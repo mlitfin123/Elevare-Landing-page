@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ELEVARE — Find & Book Personal Trainers</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="Join the waitlist for ELEVARE — a marketplace that connects clients with vetted personal trainers.">
+</head>
+<body>
+  <header class="site-header container">
+    <div class="brand">
+      <div class="logo">🏋️</div>
+      <div class="brand-text">
+        <h1 class="app-name">ELEVARE</h1>
+        <p class="tagline">Where clients meet trusted trainers</p>
+      </div>
+    </div>
+    <nav class="top-nav">
+      <a href="#how-it-works">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
+      <a href="#policies">Policies</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="hero-copy">
+        <h2>Get early access in your city</h2>
+        <p>We’re launching soon. Join the waitlist to get priority access, intro credits, and featured placement.</p>
+        <ul class="badges">
+          <li>✅ No spam — just launch updates</li>
+          <li>✅ Early-bird perks for first signups</li>
+          <li>✅ Works on iOS, Android, and Web</li>
+        </ul>
+      </div>
+      <div class="hero-card">
+        <!-- CSS-only Tabs -->
+        <div class="tabs">
+          <input type="radio" name="tabset" id="tab-trainers" checked>
+          <label for="tab-trainers">For Trainers</label>
+          <input type="radio" name="tabset" id="tab-clients">
+          <label for="tab-clients">For Clients</label>
+
+          <div class="tab-panels">
+            <section class="tab-panel" id="panel-trainers">
+              <h3>Become a founding trainer</h3>
+              <p>Get new clients, handle bookings & payouts, and keep more of what you earn.</p>
+
+              <!-- MAILCHIMP: replace dc, u, id below. Set your hosted thank-you redirect in Mailchimp form settings. -->
+              <form class="waitlist-form" method="post"
+                action="https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&amp;id=a5887ce23e&amp;f_id=001061e0f0" target="_blank" novalidate>
+                <input type="hidden" name="ROLE" value="TRAINER" />
+                <div class="field">
+                  <label for="t-name">Full name</label>
+                  <input id="t-name" name="FNAME" type="text" required placeholder="Alex Johnson" />
+                </div>
+                <div class="field">
+                  <label for="t-email">Email</label>
+                  <input id="t-email" name="EMAIL" type="email" required placeholder="you@example.com" />
+                </div>
+                <div class="field half">
+                  <label for="t-city">City</label>
+                  <input id="t-city" name="CITY" type="text" required placeholder="Miami, FL" />
+                </div>
+                <div class="field half">
+                  <label for="t-specialty">Primary specialty</label>
+                  <input id="t-specialty" name="SPECIALTY" type="text" placeholder="Strength, boxing, yoga…" />
+                </div>
+                <!-- optional Mailchimp tags -->
+                <input type="hidden" name="TAGS" value="waitlist,trainer" />
+                <button type="submit" class="cta">Join trainer waitlist</button>
+                <p class="fine-print">By joining, you agree to receive launch updates. Unsubscribe anytime.</p>
+              </form>
+
+              <ul class="benefits">
+                <li>• Keep up to 80–90% per session</li>
+                <li>• Control your rates & availability</li>
+                <li>• Verified-badge boost in search</li>
+              </ul>
+            </section>
+
+            <section class="tab-panel" id="panel-clients">
+              <h3>Find your perfect trainer</h3>
+              <p>Book vetted professionals for strength, mobility, boxing, yoga, and more—at the gym, at home, or online.</p>
+
+              <!-- MAILCHIMP: replace dc, u, id below. Set your hosted thank-you redirect in Mailchimp form settings. -->
+              <form class="waitlist-form" method="post"
+                action="https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&amp;id=a5887ce23e&amp;f_id=001061e0f0" target="_blank" novalidate>
+                <input type="hidden" name="ROLE" value="CLIENT" />
+                <div class="field">
+                  <label for="c-name">Full name</label>
+                  <input id="c-name" name="FNAME" type="text" required placeholder="Taylor Rivera" />
+                </div>
+                <div class="field">
+                  <label for="c-email">Email</label>
+                  <input id="c-email" name="EMAIL" type="email" required placeholder="you@example.com" />
+                </div>
+                <div class="field half">
+                  <label for="c-city">City</label>
+                  <input id="c-city" name="CITY" type="text" required placeholder="Miami, FL" />
+                </div>
+                <div class="field half">
+                  <label for="c-goal">Primary goal</label>
+                  <input id="c-goal" name="GOAL" type="text" placeholder="Lose fat, build muscle, rehab…" />
+                </div>
+                <!-- optional Mailchimp tags -->
+                <input type="hidden" name="TAGS" value="waitlist,client" />
+                <button type="submit" class="cta alt">Get early access</button>
+                <p class="fine-print">By joining, you agree to receive launch updates. Unsubscribe anytime.</p>
+              </form>
+
+              <ul class="benefits">
+                <li>• Transparent pricing & reviews</li>
+                <li>• Secure payments & support</li>
+                <li>• Book in minutes—no back-and-forth</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="how container">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><strong>Sign up</strong> as a trainer or client.</li>
+        <li><strong>Match</strong> via filters like specialty, price, and location.</li>
+        <li><strong>Book & pay</strong> securely. Trainers get paid automatically.</li>
+      </ol>
+    </section>
+
+    <section id="features" class="features container">
+      <h2>Why ELEVARE</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Verified pros</h3>
+          <p>Trainer profiles include certifications, reviews, and verified IDs.</p>
+        </div>
+        <div class="card">
+          <h3>Simple scheduling</h3>
+          <p>Live availability + reminders to keep everyone on time.</p>
+        </div>
+        <div class="card">
+          <h3>Fast, safe payments</h3>
+          <p>Stripe-powered checkout and payouts. No cash or awkwardness.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq container">
+      <h2>FAQ</h2>
+      <details>
+        <summary>Is it free to join?</summary>
+        <p>Yes! Trainers pay a small commission on completed sessions; clients only pay for sessions they book.</p>
+      </details>
+      <details>
+        <summary>Which cities launch first?</summary>
+        <p>We’re starting in Miami–Fort Lauderdale, then expanding based on waitlist demand.</p>
+      </details>
+      <details>
+        <summary>How do payouts work?</summary>
+        <p>Stripe Connect handles secure payouts to trainers after completed sessions.</p>
+      </details>
+    </section>
+
+    <section id="policies" class="policies container">
+      <h2>Policies</h2>
+      <p>
+        <a href="#" target="_blank" rel="noopener">Privacy Policy</a> •
+        <a href="#" target="_blank" rel="noopener">Terms of Service</a> •
+        <a href="mailto:mlitfin@elevarestrong.com">Support</a>
+      </p>
+      <p class="tiny">© <span id="year"></span> ELEVARE. All rights reserved.</p>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
