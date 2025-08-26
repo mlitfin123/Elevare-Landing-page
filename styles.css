@@ -42,6 +42,7 @@ body{
   background: linear-gradient(135deg, #5864ff, #8b9dff);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(88,100,255,.35);
+}
 .brand-text h1{
   font-size: 20px; margin: 0 0 2px 0;
 }
