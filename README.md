@@ -12,11 +12,3 @@
 3) **thank-you.html** — confirmation page shown after successful signup.
 
 4) **styles.css** — shared styling for both versions.
-
-
-
-## Pro Tips
-- Keep **two tabs** (Trainer/Client) so both sides feel seen.
-- Use **UTM parameters** on links (e.g., IG bio) to see which channels convert.
-- Add **reCAPTCHA** or a hidden honeypot field if you get spammed.
-- Add simple **error/success** messages if your provider supports inline responses.
