@@ -1,183 +1,1319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ELEVARE — Find & Book Personal Trainers and Health Professionals</title>
-  <link rel="stylesheet" href="styles.css" />
-  <meta name="description" content="Join the waitlist for ELEVARE — a marketplace that connects members with vetted personal trainers and health professionals.">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Founding Waitlist</title>
+  <meta
+    name="description"
+    content="Join the Elevare waitlist to hear when we launch and learn about a simpler way to find the right coach."
+  >
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07070f;
+      --surface: #0f0f1a;
+      --surface-strong: #161624;
+      --border: #1e1e30;
+      --border-strong: #2a2a3e;
+      --text: #e8e8f4;
+      --muted: #8d90ab;
+      --muted-strong: #5a5a7a;
+      --brand: #4f99a8;
+      --brand-bright: #74c8d6;
+      --brand-wash: rgba(79, 153, 168, 0.16);
+      --brand-line: rgba(116, 200, 214, 0.26);
+      --success: #6ee7b7;
+      --danger: #f472b6;
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --max-width: 1160px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(79, 153, 168, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 10%, rgba(116, 200, 214, 0.12), transparent 24%),
+        linear-gradient(180deg, #090914 0%, #07070f 32%, #06060d 100%);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 120px 120px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 90%);
+      opacity: 0.4;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 0;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(7, 7, 15, 0.9), rgba(7, 7, 15, 0.56));
+      border-bottom: 1px solid rgba(42, 42, 62, 0.48);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 14px 24px rgba(79, 153, 168, 0.16));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-word {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      padding-left: 0.32em;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .header-nav a:not(.btn) {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .header-nav a:not(.btn):hover {
+      color: var(--text);
+      border-color: rgba(116, 200, 214, 0.18);
+      background: rgba(22, 22, 36, 0.82);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.12s ease, opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.94;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      color: #071016;
+      background: linear-gradient(135deg, var(--brand-bright), #8de0dd);
+      box-shadow: 0 18px 32px rgba(79, 153, 168, 0.22);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: rgba(22, 22, 36, 0.82);
+      border-color: rgba(116, 200, 214, 0.16);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 420px);
+      gap: 32px;
+      align-items: start;
+      padding: 52px 0 18px;
+    }
+
+    .hero-copy {
+      padding-top: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--brand-line);
+    }
+
+    .hero-title {
+      max-width: 14ch;
+      font-size: clamp(42px, 8vw, 82px);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      margin-bottom: 18px;
+    }
+
+    .hero-lead {
+      max-width: 620px;
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .hero-proof {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 700px;
+    }
+
+    .proof-card {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, rgba(15, 15, 26, 0.92), rgba(12, 12, 22, 0.88));
+      border: 1px solid rgba(42, 42, 62, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .proof-label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      margin-bottom: 10px;
+    }
+
+    .proof-value {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+
+    .proof-copy {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .waitlist-card {
+      position: relative;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, rgba(20, 20, 32, 0.98), rgba(10, 10, 18, 0.98));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.52);
+      overflow: hidden;
+    }
+
+    .waitlist-card::before {
+      content: '';
+      position: absolute;
+      inset: -40% auto auto 58%;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79, 153, 168, 0.24), transparent 68%);
+      pointer-events: none;
+    }
+
+    .waitlist-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .card-kicker::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-bright);
+      box-shadow: 0 0 0 6px rgba(116, 200, 214, 0.12);
+    }
+
+    .waitlist-card h2 {
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      margin-bottom: 12px;
+    }
+
+    .waitlist-card p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .audience-switcher {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 6px;
+      margin: 22px 0 18px;
+      background: rgba(12, 12, 22, 0.88);
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      border-radius: 999px;
+    }
+
+    .audience-option {
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .audience-option.is-active {
+      color: var(--text);
+      background: rgba(79, 153, 168, 0.16);
+      border-color: rgba(116, 200, 214, 0.24);
+    }
+
+    .form-main {
+      display: block;
+    }
+
+    .waitlist-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .field input {
+      min-height: 48px;
+      width: 100%;
+      padding: 0 14px;
+      color: var(--text);
+      background: rgba(7, 7, 15, 0.92);
+      border: 1px solid rgba(42, 42, 62, 0.95);
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .field input:focus {
+      border-color: rgba(116, 200, 214, 0.8);
+      box-shadow: 0 0 0 4px rgba(79, 153, 168, 0.12);
+    }
+
+    .form-note {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      background: rgba(10, 10, 18, 0.74);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .form-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fine-print {
+      color: var(--muted-strong);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .form-feedback {
+      min-height: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .form-feedback.is-error {
+      color: var(--danger);
+    }
+
+    .form-feedback.is-success {
+      color: var(--success);
+    }
+
+    .form-success {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(110, 231, 183, 0.08);
+      border: 1px solid rgba(110, 231, 183, 0.24);
+    }
+
+    .success-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(110, 231, 183, 0.16);
+      color: var(--success);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .micro-trust {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .micro-item {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      background: rgba(8, 8, 15, 0.7);
+    }
+
+    .micro-item strong {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 6px;
+    }
+
+    .micro-item span {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .value-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px 0 0;
+    }
+
+    .value-panel {
+      padding: 22px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(15, 15, 26, 0.94), rgba(8, 8, 15, 0.9));
+      border: 1px solid rgba(42, 42, 62, 0.9);
+    }
+
+    .value-panel strong {
+      display: block;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .value-panel p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .section {
+      padding: 72px 0 0;
+    }
+
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 22px;
+    }
+
+    .section-head .eyebrow {
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin-bottom: 12px;
+    }
+
+    .section-copy {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .info-card {
+      min-height: 100%;
+      padding: 24px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(15, 15, 26, 0.94), rgba(8, 8, 15, 0.92));
+      border: 1px solid rgba(42, 42, 62, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .info-card .card-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--brand-wash);
+      border: 1px solid var(--brand-line);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--brand-bright);
+      margin-bottom: 20px;
+    }
+
+    .info-card h3 {
+      font-size: 22px;
+      letter-spacing: -0.04em;
+      margin-bottom: 10px;
+    }
+
+    .info-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step-card {
+      position: relative;
+      padding: 26px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(10, 10, 18, 0.98), rgba(15, 15, 26, 0.92));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      overflow: hidden;
+    }
+
+    .step-card::after {
+      content: '';
+      position: absolute;
+      inset: auto -10% -20% auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79, 153, 168, 0.14), transparent 70%);
+      pointer-events: none;
+    }
+
+    .step-number {
+      display: inline-flex;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--brand-wash);
+      border: 1px solid var(--brand-line);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--brand-bright);
+      margin-bottom: 16px;
+    }
+
+    .step-card h3 {
+      font-size: 24px;
+      letter-spacing: -0.04em;
+      margin-bottom: 10px;
+    }
+
+    .step-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .trust-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 16px;
+    }
+
+    .trust-feature {
+      padding: 28px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(16, 16, 26, 0.98), rgba(8, 8, 15, 0.92));
+      border: 1px solid rgba(42, 42, 62, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .trust-feature h3 {
+      max-width: 12ch;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
+      margin-bottom: 16px;
+    }
+
+    .trust-feature p {
+      max-width: 64ch;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .trust-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .trust-point {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid rgba(42, 42, 62, 0.9);
+      background: linear-gradient(180deg, rgba(15, 15, 26, 0.94), rgba(8, 8, 15, 0.92));
+    }
+
+    .trust-point strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .trust-point p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .final-cta {
+      padding: 72px 0 92px;
+    }
+
+    .final-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 28px;
+      border-radius: 30px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(79, 153, 168, 0.2), transparent 30%),
+        linear-gradient(180deg, rgba(16, 16, 26, 0.98), rgba(8, 8, 15, 0.92));
+      border: 1px solid rgba(42, 42, 62, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .final-copy h2 {
+      font-size: clamp(30px, 5vw, 50px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin-bottom: 10px;
+    }
+
+    .final-copy p {
+      max-width: 48ch;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .site-footer {
+      padding: 0 0 26px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(42, 42, 62, 0.86);
+    }
+
+    .footer-copy {
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 1024px) {
+      .hero,
+      .trust-layout,
+      .final-card {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .hero-proof,
+      .value-bar,
+      .card-grid,
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .waitlist-card {
+        max-width: 540px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .site-header {
+        padding: 12px 0;
+      }
+
+      .header-inner,
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .header-nav {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding-top: 30px;
+      }
+
+      .hero-copy {
+        padding-top: 0;
+      }
+
+      .hero-title,
+      .section-title,
+      .final-copy h2 {
+        max-width: none;
+      }
+
+      .field-grid,
+      .micro-trust {
+        grid-template-columns: 1fr;
+      }
+
+      .waitlist-card,
+      .trust-feature,
+      .final-card,
+      .info-card,
+      .step-card,
+      .proof-card,
+      .value-panel {
+        padding: 22px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: min(var(--max-width), calc(100vw - 20px));
+      }
+
+      .hero,
+      .section,
+      .final-cta {
+        padding-top: 22px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .hero-actions,
+      .header-nav {
+        width: 100%;
+      }
+
+      .header-nav a:not(.btn) {
+        padding-left: 0;
+        padding-right: 0;
+        border: none;
+        background: transparent;
+      }
+    }
+  </style>
 </head>
 <body>
-  <header class="site-header container">
-    <div class="brand">
-      <div class="logo"><img src="Elevare_icon.png" alt="Elevare logo" width="60"></div>
-      <div class="brand-text">
-        <h1 class="app-name">ELEVARE</h1>
-        <p class="tagline">Where members meet trusted trainers and health professionals</p>
-      </div>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="#top" aria-label="Elevare">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="logo_transparent.png" alt="">
+        </span>
+        <span class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Founding Waitlist</span>
+        </span>
+      </a>
+
+      <nav class="header-nav" aria-label="Primary">
+        <a href="#benefits">Benefits</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#trust">Trust</a>
+        <a class="btn btn-secondary" href="#waitlist">Join Waitlist</a>
+      </nav>
     </div>
-    <nav class="top-nav">
-      <a href="#how-it-works">How it works</a>
-      <a href="#features">Features</a>
-      <a href="#faq">FAQ</a>
-      <a href="#policies">Policies</a>
-    </nav>
   </header>
 
-  <main>
-    <section class="hero container">
+  <main id="top">
+    <section class="container hero">
       <div class="hero-copy">
-        <h2>Get early access in your city</h2>
-        <p>We’re launching soon. Join the waitlist to get priority access, intro credits, and featured placement.</p>
-        <ul class="badges">
-          <li>✅ No spam — just launch updates</li>
-          <li>✅ Early-bird perks for first signups</li>
-          <li>✅ Works on iOS, Android, and Web</li>
-        </ul>
+        <div class="eyebrow">Coming soon</div>
+        <h1 class="hero-title">A better way to connect members with the right coaches.</h1>
+        <p class="hero-lead">
+          Elevare is built to make it easier for members to discover trusted coaches and for coaches
+          to reach the right clients. Join the waitlist to hear when we launch.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
+          <a class="btn btn-secondary" href="#how-it-works">See how it works</a>
+        </div>
+
+        <div class="hero-proof" aria-label="Why join early">
+          <article class="proof-card">
+            <span class="proof-label">Founding access</span>
+            <div class="proof-value">Early launch updates</div>
+            <p class="proof-copy">Be first to know when Elevare opens and when availability expands.</p>
+          </article>
+          <article class="proof-card">
+            <span class="proof-label">For members</span>
+            <div class="proof-value">Find a coach who fits</div>
+            <p class="proof-copy">Search for the support, style, and specialty that matches your goals.</p>
+          </article>
+          <article class="proof-card">
+            <span class="proof-label">For coaches</span>
+            <div class="proof-value">Reach the right clients</div>
+            <p class="proof-copy">Show what you offer and connect with people looking for your expertise.</p>
+          </article>
+        </div>
       </div>
-      <div class="hero-card">
-        <!-- CSS-only Tabs -->
-        <div class="tabs">
-          <input type="radio" name="tabset" id="tab-trainers" checked>
-          <label for="tab-trainers">For Trainers</label>
-          <input type="radio" name="tabset" id="tab-clients">
-          <label for="tab-clients">For Members</label>
 
-          <div class="tab-panels">
-            <section class="tab-panel" id="panel-trainers">
-              <h3>Become a founding trainer</h3>
-              <p>Get new clients, handle bookings & payouts, and keep more of what you earn.</p>
+      <aside class="waitlist-card" id="waitlist">
+        <div class="card-kicker">Join the list</div>
+        <h2>Join the waitlist.</h2>
+        <p>
+          Sign up as a member or coach to hear when Elevare launches and when you can get started.
+        </p>
 
-              <!-- MAILCHIMP: replace dc, u, id below. Set your hosted thank-you redirect in Mailchimp form settings. -->
-              <form class="waitlist-form" method="post"
-                action="https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&amp;id=a5887ce23e&amp;f_id=001061e0f0" target="_blank" novalidate>
-                <input type="hidden" name="ROLE" value="TRAINER" />
-                <div class="field">
-                  <label for="t-name">Full name</label>
-                  <input id="t-name" name="FNAME" type="text" required placeholder="First Last" />
-                </div>
-                <div class="field">
-                  <label for="t-email">Email</label>
-                  <input id="t-email" name="EMAIL" type="email" required placeholder="you@example.com" />
-                </div>
-                <div class="field half">
-                  <label for="t-city">City</label>
-                  <input id="t-city" name="CITY" type="text" required placeholder="Miami, FL" />
-                </div>
-                <div class="field half">
-                  <label for="t-specialty">Primary specialty</label>
-                  <input id="t-specialty" name="SPECIALTY" type="text" placeholder="Strength, boxing, yoga…" />
-                </div>
-                <!-- optional Mailchimp tags -->
-                <input type="hidden" name="TAGS" value="waitlist,trainer" />
-                <button type="submit" class="cta">Join trainer waitlist</button>
-                <p class="fine-print">By joining, you agree to receive launch updates. Unsubscribe anytime.</p>
-              </form>
+        <div class="audience-switcher" role="tablist" aria-label="Audience">
+          <button type="button" class="audience-option is-active" data-role="CLIENT">Member</button>
+          <button type="button" class="audience-option" data-role="TRAINER">Coach</button>
+        </div>
 
-              <ul class="benefits">
-                <li>• Keep up to 80–90% per session</li>
-                <li>• Control your rates & availability</li>
-                <li>• Verified-badge boost in search</li>
-              </ul>
-            </section>
+        <form
+          id="waitlist-form"
+          class="waitlist-form"
+          method="post"
+          action="https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&amp;id=a5887ce23e&amp;f_id=001061e0f0"
+          target="_blank"
+        >
+          <div class="form-main" id="form-main">
+            <input type="hidden" name="ROLE" id="mailchimp-role" value="CLIENT">
+            <input type="hidden" name="TAGS" id="mailchimp-tags" value="waitlist,client">
+            <input type="hidden" id="mailchimp-honeypot" value="">
 
-            <section class="tab-panel" id="panel-clients">
-              <h3>Find your perfect trainer</h3>
-              <p>Book vetted professionals for strength, mobility, boxing, yoga, and more—at the gym, at home, or online.</p>
+            <div class="field-grid">
+              <label class="field field-full" for="waitlist-name">
+                <span class="field-label">Name</span>
+                <input id="waitlist-name" name="FNAME" type="text" placeholder="Your name">
+              </label>
 
-              <!-- MAILCHIMP: replace dc, u, id below. Set your hosted thank-you redirect in Mailchimp form settings. -->
-              <form class="waitlist-form" method="post"
-                action="https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&amp;id=a5887ce23e&amp;f_id=001061e0f0" target="_blank" novalidate>
-                <input type="hidden" name="ROLE" value="CLIENT" />
-                <div class="field">
-                  <label for="c-name">Full name</label>
-                  <input id="c-name" name="FNAME" type="text" required placeholder="First Last" />
-                </div>
-                <div class="field">
-                  <label for="c-email">Email</label>
-                  <input id="c-email" name="EMAIL" type="email" required placeholder="you@example.com" />
-                </div>
-                <div class="field half">
-                  <label for="c-city">City</label>
-                  <input id="c-city" name="CITY" type="text" required placeholder="Miami, FL" />
-                </div>
-                <div class="field half">
-                  <label for="c-goal">Primary goal</label>
-                  <input id="c-goal" name="GOAL" type="text" placeholder="Lose fat, build muscle, rehab…" />
-                </div>
-                <!-- optional Mailchimp tags -->
-                <input type="hidden" name="TAGS" value="waitlist,client" />
-                <button type="submit" class="cta alt">Get early access</button>
-                <p class="fine-print">By joining, you agree to receive launch updates. Unsubscribe anytime.</p>
-              </form>
+              <label class="field field-full" for="waitlist-email">
+                <span class="field-label">Email address</span>
+                <input id="waitlist-email" name="EMAIL" type="email" placeholder="you@example.com" required>
+              </label>
 
-              <ul class="benefits">
-                <li>• Transparent pricing & reviews</li>
-                <li>• Secure payments & support</li>
-                <li>• Book in minutes—no back-and-forth</li>
-              </ul>
-            </section>
+              <label class="field field-full" for="waitlist-city">
+                <span class="field-label">City</span>
+                <input id="waitlist-city" name="CITY" type="text" placeholder="Miami, FL">
+              </label>
+            </div>
+
+            <div class="form-note" id="audience-note">
+              Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="submit-button">Join the waitlist</button>
+              <p class="fine-print">
+                We will only use your email to send Elevare launch updates. You can unsubscribe anytime.
+              </p>
+              <div class="form-feedback" id="form-feedback" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="form-success" id="form-success" hidden>
+            <span class="success-tag">Confirmed</span>
+            <h3>You're on the list.</h3>
+            <p>We will reach out as launch access opens up. Keep an eye on your inbox for priority updates.</p>
+            <button type="button" class="btn btn-secondary" id="submit-another">Use a different email</button>
+          </div>
+        </form>
+
+        <div class="micro-trust">
+          <div class="micro-item">
+            <strong>Launch updates</strong>
+            <span>Stay in the loop as we get closer to opening access.</span>
+          </div>
+          <div class="micro-item">
+            <strong>Better discovery</strong>
+            <span>We are making it easier to find coaches who match your goals.</span>
+          </div>
+          <div class="micro-item">
+            <strong>Easy booking</strong>
+            <span>Designed to help you move from browsing to booking more smoothly.</span>
           </div>
         </div>
+      </aside>
+    </section>
+    <section class="container value-bar" aria-label="Value proposition">
+      <article class="value-panel">
+        <strong>Find the right fit</strong>
+        <p>Browse coaches based on what matters most to you, from training style to goals and experience.</p>
+      </article>
+      <article class="value-panel">
+        <strong>Grow with better visibility</strong>
+        <p>Give coaches a clearer way to show what they offer and connect with the right people.</p>
+      </article>
+      <article class="value-panel">
+        <strong>Know when we launch</strong>
+        <p>Join the waitlist so you hear about timing, availability, and your chance to get started.</p>
+      </article>
+    </section>
+
+    <section class="container section" id="benefits">
+      <div class="section-head">
+        <div class="eyebrow">Benefits</div>
+        <h2 class="section-title">What Elevare is building for members and coaches.</h2>
+        <p class="section-copy">
+          Whether you are looking for support or offering it, Elevare is meant to make that connection clearer and easier.
+        </p>
+      </div>
+
+      <div class="card-grid">
+        <article class="info-card">
+          <div class="card-index">01</div>
+          <h3>For members</h3>
+          <p>Find professionals who align with your goals instead of sorting through endless generic options.</p>
+        </article>
+        <article class="info-card">
+          <div class="card-index">02</div>
+          <h3>For coaches</h3>
+          <p>Show people who you help, what you offer, and why you are the right fit for their goals.</p>
+        </article>
+        <article class="info-card">
+          <div class="card-index">03</div>
+          <h3>Join early</h3>
+          <p>Get updates on timing, availability, and when Elevare is ready for you to take the next step.</p>
+        </article>
       </div>
     </section>
 
-    <section id="how-it-works" class="how container">
-      <h2>How it works</h2>
-      <ol class="steps">
-        <li><strong>Sign up</strong> as a trainer and health professional or member.</li>
-        <li><strong>Match</strong> via filters like specialty, price, and location.</li>
-        <li><strong>Book & pay</strong> securely. trainers and health professionals get paid automatically.</li>
-      </ol>
+    <section class="container section" id="how-it-works">
+      <div class="section-head">
+        <div class="eyebrow">How it works</div>
+        <h2 class="section-title">How it will work.</h2>
+        <p class="section-copy">
+          We are keeping the experience simple so you can quickly find the right coach and know when it is your turn to join.
+        </p>
+      </div>
+
+      <div class="steps">
+        <article class="step-card">
+          <span class="step-number">Step 01</span>
+          <h3>Join the waitlist</h3>
+          <p>Tell us a little about who you are so we can send you the right updates as launch gets closer.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">Step 02</span>
+          <h3>Hear when we launch</h3>
+          <p>We will keep you posted on timing, availability, and when you can start exploring Elevare.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">Step 03</span>
+          <h3>Start finding your fit</h3>
+          <p>Once live, you will be able to discover coaches who match your goals and get started more easily.</p>
+        </article>
+      </div>
     </section>
 
-    <section id="features" class="features container">
-      <h2>Why ELEVARE</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>Verified pros</h3>
-          <p>Trainer profiles include certifications, reviews, and verified IDs.</p>
-        </div>
-        <div class="card">
-          <h3>Simple scheduling</h3>
-          <p>Live availability + reminders to keep everyone on time.</p>
-        </div>
-        <div class="card">
-          <h3>Fast, safe payments</h3>
-          <p>Stripe-powered checkout and payouts. No cash or awkwardness.</p>
+    <section class="container section" id="trust">
+      <div class="section-head">
+        <div class="eyebrow">Why join</div>
+        <h2 class="section-title">A better way to connect with the right coach is on the way.</h2>
+        <p class="section-copy">
+          Join the waitlist if you want an easier path to discovering coaches, understanding your options,
+          and hearing as soon as Elevare becomes available.
+        </p>
+      </div>
+
+      <div class="trust-layout">
+        <article class="trust-feature">
+          <h3>We want the search for a coach to feel less confusing and more personal.</h3>
+          <p>
+            Elevare is focused on helping you spend less time guessing, more time finding the right support,
+            and more quickly taking the next step toward your goals.
+          </p>
+        </article>
+
+        <div class="trust-list">
+          <article class="trust-point">
+            <strong>Hear about launch timing</strong>
+            <p>Join the list to know when Elevare opens and when more people can start using it.</p>
+          </article>
+          <article class="trust-point">
+            <strong>Know what is coming</strong>
+            <p>We will share updates so you know what the experience will look like and when to expect access.</p>
+          </article>
+          <article class="trust-point">
+            <strong>Be first in line</strong>
+            <p>Waitlist members will be the first to hear when it is time to sign up and get started.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section id="faq" class="faq container">
-      <h2>FAQ</h2>
-      <details>
-        <summary>Is it free to join?</summary>
-        <p>Yes! Trainers and Health Professionals pay a small commission on completed sessions; clients only pay for sessions they book.</p>
-      </details>
-      <details>
-        <summary>Which cities launch first?</summary>
-        <p>We’re starting in Miami–Fort Lauderdale, then expanding based on waitlist demand.</p>
-      </details>
-      <details>
-        <summary>How do payouts work?</summary>
-        <p>Stripe Connect handles secure payouts to trainers after completed sessions.</p>
-      </details>
-    </section>
-
-    <section id="policies" class="policies container">
-      <h2>Policies</h2>
-      <p>
-        <a href="#" target="_blank" rel="noopener">Privacy Policy</a> •
-        <a href="#" target="_blank" rel="noopener">Terms of Service</a> •
-        <a href="mailto:mlitfin@elevarestrong.com">Support</a>
-      </p>
-      <p class="tiny">© <span id="year"></span> ELEVARE. All rights reserved.</p>
+    <section class="container final-cta">
+      <div class="final-card">
+        <div class="final-copy">
+          <h2>Join the Elevare waitlist and hear when we launch.</h2>
+          <p>Sign up now so you do not miss the first update when Elevare is ready.</p>
+        </div>
+        <a class="btn btn-primary" href="#waitlist">Join waitlist</a>
+      </div>
     </section>
   </main>
 
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#benefits">Benefits</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="mailto:mlitfin@elevarestrong.com">Contact</a>
+      </div>
+    </div>
+  </footer>
+
   <script>
+    const MAILCHIMP_FORM_ACTION =
+      'https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&id=a5887ce23e&f_id=001061e0f0';
+
+    const audienceConfig = {
+      CLIENT: {
+        tags: 'waitlist,client',
+        note: 'Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.'
+      },
+      TRAINER: {
+        tags: 'waitlist,trainer',
+        note: 'Coaches will hear when Elevare launches, when they can join, and how to start reaching new clients.'
+      }
+    };
+
+    const form = document.getElementById('waitlist-form');
+    const submitButton = document.getElementById('submit-button');
+    const roleInput = document.getElementById('mailchimp-role');
+    const tagsInput = document.getElementById('mailchimp-tags');
+    const honeypotInput = document.getElementById('mailchimp-honeypot');
+    const audienceNote = document.getElementById('audience-note');
+    const feedback = document.getElementById('form-feedback');
+    const formMain = document.getElementById('form-main');
+    const successPanel = document.getElementById('form-success');
+    const submitAnother = document.getElementById('submit-another');
+    const audienceButtons = Array.from(document.querySelectorAll('.audience-option'));
+
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    initializeMailchimpForm();
+
+    function initializeMailchimpForm() {
+      applyAudience(roleInput.value);
+
+      audienceButtons.forEach(button => {
+        button.addEventListener('click', () => applyAudience(button.dataset.role));
+      });
+
+      submitAnother.addEventListener('click', () => {
+        successPanel.hidden = true;
+        formMain.hidden = false;
+        feedback.textContent = '';
+        feedback.className = 'form-feedback';
+        form.reset();
+        applyAudience('CLIENT');
+      });
+
+      form.addEventListener('submit', handleSubmit);
+
+      const actionUrl = new URL(MAILCHIMP_FORM_ACTION);
+      const honeypotName = `b_${actionUrl.searchParams.get('u')}_${actionUrl.searchParams.get('id')}`;
+      honeypotInput.name = honeypotName;
+    }
+
+    function applyAudience(role) {
+      const safeRole = audienceConfig[role] ? role : 'CLIENT';
+      roleInput.value = safeRole;
+      tagsInput.value = audienceConfig[safeRole].tags;
+      audienceNote.textContent = audienceConfig[safeRole].note;
+
+      audienceButtons.forEach(button => {
+        const isActive = button.dataset.role === safeRole;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+    }
+
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      if (!form.reportValidity()) {
+        return;
+      }
+
+      if (!MAILCHIMP_FORM_ACTION || MAILCHIMP_FORM_ACTION.indexOf('MAILCHIMP_FORM_ACTION') !== -1) {
+        setFeedback('Update MAILCHIMP_FORM_ACTION before publishing this page.', 'error');
+        return;
+      }
+
+      setLoading(true);
+      setFeedback('Submitting your signup...', 'success');
+
+      submitMailchimpJsonp(new FormData(form))
+        .then(response => {
+          const message = cleanMailchimpMessage(response.msg || '');
+          const alreadySubscribed = /already subscribed/i.test(message);
+
+          if (response.result === 'success' || alreadySubscribed) {
+            setFeedback(alreadySubscribed ? 'This email is already on the waitlist.' : 'Signup successful.', 'success');
+            formMain.hidden = true;
+            successPanel.hidden = false;
+            return;
+          }
+
+          setFeedback(message || 'We could not submit the form. Please try again.', 'error');
+        })
+        .catch(error => {
+          setFeedback(error.message || 'Something went wrong while submitting the form.', 'error');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+
+    function setLoading(isLoading) {
+      submitButton.disabled = isLoading;
+      submitButton.textContent = isLoading ? 'Submitting...' : 'Join the waitlist';
+    }
+
+    function setFeedback(message, type) {
+      feedback.textContent = message;
+      feedback.className = `form-feedback ${type === 'error' ? 'is-error' : 'is-success'}`;
+    }
+
+    function cleanMailchimpMessage(message) {
+      const parser = new DOMParser();
+      const text = parser.parseFromString(message, 'text/html').body.textContent || '';
+      return text.replace(/^\d+\s*-\s*/, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function submitMailchimpJsonp(formData) {
+      return new Promise((resolve, reject) => {
+        let script;
+        let timeoutId;
+        const callbackName = `mailchimpCallback_${Date.now()}`;
+
+        try {
+          const actionUrl = new URL(MAILCHIMP_FORM_ACTION);
+          actionUrl.pathname = actionUrl.pathname.replace('/post', '/post-json');
+          actionUrl.searchParams.set('c', callbackName);
+
+          formData.forEach((value, key) => {
+            const trimmedValue = String(value).trim();
+            if (trimmedValue) {
+              actionUrl.searchParams.set(key, trimmedValue);
+            }
+          });
+
+          if (honeypotInput.name) {
+            actionUrl.searchParams.set(honeypotInput.name, honeypotInput.value);
+          }
+
+          window[callbackName] = response => {
+            cleanup();
+            resolve(response || {});
+          };
+
+          script = document.createElement('script');
+          script.src = actionUrl.toString();
+          script.async = true;
+          script.onerror = () => {
+            cleanup();
+            reject(new Error('Mailchimp request failed to load. Check the form action URL and try again.'));
+          };
+
+          timeoutId = window.setTimeout(() => {
+            cleanup();
+            reject(new Error('The signup request timed out. Please try again.'));
+          }, 12000);
+
+          document.body.appendChild(script);
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+
+        function cleanup() {
+          window.clearTimeout(timeoutId);
+          if (script && script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+          try {
+            delete window[callbackName];
+          } catch (error) {
+            window[callbackName] = undefined;
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>
