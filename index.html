@@ -960,17 +960,17 @@
             <div class="field-grid">
               <label class="field field-full" for="waitlist-name">
                 <span class="field-label">Name</span>
-                <input id="waitlist-name" name="FNAME" type="text" placeholder="Your name">
+                <input id="waitlist-name" type="text" placeholder="Your name">
               </label>
 
               <label class="field field-full" for="waitlist-email">
                 <span class="field-label">Email address</span>
-                <input id="waitlist-email" name="EMAIL" type="email" placeholder="you@example.com" required>
+                <input id="waitlist-email" type="email" placeholder="you@example.com" required>
               </label>
 
               <label class="field field-full" for="waitlist-city">
                 <span class="field-label">City</span>
-                <input id="waitlist-city" name="CITY" type="text" placeholder="Miami, FL">
+                <input id="waitlist-city" type="text" placeholder="Miami, FL">
               </label>
             </div>
 
@@ -1143,7 +1143,12 @@
   <script>
     const MAILCHIMP_FORM_ACTION =
       'https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&id=a5887ce23e&f_id=001061e0f0';
-    const MAILCHIMP_ROLE_FIELD_NAME = 'ROLE';
+    const MAILCHIMP_FIELD_NAMES = {
+      name: 'MERGE1',
+      email: 'MERGE0',
+      city: 'MERGE2',
+      role: 'MERGE4'
+    };
 
     const audienceConfig = {
       MEMBER: {
@@ -1160,6 +1165,9 @@
     const submitButton = document.getElementById('submit-button');
     const roleInput = document.getElementById('mailchimp-role');
     const tagsInput = document.getElementById('mailchimp-tags');
+    const nameInput = document.getElementById('waitlist-name');
+    const emailInput = document.getElementById('waitlist-email');
+    const cityInput = document.getElementById('waitlist-city');
     const honeypotInput = document.getElementById('mailchimp-honeypot');
     const audienceNote = document.getElementById('audience-note');
     const feedback = document.getElementById('form-feedback');
@@ -1173,7 +1181,10 @@
     initializeMailchimpForm();
 
     function initializeMailchimpForm() {
-      roleInput.name = MAILCHIMP_ROLE_FIELD_NAME;
+      nameInput.name = MAILCHIMP_FIELD_NAMES.name;
+      emailInput.name = MAILCHIMP_FIELD_NAMES.email;
+      cityInput.name = MAILCHIMP_FIELD_NAMES.city;
+      roleInput.name = MAILCHIMP_FIELD_NAMES.role;
       applyAudience(roleInput.value);
 
       audienceButtons.forEach(button => {
