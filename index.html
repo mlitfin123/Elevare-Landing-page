@@ -1152,10 +1152,12 @@
 
     const audienceConfig = {
       MEMBER: {
+        mailchimpRoleValue: 'Member',
         tags: 'waitlist,member',
         note: 'Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.'
       },
       COACH: {
+        mailchimpRoleValue: 'Coach',
         tags: 'waitlist,coach',
         note: 'Coaches will hear when Elevare launches, when they can join, and how to start reaching new clients.'
       }
@@ -1209,7 +1211,7 @@
 
     function applyAudience(role) {
       const safeRole = audienceConfig[role] ? role : 'MEMBER';
-      roleInput.value = safeRole;
+      roleInput.value = audienceConfig[safeRole].mailchimpRoleValue;
       tagsInput.value = audienceConfig[safeRole].tags;
       audienceNote.textContent = audienceConfig[safeRole].note;
 
@@ -1290,6 +1292,13 @@
               actionUrl.searchParams.set(key, trimmedValue);
             }
           });
+
+          const roleValue = String(roleInput.value || '').trim();
+          if (roleValue) {
+            ['MERGE4', 'MMERGE4', 'ROLE'].forEach(fieldName => {
+              actionUrl.searchParams.set(fieldName, roleValue);
+            });
+          }
 
           if (honeypotInput.name) {
             actionUrl.searchParams.set(honeypotInput.name, honeypotInput.value);
