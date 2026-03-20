@@ -936,8 +936,8 @@
         </p>
 
         <div class="audience-switcher" role="tablist" aria-label="Audience">
-          <button type="button" class="audience-option is-active" data-role="CLIENT">Member</button>
-          <button type="button" class="audience-option" data-role="TRAINER">Coach</button>
+          <button type="button" class="audience-option is-active" data-role="MEMBER">Member</button>
+          <button type="button" class="audience-option" data-role="COACH">Coach</button>
         </div>
 
         <form
@@ -948,8 +948,8 @@
           target="_blank"
         >
           <div class="form-main" id="form-main">
-            <input type="hidden" name="ROLE" id="mailchimp-role" value="CLIENT">
-            <input type="hidden" name="TAGS" id="mailchimp-tags" value="waitlist,client">
+            <input type="hidden" name="ROLE" id="mailchimp-role" value="MEMBER">
+            <input type="hidden" name="TAGS" id="mailchimp-tags" value="waitlist,member">
             <input type="hidden" id="mailchimp-honeypot" value="">
 
             <div class="field-grid">
@@ -1140,12 +1140,12 @@
       'https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&id=a5887ce23e&f_id=001061e0f0';
 
     const audienceConfig = {
-      CLIENT: {
-        tags: 'waitlist,client',
+      MEMBER: {
+        tags: 'waitlist,member',
         note: 'Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.'
       },
-      TRAINER: {
-        tags: 'waitlist,trainer',
+      COACH: {
+        tags: 'waitlist,coach',
         note: 'Coaches will hear when Elevare launches, when they can join, and how to start reaching new clients.'
       }
     };
@@ -1179,7 +1179,7 @@
         feedback.textContent = '';
         feedback.className = 'form-feedback';
         form.reset();
-        applyAudience('CLIENT');
+        applyAudience('MEMBER');
       });
 
       form.addEventListener('submit', handleSubmit);
@@ -1190,7 +1190,7 @@
     }
 
     function applyAudience(role) {
-      const safeRole = audienceConfig[role] ? role : 'CLIENT';
+      const safeRole = audienceConfig[role] ? role : 'MEMBER';
       roleInput.value = safeRole;
       tagsInput.value = audienceConfig[safeRole].tags;
       audienceNote.textContent = audienceConfig[safeRole].note;
