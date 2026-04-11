@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Privacy Policy</title>
+  <meta
+    name="description"
+    content="Read the Elevare privacy policy."
+  >
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07070f;
+      --surface: #0f0f1a;
+      --surface-strong: #161624;
+      --border: #1e1e30;
+      --border-strong: #2a2a3e;
+      --text: #e8e8f4;
+      --muted: #8d90ab;
+      --muted-strong: #5a5a7a;
+      --brand: #4f99a8;
+      --brand-bright: #74c8d6;
+      --brand-line: rgba(116, 200, 214, 0.26);
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --max-width: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(79, 153, 168, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 10%, rgba(116, 200, 214, 0.12), transparent 24%),
+        linear-gradient(180deg, #090914 0%, #07070f 32%, #06060d 100%);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 120px 120px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 90%);
+      opacity: 0.4;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 0;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(7, 7, 15, 0.9), rgba(7, 7, 15, 0.56));
+      border-bottom: 1px solid rgba(42, 42, 62, 0.48);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 14px 24px rgba(79, 153, 168, 0.16));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-word {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      padding-left: 0.32em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .header-links a {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .header-links a:hover {
+      color: var(--text);
+      border-color: rgba(116, 200, 214, 0.18);
+      background: rgba(22, 22, 36, 0.82);
+    }
+
+    .page-shell {
+      padding: 56px 0 28px;
+    }
+
+    .hero-card,
+    .policy-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(22, 22, 36, 0.94), rgba(12, 12, 24, 0.96));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 38px;
+      margin-bottom: 24px;
+    }
+
+    .hero-card::after,
+    .policy-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(140deg, rgba(116, 200, 214, 0.1), transparent 42%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--brand-line);
+    }
+
+    h1 {
+      font-size: clamp(38px, 7vw, 64px);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin-bottom: 18px;
+    }
+
+    .intro {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .policy-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .policy-card {
+      padding: 28px;
+    }
+
+    .policy-card h2 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .policy-card p + p,
+    .policy-card ul,
+    .policy-card ol {
+      margin-top: 12px;
+    }
+
+    .policy-card ul,
+    .policy-card ol {
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .policy-card li + li {
+      margin-top: 8px;
+    }
+
+    .policy-card p {
+      color: var(--muted);
+    }
+
+    .subhead {
+      color: var(--text);
+      font-weight: 600;
+      margin-top: 14px;
+    }
+
+    .site-footer {
+      padding: 0 0 28px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding-top: 22px;
+      border-top: 1px solid rgba(42, 42, 62, 0.86);
+    }
+
+    .footer-copy {
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 720px) {
+      .hero-card,
+      .policy-card {
+        padding: 24px;
+      }
+
+      .header-inner,
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="index.html" aria-label="Elevare home">
+        <img class="brand-mark" src="logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Elevare Fit LLC</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Legal navigation">
+        <a href="index.html">Back to home</a>
+        <a href="terms-of-service.html">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Legal</div>
+        <h1>Privacy Policy</h1>
+        <p class="intro">
+          This Privacy Policy describes how Elevare Fit LLC collects, uses, discloses, and safeguards
+          information when you use our mobile applications, websites, and related services.
+        </p>
+        <div class="meta">Last updated April 11, 2026</div>
+      </section>
+
+      <div class="policy-grid">
+        <section class="policy-card">
+          <h2>Company</h2>
+          <p>Elevare Fit LLC ("Elevare," "we," "us," "our").</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>Introduction</h2>
+          <p>
+            This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use
+            our mobile applications, websites, and related services (collectively, the "Services").
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>1. Scope</h2>
+          <p>
+            This Policy applies to users of Elevare, including clients and independent fitness professionals
+            ("Trainers"). By using the Services, you consent to the practices described herein.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>2. Information We Collect</h2>
+          <p class="subhead">A. Information You Provide</p>
+          <ul>
+            <li>Identity: name, email, phone, account credentials</li>
+            <li>Profile: fitness goals, preferences, availability, location (if enabled)</li>
+            <li>Trainer data: certifications, experience, media, pricing</li>
+            <li>Communications: messages, support requests, reviews</li>
+          </ul>
+          <p class="subhead">B. Transaction &amp; Payment Data</p>
+          <ul>
+            <li>Purchases, bookings, session history</li>
+            <li>Payment tokens and metadata via third-party processors (e.g., Stripe)</li>
+            <li>We do not store full card numbers</li>
+          </ul>
+          <p class="subhead">C. Device &amp; Usage Data</p>
+          <ul>
+            <li>IP address, device identifiers, OS, app usage events, crash logs</li>
+          </ul>
+          <p class="subhead">D. Location Data (Optional)</p>
+          <ul>
+            <li>Approximate or precise location if you enable it for matching</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>3. How We Use Information</h2>
+          <ul>
+            <li>Operate and provide the Services</li>
+            <li>Match clients with Trainers</li>
+            <li>Process payments, credits, refunds, and fraud prevention</li>
+            <li>Facilitate communications and notifications</li>
+            <li>Personalize content and recommendations</li>
+            <li>Maintain safety, enforce policies, and resolve disputes</li>
+            <li>Comply with legal obligations</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>4. Legal Bases (if applicable)</h2>
+          <p>Where required (e.g., certain jurisdictions), we rely on:</p>
+          <ul>
+            <li>Contract performance</li>
+            <li>Legitimate interests (service improvement, safety)</li>
+            <li>Consent (e.g., location, marketing)</li>
+            <li>Legal compliance</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>5. How We Share Information</h2>
+          <p>We may share information with:</p>
+          <ul>
+            <li>Service Providers: hosting, analytics, payments (e.g., Stripe)</li>
+            <li>Other Users: limited profile and booking information to enable sessions</li>
+            <li>Legal/Regulatory: when required by law or to protect rights/safety</li>
+            <li>Business Transfers: in connection with mergers, financing, or sale</li>
+          </ul>
+          <p>We do not sell personal data.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>6. Data Retention</h2>
+          <p>
+            We retain data as long as necessary for service delivery, legal compliance, fraud prevention,
+            and dispute resolution. Retention periods may vary by data type.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>7. Security</h2>
+          <p>
+            We implement administrative, technical, and physical safeguards. No system is fully secure;
+            you use the Services at your own risk.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>8. Your Rights</h2>
+          <p>
+            Depending on your location, you may request access, correction, deletion, portability, or
+            restriction of processing.
+          </p>
+          <p>Contact: <a href="mailto:mlitfin@elevarestrong.com">mlitfin@elevarestrong.com</a></p>
+        </section>
+
+        <section class="policy-card">
+          <h2>9. International Transfers</h2>
+          <p>
+            Data may be processed in the United States and other jurisdictions. We use appropriate safeguards
+            where required.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>10. Children</h2>
+          <p>
+            The Services are not intended for individuals under 18. We do not knowingly collect data from minors.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>11. Third-Party Services</h2>
+          <p>We are not responsible for third-party privacy practices.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>12. Changes</h2>
+          <p>
+            We may update this Policy. Continued use constitutes acceptance of updates.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>13. Contact</h2>
+          <p>Elevare Fit LLC</p>
+          <p><a href="mailto:mlitfin@elevarestrong.com">mlitfin@elevarestrong.com</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="terms-of-service.html">Terms of Service</a>
+        <a href="mailto:mlitfin@elevarestrong.com">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
