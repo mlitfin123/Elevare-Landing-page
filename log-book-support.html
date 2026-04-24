@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Elevare | Privacy Policy</title>
+  <title>Log-Book | Support</title>
   <meta
     name="description"
-    content="Read the Elevare privacy policy."
+    content="Support information for the Log-Book app."
   >
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
@@ -154,7 +154,8 @@
     }
 
     .hero-card,
-    .policy-card {
+    .support-card,
+    .contact-card {
       position: relative;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(22, 22, 36, 0.94), rgba(12, 12, 24, 0.96));
@@ -163,13 +164,22 @@
       box-shadow: var(--shadow);
     }
 
-    .hero-card {
+    .hero-card,
+    .contact-card {
       padding: 38px;
+    }
+
+    .support-card {
+      padding: 28px;
+    }
+
+    .hero-card {
       margin-bottom: 24px;
     }
 
     .hero-card::after,
-    .policy-card::after {
+    .support-card::after,
+    .contact-card::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -204,7 +214,7 @@
     }
 
     .intro {
-      max-width: 62ch;
+      max-width: 60ch;
       color: var(--muted);
       font-size: 17px;
       line-height: 1.8;
@@ -216,46 +226,57 @@
       font-size: 13px;
     }
 
-    .policy-grid {
+    .support-grid {
       display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
+      margin-bottom: 18px;
     }
 
-    .policy-card {
-      padding: 28px;
-    }
-
-    .policy-card h2 {
+    .support-card h2,
+    .contact-card h2 {
       font-size: 24px;
       line-height: 1.1;
       margin-bottom: 14px;
       letter-spacing: -0.03em;
     }
 
-    .policy-card p + p,
-    .policy-card ul,
-    .policy-card ol {
-      margin-top: 12px;
+    .support-card p,
+    .contact-card p {
+      color: var(--muted);
     }
 
-    .policy-card ul,
-    .policy-card ol {
+    .support-card ul {
+      margin-top: 12px;
       padding-left: 20px;
       color: var(--muted);
     }
 
-    .policy-card li + li {
+    .support-card li + li {
       margin-top: 8px;
     }
 
-    .policy-card p {
-      color: var(--muted);
+    .contact-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 24px;
     }
 
-    .subhead {
-      color: var(--text);
-      font-weight: 600;
-      margin-top: 14px;
+    .email-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand-bright), #8de0dd);
+      color: #071016;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 18px 32px rgba(79, 153, 168, 0.22);
+      white-space: nowrap;
     }
 
     .site-footer {
@@ -293,9 +314,17 @@
       color: var(--text);
     }
 
+    @media (max-width: 840px) {
+      .support-grid,
+      .contact-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 720px) {
       .hero-card,
-      .policy-card {
+      .support-card,
+      .contact-card {
         padding: 24px;
       }
 
@@ -303,6 +332,10 @@
       .footer-inner {
         flex-direction: column;
         align-items: flex-start;
+      }
+
+      .email-link {
+        width: 100%;
       }
     }
   </style>
@@ -317,8 +350,9 @@
           <span class="brand-sub">Elevare Fit LLC</span>
         </div>
       </a>
-      <nav class="header-links" aria-label="Legal navigation">
-        <a href="index.html">Back to home</a>
+      <nav class="header-links" aria-label="Support navigation">
+        <a href="index.html">Home</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
         <a href="terms-of-service.html">Terms of Service</a>
       </nav>
     </div>
@@ -327,156 +361,66 @@
   <main class="page-shell">
     <div class="container">
       <section class="hero-card">
-        <div class="eyebrow">Legal</div>
-        <h1>Privacy Policy</h1>
+        <div class="eyebrow">Support</div>
+        <h1>Log-Book App Support</h1>
         <p class="intro">
-          This Privacy Policy describes how Elevare Fit LLC collects, uses, discloses, and safeguards
-          information when you use our mobile applications, websites, and related services.
+          Need help with Log-Book? Use this page for support questions, bug reports, account issues,
+          and general feedback related to the app.
         </p>
-        <div class="meta">Last updated April 11, 2026</div>
+        <div class="meta">Last updated April 23, 2026</div>
       </section>
 
-      <div class="policy-grid">
-        <section class="policy-card">
+      <section class="contact-card">
+        <div>
+          <h2>Contact Support</h2>
+          <p>
+            For support with the Log-Book app, email us at
+            <a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a>.
+          </p>
+        </div>
+        <a class="email-link" href="mailto:mlitfin@elevarefit.org">Email Support</a>
+      </section>
+
+      <section class="support-grid">
+        <article class="support-card">
+          <h2>How We Can Help</h2>
+          <ul>
+            <li>App access and login issues</li>
+            <li>Bug reports and unexpected behavior</li>
+            <li>Questions about features or functionality</li>
+            <li>General feedback and improvement ideas</li>
+          </ul>
+        </article>
+
+        <article class="support-card">
+          <h2>What To Include</h2>
+          <ul>
+            <li>Your device model and operating system version</li>
+            <li>The version of Log-Book you are using</li>
+            <li>A short description of the issue</li>
+            <li>Steps to reproduce the problem, if applicable</li>
+          </ul>
+        </article>
+
+        <article class="support-card">
+          <h2>Account &amp; Data Questions</h2>
+          <p>
+            If your request is related to your account, personal information, or data handling,
+            please reach out by email and include enough detail for us to identify your request.
+          </p>
+        </article>
+
+        <article class="support-card">
           <h2>Company</h2>
-          <p>Elevare Fit LLC ("Elevare," "we," "us," "our").</p>
-        </section>
-
-        <section class="policy-card">
-          <h2>Introduction</h2>
           <p>
-            This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use
-            our mobile applications, websites, and related services (collectively, the "Services").
+            Log-Book support is provided by Elevare Fit LLC.
           </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>1. Scope</h2>
-          <p>
-            This Policy applies to users of Elevare, including clients and independent fitness professionals
-            ("Trainers"). By using the Services, you consent to the practices described herein.
+          <p style="margin-top: 12px;">
+            Support email:
+            <a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a>
           </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>2. Information We Collect</h2>
-          <p class="subhead">A. Information You Provide</p>
-          <ul>
-            <li>Identity: name, email, phone, account credentials</li>
-            <li>Profile: fitness goals, preferences, availability, location (if enabled)</li>
-            <li>Trainer data: certifications, experience, media, pricing</li>
-            <li>Communications: messages, support requests, reviews</li>
-          </ul>
-          <p class="subhead">B. Transaction &amp; Payment Data</p>
-          <ul>
-            <li>Purchases, bookings, session history</li>
-            <li>Payment tokens and metadata via third-party processors (e.g., Stripe)</li>
-            <li>We do not store full card numbers</li>
-          </ul>
-          <p class="subhead">C. Device &amp; Usage Data</p>
-          <ul>
-            <li>IP address, device identifiers, OS, app usage events, crash logs</li>
-          </ul>
-          <p class="subhead">D. Location Data (Optional)</p>
-          <ul>
-            <li>Approximate or precise location if you enable it for matching</li>
-          </ul>
-        </section>
-
-        <section class="policy-card">
-          <h2>3. How We Use Information</h2>
-          <ul>
-            <li>Operate and provide the Services</li>
-            <li>Match clients with Trainers</li>
-            <li>Process payments, credits, refunds, and fraud prevention</li>
-            <li>Facilitate communications and notifications</li>
-            <li>Personalize content and recommendations</li>
-            <li>Maintain safety, enforce policies, and resolve disputes</li>
-            <li>Comply with legal obligations</li>
-          </ul>
-        </section>
-
-        <section class="policy-card">
-          <h2>4. Legal Bases (if applicable)</h2>
-          <p>Where required (e.g., certain jurisdictions), we rely on:</p>
-          <ul>
-            <li>Contract performance</li>
-            <li>Legitimate interests (service improvement, safety)</li>
-            <li>Consent (e.g., location, marketing)</li>
-            <li>Legal compliance</li>
-          </ul>
-        </section>
-
-        <section class="policy-card">
-          <h2>5. How We Share Information</h2>
-          <p>We may share information with:</p>
-          <ul>
-            <li>Service Providers: hosting, analytics, payments (e.g., Stripe)</li>
-            <li>Other Users: limited profile and booking information to enable sessions</li>
-            <li>Legal/Regulatory: when required by law or to protect rights/safety</li>
-            <li>Business Transfers: in connection with mergers, financing, or sale</li>
-          </ul>
-          <p>We do not sell personal data.</p>
-        </section>
-
-        <section class="policy-card">
-          <h2>6. Data Retention</h2>
-          <p>
-            We retain data as long as necessary for service delivery, legal compliance, fraud prevention,
-            and dispute resolution. Retention periods may vary by data type.
-          </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>7. Security</h2>
-          <p>
-            We implement administrative, technical, and physical safeguards. No system is fully secure;
-            you use the Services at your own risk.
-          </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>8. Your Rights</h2>
-          <p>
-            Depending on your location, you may request access, correction, deletion, portability, or
-            restriction of processing.
-          </p>
-          <p>Contact: <a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
-        </section>
-
-        <section class="policy-card">
-          <h2>9. International Transfers</h2>
-          <p>
-            Data may be processed in the United States and other jurisdictions. We use appropriate safeguards
-            where required.
-          </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>10. Children</h2>
-          <p>
-            The Services are not intended for individuals under 18. We do not knowingly collect data from minors.
-          </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>11. Third-Party Services</h2>
-          <p>We are not responsible for third-party privacy practices.</p>
-        </section>
-
-        <section class="policy-card">
-          <h2>12. Changes</h2>
-          <p>
-            We may update this Policy. Continued use constitutes acceptance of updates.
-          </p>
-        </section>
-
-        <section class="policy-card">
-          <h2>13. Contact</h2>
-          <p>Elevare Fit LLC</p>
-          <p><a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
-        </section>
-      </div>
+        </article>
+      </section>
     </div>
   </main>
 
@@ -485,6 +429,7 @@
       <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
       <div class="footer-links">
         <a href="index.html">Home</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
         <a href="terms-of-service.html">Terms of Service</a>
         <a href="mailto:mlitfin@elevarefit.org">Contact</a>
       </div>
