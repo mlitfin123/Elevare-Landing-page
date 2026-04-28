@@ -16,15 +16,15 @@ export default function ElevarePage() {
         <div className="eyebrow">Elevare</div>
         <h1>A marketplace built around fit, clarity, and better coaching discovery.</h1>
         <p>
-          Elevare is the coaching marketplace layer of the ecosystem. It is designed to help the right members
-          find the right coaches and help the right coaches become easier to discover.
+          Elevare is built to help members discover coaches with more confidence and help coaches get in front
+          of the right people with more clarity.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href="/blog/category/coaching">
-            Read coaching articles
+          <Link className="button button-primary" href="/#waitlist">
+            Join the waitlist
           </Link>
-          <Link className="button button-secondary" href="/blog">
-            Visit the blog
+          <Link className="button button-secondary" href="/apps">
+            Explore apps
           </Link>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Callout } from "@/components/Callout";
-import { buildMetadata } from "@/lib/site";
+import { buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
   title: "Logbook",
@@ -20,8 +20,8 @@ export default function LogbookPage() {
           easier to review, and more consistent over time.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href="/blog/category/tracking">
-            Read tracking articles
+          <Link className="button button-primary" href={productConfig.Logbook.ctaHref}>
+            Download on the App Store
           </Link>
           <Link className="button button-secondary" href="/blog">
             Visit the blog

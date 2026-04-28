@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "Elevare",
-  title: "Elevare Ecosystem",
+  title: "Elevare",
   description:
-    "A clean, performance-focused content hub for Elevare, Logbook, and StageLab.",
+    "Join the Elevare waitlist and explore the connected ecosystem around coaching, tracking, and prep.",
   url: "https://elevarefit.org",
 };
 
@@ -26,7 +26,7 @@ export const productConfig: Record<
     slug: "logbook",
     title: "Logbook",
     description:
-      "A simple tracking app for workouts, habits, and training consistency.",
+      "A focused fitness tracker that makes workouts easier to record, review, and repeat with consistency.",
     status: "Live now",
     idealUser:
       "Lifters, athletes, and everyday users who want better visibility into their training.",
@@ -37,7 +37,7 @@ export const productConfig: Record<
     slug: "stagelab",
     title: "StageLab",
     description:
-      "A competition prep and performance workflow product for testing, refining, and staging high-output systems.",
+      "A competition prep app built for more deliberate structure, cleaner feedback loops, and better planning.",
     status: "Coming soon",
     idealUser:
       "Coaches and competitors who think in systems, prep phases, and performance structure.",
@@ -48,12 +48,12 @@ export const productConfig: Record<
     slug: "elevare",
     title: "Elevare",
     description:
-      "A fitness coaching marketplace built to help the right members find the right coaches.",
+      "A coaching marketplace built to help members find the right coach and help coaches get discovered by the right people.",
     status: "Waitlist open",
     idealUser:
       "People looking for coaching and coaches looking for better discovery and fit.",
-    ctaLabel: "Find or join coaching on Elevare",
-    ctaHref: "/elevare",
+    ctaLabel: "Join the Elevare waitlist",
+    ctaHref: "/#waitlist",
   },
 };
 

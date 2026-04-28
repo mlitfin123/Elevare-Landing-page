@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Terms of Service</title>
+  <meta
+    name="description"
+    content="Read the Elevare terms of service."
+  >
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07070f;
+      --surface: #0f0f1a;
+      --surface-strong: #161624;
+      --border: #1e1e30;
+      --border-strong: #2a2a3e;
+      --text: #e8e8f4;
+      --muted: #8d90ab;
+      --muted-strong: #5a5a7a;
+      --brand: #4f99a8;
+      --brand-bright: #74c8d6;
+      --brand-line: rgba(116, 200, 214, 0.26);
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --max-width: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(79, 153, 168, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 10%, rgba(116, 200, 214, 0.12), transparent 24%),
+        linear-gradient(180deg, #090914 0%, #07070f 32%, #06060d 100%);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 120px 120px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 90%);
+      opacity: 0.4;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 0;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(7, 7, 15, 0.9), rgba(7, 7, 15, 0.56));
+      border-bottom: 1px solid rgba(42, 42, 62, 0.48);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 14px 24px rgba(79, 153, 168, 0.16));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-word {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      padding-left: 0.32em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .header-links a {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .header-links a:hover {
+      color: var(--text);
+      border-color: rgba(116, 200, 214, 0.18);
+      background: rgba(22, 22, 36, 0.82);
+    }
+
+    .page-shell {
+      padding: 56px 0 28px;
+    }
+
+    .hero-card,
+    .policy-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(22, 22, 36, 0.94), rgba(12, 12, 24, 0.96));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 38px;
+      margin-bottom: 24px;
+    }
+
+    .hero-card::after,
+    .policy-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(140deg, rgba(116, 200, 214, 0.1), transparent 42%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--brand-line);
+    }
+
+    h1 {
+      font-size: clamp(38px, 7vw, 64px);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin-bottom: 18px;
+    }
+
+    .intro {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .policy-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .policy-card {
+      padding: 28px;
+    }
+
+    .policy-card h2 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .policy-card p + p,
+    .policy-card ul {
+      margin-top: 12px;
+    }
+
+    .policy-card ul {
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .policy-card li + li {
+      margin-top: 8px;
+    }
+
+    .policy-card p {
+      color: var(--muted);
+    }
+
+    .site-footer {
+      padding: 0 0 28px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding-top: 22px;
+      border-top: 1px solid rgba(42, 42, 62, 0.86);
+    }
+
+    .footer-copy {
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 720px) {
+      .hero-card,
+      .policy-card {
+        padding: 24px;
+      }
+
+      .header-inner,
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="index.html" aria-label="Elevare home">
+        <img class="brand-mark" src="logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Elevare Fit LLC</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Legal navigation">
+        <a href="index.html">Back to home</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Legal</div>
+        <h1>Terms of Service</h1>
+        <p class="intro">
+          By accessing or using Elevare's Services, you agree to these Terms of Service.
+        </p>
+        <div class="meta">Last updated April 11, 2026</div>
+      </section>
+
+      <div class="policy-grid">
+        <section class="policy-card">
+          <h2>Company</h2>
+          <p>Elevare Fit LLC.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>Introduction</h2>
+          <p>By accessing or using Elevare's Services, you agree to these Terms.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>1. Platform Role</h2>
+          <p>
+            Elevare is a technology marketplace that facilitates connections and transactions between clients
+            and independent Trainers.
+          </p>
+          <p>
+            Elevare is not a provider of fitness services and does not supervise, direct, or control Trainers.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>2. Eligibility</h2>
+          <p>You must be at least 18 years old and capable of entering a binding contract.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>3. Accounts</h2>
+          <p>You are responsible for:</p>
+          <ul>
+            <li>Accurate information</li>
+            <li>Account security</li>
+            <li>All activity under your account</li>
+          </ul>
+          <p>We may suspend or terminate accounts at our discretion.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>4. Bookings, Payments, and Credits</h2>
+          <p>A. Payments</p>
+          <ul>
+            <li>Payments are processed via third parties (e.g., Stripe)</li>
+            <li>By purchasing, you authorize charges for selected services</li>
+          </ul>
+          <p>B. Platform Fees</p>
+          <ul>
+            <li>Elevare may charge service fees or commissions</li>
+          </ul>
+          <p>C. Credits</p>
+          <ul>
+            <li>Refunds may be issued as platform credits</li>
+            <li>Credits may expire and are non-transferable unless stated otherwise</li>
+          </ul>
+          <p>D. Pricing</p>
+          <ul>
+            <li>Prices may be set by Trainers or the platform and may vary</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>5. Cancellations &amp; No-Shows</h2>
+          <ul>
+            <li>Policies may vary by Trainer or service</li>
+            <li>Late cancellations or no-shows may result in forfeited payments</li>
+            <li>Elevare may mediate disputes but has final discretion</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>6. Independent Contractors</h2>
+          <p>
+            Trainers are independent contractors. No employment, partnership, or agency relationship exists
+            between Elevare and Trainers.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>7. Assumption of Risk</h2>
+          <p>You acknowledge that:</p>
+          <ul>
+            <li>Fitness activities involve inherent risks (injury, illness, death)</li>
+            <li>You voluntarily assume all risks</li>
+            <li>You are responsible for consulting a medical professional before participation</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>8. Release &amp; Waiver of Liability</h2>
+          <p>
+            To the maximum extent permitted by law, you release Elevare from any claims arising out of:
+          </p>
+          <ul>
+            <li>Training sessions</li>
+            <li>Interactions between users</li>
+            <li>Injuries or damages</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>9. Limitation of Liability</h2>
+          <p>
+            Elevare's liability is limited to the amount paid through the platform in the preceding 3 months
+            or $100, whichever is greater.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>10. Disputes Between Users</h2>
+          <p>
+            Elevare is not a party to disputes between clients and Trainers. We may assist but are not
+            obligated to resolve disputes.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>11. Prohibited Conduct</h2>
+          <p>You agree not to:</p>
+          <ul>
+            <li>Circumvent the platform to avoid fees</li>
+            <li>Misrepresent qualifications or identity</li>
+            <li>Engage in harassment, fraud, or illegal conduct</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>12. Intellectual Property</h2>
+          <p>
+            All platform content is owned by Elevare or its licensors. You may not copy or distribute without
+            permission.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>13. Termination</h2>
+          <p>We may suspend or terminate access at any time.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>14. Arbitration &amp; Governing Law</h2>
+          <ul>
+            <li>Governed by Florida law</li>
+            <li>Disputes resolved via binding arbitration (except where prohibited)</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>15. Modifications</h2>
+          <p>We may update these Terms. Continued use constitutes acceptance.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>16. Contact</h2>
+          <p>Elevare Fit LLC</p>
+          <p><a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="mailto:mlitfin@elevarefit.org">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

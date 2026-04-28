@@ -1,11 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const navigation = [
-  { href: "/", label: "Home" },
   { href: "/apps", label: "Apps" },
-  { href: "/logbook", label: "Logbook" },
-  { href: "/stagelab", label: "StageLab" },
-  { href: "/elevare", label: "Elevare" },
+  { href: "/#benefits", label: "Benefits" },
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/#trust", label: "Trust" },
   { href: "/blog", label: "Blog" },
 ];
 
@@ -13,11 +13,20 @@ export function Header() {
   return (
     <header className="site-header">
       <div className="container header-inner">
-        <Link className="brand" href="/">
-          <span className="brand-mark">EF</span>
+        <Link className="brand-lockup" href="/">
+          <span className="brand-mark" aria-hidden="true">
+            <Image
+              className="brand-mark-image"
+              src="/logo_transparent.png"
+              alt=""
+              width={34}
+              height={34}
+              priority
+            />
+          </span>
           <span className="brand-copy">
-            <span className="brand-title">Elevare</span>
-            <span className="brand-subtitle">Performance ecosystem</span>
+            <span className="brand-word">Elevare</span>
+            <span className="brand-sub">Founding Waitlist</span>
           </span>
         </Link>
 
@@ -27,6 +36,9 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          <Link className="button-link" href="/#waitlist">
+            Join Waitlist
+          </Link>
         </nav>
       </div>
     </header>

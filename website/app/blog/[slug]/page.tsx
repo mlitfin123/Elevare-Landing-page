@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { ArticleLayout } from "@/components/ArticleLayout";
 import { ProductCTA } from "@/components/ProductCTA";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
-import { buildMetadata } from "@/lib/site";
+import { buildMetadata, siteConfig } from "@/lib/site";
 import { getMDXComponents } from "@/mdx-components";
 
 type BlogPostPageProps = {
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       title: post.title,
       description: post.description,
       url: `/blog/${post.slug}`,
-      siteName: "Elevare Ecosystem",
+      siteName: siteConfig.title,
       type: "article",
       publishedTime: post.date,
       tags: [post.category, post.product],
