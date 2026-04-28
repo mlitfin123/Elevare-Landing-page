@@ -1,0 +1,36 @@
+{
+  "name": "elevare-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next.js content hub for the Elevare ecosystem.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "check:static": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "nextjs",
+    "mdx",
+    "blog",
+    "fitness"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "next": "^16.2.4",
+    "next-mdx-remote": "^6.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "typescript": "^6.0.3"
+  }
+}
