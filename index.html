@@ -749,6 +749,13 @@
       line-height: 1.75;
     }
 
+    .final-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     .site-footer {
       padding: 0 0 26px;
     }
@@ -892,6 +899,7 @@
       </a>
 
       <nav class="header-nav" aria-label="Primary">
+        <a href="apps/">Apps</a>
         <a href="#benefits">Benefits</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#trust">Trust</a>
@@ -1121,10 +1129,16 @@
     <section class="container final-cta">
       <div class="final-card">
         <div class="final-copy">
-          <h2>Join the Elevare waitlist and hear when we launch.</h2>
-          <p>Sign up now so you do not miss the first update when Elevare is ready.</p>
+          <h2>Explore the Elevare ecosystem.</h2>
+          <p>
+            See how Logbook, StageLab, and Elevare fit together across daily training, performance systems,
+            and coach discovery.
+          </p>
         </div>
-        <a class="btn btn-primary" href="#waitlist">Join waitlist</a>
+        <div class="final-actions">
+          <a class="btn btn-primary" href="apps/">Explore apps</a>
+          <a class="btn btn-secondary" href="#waitlist">Join waitlist</a>
+        </div>
       </div>
     </section>
   </main>
@@ -1133,6 +1147,7 @@
     <div class="container footer-inner">
       <div class="footer-copy">&copy; <span id="year"></span> Elevare. All rights reserved.</div>
       <div class="footer-links">
+        <a href="apps/">Apps</a>
         <a href="#benefits">Benefits</a>
         <a href="#how-it-works">How It Works</a>
         <a href="privacy-policy.html">Privacy Policy</a>

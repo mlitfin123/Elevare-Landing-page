@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Product</title>
+  <meta
+    name="description"
+    content="Learn about Elevare, part of the Elevare ecosystem."
+  >
+  <link rel="stylesheet" href="../ecosystem.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="../apps/" aria-label="Elevare apps">
+        <img class="brand-mark" src="../logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Coach discovery</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Primary">
+        <a href="../apps/">Apps</a>
+        <a href="../elevare-status.json">Status JSON</a>
+        <a href="../privacy-policy.html">Privacy Policy</a>
+        <a href="../terms-of-service.html">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Waitlist open</div>
+        <h1>Elevare helps members find the right coach and helps coaches reach the right people.</h1>
+        <p class="intro">
+          Elevare is being built as a clearer way to connect members with coaching support that fits,
+          while giving coaches a better way to show what they offer and who they help.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="../#waitlist">Join the waitlist</a>
+          <a class="btn btn-secondary" href="../apps/">Back to apps</a>
+        </div>
+      </section>
+
+      <section class="feature-grid">
+        <article class="feature-card">
+          <h2>Product role</h2>
+          <p>A discovery and connection layer between members looking for support and coaches ready to help.</p>
+        </article>
+        <article class="feature-card">
+          <h2>Ideal user</h2>
+          <p>Members searching for the right coach and coaches who want clearer visibility with the right audience.</p>
+        </article>
+        <article class="feature-card">
+          <h2>Status</h2>
+          <p>In pre-launch with the public waitlist currently open.</p>
+        </article>
+      </section>
+
+      <section class="section-stack">
+        <article class="section-card">
+          <h2>Built around fit and clarity</h2>
+          <p>
+            Elevare is focused on making coach discovery feel less noisy and more intentional, so people can
+            spend less time guessing and more time moving toward the right next step.
+          </p>
+        </article>
+
+        <article class="callout-card">
+          <div>
+            <h2>Want to follow launch progress?</h2>
+            <p>
+              Join the waitlist for product updates or use the public status endpoint for a simple live flag.
+            </p>
+          </div>
+          <div class="button-row">
+            <a class="btn btn-primary" href="../#waitlist">Join waitlist</a>
+            <a class="btn btn-secondary" href="../elevare-status.json">View status JSON</a>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="../apps/">Apps</a>
+        <a href="../elevare-status.json">Status JSON</a>
+        <a href="../privacy-policy.html">Privacy Policy</a>
+        <a href="../terms-of-service.html">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

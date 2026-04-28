@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StageLab | Elevare</title>
+  <meta
+    name="description"
+    content="Learn about StageLab, part of the Elevare ecosystem."
+  >
+  <link rel="stylesheet" href="../ecosystem.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="../apps/" aria-label="Elevare apps">
+        <img class="brand-mark" src="../logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">StageLab</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Primary">
+        <a href="../apps/">Apps</a>
+        <a href="../stagelab-status.json">Status JSON</a>
+        <a href="../privacy-policy.html">Privacy Policy</a>
+        <a href="../terms-of-service.html">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Coming soon</div>
+        <h1>StageLab is where performance ideas get staged, tested, and sharpened.</h1>
+        <p class="intro">
+          StageLab is being developed as a focused environment for experimenting with workflows, refining ideas,
+          and building better systems before they reach the real world.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-secondary" href="../stagelab-status.json">View public status</a>
+          <a class="btn btn-primary" href="../apps/">Back to apps</a>
+        </div>
+      </section>
+
+      <section class="feature-grid">
+        <article class="feature-card">
+          <h2>Product role</h2>
+          <p>A place to stage, test, and refine performance workflows before wider release.</p>
+        </article>
+        <article class="feature-card">
+          <h2>Ideal user</h2>
+          <p>Coaches, builders, and operators who think in systems and want a more deliberate testing ground.</p>
+        </article>
+        <article class="feature-card">
+          <h2>Status</h2>
+          <p>Coming soon and currently in development.</p>
+        </article>
+      </section>
+
+      <section class="section-stack">
+        <article class="section-card">
+          <h2>Built for the work behind the scenes</h2>
+          <p>
+            StageLab is meant to support the quieter part of performance work: experimenting, organizing,
+            and improving the systems that sit behind better outcomes.
+          </p>
+        </article>
+
+        <article class="callout-card">
+          <div>
+            <h2>Need a quick status check?</h2>
+            <p>
+              A public JSON status endpoint is available for simple live-status checks and future integrations.
+            </p>
+          </div>
+          <div class="button-row">
+            <a class="btn btn-secondary" href="../stagelab-status.json">Open /stagelab-status.json</a>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="../apps/">Apps</a>
+        <a href="../stagelab-status.json">Status JSON</a>
+        <a href="../privacy-policy.html">Privacy Policy</a>
+        <a href="../terms-of-service.html">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
