@@ -20,7 +20,7 @@ export default function LogbookPage() {
           easier to review, and more consistent over time.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href={productConfig.Logbook.ctaHref}>
+          <Link className="button button-store" href={productConfig.Logbook.ctaHref}>
             Download on the App Store
           </Link>
           <Link className="button button-secondary" href="/blog">

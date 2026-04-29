@@ -7,6 +7,8 @@ type ProductCTAProps = {
 
 export function ProductCTA({ product }: ProductCTAProps) {
   const config = productConfig[product];
+  const buttonClassName =
+    product === "Logbook" ? "button button-store" : "button button-primary";
 
   return (
     <section className="product-cta">
@@ -14,7 +16,7 @@ export function ProductCTA({ product }: ProductCTAProps) {
       <h2>{config.title}</h2>
       <p>{config.description}</p>
       <div className="button-row">
-        <Link className="button button-primary" href={config.ctaHref}>
+        <Link className={buttonClassName} href={config.ctaHref}>
           {config.ctaLabel}
         </Link>
       </div>

@@ -66,6 +66,8 @@ export default function AppsPage() {
         <div className="grid-3">
           {productCards.map((card) => {
             const product = productConfig[card.key];
+            const buttonClassName =
+              card.key === "Logbook" ? "button button-store" : "button button-primary";
 
             return (
               <article key={card.key} className="panel">
@@ -81,7 +83,7 @@ export default function AppsPage() {
                   </li>
                 </ul>
                 <div className="button-row">
-                  <Link className="button button-primary" href={card.ctaHref}>
+                  <Link className={buttonClassName} href={card.ctaHref}>
                     {card.ctaLabel}
                   </Link>
                 </div>
