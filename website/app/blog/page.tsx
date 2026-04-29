@@ -21,7 +21,7 @@ export default function BlogIndexPage() {
         <h1>Articles on training, coaching, and performance systems.</h1>
         <p>
           Explore practical analysis, product perspective, and performance-focused guidance across the Elevare
-          ecosystem. Everything here is built to be useful, specific, and easy to grow over time.
+          ecosystem.
         </p>
         <div className="button-row">
           {(categories.length > 0 ? categories : BLOG_CATEGORIES).map((category) => (
