@@ -5,7 +5,7 @@ export const siteConfig = {
   title: "Elevare",
   description:
     "Join the Elevare waitlist and explore the connected ecosystem around coaching, tracking, and prep.",
-  url: "https://elevarefit.org",
+  url: "https://www.elevarefit.org",
 };
 
 export type ProductName = "Logbook" | "StageLab" | "Elevare";
