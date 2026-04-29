@@ -28,6 +28,7 @@ export type BlogFrontmatter = {
 
 export type BlogPost = BlogFrontmatter & {
   content: string;
+  hasInlineProductCTA: boolean;
 };
 
 export type BlogPostSummary = BlogFrontmatter;
@@ -82,6 +83,7 @@ function readPostFile(fileName: string): BlogPost {
     slug: data.slug,
     published: data.published,
     content: content.trim(),
+    hasInlineProductCTA: /<ProductCTA\b/.test(content),
   };
 }
 
