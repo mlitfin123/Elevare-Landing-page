@@ -21,10 +21,10 @@ export default function StageLabPage() {
         </p>
         <div className="button-row">
           <Link className="button button-primary" href="/blog/category/prep">
-            Read prep articles
+            Explore prep insights
           </Link>
           <Link className="button button-secondary" href="/blog">
-            Visit the blog
+            Read insights
           </Link>
         </div>
       </section>

@@ -4,9 +4,9 @@ import { BLOG_CATEGORIES, getAllCategories, getAllPosts } from "@/lib/blog";
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
-  title: "Blog",
+  title: "Insights",
   description:
-    "Published articles across tracking, nutrition, training, prep, coaching, and product updates.",
+    "Articles and product insights across tracking, nutrition, training, prep, coaching, and product updates.",
   pathname: "/blog",
 });
 
@@ -17,11 +17,11 @@ export default function BlogIndexPage() {
   return (
     <div className="container">
       <section className="hero">
-        <div className="eyebrow">Blog</div>
-        <h1>Useful writing across tracking, prep, training, and coaching.</h1>
+        <div className="eyebrow">Insights</div>
+        <h1>Articles on training, coaching, and performance systems.</h1>
         <p>
-          This blog is organized around practical fitness behavior and product thinking, with local MDX content
-          that stays fast, static, and easy to grow.
+          Explore practical analysis, product perspective, and performance-focused guidance across the Elevare
+          ecosystem. Everything here is built to be useful, specific, and easy to grow over time.
         </p>
         <div className="button-row">
           {(categories.length > 0 ? categories : BLOG_CATEGORIES).map((category) => (

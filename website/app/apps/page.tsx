@@ -45,7 +45,7 @@ export default function AppsPage() {
         </p>
         <div className="button-row">
           <Link className="button button-primary" href="/blog">
-            Read the blog
+            Read insights
           </Link>
           <Link className="button button-secondary" href="/elevare">
             Explore Elevare

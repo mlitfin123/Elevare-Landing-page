@@ -6,7 +6,7 @@ const navigation = [
   { href: "/#benefits", label: "Benefits" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#trust", label: "Trust" },
-  { href: "/blog", label: "Blog" },
+  { href: "/blog", label: "Insights" },
 ];
 
 export function Header() {

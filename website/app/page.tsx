@@ -177,7 +177,7 @@ export default function HomePage() {
               Explore apps
             </Link>
             <Link className="btn btn-secondary" href="/blog">
-              Read the blog
+              Read insights
             </Link>
           </div>
         </div>

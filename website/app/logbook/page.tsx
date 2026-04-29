@@ -24,7 +24,7 @@ export default function LogbookPage() {
             Download on the App Store
           </Link>
           <Link className="button button-secondary" href="/blog">
-            Visit the blog
+            Read insights
           </Link>
         </div>
       </section>
