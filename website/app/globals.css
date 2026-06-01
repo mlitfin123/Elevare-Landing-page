@@ -732,6 +732,40 @@ select {
   padding-left: 22px;
 }
 
+.checkin-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 22px;
+  margin: 28px 0;
+}
+
+.checkin-photo-card {
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.checkin-photo-card h3 {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.checkin-photo-card img,
+.article-screenshot-frame img {
+  width: 100%;
+  height: auto;
+  border-radius: 22px;
+  border: 1px solid rgba(73, 84, 112, 0.7);
+  box-shadow: 0 24px 50px rgba(2, 7, 16, 0.42);
+}
+
+.article-screenshot-frame {
+  width: min(100%, 360px);
+  margin: 28px auto;
+}
+
 .article-body a {
   color: var(--brand-bright);
   text-decoration: underline;
@@ -833,6 +867,21 @@ select {
 
   .waitlist-card {
     max-width: 540px;
+  }
+}
+
+@media (max-width: 640px) {
+  .checkin-photo-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .checkin-photo-card {
+    max-width: 240px;
+  }
+
+  .article-screenshot-frame {
+    width: min(100%, 310px);
   }
 }
 
