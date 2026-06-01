@@ -7,6 +7,7 @@ export const BLOG_CATEGORIES = [
   "nutrition",
   "training",
   "prep",
+  "prep-files",
   "coaching",
   "product-updates",
 ] as const;
