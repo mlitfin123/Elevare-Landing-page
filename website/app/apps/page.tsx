@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -44,12 +44,29 @@ export default function AppsPage() {
           coaching support.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href="/blog">
+          <TrackedLink
+            className="button button-primary"
+            href="/blog"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Read insights",
+              cta_context: "apps_hero",
+            }}
+          >
             Read insights
-          </Link>
-          <Link className="button button-secondary" href="/elevare">
+          </TrackedLink>
+          <TrackedLink
+            className="button button-secondary"
+            href="/elevare"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Explore Elevare",
+              cta_context: "apps_hero",
+              product: "Elevare",
+            }}
+          >
             Explore Elevare
-          </Link>
+          </TrackedLink>
         </div>
       </section>
 
@@ -83,9 +100,18 @@ export default function AppsPage() {
                   </li>
                 </ul>
                 <div className="button-row">
-                  <Link className={buttonClassName} href={card.ctaHref}>
+                  <TrackedLink
+                    className={buttonClassName}
+                    href={card.ctaHref}
+                    eventName="cta_click"
+                    eventParams={{
+                      cta_name: card.ctaLabel,
+                      cta_context: "apps_directory_card",
+                      product: product.title,
+                    }}
+                  >
                     {card.ctaLabel}
-                  </Link>
+                  </TrackedLink>
                 </div>
               </article>
             );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Mono, DM_Sans } from "next/font/google";
 import Script from "next/script";
 import { Footer } from "@/components/Footer";
+import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -55,11 +56,12 @@ export default function RootLayout({
                 function gtag(){dataLayer.push(arguments);}
                 window.gtag = gtag;
                 gtag('js', new Date());
-                gtag('config', '${googleAnalyticsId}');
+                gtag('config', '${googleAnalyticsId}', { send_page_view: false });
               `}
             </Script>
           </>
         ) : null}
+        {googleAnalyticsId ? <GoogleAnalyticsPageTracker measurementId={googleAnalyticsId} /> : null}
         <div className="site-shell">
           <Header />
           <main className="page-main">{children}</main>

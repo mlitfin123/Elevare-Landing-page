@@ -1,11 +1,12 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/TrackedLink";
 import { productConfig, type ProductName } from "@/lib/site";
 
 type ProductCTAProps = {
   product: ProductName;
+  context?: string;
 };
 
-export function ProductCTA({ product }: ProductCTAProps) {
+export function ProductCTA({ product, context = "product_cta" }: ProductCTAProps) {
   const config = productConfig[product];
   const buttonClassName =
     product === "Logbook" ? "button button-store" : "button button-primary";
@@ -16,9 +17,18 @@ export function ProductCTA({ product }: ProductCTAProps) {
       <h2>{config.title}</h2>
       <p>{config.description}</p>
       <div className="button-row">
-        <Link className={buttonClassName} href={config.ctaHref}>
+        <TrackedLink
+          className={buttonClassName}
+          href={config.ctaHref}
+          eventName="cta_click"
+          eventParams={{
+            cta_name: config.ctaLabel,
+            cta_context: context,
+            product: config.title,
+          }}
+        >
           {config.ctaLabel}
-        </Link>
+        </TrackedLink>
       </div>
     </section>
   );

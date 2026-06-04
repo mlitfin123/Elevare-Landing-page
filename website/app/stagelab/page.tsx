@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Callout } from "@/components/Callout";
+import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -20,12 +20,30 @@ export default function StageLabPage() {
           performance phases, competition timing, and execution.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href="/blog/category/prep">
+          <TrackedLink
+            className="button button-primary"
+            href="/blog/category/prep"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Explore prep insights",
+              cta_context: "stagelab_hero",
+              product: "StageLab",
+            }}
+          >
             Explore prep insights
-          </Link>
-          <Link className="button button-secondary" href="/blog">
+          </TrackedLink>
+          <TrackedLink
+            className="button button-secondary"
+            href="/blog"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Read insights",
+              cta_context: "stagelab_hero",
+              product: "StageLab",
+            }}
+          >
             Read insights
-          </Link>
+          </TrackedLink>
         </div>
       </section>
 

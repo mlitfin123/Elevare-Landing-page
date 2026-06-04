@@ -76,7 +76,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         />
       </ArticleLayout>
 
-      {!post.hasInlineProductCTA ? <ProductCTA product={post.product} /> : null}
+      {!post.hasInlineProductCTA ? <ProductCTA product={post.product} context={`blog_post_${post.slug}`} /> : null}
     </div>
   );
 }

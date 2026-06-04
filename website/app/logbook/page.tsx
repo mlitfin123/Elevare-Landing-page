@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Callout } from "@/components/Callout";
+import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -20,12 +20,30 @@ export default function LogbookPage() {
           easier to review, and more consistent over time.
         </p>
         <div className="button-row">
-          <Link className="button button-store" href={productConfig.Logbook.ctaHref}>
+          <TrackedLink
+            className="button button-store"
+            href={productConfig.Logbook.ctaHref}
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Download on the App Store",
+              cta_context: "logbook_hero",
+              product: "Logbook",
+            }}
+          >
             Download on the App Store
-          </Link>
-          <Link className="button button-secondary" href="/blog">
+          </TrackedLink>
+          <TrackedLink
+            className="button button-secondary"
+            href="/blog"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Read insights",
+              cta_context: "logbook_hero",
+              product: "Logbook",
+            }}
+          >
             Read insights
-          </Link>
+          </TrackedLink>
         </div>
       </section>
 

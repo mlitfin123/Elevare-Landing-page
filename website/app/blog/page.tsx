@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { BlogCard } from "@/components/BlogCard";
+import { TrackedLink } from "@/components/TrackedLink";
 import { BLOG_CATEGORIES, getAllCategories, getAllPosts } from "@/lib/blog";
 import { buildMetadata } from "@/lib/site";
 
@@ -25,9 +25,18 @@ export default function BlogIndexPage() {
         </p>
         <div className="button-row">
           {(categories.length > 0 ? categories : BLOG_CATEGORIES).map((category) => (
-            <Link key={category} className="button button-secondary" href={`/blog/category/${category}`}>
+            <TrackedLink
+              key={category}
+              className="button button-secondary"
+              href={`/blog/category/${category}`}
+              eventName="cta_click"
+              eventParams={{
+                cta_name: `Category: ${category}`,
+                cta_context: "blog_index_category_filter",
+              }}
+            >
               {category}
-            </Link>
+            </TrackedLink>
           ))}
         </div>
       </section>
@@ -35,7 +44,7 @@ export default function BlogIndexPage() {
       <section className="section">
         <div className="blog-grid">
           {posts.map((post) => (
-            <BlogCard key={post.slug} post={post} />
+            <BlogCard key={post.slug} post={post} sourcePage="blog_index" />
           ))}
         </div>
       </section>

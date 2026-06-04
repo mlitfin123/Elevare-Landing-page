@@ -1,11 +1,12 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/TrackedLink";
 import { formatDate, type BlogPostSummary } from "@/lib/blog";
 
 type BlogCardProps = {
   post: BlogPostSummary;
+  sourcePage?: string;
 };
 
-export function BlogCard({ post }: BlogCardProps) {
+export function BlogCard({ post, sourcePage = "blog_index" }: BlogCardProps) {
   return (
     <article className="blog-card">
       <div className="blog-card-top">
@@ -16,9 +17,20 @@ export function BlogCard({ post }: BlogCardProps) {
       <p>{post.description}</p>
       <div className="blog-card-footer">
         <span className="footer-copy">{formatDate(post.date)}</span>
-        <Link className="blog-link" href={`/blog/${post.slug}`}>
+        <TrackedLink
+          className="blog-link"
+          href={`/blog/${post.slug}`}
+          eventName="article_click"
+          eventParams={{
+            article_slug: post.slug,
+            article_title: post.title,
+            article_category: post.category,
+            article_product: post.product,
+            source_page: sourcePage,
+          }}
+        >
           Read article
-        </Link>
+        </TrackedLink>
       </div>
     </article>
   );

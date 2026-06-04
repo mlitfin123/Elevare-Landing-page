@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useMemo, useRef, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 const MAILCHIMP_FORM_ACTION =
   "https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&id=a5887ce23e&f_id=001061e0f0";
@@ -81,6 +82,12 @@ export function WaitlistForm() {
       const alreadySubscribed = /already subscribed/i.test(message);
 
       if (response.result === "success" || alreadySubscribed) {
+        trackEvent("generate_lead", {
+          form_name: "waitlist",
+          role: currentAudience.mailchimpRoleValue.toLowerCase(),
+          lead_source: "website",
+          signup_state: alreadySubscribed ? "already_subscribed" : "success",
+        });
         setFeedback("");
         setIsSubmitted(true);
         return;

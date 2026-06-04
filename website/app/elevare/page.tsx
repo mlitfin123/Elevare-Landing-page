@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Callout } from "@/components/Callout";
+import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -20,12 +20,30 @@ export default function ElevarePage() {
           of the right people with more clarity.
         </p>
         <div className="button-row">
-          <Link className="button button-primary" href="/#waitlist">
+          <TrackedLink
+            className="button button-primary"
+            href="/#waitlist"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Join the waitlist",
+              cta_context: "elevare_hero",
+              product: "Elevare",
+            }}
+          >
             Join the waitlist
-          </Link>
-          <Link className="button button-secondary" href="/apps">
+          </TrackedLink>
+          <TrackedLink
+            className="button button-secondary"
+            href="/apps"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Explore apps",
+              cta_context: "elevare_hero",
+              product: "Elevare",
+            }}
+          >
             Explore apps
-          </Link>
+          </TrackedLink>
         </div>
       </section>
 

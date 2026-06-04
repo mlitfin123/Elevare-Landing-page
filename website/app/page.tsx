@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TrackedLink } from "@/components/TrackedLink";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { buildMetadata } from "@/lib/site";
 
@@ -21,12 +21,30 @@ export default function HomePage() {
             reach the right clients. Join the waitlist to hear when we launch.
           </p>
           <div className="hero-actions">
-            <a className="btn btn-primary" href="#waitlist">
+            <TrackedLink
+              className="btn btn-primary"
+              href="/#waitlist"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Join the waitlist",
+                cta_context: "home_hero",
+                product: "Elevare",
+              }}
+            >
               Join the waitlist
-            </a>
-            <a className="btn btn-secondary" href="#how-it-works">
+            </TrackedLink>
+            <TrackedLink
+              className="btn btn-secondary"
+              href="/#how-it-works"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "See how it works",
+                cta_context: "home_hero",
+                product: "Elevare",
+              }}
+            >
               See how it works
-            </a>
+            </TrackedLink>
           </div>
 
           <div className="hero-proof" aria-label="Why join early">
@@ -173,12 +191,28 @@ export default function HomePage() {
             </p>
           </div>
           <div className="final-actions">
-            <Link className="btn btn-primary" href="/apps">
+            <TrackedLink
+              className="btn btn-primary"
+              href="/apps"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Explore apps",
+                cta_context: "home_final_cta",
+              }}
+            >
               Explore apps
-            </Link>
-            <Link className="btn btn-secondary" href="/blog">
+            </TrackedLink>
+            <TrackedLink
+              className="btn btn-secondary"
+              href="/blog"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Read insights",
+                cta_context: "home_final_cta",
+              }}
+            >
               Read insights
-            </Link>
+            </TrackedLink>
           </div>
         </div>
       </section>

@@ -56,7 +56,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <section className="section">
         <div className="blog-grid">
           {posts.map((post) => (
-            <BlogCard key={post.slug} post={post} />
+            <BlogCard key={post.slug} post={post} sourcePage={`blog_category_${category}`} />
           ))}
         </div>
       </section>
