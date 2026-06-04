@@ -6,6 +6,9 @@ export const siteConfig = {
   description:
     "Join the Elevare waitlist and explore the connected ecosystem around coaching, tracking, and prep.",
   url: "https://www.elevarefit.org",
+  analytics: {
+    googleAnalyticsId: "G-NL9H9SEZJ8",
+  },
 };
 
 export type ProductName = "Logbook" | "StageLab" | "Elevare";
