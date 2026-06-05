@@ -36,17 +36,35 @@ export type BlogPostSummary = BlogFrontmatter;
 
 const contentDirectory = path.join(process.cwd(), "content", "blog");
 
-function isValidCategory(value: string): value is BlogCategory {
-  return BLOG_CATEGORIES.includes(value as BlogCategory);
+function normalizeCategory(value: string): BlogCategory | null {
+  const matchedCategory = BLOG_CATEGORIES.find(
+    (category) => category.toLowerCase() === value.toLowerCase(),
+  );
+
+  return matchedCategory ?? null;
 }
 
-function isValidProduct(value: string): value is BlogProduct {
-  return BLOG_PRODUCTS.includes(value as BlogProduct);
+function normalizeProduct(value: string): BlogProduct | null {
+  const matchedProduct = BLOG_PRODUCTS.find(
+    (product) => product.toLowerCase() === value.toLowerCase(),
+  );
+
+  return matchedProduct ?? null;
+}
+
+function parseBlogDate(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    throw new Error(`Invalid date "${date}"`);
+  }
+
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 function sortPosts(posts: BlogPostSummary[]) {
   return posts.sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    return parseBlogDate(b.date).getTime() - parseBlogDate(a.date).getTime();
   });
 }
 
@@ -67,11 +85,14 @@ function readPostFile(fileName: string): BlogPost {
     throw new Error(`Invalid frontmatter in ${fileName}`);
   }
 
-  if (!isValidCategory(data.category)) {
+  const normalizedCategory = normalizeCategory(data.category);
+  const normalizedProduct = normalizeProduct(data.product);
+
+  if (!normalizedCategory) {
     throw new Error(`Unsupported category "${data.category}" in ${fileName}`);
   }
 
-  if (!isValidProduct(data.product)) {
+  if (!normalizedProduct) {
     throw new Error(`Unsupported product "${data.product}" in ${fileName}`);
   }
 
@@ -79,8 +100,8 @@ function readPostFile(fileName: string): BlogPost {
     title: data.title,
     description: data.description,
     date: data.date,
-    category: data.category,
-    product: data.product,
+    category: normalizedCategory,
+    product: normalizedProduct,
     slug: data.slug,
     published: data.published,
     content: content.trim(),
@@ -140,5 +161,6 @@ export function formatDate(date: string) {
     month: "long",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(date));
+    timeZone: "UTC",
+  }).format(parseBlogDate(date));
 }
