@@ -753,12 +753,18 @@ select {
 }
 
 .checkin-photo-card img,
+.article-feature-image img,
 .article-screenshot-frame img {
   width: 100%;
   height: auto;
   border-radius: 22px;
   border: 1px solid rgba(73, 84, 112, 0.7);
   box-shadow: 0 24px 50px rgba(2, 7, 16, 0.42);
+}
+
+.article-feature-image {
+  width: min(100%, 760px);
+  margin: 12px auto 28px;
 }
 
 .article-screenshot-frame {
