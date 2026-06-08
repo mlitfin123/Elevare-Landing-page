@@ -1,0 +1,4 @@
+project_id = "yozfzsudbcqjttepjnyg"
+
+[functions.resend-waitlist]
+verify_jwt = false

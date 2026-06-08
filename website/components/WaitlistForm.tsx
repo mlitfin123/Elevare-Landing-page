@@ -1,43 +1,30 @@
 "use client";
 
-import { type FormEvent, useMemo, useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { siteConfig } from "@/lib/site";
 
-const MAILCHIMP_FORM_ACTION =
-  "https://elevarestrong.us14.list-manage.com/subscribe/post?u=521587ae7856d1fcca983cb8d&id=a5887ce23e&f_id=001061e0f0";
-
-const MAILCHIMP_FIELD_NAMES = {
-  name: "FNAME",
-  email: "EMAIL",
-  city: "CITY",
-  role: "MERGE4",
-} as const;
+const WAITLIST_ENDPOINT = siteConfig.waitlist.endpoint;
+const HONEYPOT_FIELD_NAME = "website";
 
 const audienceConfig = {
   MEMBER: {
-    mailchimpRoleValue: "Member",
-    tags: "waitlist,member",
+    roleValue: "Member",
     note: "Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.",
   },
   COACH: {
-    mailchimpRoleValue: "Coach",
-    tags: "waitlist,coach",
+    roleValue: "Coach",
     note: "Coaches will hear when Elevare launches, when they can join, and how to start reaching new clients.",
   },
 } as const;
 
 type AudienceRole = keyof typeof audienceConfig;
 
-type MailchimpResponse = {
-  result?: "success" | "error";
-  msg?: string;
+type WaitlistResponse = {
+  ok?: boolean;
+  status?: "created" | "updated" | "ignored";
+  message?: string;
 };
-
-declare global {
-  interface Window {
-    [key: string]: unknown;
-  }
-}
 
 export function WaitlistForm() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -51,10 +38,6 @@ export function WaitlistForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const currentAudience = audienceConfig[audience];
-  const honeypotName = useMemo(() => {
-    const actionUrl = new URL(MAILCHIMP_FORM_ACTION);
-    return `b_${actionUrl.searchParams.get("u")}_${actionUrl.searchParams.get("id")}`;
-  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,31 +52,30 @@ export function WaitlistForm() {
     setFeedbackType("success");
 
     try {
-      const response = await submitMailchimpJsonp({
-        [MAILCHIMP_FIELD_NAMES.name]: name.trim(),
-        [MAILCHIMP_FIELD_NAMES.email]: email.trim(),
-        [MAILCHIMP_FIELD_NAMES.city]: city.trim(),
-        [MAILCHIMP_FIELD_NAMES.role]: currentAudience.mailchimpRoleValue,
-        TAGS: currentAudience.tags,
-        [honeypotName]: "",
+      const response = await submitWaitlistSignup({
+        name: name.trim(),
+        email: email.trim(),
+        city: city.trim(),
+        role: currentAudience.roleValue,
+        [HONEYPOT_FIELD_NAME]: "",
       });
 
-      const message = cleanMailchimpMessage(response.msg || "");
-      const alreadySubscribed = /already subscribed/i.test(message);
+      if (response.ok) {
+        if (response.status !== "ignored") {
+          trackEvent("generate_lead", {
+            form_name: "waitlist",
+            role: currentAudience.roleValue.toLowerCase(),
+            lead_source: "website",
+            signup_state: response.status === "updated" ? "already_subscribed" : "success",
+          });
+        }
 
-      if (response.result === "success" || alreadySubscribed) {
-        trackEvent("generate_lead", {
-          form_name: "waitlist",
-          role: currentAudience.mailchimpRoleValue.toLowerCase(),
-          lead_source: "website",
-          signup_state: alreadySubscribed ? "already_subscribed" : "success",
-        });
         setFeedback("");
         setIsSubmitted(true);
         return;
       }
 
-      setFeedback(message || "We could not submit the form. Please try again.");
+      setFeedback(response.message || "We could not submit the form. Please try again.");
       setFeedbackType("error");
     } catch (error) {
       setFeedback(
@@ -142,22 +124,21 @@ export function WaitlistForm() {
       <form
         ref={formRef}
         className="waitlist-form"
-        action={MAILCHIMP_FORM_ACTION}
+        action={WAITLIST_ENDPOINT}
         method="post"
         onSubmit={handleSubmit}
       >
         {!isSubmitted ? (
           <div className="form-main">
-            <input type="hidden" name="TAGS" value={currentAudience.tags} />
-            <input type="hidden" name={MAILCHIMP_FIELD_NAMES.role} value={currentAudience.mailchimpRoleValue} />
-            <input type="hidden" name={honeypotName} value="" tabIndex={-1} autoComplete="off" />
+            <input type="hidden" name="role" value={currentAudience.roleValue} />
+            <input type="hidden" name={HONEYPOT_FIELD_NAME} value="" tabIndex={-1} autoComplete="off" />
 
             <div className="field-grid">
               <label className="field field-full" htmlFor="waitlist-name">
                 <span className="field-label">Name</span>
                 <input
                   id="waitlist-name"
-                  name={MAILCHIMP_FIELD_NAMES.name}
+                  name="name"
                   type="text"
                   placeholder="Your name"
                   value={name}
@@ -169,7 +150,7 @@ export function WaitlistForm() {
                 <span className="field-label">Email address</span>
                 <input
                   id="waitlist-email"
-                  name={MAILCHIMP_FIELD_NAMES.email}
+                  name="email"
                   type="email"
                   placeholder="you@example.com"
                   required
@@ -182,7 +163,7 @@ export function WaitlistForm() {
                 <span className="field-label">City</span>
                 <input
                   id="waitlist-city"
-                  name={MAILCHIMP_FIELD_NAMES.city}
+                  name="city"
                   type="text"
                   placeholder="Miami, FL"
                   required
@@ -242,54 +223,35 @@ export function WaitlistForm() {
   );
 }
 
-function cleanMailchimpMessage(message: string) {
-  return message.replace(/<[^>]*>/g, " ").replace(/^\d+\s*-\s*/, "").replace(/\s+/g, " ").trim();
-}
+async function submitWaitlistSignup(payload: Record<string, string>) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
 
-function submitMailchimpJsonp(payload: Record<string, string>) {
-  return new Promise<MailchimpResponse>((resolve, reject) => {
-    const callbackName = `mailchimpCallback_${Date.now()}`;
-    const actionUrl = new URL(MAILCHIMP_FORM_ACTION);
-    actionUrl.pathname = actionUrl.pathname.replace("/post", "/post-json");
-    actionUrl.searchParams.set("c", callbackName);
-
-    Object.entries(payload).forEach(([fieldName, fieldValue]) => {
-      actionUrl.searchParams.set(fieldName, fieldValue);
+  try {
+    const response = await fetch(WAITLIST_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
     });
 
-    const roleValue = payload[MAILCHIMP_FIELD_NAMES.role];
-    if (roleValue) {
-      ["MERGE4", "MMERGE4", "ROLE"].forEach((fieldName) => {
-        actionUrl.searchParams.set(fieldName, roleValue);
-      });
+    const data = (await response.json().catch(() => ({}))) as WaitlistResponse;
+
+    if (!response.ok) {
+      throw new Error(data.message || "We could not submit the form. Please try again.");
     }
 
-    let timeoutId = 0;
-    const script = document.createElement("script");
+    return data;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The signup request took too long. Please try again.");
+    }
 
-    const cleanup = () => {
-      window.clearTimeout(timeoutId);
-      script.remove();
-      delete window[callbackName];
-    };
-
-    window[callbackName] = (response: MailchimpResponse) => {
-      cleanup();
-      resolve(response);
-    };
-
-    script.src = actionUrl.toString();
-    script.async = true;
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Mailchimp request failed to load. Check the form action URL and try again."));
-    };
-
-    timeoutId = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("Mailchimp took too long to respond. Please try again."));
-    }, 12000);
-
-    document.body.appendChild(script);
-  });
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
