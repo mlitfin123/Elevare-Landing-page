@@ -141,7 +141,6 @@ async function upsertContact({
 }) {
   const body = {
     unsubscribed: false,
-    firstName: name || undefined,
     properties: {
       role,
       city,
@@ -149,10 +148,19 @@ async function upsertContact({
     },
   };
 
+  const nameFields = name
+    ? {
+        first_name: name,
+      }
+    : {};
+
   try {
     await resendRequest(`/contacts/${encodeURIComponent(email)}`, {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        ...body,
+        ...nameFields,
+      }),
     });
     return "updated" as const;
   } catch (error) {
@@ -165,6 +173,7 @@ async function upsertContact({
     method: "POST",
     body: JSON.stringify({
       email,
+      ...nameFields,
       ...body,
     }),
   });
