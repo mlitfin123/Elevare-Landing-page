@@ -8,7 +8,8 @@
     "build": "next build",
     "check:static": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test --experimental-strip-types .\\tests\\tools-calculators.test.ts"
   },
   "keywords": [
     "nextjs",
