@@ -35,8 +35,7 @@ export default function ToolsIndexPage() {
         <div className="eyebrow">Tools</div>
         <h1>Free fitness tools for calories, strength, and prep.</h1>
         <p>
-          Explore practical calculators and planning tools across nutrition, training, and bodybuilding prep
-          without needing an account.
+          Explore practical calculators and planning tools across nutrition, training, and bodybuilding prep.
         </p>
       </section>
 
