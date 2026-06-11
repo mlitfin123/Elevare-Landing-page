@@ -4,13 +4,13 @@
   "private": true,
   "description": "Next.js content hub for the Elevare ecosystem.",
   "scripts": {
-    "prebuild": "node .\\scripts\\generate-nutrition-data.mjs",
+    "prebuild": "node ./scripts/generate-nutrition-data.mjs",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types .\\tests\\*.test.ts"
+    "test": "node --test --experimental-strip-types ./tests/*.test.ts"
   },
   "keywords": [
     "nextjs",
