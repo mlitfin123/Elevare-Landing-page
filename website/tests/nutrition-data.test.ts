@@ -7,6 +7,7 @@ import {
   getFastFoodItems,
   getNutritionTags,
   getProteinPerCalorie,
+  isSupplementalNutritionItem,
   isNutritionVariant,
   searchNutritionItems,
   searchRestaurants,
@@ -96,6 +97,26 @@ const sampleItems: NutritionProduct[] = [
     sourceUrl: null,
     updatedAt: "2026-06-10T00:00:00.000Z",
   },
+  {
+    id: "5",
+    restaurantName: "Starbucks",
+    productName: "Cold Brew Coffee",
+    category: "Drinks",
+    calories: 5,
+    proteinG: 0,
+    carbsG: 0,
+    fatG: 0,
+    fiberG: 0,
+    sugarG: 0,
+    sodiumMg: 10,
+    servingDescription: "1 drink",
+    servingSizeValue: 1,
+    servingSizeUnit: "drink",
+    gramsPerServing: 473,
+    brandName: null,
+    sourceUrl: null,
+    updatedAt: "2026-06-10T00:00:00.000Z",
+  },
 ];
 
 test("slug generation and variant guards work for nutrition routes", () => {
@@ -123,8 +144,13 @@ test("protein per calorie and dynamic tags are calculated correctly", () => {
   ]);
 });
 
+test("supplemental nutrition items are classified correctly", () => {
+  assert.equal(isSupplementalNutritionItem(sampleItems[4]), true);
+  assert.equal(isSupplementalNutritionItem(sampleItems[0]), false);
+});
+
 test("variant filtering and sorting return the expected menu items", () => {
-  assert.equal(applyNutritionVariant(sampleItems, "under-500-calories").length, 2);
+  assert.equal(applyNutritionVariant(sampleItems, "under-500-calories").length, 3);
   assert.equal(
     sortNutritionItems(sampleItems, "highest-protein-per-calorie")[0]?.productName,
     "Chicken Salad",
@@ -142,6 +168,7 @@ test("combined nutrition filters narrow items as expected", () => {
       maxCarbs: "20",
       maxFat: "25",
       category: "Salads",
+      hideExtras: true,
     },
     sort: "highest-protein",
   });
@@ -153,6 +180,25 @@ test("combined nutrition filters narrow items as expected", () => {
 test("fast food filtering keeps allowlisted restaurant items only", () => {
   const fastFoodItems = getFastFoodItems(sampleItems);
 
-  assert.equal(fastFoodItems.length, 3);
+  assert.equal(fastFoodItems.length, 4);
   assert.equal(fastFoodItems.some((item) => item.restaurantName === "Local Bistro"), false);
+});
+
+test("hideExtras removes drinks and add-ons from filtered nutrition lists", () => {
+  const filtered = filterAndSortNutritionItems({
+    items: sampleItems,
+    variant: "all",
+    filters: {
+      search: "",
+      maxCalories: "",
+      minProtein: "",
+      maxCarbs: "",
+      maxFat: "",
+      category: "",
+      hideExtras: true,
+    },
+    sort: "lowest-calories",
+  });
+
+  assert.equal(filtered.some((item) => item.productName === "Cold Brew Coffee"), false);
 });

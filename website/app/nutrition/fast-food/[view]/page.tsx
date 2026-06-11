@@ -36,6 +36,7 @@ const emptyFilters = {
   maxCarbs: "",
   maxFat: "",
   category: "",
+  hideExtras: true,
 };
 
 export const dynamicParams = false;

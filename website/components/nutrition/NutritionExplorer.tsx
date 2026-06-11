@@ -23,6 +23,7 @@ const emptyFilters: NutritionFiltersState = {
   maxCarbs: "",
   maxFat: "",
   category: "",
+  hideExtras: true,
 };
 
 type NutritionExplorerProps = {

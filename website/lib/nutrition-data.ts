@@ -44,6 +44,7 @@ export type NutritionFiltersState = {
   maxCarbs: string;
   maxFat: string;
   category: string;
+  hideExtras: boolean;
 };
 
 export type RestaurantSummary = {
@@ -146,6 +147,55 @@ const fastFoodRestaurants = [
   "Tim Hortons",
   "Wawa",
   "Wendy's",
+];
+
+const supplementalCategoryTerms = [
+  "drink",
+  "beverage",
+  "coffee",
+  "tea",
+  "latte",
+  "espresso",
+  "smoothie",
+  "shake",
+  "soda",
+  "float",
+  "lemonade",
+  "juice",
+  "topping",
+  "condiment",
+  "dressing",
+  "sauce",
+  "syrup",
+  "component",
+  "add on",
+  "add ons",
+  "addon",
+  "addons",
+  "extra",
+  "extras",
+  "flavor",
+];
+
+const supplementalProductTerms = [
+  "dipping sauce",
+  "sauce adds",
+  "dressing",
+  "vinaigrette",
+  "syrup",
+  "creamer",
+  "sweetener",
+  "packet",
+  "soda",
+  "iced tea",
+  "hot tea",
+  "coffee",
+  "latte",
+  "espresso",
+  "smoothie",
+  "milkshake",
+  "shake",
+  "lemonade",
 ];
 
 function normalizeText(value: string) {
@@ -364,6 +414,19 @@ export function searchNutritionItems(items: NutritionProduct[], query: string) {
   );
 }
 
+export function isSupplementalNutritionItem(product: NutritionProduct) {
+  const normalizedCategory = normalizeText(product.category ?? "");
+  const normalizedName = normalizeText(product.productName);
+
+  if (
+    supplementalCategoryTerms.some((term) => normalizedCategory.includes(normalizeText(term)))
+  ) {
+    return true;
+  }
+
+  return supplementalProductTerms.some((term) => normalizedName.includes(normalizeText(term)));
+}
+
 export function applyNutritionVariant(items: NutritionProduct[], variant: NutritionVariant) {
   switch (variant) {
     case "high-protein":
@@ -382,6 +445,10 @@ export function applyNutritionVariant(items: NutritionProduct[], variant: Nutrit
 
 export function applyNutritionFilters(items: NutritionProduct[], filters: NutritionFiltersState) {
   return items.filter((item) => {
+    if (filters.hideExtras && isSupplementalNutritionItem(item)) {
+      return false;
+    }
+
     if (filters.search && !searchNutritionItems([item], filters.search).length) {
       return false;
     }

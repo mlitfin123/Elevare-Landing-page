@@ -846,6 +846,30 @@ select {
   max-width: 260px;
 }
 
+.nutrition-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 14px 16px;
+  color: var(--text);
+  background: rgba(8, 8, 17, 0.88);
+  border: 1px solid rgba(42, 42, 62, 0.92);
+  border-radius: 14px;
+}
+
+.nutrition-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand-bright);
+}
+
+.nutrition-toggle span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .nutrition-results-head {
   display: flex;
   align-items: center;

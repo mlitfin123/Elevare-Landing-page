@@ -76,6 +76,14 @@ export function NutritionFilters({ categories, filters, onChange }: NutritionFil
           onChange={(event) => onChange({ ...filters, maxFat: event.target.value })}
         />
       </label>
+      <label className="nutrition-toggle">
+        <input
+          type="checkbox"
+          checked={filters.hideExtras}
+          onChange={(event) => onChange({ ...filters, hideExtras: event.target.checked })}
+        />
+        <span>Hide drinks, sauces, toppings, and add-ons</span>
+      </label>
     </div>
   );
 }

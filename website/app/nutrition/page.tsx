@@ -48,7 +48,7 @@ export default async function NutritionIndexPage() {
 
       <section className="hero">
         <div className="eyebrow">Nutrition</div>
-        <h1>Restaurant nutrition facts and macros in one place.</h1>
+        <h1>Restaurant nutrition facts and macros.</h1>
         <p className="page-intro">
           Search restaurants, compare menu items, and review calories, protein, carbs, and fat before you
           order.
