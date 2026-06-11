@@ -101,7 +101,7 @@ const sampleItems: NutritionProduct[] = [
     id: "5",
     restaurantName: "Starbucks",
     productName: "Cold Brew Coffee",
-    category: "Drinks",
+    category: "Medium Drinks",
     calories: 5,
     proteinG: 0,
     carbsG: 0,
@@ -147,6 +147,23 @@ test("protein per calorie and dynamic tags are calculated correctly", () => {
 test("supplemental nutrition items are classified correctly", () => {
   assert.equal(isSupplementalNutritionItem(sampleItems[4]), true);
   assert.equal(isSupplementalNutritionItem(sampleItems[0]), false);
+  assert.equal(isSupplementalNutritionItem(sampleItems[3]), false);
+  assert.equal(
+    isSupplementalNutritionItem({
+      ...sampleItems[2],
+      category: "Kids Menu",
+      productName: "Kids Chocolate Milk",
+    }),
+    true,
+  );
+  assert.equal(
+    isSupplementalNutritionItem({
+      ...sampleItems[2],
+      category: "Other",
+      productName: "Mayonnaise 1 oz",
+    }),
+    true,
+  );
 });
 
 test("variant filtering and sorting return the expected menu items", () => {

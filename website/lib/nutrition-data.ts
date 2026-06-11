@@ -150,52 +150,94 @@ const fastFoodRestaurants = [
 ];
 
 const supplementalCategoryTerms = [
-  "drink",
-  "beverage",
-  "coffee",
-  "tea",
-  "latte",
-  "espresso",
-  "smoothie",
-  "shake",
-  "soda",
-  "float",
-  "lemonade",
-  "juice",
-  "topping",
-  "condiment",
-  "dressing",
-  "sauce",
-  "syrup",
-  "component",
   "add on",
   "add ons",
   "addon",
   "addons",
-  "extra",
-  "extras",
-  "flavor",
+  "addition",
+  "additions",
+  "protein side",
+  "miscellaneous",
 ];
 
 const supplementalProductTerms = [
-  "dipping sauce",
-  "sauce adds",
-  "dressing",
-  "vinaigrette",
-  "syrup",
-  "creamer",
-  "sweetener",
-  "packet",
-  "soda",
-  "iced tea",
-  "hot tea",
-  "coffee",
-  "latte",
-  "espresso",
-  "smoothie",
-  "milkshake",
-  "shake",
-  "lemonade",
+  "apple juice",
+  "orange juice",
+  "cranberry juice",
+  "pineapple juice",
+  "bottled water",
+  "applesauce",
+  "limeade",
+  "salad toppings",
+  "add on",
+  "add ons",
+  "addon",
+  "addons",
+  "adds",
+  "sour cream",
+];
+
+const supplementalCategoryPatterns = [
+  /\bdrink(?:s)?\b/,
+  /\bbeverage(?:s)?\b/,
+  /\bcoffee(?:s)?\b/,
+  /\btea(?:s)?\b/,
+  /\blatte(?:s)?\b/,
+  /\bespresso(?:s)?\b/,
+  /\bcappuccino(?:s)?\b/,
+  /\bfrappuccino(?:s)?\b/,
+  /\bsmoothie(?:s)?\b/,
+  /\bmilkshake(?:s)?\b/,
+  /\bshake(?:s)?\b/,
+  /\bsoda(?:s)?\b/,
+  /\bfloat(?:s)?\b/,
+  /\blemonade(?:s)?\b/,
+  /\blimeade(?:s)?\b/,
+  /\bjuice(?:s)?\b/,
+  /\bquencher(?:s)?\b/,
+  /\brefresher(?:s)?\b/,
+  /\btopping(?:s)?\b/,
+  /\bcondiment(?:s)?\b/,
+  /\bdressing(?:s)?\b/,
+  /\bsauce(?:s)?\b/,
+  /\brub(?:s)?\b/,
+  /\bsyrup(?:s)?\b/,
+  /\bcomponent(?:s)?\b/,
+  /\bfinish(?:es|ing)?\b/,
+  /\bspread(?:s)?\b/,
+  /\bextra(?:s)?\b/,
+  /\bflavor(?:s)?\b/,
+  /\bcreamer(?:s)?\b/,
+  /\bsweetener(?:s)?\b/,
+];
+
+const supplementalProductPatterns = [
+  /\bwater\b/,
+  /\bcoffee(?:s)?\b/,
+  /\btea(?:s)?\b/,
+  /\blatte(?:s)?\b/,
+  /\bespresso(?:s)?\b/,
+  /\bcappuccino(?:s)?\b/,
+  /\bfrappuccino(?:s)?\b/,
+  /\bsmoothie(?:s)?\b/,
+  /\bmilkshake(?:s)?\b/,
+  /\bshake(?:s)?\b/,
+  /\bsoda(?:s)?\b/,
+  /\bfloat(?:s)?\b/,
+  /\blemonade(?:s)?\b/,
+  /\blimeade(?:s)?\b/,
+  /\bjuice(?:s)?\b/,
+  /\brefresher(?:s)?\b/,
+  /\bagua fresca(?:s)?\b/,
+  /\bdipping sauce(?:s)?\b/,
+  /\bcreamer(?:s)?\b/,
+  /\bsweetener(?:s)?\b/,
+  /\bpacket(?:s)?\b/,
+];
+
+const standaloneSupplementalProductPatterns = [
+  /^(?:kids )?(?:organic )?(?:\d+ ?% )?(?:lowfat )?(?:chocolate |white )?milk$/,
+  /^(?:ketchup|mayonnaise|mustard|yellow mustard|spicy mustard|honey mustard|ranch|pico de gallo|sour cream|oil and vinegar|red wine vinegar|malt vinegar)(?: \d+(?:\.\d+)? oz)?$/,
 ];
 
 function normalizeText(value: string) {
@@ -414,17 +456,29 @@ export function searchNutritionItems(items: NutritionProduct[], query: string) {
   );
 }
 
-export function isSupplementalNutritionItem(product: NutritionProduct) {
-  const normalizedCategory = normalizeText(product.category ?? "");
-  const normalizedName = normalizeText(product.productName);
+function hasNormalizedTerm(value: string, term: string) {
+  const normalizedValue = ` ${normalizeText(value)} `;
+  const normalizedTerm = ` ${normalizeText(term)} `;
+  return normalizedValue.includes(normalizedTerm);
+}
 
+function matchesNormalizedPattern(value: string, pattern: RegExp) {
+  return pattern.test(normalizeText(value));
+}
+
+export function isSupplementalNutritionItem(product: NutritionProduct) {
   if (
-    supplementalCategoryTerms.some((term) => normalizedCategory.includes(normalizeText(term)))
+    supplementalCategoryTerms.some((term) => hasNormalizedTerm(product.category ?? "", term)) ||
+    supplementalCategoryPatterns.some((pattern) => matchesNormalizedPattern(product.category ?? "", pattern))
   ) {
     return true;
   }
 
-  return supplementalProductTerms.some((term) => normalizedName.includes(normalizeText(term)));
+  return (
+    supplementalProductTerms.some((term) => hasNormalizedTerm(product.productName, term)) ||
+    supplementalProductPatterns.some((pattern) => matchesNormalizedPattern(product.productName, pattern)) ||
+    standaloneSupplementalProductPatterns.some((pattern) => matchesNormalizedPattern(product.productName, pattern))
+  );
 }
 
 export function applyNutritionVariant(items: NutritionProduct[], variant: NutritionVariant) {
