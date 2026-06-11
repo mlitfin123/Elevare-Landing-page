@@ -1,16 +1,19 @@
 import type { MetadataRoute } from "next";
 import { getAllCategories, getAllPosts } from "@/lib/blog";
+import { getNutritionRestaurants } from "@/lib/nutrition";
+import { fastFoodNutritionViews, restaurantNutritionViews } from "@/lib/nutrition-pages";
 import { absoluteUrl } from "@/lib/site";
 import { tools } from "@/lib/tools";
 
 export const dynamic = "force-static";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["/", "/apps", "/tools", "/logbook", "/stagelab", "/elevare", "/blog"];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const staticRoutes = ["/", "/apps", "/tools", "/nutrition", "/logbook", "/stagelab", "/elevare", "/blog"];
+  const restaurants = await getNutritionRestaurants();
 
   const staticEntries = staticRoutes.map((route) => ({
     url: absoluteUrl(route),
-    lastModified: new Date(route === "/tools" ? "2026-06-10" : "2026-04-28"),
+    lastModified: new Date(route === "/tools" || route === "/nutrition" ? "2026-06-10" : "2026-04-28"),
   }));
 
   const toolEntries = tools.map((tool) => ({
@@ -28,5 +31,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(post.date),
   }));
 
-  return [...staticEntries, ...toolEntries, ...categoryEntries, ...postEntries];
+  const restaurantEntries = restaurants.flatMap((restaurant) => [
+    {
+      url: absoluteUrl(`/nutrition/${restaurant.slug}`),
+      lastModified: new Date("2026-06-10"),
+    },
+    ...restaurantNutritionViews.map((view) => ({
+      url: absoluteUrl(`/nutrition/${restaurant.slug}/${view}`),
+      lastModified: new Date("2026-06-10"),
+    })),
+  ]);
+
+  const fastFoodEntries = fastFoodNutritionViews.map((view) => ({
+    url: absoluteUrl(`/nutrition/fast-food/${view}`),
+    lastModified: new Date("2026-06-10"),
+  }));
+
+  return [
+    ...staticEntries,
+    ...toolEntries,
+    ...restaurantEntries,
+    ...fastFoodEntries,
+    ...categoryEntries,
+    ...postEntries,
+  ];
 }

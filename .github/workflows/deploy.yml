@@ -39,6 +39,9 @@ jobs:
       - name: Build static site
         working-directory: website
         run: npm run build
+        env:
+          SUPABASE_URL: https://yozfzsudbcqjttepjnyg.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
