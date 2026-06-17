@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/",
     "/apps",
     "/calculators",
+    "/tools",
     "/tools/workout-generator",
     "/nutrition",
     "/exercises",
@@ -33,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: absoluteUrl(route),
     lastModified: new Date(
       route === "/calculators" || route === "/nutrition" || route === "/exercises" || route === "/workouts"
-        || route === "/tools/workout-generator"
+        || route === "/tools" || route === "/tools/workout-generator"
         ? "2026-06-16"
         : "2026-04-28",
     ),

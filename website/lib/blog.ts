@@ -35,6 +35,7 @@ export type BlogPost = BlogFrontmatter & {
 export type BlogPostSummary = BlogFrontmatter;
 
 const contentDirectory = path.join(process.cwd(), "content", "blog");
+const publicDirectory = path.join(process.cwd(), "public");
 
 function normalizeCategory(value: string): BlogCategory | null {
   const matchedCategory = BLOG_CATEGORIES.find(
@@ -136,6 +137,21 @@ export function getPostBySlug(slug: string): BlogPost | null {
 
     if (post.slug === slug) {
       return post.published ? post : null;
+    }
+  }
+
+  return null;
+}
+
+export function getBlogFeaturedImagePath(slug: string) {
+  const extensions = ["png", "jpg", "jpeg", "webp"];
+
+  for (const extension of extensions) {
+    const relativePath = `/blog-posts/${slug}/featured.${extension}`;
+    const absolutePath = path.join(publicDirectory, "blog-posts", slug, `featured.${extension}`);
+
+    if (fs.existsSync(absolutePath)) {
+      return relativePath;
     }
   }
 
