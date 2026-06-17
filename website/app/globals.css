@@ -700,7 +700,10 @@ select {
 .tool-timeline-item p,
 .tool-related-card p,
 .tool-index-card p,
-.tool-disclaimer-card p {
+.tool-feature-card p,
+.tool-disclaimer-card p,
+.tool-copy-card p,
+.tool-faq-card p {
   color: var(--muted);
 }
 
@@ -717,6 +720,10 @@ select {
 
 .tool-result-card {
   margin-top: 22px;
+}
+
+.tool-feature-card {
+  padding: 24px;
 }
 
 .tool-result-grid {
@@ -814,8 +821,158 @@ select {
   min-width: 148px;
 }
 
+.tool-copy-card {
+  padding: 24px;
+}
+
+.tool-copy-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.tool-copy-stack p {
+  margin: 0;
+}
+
+.tool-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.tool-faq-card {
+  padding: 24px;
+}
+
+.tool-faq-card h3 {
+  margin: 0 0 10px;
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
 .tool-disclaimer-card {
   padding: 18px 24px;
+}
+
+.training-grid,
+.training-link-list,
+.training-day-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.training-grid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.training-card,
+.training-directory-card,
+.training-day-block {
+  padding: 24px;
+}
+
+.training-card-top,
+.training-card-meta,
+.training-day-head,
+.training-results-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.training-card-top {
+  margin-bottom: 10px;
+}
+
+.training-card h3,
+.training-day-head h3 {
+  margin: 8px 0 10px;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+.training-card-meta,
+.training-results-head span,
+.training-day-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.training-card .button {
+  margin-top: 18px;
+}
+
+.training-filter-grid {
+  margin-top: 18px;
+}
+
+.training-results-head {
+  justify-content: space-between;
+  margin: 20px 0 0;
+}
+
+.training-results-head strong {
+  font-size: 16px;
+}
+
+.training-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.training-list li + li {
+  margin-top: 10px;
+}
+
+.training-link-list {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  margin-top: 16px;
+}
+
+.training-day-head {
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.training-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(42, 42, 62, 0.82);
+  border-radius: 18px;
+  background: rgba(8, 8, 17, 0.78);
+}
+
+.training-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.training-table th,
+.training-table td {
+  padding: 16px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(42, 42, 62, 0.72);
+}
+
+.training-table th {
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.training-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.workout-generator-actions {
+  margin-top: 18px;
 }
 
 .nutrition-search-grid,
@@ -1357,6 +1514,12 @@ select {
   }
 
   .nutrition-results-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .training-results-head,
+  .training-day-head {
     flex-direction: column;
     align-items: flex-start;
   }

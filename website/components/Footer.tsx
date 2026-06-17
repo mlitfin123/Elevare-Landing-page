@@ -11,8 +11,11 @@ export function Footer() {
 
         <nav className="footer-links" aria-label="Footer">
           <Link href="/apps">Apps</Link>
-          <Link href="/tools">Tools</Link>
+          <Link href="/calculators">Tools</Link>
+          <Link href="/tools/workout-generator">Workout Finder</Link>
           <Link href="/nutrition">Nutrition</Link>
+          <Link href="/exercises">Exercises</Link>
+          <Link href="/workouts">Workouts</Link>
           <Link href="/blog">Insights</Link>
           <Link href="/#benefits">Benefits</Link>
           <Link href="/#how-it-works">How It Works</Link>

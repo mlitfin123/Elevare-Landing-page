@@ -10,7 +10,7 @@ export function ToolLogbookCta({ toolSlug }: ToolLogbookCtaProps) {
   return (
     <section className="product-cta">
       <span className="meta-pill">Track it</span>
-      <h2>Want to track your calories, weight, and progress? Use Logbook.</h2>
+      <h2>Track your nutrition and workouts for free in Logbook.</h2>
       <p>
         If you want a cleaner place to track the daily side of your plan, Logbook is built to keep that
         process simple.

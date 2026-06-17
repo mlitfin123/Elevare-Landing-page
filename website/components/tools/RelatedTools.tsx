@@ -1,5 +1,5 @@
 import { TrackedLink } from "@/components/TrackedLink";
-import { toolMap, type ToolSlug } from "@/lib/tools";
+import { getCalculatorPath, toolMap, type ToolSlug } from "@/lib/tools";
 
 type RelatedToolsProps = {
   currentTool: ToolSlug;
@@ -12,7 +12,7 @@ export function RelatedTools({ currentTool }: RelatedToolsProps) {
   return (
     <section className="section">
       <div className="section-head">
-        <div className="eyebrow">Related tools</div>
+        <div className="eyebrow">Related calculators</div>
         <h2 className="section-title">Keep going with the next useful calculator.</h2>
         <p className="section-copy">
           These related tools cover the same planning workflow from calories and macros through prep timing.
@@ -26,7 +26,7 @@ export function RelatedTools({ currentTool }: RelatedToolsProps) {
             <p>{relatedTool.metaDescription}</p>
             <TrackedLink
               className="blog-link"
-              href={`/tools/${relatedTool.slug}`}
+              href={getCalculatorPath(relatedTool.slug)}
               eventName="tool_related_click"
               eventParams={{
                 source_tool: currentTool,

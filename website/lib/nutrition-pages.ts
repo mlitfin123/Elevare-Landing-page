@@ -32,19 +32,19 @@ type VariantCopy = {
 
 export const nutritionToolLinks: LinkItem[] = [
   {
-    href: "/tools/calorie-calculator",
+    href: "/calculators/calorie-calculator",
     label: "Calorie Calculator",
   },
   {
-    href: "/tools/protein-calculator",
+    href: "/calculators/protein-calculator",
     label: "Protein Calculator",
   },
   {
-    href: "/tools/macro-calculator",
+    href: "/calculators/macro-calculator",
     label: "Macro Calculator",
   },
   {
-    href: "/tools/body-fat-calculator",
+    href: "/calculators/body-fat-calculator",
     label: "Body Fat Calculator",
   },
 ];
@@ -182,7 +182,12 @@ export function getRestaurantViewLinks(
     },
   ];
 
-  return links.filter((link) => link.view !== currentView).map(({ view: _view, ...link }) => link);
+  return links
+    .filter((link) => link.view !== currentView)
+    .map(({ href, label }) => ({
+      href,
+      label,
+    }));
 }
 
 export function getFastFoodViewLinks(currentView: FastFoodNutritionView) {

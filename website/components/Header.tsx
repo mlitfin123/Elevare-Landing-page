@@ -3,7 +3,8 @@ import Link from "next/link";
 
 const navigation = [
   { href: "/apps", label: "Apps" },
-  { href: "/tools", label: "Tools" },
+  { href: "/calculators", label: "Tools" },
+  { href: "/tools/workout-generator", label: "Workout Finder" },
   { href: "/nutrition", label: "Nutrition" },
   { href: "/#benefits", label: "Benefits" },
   { href: "/#how-it-works", label: "How It Works" },

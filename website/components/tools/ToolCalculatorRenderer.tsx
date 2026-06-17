@@ -1,6 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import {
+  BmiCalculator,
+  BmrCalculator,
+  BodyRecompositionCalculator,
+  CalorieDifferenceCalculator,
+  CardioCaloriesCalculator,
+  IdealBodyWeightCalculator,
+  LeanBodyMassCalculator,
+  MacroSplitCalculator,
+  PaceCalculator,
+  ProteinPerMealCalculator,
+  ReverseDietCalculator,
+  StepToCalorieCalculator,
+  TargetHeartRateCalculator,
+  TdeeCalculator,
+  WaterIntakeCalculator,
+  WeightChangeCalculator,
+} from "@/components/tools/NutritionToolCalculators";
+import {
+  DotsCalculator,
+  PowerliftingMeetAttemptCalculator,
+  RelativeStrengthCalculator,
+  RepMaxCalculator,
+  RestTimeCalculator,
+  StrengthStandardsCalculator,
+  TrainingMaxCalculator,
+  WilksCalculator,
+  WorkoutVolumeCalculator,
+} from "@/components/tools/StrengthToolCalculators";
 import { trackEvent } from "@/lib/analytics";
 import {
   ACTIVITY_FACTORS,
@@ -1050,18 +1079,74 @@ export function ToolCalculatorRenderer({ toolSlug }: { toolSlug: ToolSlug }) {
       return <CalorieEstimator toolSlug={toolSlug} mode="full" />;
     case "maintenance-calorie-calculator":
       return <CalorieEstimator toolSlug={toolSlug} mode="maintenance" />;
+    case "tdee-calculator":
+      return <TdeeCalculator toolSlug={toolSlug} />;
+    case "bmr-calculator":
+      return <BmrCalculator toolSlug={toolSlug} />;
+    case "weight-loss-calorie-calculator":
+      return <WeightChangeCalculator toolSlug={toolSlug} mode="loss" />;
+    case "weight-gain-calculator":
+      return <WeightChangeCalculator toolSlug={toolSlug} mode="gain" />;
     case "calorie-burn-calculator":
       return <CalorieBurnCalculator toolSlug={toolSlug} />;
+    case "walking-calorie-calculator":
+      return <CardioCaloriesCalculator toolSlug={toolSlug} mode="walking" />;
+    case "running-calorie-calculator":
+      return <CardioCaloriesCalculator toolSlug={toolSlug} mode="running" />;
+    case "step-to-calorie-calculator":
+      return <StepToCalorieCalculator toolSlug={toolSlug} />;
+    case "target-heart-rate-calculator":
+      return <TargetHeartRateCalculator toolSlug={toolSlug} />;
+    case "pace-calculator":
+      return <PaceCalculator toolSlug={toolSlug} />;
     case "body-fat-calculator":
       return <BodyFatCalculator toolSlug={toolSlug} />;
+    case "bmi-calculator":
+      return <BmiCalculator toolSlug={toolSlug} />;
+    case "lean-body-mass-calculator":
+      return <LeanBodyMassCalculator toolSlug={toolSlug} />;
+    case "water-intake-calculator":
+      return <WaterIntakeCalculator toolSlug={toolSlug} />;
+    case "calorie-deficit-calculator":
+      return <CalorieDifferenceCalculator toolSlug={toolSlug} mode="deficit" />;
+    case "calorie-surplus-calculator":
+      return <CalorieDifferenceCalculator toolSlug={toolSlug} mode="surplus" />;
+    case "ideal-body-weight-calculator":
+      return <IdealBodyWeightCalculator toolSlug={toolSlug} />;
     case "one-rep-max-calculator":
       return <OneRepMaxCalculator toolSlug={toolSlug} />;
+    case "rep-max-calculator":
+      return <RepMaxCalculator toolSlug={toolSlug} />;
+    case "training-max-calculator":
+      return <TrainingMaxCalculator toolSlug={toolSlug} />;
+    case "relative-strength-calculator":
+      return <RelativeStrengthCalculator toolSlug={toolSlug} />;
+    case "dots-calculator":
+      return <DotsCalculator toolSlug={toolSlug} />;
+    case "wilks-calculator":
+      return <WilksCalculator toolSlug={toolSlug} />;
+    case "powerlifting-meet-attempt-calculator":
+      return <PowerliftingMeetAttemptCalculator toolSlug={toolSlug} />;
+    case "strength-standards-calculator":
+      return <StrengthStandardsCalculator toolSlug={toolSlug} />;
+    case "workout-volume-calculator":
+      return <WorkoutVolumeCalculator toolSlug={toolSlug} />;
+    case "rest-time-calculator":
+      return <RestTimeCalculator toolSlug={toolSlug} />;
     case "protein-calculator":
       return <ProteinCalculator toolSlug={toolSlug} />;
+    case "protein-per-meal-calculator":
+      return <ProteinPerMealCalculator toolSlug={toolSlug} />;
     case "macro-calculator":
       return <MacroCalculator toolSlug={toolSlug} />;
+    case "macro-split-calculator":
+      return <MacroSplitCalculator toolSlug={toolSlug} />;
+    case "body-recomposition-calculator":
+      return <BodyRecompositionCalculator toolSlug={toolSlug} />;
     case "goal-weight-timeline-calculator":
       return <GoalWeightTimelineCalculator toolSlug={toolSlug} />;
+    case "reverse-diet-calculator":
+      return <ReverseDietCalculator toolSlug={toolSlug} />;
     case "contest-prep-countdown":
       return <ContestPrepCountdownCalculator toolSlug={toolSlug} />;
     case "competition-timeline-generator":

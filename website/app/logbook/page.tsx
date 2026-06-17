@@ -74,6 +74,32 @@ export default function LogbookPage() {
           Logbook is about the day-to-day habit of training. It focuses on capturing the work itself so the rest
           of the ecosystem can build on real behavior rather than vague intent.
         </p>
+        <div className="hero-actions">
+          <TrackedLink
+            className="button button-secondary"
+            href="/exercises"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Browse exercises",
+              cta_context: "logbook_callout",
+              product: "Logbook",
+            }}
+          >
+            Browse exercises
+          </TrackedLink>
+          <TrackedLink
+            className="button button-secondary"
+            href="/workouts"
+            eventName="cta_click"
+            eventParams={{
+              cta_name: "Browse workout templates",
+              cta_context: "logbook_callout",
+              product: "Logbook",
+            }}
+          >
+            Browse workout templates
+          </TrackedLink>
+        </div>
       </Callout>
     </div>
   );

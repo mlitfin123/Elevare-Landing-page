@@ -67,7 +67,7 @@ export default async function NutritionIndexPage() {
           </TrackedLink>
           <TrackedLink
             className="button button-secondary"
-            href="/tools/calorie-calculator"
+            href="/calculators/calorie-calculator"
             eventName="nutrition_nav_click"
             eventParams={{
               source_page: "nutrition_index",

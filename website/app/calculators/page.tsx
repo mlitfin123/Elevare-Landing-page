@@ -1,20 +1,19 @@
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { WorkoutGeneratorFeature } from "@/components/tools/WorkoutGeneratorFeature";
-import { buildMetadata, absoluteUrl } from "@/lib/site";
+import { absoluteUrl, buildMetadata } from "@/lib/site";
 import { getCalculatorPath, getToolsByGroup, TOOL_GROUPS, tools } from "@/lib/tools";
 
 export const metadata = buildMetadata({
   title: "Fitness Calculators",
   description:
     "Explore free calorie, macro, body fat, strength, and contest prep calculators from Elevare.",
-  pathname: "/tools",
-  canonicalPath: "/calculators",
+  pathname: "/calculators",
 });
 
 const orderedGroups = ["nutrition", "strength", "prep"] as const;
 
-export default function ToolsIndexPage() {
+export default function CalculatorsIndexPage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -49,7 +48,7 @@ export default function ToolsIndexPage() {
         </p>
       </section>
 
-      <WorkoutGeneratorFeature sourcePage="tools_index" />
+      <WorkoutGeneratorFeature sourcePage="calculators_index" />
 
       {orderedGroups.map((groupKey) => {
         const group = TOOL_GROUPS[groupKey];
@@ -75,10 +74,10 @@ export default function ToolsIndexPage() {
                     eventName="tool_open"
                     eventParams={{
                       tool_slug: tool.slug,
-                      source_page: "tools_index",
+                      source_page: "calculators_index",
                     }}
                   >
-                    Open tool
+                    Open calculator
                   </TrackedLink>
                 </article>
               ))}

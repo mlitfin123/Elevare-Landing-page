@@ -4,7 +4,7 @@
   "private": true,
   "description": "Next.js content hub for the Elevare ecosystem.",
   "scripts": {
-    "prebuild": "node ./scripts/generate-nutrition-data.mjs",
+    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",

@@ -71,20 +71,23 @@ export function buildMetadata({
   title,
   description,
   pathname,
+  canonicalPath,
   type = "website",
 }: {
   title: string;
   description: string;
   pathname: string;
+  canonicalPath?: string;
   type?: "website" | "article";
 }): Metadata {
-  const url = absoluteUrl(pathname);
+  const canonical = canonicalPath ?? pathname;
+  const url = absoluteUrl(canonical);
 
   return {
     title,
     description,
     alternates: {
-      canonical: pathname,
+      canonical,
     },
     openGraph: {
       title,

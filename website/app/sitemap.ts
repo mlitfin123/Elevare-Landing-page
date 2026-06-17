@@ -3,22 +3,45 @@ import { getAllCategories, getAllPosts } from "@/lib/blog";
 import { getNutritionRestaurants } from "@/lib/nutrition";
 import { fastFoodNutritionViews, restaurantNutritionViews } from "@/lib/nutrition-pages";
 import { absoluteUrl } from "@/lib/site";
-import { tools } from "@/lib/tools";
+import { getAllExercises, getAllWorkoutTemplates } from "@/lib/training";
+import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, WORKOUT_GOALS } from "@/lib/training-data";
+import { getCalculatorPath, tools } from "@/lib/tools";
 
 export const dynamic = "force-static";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["/", "/apps", "/tools", "/nutrition", "/logbook", "/stagelab", "/elevare", "/blog"];
-  const restaurants = await getNutritionRestaurants();
+  const staticRoutes = [
+    "/",
+    "/apps",
+    "/calculators",
+    "/tools/workout-generator",
+    "/nutrition",
+    "/exercises",
+    "/workouts",
+    "/logbook",
+    "/stagelab",
+    "/elevare",
+    "/blog",
+  ];
+  const [restaurants, exercises, workoutTemplates] = await Promise.all([
+    getNutritionRestaurants(),
+    getAllExercises(),
+    getAllWorkoutTemplates(),
+  ]);
 
   const staticEntries = staticRoutes.map((route) => ({
     url: absoluteUrl(route),
-    lastModified: new Date(route === "/tools" || route === "/nutrition" ? "2026-06-10" : "2026-04-28"),
+    lastModified: new Date(
+      route === "/calculators" || route === "/nutrition" || route === "/exercises" || route === "/workouts"
+        || route === "/tools/workout-generator"
+        ? "2026-06-16"
+        : "2026-04-28",
+    ),
   }));
 
   const toolEntries = tools.map((tool) => ({
-    url: absoluteUrl(`/tools/${tool.slug}`),
-    lastModified: new Date("2026-06-10"),
+    url: absoluteUrl(getCalculatorPath(tool.slug)),
+    lastModified: new Date("2026-06-16"),
   }));
 
   const categoryEntries = getAllCategories().map((category) => ({
@@ -29,6 +52,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const postEntries = getAllPosts().map((post) => ({
     url: absoluteUrl(`/blog/${post.slug}`),
     lastModified: new Date(post.date),
+  }));
+
+  const exerciseEntries = exercises.map((exercise) => ({
+    url: absoluteUrl(`/exercises/${exercise.slug}`),
+    lastModified: new Date(exercise.updatedAt ?? "2026-06-16"),
+  }));
+
+  const exerciseCategoryEntries = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map(
+    (category) => ({
+      url: absoluteUrl(`/exercises/${category.slug}`),
+      lastModified: new Date("2026-06-16"),
+    }),
+  );
+
+  const workoutEntries = workoutTemplates.map((workoutTemplate) => ({
+    url: absoluteUrl(`/workouts/${workoutTemplate.slug}`),
+    lastModified: new Date(workoutTemplate.updatedAt ?? "2026-06-16"),
+  }));
+
+  const workoutGoalEntries = WORKOUT_GOALS.map((goal) => ({
+    url: absoluteUrl(`/workouts/${goal.slug}`),
+    lastModified: new Date("2026-06-16"),
   }));
 
   const restaurantEntries = restaurants.flatMap((restaurant) => [
@@ -52,6 +97,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...toolEntries,
     ...restaurantEntries,
     ...fastFoodEntries,
+    ...exerciseEntries,
+    ...exerciseCategoryEntries,
+    ...workoutEntries,
+    ...workoutGoalEntries,
     ...categoryEntries,
     ...postEntries,
   ];

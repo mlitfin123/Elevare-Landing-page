@@ -4,7 +4,7 @@ import { ToolPageShell } from "@/components/tools/ToolPageShell";
 import { buildMetadata } from "@/lib/site";
 import { getCalculatorPath, getTool, tools } from "@/lib/tools";
 
-type ToolPageProps = {
+type CalculatorPageProps = {
   params: Promise<{
     slug: string;
   }>;
@@ -18,28 +18,26 @@ export function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: ToolPageProps) {
+export async function generateMetadata({ params }: CalculatorPageProps) {
   const { slug } = await params;
   const tool = getTool(slug);
 
   if (!tool) {
     return buildMetadata({
-      title: "Tool not found",
-      description: "The requested tool could not be found.",
-      pathname: `/tools/${slug}`,
-      canonicalPath: `/calculators/${slug}`,
+      title: "Calculator not found",
+      description: "The requested calculator could not be found.",
+      pathname: `/calculators/${slug}`,
     });
   }
 
   return buildMetadata({
     title: tool.title,
     description: tool.metaDescription,
-    pathname: `/tools/${tool.slug}`,
-    canonicalPath: getCalculatorPath(tool.slug),
+    pathname: getCalculatorPath(tool.slug),
   });
 }
 
-export default async function ToolPage({ params }: ToolPageProps) {
+export default async function CalculatorPage({ params }: CalculatorPageProps) {
   const { slug } = await params;
   const tool = getTool(slug);
 
