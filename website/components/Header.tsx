@@ -6,9 +6,7 @@ const navigation = [
   { href: "/calculators", label: "Tools" },
   { href: "/tools/workout-generator", label: "Workout Finder" },
   { href: "/nutrition", label: "Nutrition" },
-  { href: "/#benefits", label: "Benefits" },
   { href: "/#how-it-works", label: "How It Works" },
-  { href: "/#trust", label: "Trust" },
   { href: "/blog", label: "Insights" },
 ];
 
