@@ -33,7 +33,7 @@ export const productConfig: Record<
     title: "Logbook",
     description:
       "A focused fitness tracker that makes workouts easier to record, review, and repeat with consistency.",
-    status: "Live now",
+    status: "Live on iOS",
     idealUser:
       "Lifters, athletes, and everyday users who want better visibility into their training.",
     ctaLabel: "Download Logbook",

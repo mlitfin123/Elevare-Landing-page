@@ -63,8 +63,8 @@ export default function LogbookPage() {
 
           <article className="panel">
             <span className="stat-label">Status</span>
-            <h3>Live product</h3>
-            <p>Available now as part of the wider Elevare product ecosystem.</p>
+            <h3>Live on iOS</h3>
+            <p>Available now on the App Store as part of the wider Elevare product ecosystem.</p>
           </article>
         </div>
       </section>
