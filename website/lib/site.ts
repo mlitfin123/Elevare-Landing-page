@@ -44,11 +44,11 @@ export const productConfig: Record<
     title: "StageLab",
     description:
       "A competition prep app built for more deliberate structure, cleaner feedback loops, and better planning.",
-    status: "Coming soon",
+    status: "Live on iOS",
     idealUser:
       "Coaches and competitors who think in systems, prep phases, and performance structure.",
-    ctaLabel: "Learn about StageLab",
-    ctaHref: "/stagelab",
+    ctaLabel: "Download on the App Store",
+    ctaHref: "https://apps.apple.com/app/stagelab-competition-prep/id6764351799",
   },
   Elevare: {
     slug: "elevare",

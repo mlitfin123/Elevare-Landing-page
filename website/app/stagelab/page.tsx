@@ -1,15 +1,17 @@
 import { Callout } from "@/components/Callout";
 import { TrackedLink } from "@/components/TrackedLink";
-import { buildMetadata } from "@/lib/site";
+import { buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
   title: "StageLab",
   description:
-    "StageLab is the competition prep and performance workflow app in the Elevare ecosystem.",
+    "StageLab is the competition prep and performance workflow app in the Elevare ecosystem, now available on iOS.",
   pathname: "/stagelab",
 });
 
 export default function StageLabPage() {
+  const stageLab = productConfig.StageLab;
+
   return (
     <div className="container">
       <section className="hero">
@@ -21,28 +23,28 @@ export default function StageLabPage() {
         </p>
         <div className="button-row">
           <TrackedLink
-            className="button button-primary"
-            href="/blog/category/prep"
+            className="button button-store"
+            href={stageLab.ctaHref}
             eventName="cta_click"
             eventParams={{
-              cta_name: "Explore prep insights",
+              cta_name: stageLab.ctaLabel,
               cta_context: "stagelab_hero",
               product: "StageLab",
             }}
           >
-            Explore prep insights
+            {stageLab.ctaLabel}
           </TrackedLink>
           <TrackedLink
             className="button button-secondary"
-            href="/blog"
+            href="/blog/category/prep-files"
             eventName="cta_click"
             eventParams={{
-              cta_name: "Read insights",
+              cta_name: "Read prep files",
               cta_context: "stagelab_hero",
               product: "StageLab",
             }}
           >
-            Read insights
+            Read prep files
           </TrackedLink>
         </div>
       </section>
@@ -63,8 +65,8 @@ export default function StageLabPage() {
 
           <article className="panel">
             <span className="stat-label">Status</span>
-            <h3>Coming soon</h3>
-            <p>Currently being shaped as the next layer in the ecosystem.</p>
+            <h3>Live on iOS</h3>
+            <p>Available now on the App Store for coaches and competitors who want more structure in prep.</p>
           </article>
         </div>
       </section>

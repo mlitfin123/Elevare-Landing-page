@@ -9,7 +9,7 @@ type ProductCTAProps = {
 export function ProductCTA({ product, context = "product_cta" }: ProductCTAProps) {
   const config = productConfig[product];
   const buttonClassName =
-    product === "Logbook" ? "button button-store" : "button button-primary";
+    product === "Logbook" || product === "StageLab" ? "button button-store" : "button button-primary";
 
   return (
     <section className="product-cta">

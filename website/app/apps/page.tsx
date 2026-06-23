@@ -18,8 +18,8 @@ const productCards = [
   },
   {
     key: "StageLab" as const,
-    ctaLabel: "Learn more",
-    ctaHref: "/stagelab",
+    ctaLabel: "Download on the App Store",
+    ctaHref: productConfig.StageLab.ctaHref,
     description:
       "A competition prep app for structuring performance phases, tightening feedback loops, and organizing prep work with more discipline.",
   },
@@ -84,7 +84,7 @@ export default function AppsPage() {
           {productCards.map((card) => {
             const product = productConfig[card.key];
             const buttonClassName =
-              card.key === "Logbook" ? "button button-store" : "button button-primary";
+              card.key === "Logbook" || card.key === "StageLab" ? "button button-store" : "button button-primary";
 
             return (
               <article key={card.key} className="panel">
