@@ -1,5 +1,4 @@
-import { TrackedLink } from "@/components/TrackedLink";
-import { productConfig } from "@/lib/site";
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import type { ToolSlug } from "@/lib/tools";
 
 type ToolLogbookCtaProps = {
@@ -16,18 +15,7 @@ export function ToolLogbookCta({ toolSlug }: ToolLogbookCtaProps) {
         process simple.
       </p>
       <div className="button-row">
-        <TrackedLink
-          className="button button-store"
-          href={productConfig.Logbook.ctaHref}
-          eventName="cta_click"
-          eventParams={{
-            cta_name: "Download Logbook",
-            cta_context: `tool_cta_${toolSlug}`,
-            product: "Logbook",
-          }}
-        >
-          Download Logbook
-        </TrackedLink>
+        <ProductCtaButtons product="Logbook" context={`tool_cta_${toolSlug}`} />
       </div>
     </section>
   );

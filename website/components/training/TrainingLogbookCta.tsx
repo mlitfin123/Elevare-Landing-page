@@ -1,5 +1,4 @@
-import { TrackedLink } from "@/components/TrackedLink";
-import { productConfig } from "@/lib/site";
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 
 type TrainingLogbookCtaProps = {
   title: string;
@@ -14,18 +13,9 @@ export function TrainingLogbookCta({ title, description, ctaContext }: TrainingL
         <span className="meta-pill">Logbook</span>
         <h2>{title}</h2>
         <p>{description}</p>
-        <TrackedLink
-          className="button button-store"
-          href={productConfig.Logbook.ctaHref}
-          eventName="cta_click"
-          eventParams={{
-            cta_name: "Download Logbook",
-            cta_context: ctaContext,
-            product: "Logbook",
-          }}
-        >
-          Download on the App Store
-        </TrackedLink>
+        <div className="button-row">
+          <ProductCtaButtons product="Logbook" context={ctaContext} />
+        </div>
       </article>
     </section>
   );

@@ -1,3 +1,4 @@
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { WorkoutRecommendationTool } from "@/components/tools/WorkoutRecommendationTool";
@@ -291,18 +292,9 @@ export default async function WorkoutGeneratorPage() {
             Once you land on a plan that fits your week, Logbook gives you a cleaner place to record sessions,
             review progress, and stay more consistent.
           </p>
-          <TrackedLink
-            className="button button-store"
-            href="https://apps.apple.com/us/app/logbook-fitness-tracker/id6762474210"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Download on the App Store",
-              cta_context: "workout_generator_cta",
-              product: "Logbook",
-            }}
-          >
-            Download on the App Store
-          </TrackedLink>
+          <div className="button-row">
+            <ProductCtaButtons product="Logbook" context="workout_generator_cta" />
+          </div>
         </article>
       </section>
     </div>

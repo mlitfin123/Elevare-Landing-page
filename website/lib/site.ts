@@ -15,6 +15,11 @@ export const siteConfig = {
 };
 
 export type ProductName = "Logbook" | "StageLab" | "Elevare";
+export type ProductStoreLink = {
+  label: string;
+  href: string;
+  store: "ios" | "android";
+};
 
 export const productConfig: Record<
   ProductName,
@@ -26,6 +31,7 @@ export const productConfig: Record<
     idealUser: string;
     ctaLabel: string;
     ctaHref: string;
+    storeLinks?: ProductStoreLink[];
   }
 > = {
   Logbook: {
@@ -33,11 +39,23 @@ export const productConfig: Record<
     title: "Logbook",
     description:
       "A focused fitness tracker that makes workouts easier to record, review, and repeat with consistency.",
-    status: "Live on iOS",
+    status: "Live on iOS and Android",
     idealUser:
       "Lifters, athletes, and everyday users who want better visibility into their training.",
-    ctaLabel: "Download Logbook",
+    ctaLabel: "Download on the App Store",
     ctaHref: "https://apps.apple.com/us/app/logbook-fitness-tracker/id6762474210",
+    storeLinks: [
+      {
+        label: "Download on the App Store",
+        href: "https://apps.apple.com/us/app/logbook-fitness-tracker/id6762474210",
+        store: "ios",
+      },
+      {
+        label: "Get it on Google Play",
+        href: "https://play.google.com/store/apps/details?id=com.logbook.tracking",
+        store: "android",
+      },
+    ],
   },
   StageLab: {
     slug: "stagelab",
@@ -49,6 +67,13 @@ export const productConfig: Record<
       "Coaches and competitors who think in systems, prep phases, and performance structure.",
     ctaLabel: "Download on the App Store",
     ctaHref: "https://apps.apple.com/app/stagelab-competition-prep/id6764351799",
+    storeLinks: [
+      {
+        label: "Download on the App Store",
+        href: "https://apps.apple.com/app/stagelab-competition-prep/id6764351799",
+        store: "ios",
+      },
+    ],
   },
   Elevare: {
     slug: "elevare",

@@ -1,3 +1,4 @@
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, productConfig } from "@/lib/site";
 
@@ -11,22 +12,16 @@ export const metadata = buildMetadata({
 const productCards = [
   {
     key: "Logbook" as const,
-    ctaLabel: "Download on the App Store",
-    ctaHref: productConfig.Logbook.ctaHref,
     description:
       "A focused fitness tracking app built to make workouts easier to record, review, and repeat with consistency.",
   },
   {
     key: "StageLab" as const,
-    ctaLabel: "Download on the App Store",
-    ctaHref: productConfig.StageLab.ctaHref,
     description:
       "A competition prep app for structuring performance phases, tightening feedback loops, and organizing prep work with more discipline.",
   },
   {
     key: "Elevare" as const,
-    ctaLabel: "Learn more",
-    ctaHref: "/elevare",
     description:
       "A coaching marketplace built to help members find the right coach and help coaches get discovered by the right people.",
   },
@@ -83,8 +78,6 @@ export default function AppsPage() {
         <div className="grid-3">
           {productCards.map((card) => {
             const product = productConfig[card.key];
-            const buttonClassName =
-              card.key === "Logbook" || card.key === "StageLab" ? "button button-store" : "button button-primary";
 
             return (
               <article key={card.key} className="panel">
@@ -100,18 +93,7 @@ export default function AppsPage() {
                   </li>
                 </ul>
                 <div className="button-row">
-                  <TrackedLink
-                    className={buttonClassName}
-                    href={card.ctaHref}
-                    eventName="cta_click"
-                    eventParams={{
-                      cta_name: card.ctaLabel,
-                      cta_context: "apps_directory_card",
-                      product: product.title,
-                    }}
-                  >
-                    {card.ctaLabel}
-                  </TrackedLink>
+                  <ProductCtaButtons product={card.key} context="apps_directory_card" />
                 </div>
               </article>
             );

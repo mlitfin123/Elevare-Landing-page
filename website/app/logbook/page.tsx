@@ -1,4 +1,5 @@
 import { Callout } from "@/components/Callout";
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, productConfig } from "@/lib/site";
 
@@ -10,6 +11,8 @@ export const metadata = buildMetadata({
 });
 
 export default function LogbookPage() {
+  const logbook = productConfig.Logbook;
+
   return (
     <div className="container">
       <section className="hero">
@@ -20,18 +23,7 @@ export default function LogbookPage() {
           easier to review, and more consistent over time.
         </p>
         <div className="button-row">
-          <TrackedLink
-            className="button button-store"
-            href={productConfig.Logbook.ctaHref}
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Download on the App Store",
-              cta_context: "logbook_hero",
-              product: "Logbook",
-            }}
-          >
-            Download on the App Store
-          </TrackedLink>
+          <ProductCtaButtons product="Logbook" context="logbook_hero" />
           <TrackedLink
             className="button button-secondary"
             href="/blog"
@@ -63,8 +55,8 @@ export default function LogbookPage() {
 
           <article className="panel">
             <span className="stat-label">Status</span>
-            <h3>Live on iOS</h3>
-            <p>Available now on the App Store as part of the wider Elevare product ecosystem.</p>
+            <h3>{logbook.status}</h3>
+            <p>Available now on the App Store and Google Play as part of the wider Elevare product ecosystem.</p>
           </article>
         </div>
       </section>
