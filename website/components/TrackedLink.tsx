@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
 import { trackEvent, type AnalyticsEventParams } from "@/lib/analytics";
+import { normalizeSitePath } from "@/lib/site";
 
 type TrackedLinkProps = {
   href: string;
@@ -23,6 +24,8 @@ export function TrackedLink({
   eventParams,
   onClick,
 }: TrackedLinkProps) {
+  const normalizedHref = href.startsWith("/") ? normalizeSitePath(href) : href;
+
   const handleClick: MouseEventHandler<HTMLAnchorElement> = (event) => {
     onClick?.(event);
 
@@ -32,12 +35,12 @@ export function TrackedLink({
 
     trackEvent(eventName, {
       ...eventParams,
-      destination_url: href,
+      destination_url: normalizedHref,
     });
   };
 
   return (
-    <Link href={href} className={className} prefetch={prefetch} onClick={handleClick}>
+    <Link href={normalizedHref} className={className} prefetch={prefetch} onClick={handleClick}>
       {children}
     </Link>
   );

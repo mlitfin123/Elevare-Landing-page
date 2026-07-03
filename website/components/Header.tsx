@@ -2,12 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 const navigation = [
-  { href: "/apps", label: "Apps" },
-  { href: "/calculators", label: "Tools" },
-  { href: "/tools/workout-generator", label: "Workout Finder" },
-  { href: "/nutrition", label: "Nutrition" },
+  { href: "/apps/", label: "Apps" },
+  { href: "/calculators/", label: "Tools" },
+  { href: "/tools/workout-generator/", label: "Workout Finder" },
+  { href: "/nutrition/", label: "Nutrition" },
   { href: "/#how-it-works", label: "How It Works" },
-  { href: "/blog", label: "Insights" },
+  { href: "/blog/", label: "Insights" },
 ];
 
 export function Header() {

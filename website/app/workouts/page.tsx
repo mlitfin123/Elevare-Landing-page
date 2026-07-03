@@ -4,7 +4,9 @@ import { WorkoutDirectory } from "@/components/training/WorkoutDirectory";
 import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, absoluteUrl } from "@/lib/site";
 import { getAllWorkoutTemplates } from "@/lib/training";
+import { getPopularWorkoutTemplates } from "@/lib/training-seo";
 import { formatGoalLabel, WORKOUT_GOALS } from "@/lib/training-data";
+import { WorkoutTemplateCard } from "@/components/training/WorkoutTemplateCard";
 
 export const metadata = buildMetadata({
   title: "Workout Templates",
@@ -15,6 +17,7 @@ export const metadata = buildMetadata({
 
 export default async function WorkoutsIndexPage() {
   const workoutTemplates = await getAllWorkoutTemplates();
+  const popularWorkouts = getPopularWorkoutTemplates(workoutTemplates, 8);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -85,6 +88,29 @@ export default async function WorkoutsIndexPage() {
           </article>
         </div>
       </section>
+
+      {popularWorkouts.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">Popular workout templates</div>
+            <h2 className="section-title">Start with the workout templates most people can use immediately.</h2>
+            <p className="section-copy">
+              These are the strongest starting points in the public workout library if you want a plan before you
+              sort through every template in the database.
+            </p>
+          </div>
+
+          <div className="training-grid">
+            {popularWorkouts.map((workoutTemplate) => (
+              <WorkoutTemplateCard
+                key={workoutTemplate.slug}
+                workoutTemplate={workoutTemplate}
+                sourcePage="workout_index_popular_templates"
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="section-head">

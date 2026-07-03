@@ -28,6 +28,10 @@ export async function generateMetadata({ params }: ToolPageProps) {
       description: "The requested tool could not be found.",
       pathname: `/tools/${slug}`,
       canonicalPath: `/calculators/${slug}`,
+      robots: {
+        index: false,
+        follow: true,
+      },
     });
   }
 
@@ -36,6 +40,10 @@ export async function generateMetadata({ params }: ToolPageProps) {
     description: tool.metaDescription,
     pathname: `/tools/${tool.slug}`,
     canonicalPath: getCalculatorPath(tool.slug),
+    robots: {
+      index: false,
+      follow: true,
+    },
   });
 }
 

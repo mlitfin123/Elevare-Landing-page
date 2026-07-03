@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/StructuredData";
 import { ExerciseCard } from "@/components/training/ExerciseCard";
+import { RelatedTrainingTools } from "@/components/training/RelatedTrainingTools";
 import { TrainingLogbookCta } from "@/components/training/TrainingLogbookCta";
 import { WorkoutTemplateCard } from "@/components/training/WorkoutTemplateCard";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -11,6 +12,7 @@ import {
   getAllWorkoutTemplates,
   getWorkoutTemplateBySlug,
 } from "@/lib/training";
+import { getWorkoutGoalRelatedToolSlugs, getWorkoutRelatedToolSlugs } from "@/lib/training-seo";
 import {
   buildWorkoutFaqs,
   buildWorkoutSummary,
@@ -178,6 +180,13 @@ async function WorkoutGoalPage({ slug }: { slug: string }) {
           </div>
         </section>
       ) : null}
+
+      <RelatedTrainingTools
+        title={`Helpful calculators for ${goal.label.toLowerCase()} workouts.`}
+        description="Use these calculators to turn your workout choice into a more realistic plan for calories, protein, progression, or training structure."
+        toolSlugs={getWorkoutGoalRelatedToolSlugs(goal.slug)}
+        sourcePage={`workout_goal_${goal.slug}_related_tools`}
+      />
 
       <TrainingLogbookCta
         title="Track this workout goal for free in Logbook."
@@ -475,6 +484,13 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
           </div>
         </section>
       ) : null}
+
+      <RelatedTrainingTools
+        title="Related calculators for this workout."
+        description="Use these tools when you want to turn the workout into a clearer calorie target, protein target, strength checkpoint, or training-volume plan."
+        toolSlugs={getWorkoutRelatedToolSlugs(workoutTemplate)}
+        sourcePage={`workout_detail_${workoutTemplate.slug}_related_tools`}
+      />
 
       <section className="section">
         <div className="section-head">

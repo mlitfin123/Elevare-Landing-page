@@ -294,6 +294,228 @@ function matchesQuery(haystackParts: Array<string | null | undefined>, query: st
   return haystack.includes(query.toLowerCase());
 }
 
+const LOW_QUALITY_SUBSTITUTION_PATTERN =
+  /\b(with chains|with bands|reverse band|guillotine|behind the head|behind the neck|palms-down|palms-up|plate movers)\b/i;
+
+function getExerciseFamilyTags(exerciseName: string) {
+  const normalizedName = exerciseName.toLowerCase();
+  const tags = new Set<string>();
+
+  const familyMatchers: Array<[string, RegExp]> = [
+    ["bench-press", /\bbench press\b/],
+    ["incline-press", /\bincline\b.*\b(bench press|press)\b|\bhammer grip incline db bench press\b/],
+    ["decline-press", /\bdecline\b.*\b(bench press|press)\b/],
+    ["chest-press", /\bchest press\b/],
+    ["push-up", /\bpush ?ups?\b/],
+    ["dip", /\bdips?\b/],
+    ["deadlift", /\bdeadlift\b/],
+    ["squat", /\bsquat\b/],
+    ["lunge", /\blunge\b/],
+    ["row", /\brow\b/],
+    ["pulldown", /\bpull ?down\b/],
+    ["pull-up", /\bpull ?up\b/],
+    ["curl", /\bcurls?\b/],
+    ["pushdown", /\bpush ?down\b/],
+    ["extension", /\bextensions?\b/],
+    ["raise", /\braise\b/],
+    ["fly", /\bflye?s?\b|\bpec deck\b/],
+    ["plank", /\bplank\b/],
+    ["sit-up", /\bsit[- ]?up\b/],
+    ["crunch", /\bcrunch\b/],
+    ["rollout", /\brollout\b/],
+    ["bridge", /\bbridge\b/],
+    ["thrust", /\bthrust\b/],
+    ["pull-through", /\bpull through\b/],
+  ];
+
+  for (const [tag, pattern] of familyMatchers) {
+    if (pattern.test(normalizedName)) {
+      tags.add(tag);
+    }
+  }
+
+  return [...tags];
+}
+
+export function getNormalizedExerciseMovementPattern(exercise: ExerciseRecord) {
+  const pattern = (exercise.movementPattern ?? "general").toLowerCase();
+  const name = exercise.name.toLowerCase();
+
+  if (pattern === "horizontal-push" || pattern === "vertical-push" || pattern === "elbow-flexion" || pattern === "elbow-extension" || pattern === "chest-fly") {
+    return pattern;
+  }
+
+  if (pattern === "press") {
+    if (/\b(bench press|floor press|board press|pin press|chest press|push ?ups?|bench dips|dips - triceps version|jm press)\b/.test(name)) {
+      return "horizontal-push";
+    }
+
+    if (/\b(shoulder press|push press|arnold)\b/.test(name)) {
+      return "vertical-push";
+    }
+  }
+
+  if (pattern === "curl") return "elbow-flexion";
+  if (pattern === "extension") return "elbow-extension";
+
+  if (pattern === "raise") {
+    if ((/\b(flye?s?|pec deck)\b/.test(name) || /\bbutterfly\b/.test(name)) && !/\breverse\b/.test(name) && exercise.primaryMuscleGroup === "chest") {
+      return "chest-fly";
+    }
+  }
+
+  return pattern || "general";
+}
+
+function sharesExerciseFamily(left: ExerciseRecord, right: ExerciseRecord) {
+  const leftTags = getExerciseFamilyTags(left.name);
+  const rightTags = getExerciseFamilyTags(right.name);
+
+  return leftTags.some((tag) => rightTags.includes(tag));
+}
+
+function sharesEquipment(left: ExerciseRecord, right: ExerciseRecord) {
+  return left.equipment.some((item) => right.equipment.includes(item));
+}
+
+function sharesTrainingRole(left: ExerciseRecord, right: ExerciseRecord) {
+  if (left.isCompound !== right.isCompound) {
+    return false;
+  }
+
+  const leftPattern = getNormalizedExerciseMovementPattern(left);
+  const rightPattern = getNormalizedExerciseMovementPattern(right);
+
+  if (leftPattern === rightPattern) {
+    return true;
+  }
+
+  if (!left.exerciseType || !right.exerciseType) {
+    return sharesExerciseFamily(left, right);
+  }
+
+  return left.exerciseType === right.exerciseType && sharesExerciseFamily(left, right);
+}
+
+function isClearlyRelevantSecondaryMatch(exercise: ExerciseRecord, muscleGroup: string) {
+  if (!exercise.secondaryMuscleGroups.includes(muscleGroup)) {
+    return false;
+  }
+
+  if (muscleGroup === "glutes") {
+    return exercise.primaryMuscleGroup === "legs"
+      && ["hinge", "squat", "single-leg", "general"].includes(exercise.movementPattern ?? "general");
+  }
+
+  return false;
+}
+
+function hasUnsafeSubstitutionMismatch(base: ExerciseRecord, candidate: ExerciseRecord) {
+  const basePattern = getNormalizedExerciseMovementPattern(base);
+  const candidatePattern = getNormalizedExerciseMovementPattern(candidate);
+
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return true;
+  }
+
+  if (basePattern === "horizontal-push" && ["elbow-flexion", "elbow-extension"].includes(candidatePattern)) {
+    return true;
+  }
+
+  if (basePattern === "elbow-flexion" && candidatePattern !== "elbow-flexion") {
+    return true;
+  }
+
+  if (basePattern === "elbow-extension" && candidatePattern !== "elbow-extension") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "chest" && base.isCompound && candidate.primaryMuscleGroup === "arms") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "arms" && base.isCompound && !candidate.isCompound) {
+    return true;
+  }
+
+  if (base.isCompound && !candidate.isCompound && ["horizontal-push", "vertical-push", "pull", "hinge", "squat"].includes(basePattern)) {
+    return true;
+  }
+
+  if (!base.isCompound && candidate.isCompound && ["elbow-flexion", "elbow-extension", "chest-fly"].includes(basePattern)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function getExerciseSubstitutionCompatibilityScore(base: ExerciseRecord, candidate: ExerciseRecord) {
+  if (hasUnsafeSubstitutionMismatch(base, candidate)) {
+    return -1;
+  }
+
+  const basePattern = getNormalizedExerciseMovementPattern(base);
+  const candidatePattern = getNormalizedExerciseMovementPattern(candidate);
+  const sameMovementPattern = candidatePattern === basePattern;
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovementPattern && !sameFamily) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (candidate.primaryMuscleGroup === base.primaryMuscleGroup) score += 5;
+  if (sameMovementPattern) score += 4;
+  if (sameFamily) score += 3;
+  if (sharesEquipment(base, candidate)) score += 2;
+  if (candidate.isCompound === base.isCompound) score += 2;
+  if (sharesTrainingRole(base, candidate)) score += 1;
+  if (candidate.exerciseType === base.exerciseType) score += 1;
+  if (candidate.difficulty === base.difficulty) score += 1;
+  if (LOW_QUALITY_SUBSTITUTION_PATTERN.test(candidate.name)) score -= 4;
+
+  return score;
+}
+
+function isValidSubstitutionCandidate(base: ExerciseRecord, candidate: ExerciseRecord) {
+  if (getExerciseSubstitutionCompatibilityScore(base, candidate) < 10) {
+    return false;
+  }
+
+  return true;
+}
+
+function isValidVariationCandidate(base: ExerciseRecord, candidate: ExerciseRecord) {
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return false;
+  }
+
+  const sameMovementPattern =
+    getNormalizedExerciseMovementPattern(candidate) === getNormalizedExerciseMovementPattern(base);
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovementPattern && !sameFamily) {
+    return false;
+  }
+
+  return sharesEquipment(base, candidate) || sharesTrainingRole(base, candidate);
+}
+
+function getExerciseRelationshipScore(base: ExerciseRecord, candidate: ExerciseRecord) {
+  let score = 0;
+
+  if (candidate.primaryMuscleGroup === base.primaryMuscleGroup) score += 6;
+  if (getNormalizedExerciseMovementPattern(candidate) === getNormalizedExerciseMovementPattern(base)) score += 4;
+  if (sharesExerciseFamily(base, candidate)) score += 4;
+  if (sharesEquipment(base, candidate)) score += 3;
+  if (sharesTrainingRole(base, candidate)) score += 2;
+  if (candidate.secondaryMuscleGroups.some((group) => base.secondaryMuscleGroups.includes(group))) score += 1;
+  if (candidate.difficulty === base.difficulty) score += 1;
+
+  return score;
+}
+
 export function searchExercises(exercises: ExerciseRecord[], query: string) {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return exercises;
@@ -317,8 +539,7 @@ export function filterExercisesByMuscleGroup(exercises: ExerciseRecord[], muscle
   if (!muscleGroup || muscleGroup === "all") return exercises;
 
   return exercises.filter(
-    (exercise) =>
-      exercise.primaryMuscleGroup === muscleGroup || exercise.secondaryMuscleGroups.includes(muscleGroup),
+    (exercise) => exercise.primaryMuscleGroup === muscleGroup,
   );
 }
 
@@ -330,9 +551,25 @@ export function filterExercisesByEquipment(exercises: ExerciseRecord[], equipmen
 export function getExercisesByCategorySlug(exercises: ExerciseRecord[], slug: string) {
   const category = getExerciseCategoryInfo(slug);
   if (!category) return [];
-  return category.kind === "muscle"
-    ? filterExercisesByMuscleGroup(exercises, category.slug)
-    : filterExercisesByEquipment(exercises, category.slug);
+
+  if (category.kind === "equipment") {
+    return filterExercisesByEquipment(exercises, category.slug);
+  }
+
+  return exercises.filter(
+    (exercise) => exercise.primaryMuscleGroup === category.slug,
+  );
+}
+
+export function getSupportingExercisesByCategorySlug(exercises: ExerciseRecord[], slug: string) {
+  const category = getExerciseCategoryInfo(slug);
+  if (!category || category.kind === "equipment") {
+    return [];
+  }
+
+  return exercises.filter(
+    (exercise) => exercise.primaryMuscleGroup !== category.slug && isClearlyRelevantSecondaryMatch(exercise, category.slug),
+  );
 }
 
 export function searchWorkoutTemplates(templates: WorkoutTemplateRecord[], query: string) {
@@ -418,41 +655,57 @@ export function groupWorkoutExercisesByDay(
 export function getExerciseSubstitutions(exercise: ExerciseRecord, exercises: ExerciseRecord[], limit = 3) {
   const namedAlternatives = exercise.alternatives
     .map((name) => exercises.find((candidate) => candidate.name === name) ?? null)
-    .filter((candidate): candidate is ExerciseRecord => candidate != null)
-    .slice(0, limit);
+    .filter((candidate): candidate is ExerciseRecord => candidate != null && isValidSubstitutionCandidate(exercise, candidate));
 
   if (namedAlternatives.length >= limit) {
-    return namedAlternatives;
+    return namedAlternatives
+      .sort(
+        (left, right) =>
+          getExerciseSubstitutionCompatibilityScore(exercise, right)
+          - getExerciseSubstitutionCompatibilityScore(exercise, left),
+      )
+      .slice(0, limit);
   }
 
   const fallback = exercises.filter(
-    (candidate) =>
-      candidate.slug !== exercise.slug &&
-      candidate.primaryMuscleGroup === exercise.primaryMuscleGroup &&
-      !candidate.equipment.some((item) => exercise.equipment.includes(item)),
+    (candidate) => isValidSubstitutionCandidate(exercise, candidate),
   );
 
-  return [...namedAlternatives, ...fallback].slice(0, limit);
+  const deduped = [...namedAlternatives, ...fallback].filter(
+    (candidate, index, collection) => collection.findIndex((entry) => entry.slug === candidate.slug) === index,
+  );
+
+  return deduped
+    .sort(
+      (left, right) =>
+        getExerciseSubstitutionCompatibilityScore(exercise, right)
+        - getExerciseSubstitutionCompatibilityScore(exercise, left),
+    )
+    .slice(0, limit);
 }
 
 export function getExerciseVariations(exercise: ExerciseRecord, exercises: ExerciseRecord[], limit = 3) {
   const namedVariations = exercise.variations
     .map((name) => exercises.find((candidate) => candidate.name === name) ?? null)
-    .filter((candidate): candidate is ExerciseRecord => candidate != null)
-    .slice(0, limit);
+    .filter((candidate): candidate is ExerciseRecord => candidate != null && isValidVariationCandidate(exercise, candidate));
 
   if (namedVariations.length >= limit) {
-    return namedVariations;
+    return namedVariations
+      .sort((left, right) => getExerciseRelationshipScore(exercise, right) - getExerciseRelationshipScore(exercise, left))
+      .slice(0, limit);
   }
 
   const fallback = exercises.filter(
-    (candidate) =>
-      candidate.slug !== exercise.slug &&
-      candidate.primaryMuscleGroup === exercise.primaryMuscleGroup &&
-      candidate.equipment.some((item) => exercise.equipment.includes(item)),
+    (candidate) => isValidVariationCandidate(exercise, candidate),
   );
 
-  return [...namedVariations, ...fallback].slice(0, limit);
+  const deduped = [...namedVariations, ...fallback].filter(
+    (candidate, index, collection) => collection.findIndex((entry) => entry.slug === candidate.slug) === index,
+  );
+
+  return deduped
+    .sort((left, right) => getExerciseRelationshipScore(exercise, right) - getExerciseRelationshipScore(exercise, left))
+    .slice(0, limit);
 }
 
 export function getRelatedExercises(exercise: ExerciseRecord, exercises: ExerciseRecord[], limit = 4) {
@@ -462,13 +715,24 @@ export function getRelatedExercises(exercise: ExerciseRecord, exercises: Exercis
       let score = 0;
 
       if (candidate.primaryMuscleGroup === exercise.primaryMuscleGroup) score += 4;
+      if (getNormalizedExerciseMovementPattern(candidate) === getNormalizedExerciseMovementPattern(exercise)) score += 3;
+      if (sharesExerciseFamily(exercise, candidate)) score += 3;
       if (candidate.difficulty === exercise.difficulty) score += 2;
-      if (candidate.equipment.some((item) => exercise.equipment.includes(item))) score += 2;
+      if (sharesEquipment(exercise, candidate)) score += 2;
+      if (sharesTrainingRole(exercise, candidate)) score += 2;
       if (candidate.secondaryMuscleGroups.some((item) => exercise.secondaryMuscleGroups.includes(item))) score += 1;
 
       return { candidate, score };
     })
-    .filter((entry) => entry.score > 0)
+    .filter(
+      (entry) =>
+        entry.score > 0
+        && (
+          entry.candidate.primaryMuscleGroup === exercise.primaryMuscleGroup
+          || getNormalizedExerciseMovementPattern(entry.candidate) === getNormalizedExerciseMovementPattern(exercise)
+          || sharesExerciseFamily(exercise, entry.candidate)
+        ),
+    )
     .sort((left, right) => right.score - left.score || left.candidate.name.localeCompare(right.candidate.name))
     .slice(0, limit)
     .map((entry) => entry.candidate);

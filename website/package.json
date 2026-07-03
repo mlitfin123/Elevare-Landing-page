@@ -2,15 +2,18 @@
   "name": "elevare-website",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Next.js content hub for the Elevare ecosystem.",
   "scripts": {
-    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs",
+    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types ./tests/*.test.ts"
+    "test": "node --test --experimental-strip-types ./tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "seo:audit": "node --experimental-strip-types ./scripts/seo-audit.ts"
   },
   "keywords": [
     "nextjs",

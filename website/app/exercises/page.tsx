@@ -1,8 +1,10 @@
 import { StructuredData } from "@/components/StructuredData";
+import { ExerciseCard } from "@/components/training/ExerciseCard";
 import { ExerciseDirectory } from "@/components/training/ExerciseDirectory";
 import { TrainingLogbookCta } from "@/components/training/TrainingLogbookCta";
 import { TrackedLink } from "@/components/TrackedLink";
 import { getAllExercises } from "@/lib/training";
+import { getPopularExercises } from "@/lib/training-seo";
 import {
   EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
@@ -20,6 +22,7 @@ export const metadata = buildMetadata({
 
 export default async function ExercisesIndexPage() {
   const exercises = await getAllExercises();
+  const popularExercises = getPopularExercises(exercises, 14);
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -92,6 +95,25 @@ export default async function ExercisesIndexPage() {
           </article>
         </div>
       </section>
+
+      {popularExercises.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">Popular exercises</div>
+            <h2 className="section-title">Start with the exercise pages people are most likely to need first.</h2>
+            <p className="section-copy">
+              These are the highest-value movement pages in the current library and the best entry point if you
+              want dependable, commonly used exercises before digging through the full database.
+            </p>
+          </div>
+
+          <div className="training-grid">
+            {popularExercises.map((exercise) => (
+              <ExerciseCard key={exercise.slug} exercise={exercise} sourcePage="exercise_index_popular_exercises" />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="section-head">

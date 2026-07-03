@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getExerciseSubstitutions,
   getExercisesByCategorySlug,
   getRelatedWorkoutTemplatesForExercise,
   groupWorkoutExercisesByDay,
@@ -42,6 +43,167 @@ const exercises: ExerciseRecord[] = [
     secondaryMuscleGroups: ["arms"],
     equipment: ["cable"],
     movementPattern: "pull",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-3",
+    name: "Dumbbell Bench Press",
+    slug: "dumbbell-bench-press",
+    primaryMuscleGroup: "chest",
+    secondaryMuscleGroups: ["shoulders", "arms"],
+    equipment: ["dumbbell"],
+    movementPattern: "press",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-4",
+    name: "Dumbbell Bicep Curl",
+    slug: "dumbbell-bicep-curl",
+    primaryMuscleGroup: "arms",
+    secondaryMuscleGroups: [],
+    equipment: ["dumbbell"],
+    movementPattern: "elbow-flexion",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: false,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-5",
+    name: "Cable Chest Press",
+    slug: "cable-chest-press",
+    primaryMuscleGroup: "chest",
+    secondaryMuscleGroups: ["shoulders", "arms"],
+    equipment: ["cable"],
+    movementPattern: "horizontal-push",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-6",
+    name: "Pushups",
+    slug: "pushups",
+    primaryMuscleGroup: "chest",
+    secondaryMuscleGroups: ["shoulders", "arms"],
+    equipment: ["bodyweight"],
+    movementPattern: "horizontal-push",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-7",
+    name: "Dumbbell One-Arm Triceps Extension",
+    slug: "dumbbell-one-arm-triceps-extension",
+    primaryMuscleGroup: "arms",
+    secondaryMuscleGroups: [],
+    equipment: ["dumbbell"],
+    movementPattern: "elbow-extension",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: false,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-8",
+    name: "Flat Bench Cable Flyes",
+    slug: "flat-bench-cable-flyes",
+    primaryMuscleGroup: "chest",
+    secondaryMuscleGroups: [],
+    equipment: ["cable"],
+    movementPattern: "chest-fly",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: false,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-9",
+    name: "Close-Grip Barbell Bench Press",
+    slug: "close-grip-barbell-bench-press",
+    primaryMuscleGroup: "arms",
+    secondaryMuscleGroups: ["chest", "shoulders"],
+    equipment: ["barbell"],
+    movementPattern: "horizontal-push",
     difficulty: "beginner",
     exerciseType: "strength",
     isCompound: true,
@@ -138,11 +300,11 @@ const templateExercises: WorkoutTemplateExerciseRecord[] = [
 test("getExercisesByCategorySlug filters by muscle and equipment categories", () => {
   assert.deepEqual(
     getExercisesByCategorySlug(exercises, "chest").map((exercise) => exercise.slug),
-    ["bench-press"],
+    ["bench-press", "dumbbell-bench-press", "cable-chest-press", "pushups", "flat-bench-cable-flyes"],
   );
   assert.deepEqual(
     getExercisesByCategorySlug(exercises, "cable").map((exercise) => exercise.slug),
-    ["seated-cable-row"],
+    ["seated-cable-row", "cable-chest-press", "flat-bench-cable-flyes"],
   );
 });
 
@@ -160,4 +322,30 @@ test("getRelatedWorkoutTemplatesForExercise prioritizes templates containing the
   const related = getRelatedWorkoutTemplatesForExercise(exercises[0]!, workoutTemplates, templateExercises, 2);
 
   assert.equal(related[0]?.slug, "upper-workout");
+});
+
+test("getExerciseSubstitutions rejects curls and triceps isolation for bench-pattern substitutions", () => {
+  const benchPress = {
+    ...exercises[0]!,
+    movementPattern: "horizontal-push",
+    alternatives: ["Dumbbell Bicep Curl", "Dumbbell One-Arm Triceps Extension", "Cable Chest Press"],
+  };
+
+  const substitutions = getExerciseSubstitutions(benchPress, exercises, 3);
+
+  assert.deepEqual(
+    substitutions.map((exercise) => exercise.slug).sort(),
+    ["dumbbell-bench-press", "pushups", "cable-chest-press"].sort(),
+  );
+});
+
+test("getExerciseSubstitutions keeps close-grip bench substitutions in the same compound pressing lane", () => {
+  const closeGripBench = {
+    ...exercises[8]!,
+    alternatives: ["Dumbbell One-Arm Triceps Extension", "Dumbbell Bicep Curl"],
+  };
+
+  const substitutions = getExerciseSubstitutions(closeGripBench, exercises, 3);
+
+  assert.deepEqual(substitutions.map((exercise) => exercise.slug), []);
 });

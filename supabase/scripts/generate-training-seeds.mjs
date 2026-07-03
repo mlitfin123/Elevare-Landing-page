@@ -159,13 +159,16 @@ function inferMovementPattern(exercise) {
 
   if (haystack.includes("squat")) return "squat";
   if (haystack.includes("deadlift") || haystack.includes("good morning") || haystack.includes("hinge")) return "hinge";
-  if (haystack.includes("press")) return "press";
+  if (/\b(bench press|floor press|board press|pin press|chest press|push ?ups?|bench dips|dips - triceps version|jm press)\b/.test(haystack)) return "horizontal-push";
+  if (/\b(shoulder press|push press|arnold)\b/.test(haystack)) return "vertical-push";
   if (haystack.includes("row") || haystack.includes("pulldown") || haystack.includes("pull-up") || haystack.includes("chin-up"))
     return "pull";
   if (haystack.includes("lunge") || haystack.includes("split squat") || haystack.includes("step-up")) return "single-leg";
-  if (haystack.includes("curl")) return "curl";
-  if (haystack.includes("extension")) return "extension";
-  if (haystack.includes("raise") || haystack.includes("fly")) return "raise";
+  if (/\b(bicep curls?|hammer curls?|preacher curls?|concentration curls?|barbell curls?|close-grip ez bar curls?|alternate .*curls?|zottman curls?|drag curls?)\b/.test(haystack)) return "elbow-flexion";
+  if ((/\b(triceps|pushdown|skull crusher|kickback)\b/.test(haystack) || haystack.includes("triceps extension")) && !haystack.includes("leg extension")) return "elbow-extension";
+  if ((/\b(flye?s?|pec deck|butterfly)\b/.test(haystack) || haystack.includes("cable fly")) && !haystack.includes("reverse")) return "chest-fly";
+  if (haystack.includes("press")) return "press";
+  if (haystack.includes("raise")) return "raise";
   if (haystack.includes("plank") || haystack.includes("crunch") || haystack.includes("sit-up") || haystack.includes("twist"))
     return "core";
   if (haystack.includes("carry")) return "carry";
@@ -185,6 +188,26 @@ function inferBenefits(exercise, primaryMuscleGroup) {
   if (normalizeCategory(exercise.category) === "stretching") {
     benefits.push("Can improve mobility and help you move more comfortably through the target range.");
   } else if (normalizeCategory(exercise.category) === "cardio") {
+    benefits.push("Adds conditioning work that can support general fitness and work capacity.");
+  } else {
+    benefits.push("Gives you a repeatable way to track progress inside Logbook over time.");
+  }
+
+  return benefits;
+}
+
+function inferBenefitsFromRecord(record) {
+  const benefits = [`Builds strength and control through the ${record.primaryMuscleGroup} region.`];
+
+  if (record.isCompound) {
+    benefits.push("Trains multiple joints at once, which can make your sessions more efficient.");
+  } else {
+    benefits.push("Makes it easier to focus on one area when you want extra practice or volume.");
+  }
+
+  if (record.exerciseType === "stretching") {
+    benefits.push("Can improve mobility and help you move more comfortably through the target range.");
+  } else if (record.exerciseType === "cardio") {
     benefits.push("Adds conditioning work that can support general fitness and work capacity.");
   } else {
     benefits.push("Gives you a repeatable way to track progress inside Logbook over time.");
@@ -227,7 +250,7 @@ function buildExerciseRecord(exercise) {
   const commonMistakes = inferCommonMistakes(exercise);
   const benefits = inferBenefits(exercise, primaryMuscleGroup);
 
-  return {
+  const record = {
     name: cleanText(exercise.name),
     slug,
     primaryMuscleGroup,
@@ -247,6 +270,8 @@ function buildExerciseRecord(exercise) {
     source: "free-exercise-db",
     sourceLicense: "Unlicense",
   };
+
+  return applyCanonicalExerciseOverrides(record);
 }
 
 function scoreExercise(record) {
@@ -259,24 +284,253 @@ function scoreExercise(record) {
   return equipmentScore + categoryScore + muscleScore + instructionScore + compoundScore;
 }
 
-function enrichExerciseRelationships(records) {
-  return records.map((record) => {
-    const similar = records.filter((candidate) => candidate.slug !== record.slug && candidate.primaryMuscleGroup === record.primaryMuscleGroup);
-    const variations = similar
-      .filter((candidate) => candidate.equipment.some((item) => record.equipment.includes(item)))
-      .slice(0, 3)
-      .map((candidate) => candidate.name);
-    const alternatives = similar
-      .filter((candidate) => !candidate.equipment.some((item) => record.equipment.includes(item)))
-      .slice(0, 3)
-      .map((candidate) => candidate.name);
+const LOW_QUALITY_SUBSTITUTION_PATTERN =
+  /\b(with chains|with bands|reverse band|guillotine|behind the head|behind the neck|palms-down|palms-up|plate movers)\b/i;
 
-    return {
-      ...record,
-      variations,
-      alternatives,
-    };
-  });
+const EXERCISE_RELATIONSHIP_OVERRIDES = {
+  "bench-press-powerlifting": {
+    alternatives: ["Barbell Bench Press - Medium Grip", "Dumbbell Bench Press", "Cable Chest Press"],
+    variations: ["Barbell Bench Press - Medium Grip", "Barbell Incline Bench Press - Medium Grip", "Dumbbell Bench Press"],
+  },
+  "barbell-incline-bench-press-medium-grip": {
+    alternatives: ["Dumbbell Bench Press", "Cable Chest Press", "Pushups"],
+    variations: ["Barbell Bench Press - Medium Grip", "Decline Barbell Bench Press", "Hammer Grip Incline DB Bench Press"],
+  },
+  "close-grip-barbell-bench-press": {
+    alternatives: ["Bench Dips", "Dips - Triceps Version"],
+    variations: ["Bench Dips", "Dips - Triceps Version"],
+  },
+  "dumbbell-bicep-curl": {
+    alternatives: ["Alternate Hammer Curl", "Concentration Curls", "Barbell Curl"],
+    variations: ["Alternate Hammer Curl", "Concentration Curls", "Barbell Curl"],
+  },
+  "dumbbell-one-arm-triceps-extension": {
+    alternatives: ["Reverse Grip Triceps Pushdown", "Cable Rope Overhead Triceps Extension", "Decline Dumbbell Triceps Extension"],
+    variations: ["Reverse Grip Triceps Pushdown", "Cable Rope Overhead Triceps Extension", "Decline Dumbbell Triceps Extension"],
+  },
+  "flat-bench-cable-flyes": {
+    alternatives: ["Dumbbell Flyes", "Incline Dumbbell Flyes", "Decline Dumbbell Flyes"],
+    variations: ["Incline Cable Chest Press", "Standing Cable Chest Press", "Cable Chest Press"],
+  },
+};
+
+function getExerciseFamilyTags(exerciseName) {
+  const normalizedName = exerciseName.toLowerCase();
+  const tags = new Set();
+
+  const familyMatchers = [
+    ["bench-press", /\bbench press\b/],
+    ["incline-press", /\bincline\b.*\b(bench press|press)\b|\bhammer grip incline db bench press\b/],
+    ["decline-press", /\bdecline\b.*\b(bench press|press)\b/],
+    ["chest-press", /\bchest press\b/],
+    ["push-up", /\bpush ?ups?\b/],
+    ["dip", /\bdips?\b/],
+    ["row", /\brow\b/],
+    ["pulldown", /\bpull ?down\b/],
+    ["curl", /\bcurls?\b/],
+    ["extension", /\bextensions?\b/],
+    ["pushdown", /\bpush ?down\b/],
+    ["fly", /\bflye?s?\b|\bpec deck\b/],
+  ];
+
+  for (const [tag, pattern] of familyMatchers) {
+    if (pattern.test(normalizedName)) {
+      tags.add(tag);
+    }
+  }
+
+  return [...tags];
+}
+
+function sharesExerciseFamily(left, right) {
+  const leftTags = getExerciseFamilyTags(left.name);
+  const rightTags = getExerciseFamilyTags(right.name);
+
+  return leftTags.some((tag) => rightTags.includes(tag));
+}
+
+function sharesEquipment(left, right) {
+  return left.equipment.some((item) => right.equipment.includes(item));
+}
+
+function sharesTrainingRole(left, right) {
+  if (left.isCompound !== right.isCompound) {
+    return false;
+  }
+
+  if (left.movementPattern === right.movementPattern) {
+    return true;
+  }
+
+  return left.exerciseType === right.exerciseType && sharesExerciseFamily(left, right);
+}
+
+function applyCanonicalExerciseOverrides(record) {
+  const normalizedName = record.name.toLowerCase();
+
+  const setPrimary = (primaryMuscleGroup, secondaryMuscleGroups = record.secondaryMuscleGroups) => {
+    record.primaryMuscleGroup = primaryMuscleGroup;
+    record.secondaryMuscleGroups = [...new Set(secondaryMuscleGroups.filter((group) => group && group !== primaryMuscleGroup))];
+  };
+
+  const setType = (exerciseType) => {
+    record.exerciseType = exerciseType;
+  };
+
+  const setCompound = (isCompound) => {
+    record.isCompound = isCompound;
+  };
+
+  if (normalizedName.includes("close-grip barbell bench press")) {
+    setPrimary("arms", ["chest", "shoulders"]);
+    record.movementPattern = "horizontal-push";
+    setType("strength");
+    setCompound(true);
+  } else if (/\b(bench dips|dips - triceps version|jm press)\b/.test(normalizedName)) {
+    setPrimary("arms", ["chest", "shoulders"]);
+    record.movementPattern = "horizontal-push";
+    setType("strength");
+    setCompound(true);
+  } else if (/\b(bicep curls?|hammer curls?|preacher curls?|concentration curls?|barbell curls?|close-grip ez bar curls?|alternate .*curls?|zottman curls?|drag curls?)\b/.test(normalizedName)) {
+    setPrimary("arms", []);
+    record.movementPattern = "elbow-flexion";
+    setType("strength");
+    setCompound(false);
+  } else if ((/\b(triceps|pushdown|skull crusher|kickback)\b/.test(normalizedName) || normalizedName.includes("triceps extension")) && !normalizedName.includes("leg extension")) {
+    setPrimary("arms", []);
+    record.movementPattern = "elbow-extension";
+    setType("strength");
+    setCompound(false);
+  } else if ((/\b(flye?s?|pec deck|butterfly)\b/.test(normalizedName) || normalizedName.includes("cable fly")) && !normalizedName.includes("reverse")) {
+    setPrimary("chest", []);
+    record.movementPattern = "chest-fly";
+    setType("strength");
+    setCompound(false);
+  } else if (/\b(bench press|floor press|board press|pin press|chest press|push ?ups?|guillotine bench|chest dip)\b/.test(normalizedName) || normalizedName.includes("close-grip dumbbell press")) {
+    setPrimary("chest", ["shoulders", "arms"]);
+    record.movementPattern = "horizontal-push";
+    setType("strength");
+    setCompound(true);
+  }
+
+  record.benefits = inferBenefitsFromRecord(record);
+  return record;
+}
+
+function hasUnsafeSubstitutionMismatch(base, candidate) {
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return true;
+  }
+
+  if (base.movementPattern === "horizontal-push" && ["elbow-flexion", "elbow-extension"].includes(candidate.movementPattern)) {
+    return true;
+  }
+
+  if (base.movementPattern === "elbow-flexion" && candidate.movementPattern !== "elbow-flexion") {
+    return true;
+  }
+
+  if (base.movementPattern === "elbow-extension" && candidate.movementPattern !== "elbow-extension") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "chest" && base.isCompound && candidate.primaryMuscleGroup === "arms") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "arms" && base.isCompound && !candidate.isCompound) {
+    return true;
+  }
+
+  if (base.isCompound && !candidate.isCompound && ["horizontal-push", "vertical-push", "pull", "hinge", "squat"].includes(base.movementPattern)) {
+    return true;
+  }
+
+  return false;
+}
+
+function getSubstitutionCompatibilityScore(base, candidate) {
+  if (hasUnsafeSubstitutionMismatch(base, candidate)) {
+    return -1;
+  }
+
+  const sameMovement = candidate.movementPattern === base.movementPattern;
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovement && !sameFamily) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (candidate.primaryMuscleGroup === base.primaryMuscleGroup) score += 5;
+  if (sameMovement) score += 4;
+  if (sameFamily) score += 3;
+  if (sharesEquipment(base, candidate)) score += 2;
+  if (candidate.isCompound === base.isCompound) score += 2;
+  if (sharesTrainingRole(base, candidate)) score += 1;
+  if (candidate.exerciseType === base.exerciseType) score += 1;
+  if (candidate.difficulty === base.difficulty) score += 1;
+  if (LOW_QUALITY_SUBSTITUTION_PATTERN.test(candidate.name)) score -= 4;
+
+  return score;
+}
+
+function getVariationCompatibilityScore(base, candidate) {
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return -1;
+  }
+
+  const sameMovement = candidate.movementPattern === base.movementPattern;
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovement && !sameFamily) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (sameFamily) score += 4;
+  if (sameMovement) score += 3;
+  if (sharesEquipment(base, candidate)) score += 3;
+  if (candidate.isCompound === base.isCompound) score += 2;
+  if (candidate.difficulty === base.difficulty) score += 1;
+  if (LOW_QUALITY_SUBSTITUTION_PATTERN.test(candidate.name)) score -= 4;
+
+  return score;
+}
+
+function buildRelationshipList(base, records, kind, limit = 3) {
+  const override = EXERCISE_RELATIONSHIP_OVERRIDES[base.slug]?.[kind] ?? [];
+
+  const overrideMatches = override
+    .map((name) => records.find((candidate) => candidate.name === name) ?? null)
+    .filter(Boolean);
+
+  const scoredMatches = records
+    .filter((candidate) => candidate.slug !== base.slug)
+    .map((candidate) => ({
+      candidate,
+      score: kind === "alternatives"
+        ? getSubstitutionCompatibilityScore(base, candidate)
+        : getVariationCompatibilityScore(base, candidate),
+    }))
+    .filter((entry) => entry.score >= (kind === "alternatives" ? 10 : 8))
+    .sort((left, right) => right.score - left.score || left.candidate.name.localeCompare(right.candidate.name))
+    .map((entry) => entry.candidate);
+
+  return [...overrideMatches, ...scoredMatches]
+    .filter((candidate, index, collection) => collection.findIndex((entry) => entry.slug === candidate.slug) === index)
+    .slice(0, limit)
+    .map((candidate) => candidate.name);
+}
+
+function enrichExerciseRelationships(records) {
+  return records.map((record) => ({
+    ...record,
+    alternatives: buildRelationshipList(record, records, "alternatives"),
+    variations: buildRelationshipList(record, records, "variations"),
+  }));
 }
 
 function templateSeed({

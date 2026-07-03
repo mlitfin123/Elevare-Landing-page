@@ -10,6 +10,10 @@ export const metadata = buildMetadata({
     "Explore free calorie, macro, body fat, strength, and contest prep calculators from Elevare.",
   pathname: "/tools",
   canonicalPath: "/calculators",
+  robots: {
+    index: false,
+    follow: true,
+  },
 });
 
 const orderedGroups = ["nutrition", "strength", "prep"] as const;

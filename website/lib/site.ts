@@ -88,8 +88,25 @@ export const productConfig: Record<
   },
 };
 
+function hasFileExtension(pathname: string) {
+  return /\.[a-z0-9]+$/i.test(pathname);
+}
+
+export function normalizeSitePath(pathname: string) {
+  if (!pathname || pathname === "/") {
+    return "/";
+  }
+
+  const [pathWithQuery, hash = ""] = pathname.split("#");
+  const [rawPath, search = ""] = pathWithQuery.split("?");
+  const normalizedPath =
+    rawPath === "/" || hasFileExtension(rawPath) ? rawPath : rawPath.endsWith("/") ? rawPath : `${rawPath}/`;
+
+  return `${normalizedPath}${search ? `?${search}` : ""}${hash ? `#${hash}` : ""}`;
+}
+
 export function absoluteUrl(pathname: string) {
-  return new URL(pathname, siteConfig.url).toString();
+  return new URL(normalizeSitePath(pathname), siteConfig.url).toString();
 }
 
 export function buildMetadata({
@@ -98,14 +115,16 @@ export function buildMetadata({
   pathname,
   canonicalPath,
   type = "website",
+  robots,
 }: {
   title: string;
   description: string;
   pathname: string;
   canonicalPath?: string;
   type?: "website" | "article";
+  robots?: Metadata["robots"];
 }): Metadata {
-  const canonical = canonicalPath ?? pathname;
+  const canonical = normalizeSitePath(canonicalPath ?? pathname);
   const url = absoluteUrl(canonical);
 
   return {
@@ -126,5 +145,6 @@ export function buildMetadata({
       title,
       description,
     },
+    robots,
   };
 }

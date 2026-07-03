@@ -93,6 +93,18 @@ export default function AppsPage() {
                   </li>
                 </ul>
                 <div className="button-row">
+                  <TrackedLink
+                    className="button button-secondary"
+                    href={`/${product.slug}`}
+                    eventName="cta_click"
+                    eventParams={{
+                      cta_name: "View product page",
+                      cta_context: "apps_directory_card",
+                      product: product.title,
+                    }}
+                  >
+                    View product page
+                  </TrackedLink>
                   <ProductCtaButtons product={card.key} context="apps_directory_card" />
                 </div>
               </article>

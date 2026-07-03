@@ -1,11 +1,18 @@
 import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/StructuredData";
 import { ExerciseCard } from "@/components/training/ExerciseCard";
+import { RelatedTrainingTools } from "@/components/training/RelatedTrainingTools";
 import { TrainingLogbookCta } from "@/components/training/TrainingLogbookCta";
 import { WorkoutTemplateCard } from "@/components/training/WorkoutTemplateCard";
 import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, absoluteUrl } from "@/lib/site";
 import { getAllExercises, getAllWorkoutTemplateExercises, getAllWorkoutTemplates, getExerciseBySlug } from "@/lib/training";
+import {
+  getCategoryRelatedToolSlugs,
+  getExerciseCategoryContent,
+  getExerciseCategoryFeaturedExercises,
+  getExerciseRelatedToolSlugs,
+} from "@/lib/training-seo";
 import {
   buildExerciseFaqs,
   buildExerciseSummary,
@@ -16,6 +23,7 @@ import {
   formatMuscleLabel,
   getExerciseCategoryInfo,
   getExerciseSubstitutions,
+  getSupportingExercisesByCategorySlug,
   getExerciseVariations,
   getExercisesByCategorySlug,
   getRelatedExercises,
@@ -70,9 +78,11 @@ export async function generateMetadata({ params }: ExercisePageProps) {
       });
     }
 
+    const categoryContent = getExerciseCategoryContent(category);
+
     return buildMetadata({
       title: category.title,
-      description: category.description,
+      description: categoryContent.introParagraphs[0] ?? category.description,
       pathname: `/exercises/${slug}`,
     });
   }
@@ -138,6 +148,9 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
   }
 
   const categoryExercises = getExercisesByCategorySlug(exercises, slug);
+  const supportingExercises = getSupportingExercisesByCategorySlug(exercises, slug);
+  const categoryContent = getExerciseCategoryContent(category);
+  const featuredExercises = getExerciseCategoryFeaturedExercises(category, exercises, categoryExercises, 10);
   const relatedWorkouts =
     category.kind === "muscle"
       ? workoutTemplates.filter((template) => template.targetMuscleGroups.includes(slug)).slice(0, 4)
@@ -163,7 +176,7 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
           <article className="proof-card">
             <span className="proof-label">Results</span>
             <div className="proof-value">{categoryExercises.length.toLocaleString()}</div>
-            <p className="proof-copy">Exercises currently listed in this category.</p>
+            <p className="proof-copy">Exercises where this is the primary training focus.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Use case</span>
@@ -177,6 +190,54 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
           </article>
         </div>
       </section>
+
+      <section className="section">
+        <article className="panel tool-copy-card">
+          <div className="section-head">
+            <div className="eyebrow">Category guide</div>
+            <h2 className="section-title">How to use this {category.label.toLowerCase()} exercise category.</h2>
+            <p className="section-copy">
+              Use this page to narrow down the options that actually fit the way you train, not just to collect
+              more exercises than you can realistically use.
+            </p>
+          </div>
+
+          <div className="tool-copy-stack">
+            {categoryContent.introParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      {featuredExercises.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">Top exercises</div>
+            <h2 className="section-title">Ten high-value places to start in this category.</h2>
+            <p className="section-copy">
+              If you do not want to scan the full list yet, start with these commonly used exercises first.
+            </p>
+          </div>
+
+          <div className="nutrition-link-cloud">
+            {featuredExercises.map((exercise) => (
+              <TrackedLink
+                key={exercise.slug}
+                className="nutrition-link-pill"
+                href={`/exercises/${exercise.slug}`}
+                eventName="exercise_open"
+                eventParams={{
+                  exercise_slug: exercise.slug,
+                  source_page: `exercise_category_${category.slug}_featured`,
+                }}
+              >
+                {exercise.name}
+              </TrackedLink>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         {categoryExercises.length > 0 ? (
@@ -197,6 +258,29 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
           </article>
         )}
       </section>
+
+      {supportingExercises.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">Supporting matches</div>
+            <h2 className="section-title">Exercises that also train {category.label.toLowerCase()}.</h2>
+            <p className="section-copy">
+              These are not primary {category.label.toLowerCase()} movements, but they still involve the area in a
+              clear secondary way.
+            </p>
+          </div>
+
+          <div className="training-grid">
+            {supportingExercises.map((exercise) => (
+              <ExerciseCard
+                key={exercise.slug}
+                exercise={exercise}
+                sourcePage={`exercise_category_${category.slug}_supporting`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {relatedWorkouts.length > 0 ? (
         <section className="section">
@@ -219,6 +303,34 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
           </div>
         </section>
       ) : null}
+
+      {categoryContent.faqs.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">FAQ</div>
+            <h2 className="section-title">Common questions about {category.label.toLowerCase()} exercises.</h2>
+            <p className="section-copy">
+              These quick answers should make it easier to choose a smaller, more useful exercise shortlist.
+            </p>
+          </div>
+
+          <div className="tool-faq-grid">
+            {categoryContent.faqs.map((faq) => (
+              <article key={faq.question} className="panel tool-faq-card">
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <RelatedTrainingTools
+        title={`Helpful calculators for ${category.label.toLowerCase()} training.`}
+        description="Use these tools to turn the exercise ideas on this page into better calorie, macro, strength, or training-volume decisions."
+        toolSlugs={getCategoryRelatedToolSlugs(category)}
+        sourcePage={`exercise_category_${category.slug}_related_tools`}
+      />
 
       <TrainingLogbookCta
         title="Track this exercise category for free in Logbook."
@@ -325,11 +437,19 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
             </p>
           </div>
 
-          <ol className="article-body">
-            {exercise.instructions.map((instruction) => (
-              <li key={instruction}>{instruction}</li>
-            ))}
-          </ol>
+          {exercise.instructions.length > 0 ? (
+            <ol className="article-body">
+              {exercise.instructions.map((instruction) => (
+                <li key={instruction}>{instruction}</li>
+              ))}
+            </ol>
+          ) : (
+            <p>
+              This exercise page is live, but the step-by-step instruction set is still being expanded inside the
+              public training library. Use the related exercises and workout templates below while the guide is
+              being enriched.
+            </p>
+          )}
         </article>
       </section>
 
@@ -337,19 +457,35 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
         <div className="tool-faq-grid">
           <article className="panel tool-faq-card">
             <h3>Benefits</h3>
-            <ul className="training-list">
-              {exercise.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
+            {exercise.benefits.length > 0 ? (
+              <ul className="training-list">
+                {exercise.benefits.map((benefit) => (
+                  <li key={benefit}>{benefit}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                The public training library is still adding more exercise-specific coaching notes here. In the
+                meantime, use the movement pattern, muscles worked, and related links on this page to decide
+                whether the exercise fits your plan.
+              </p>
+            )}
           </article>
           <article className="panel tool-faq-card">
             <h3>Common mistakes</h3>
-            <ul className="training-list">
-              {exercise.commonMistakes.map((mistake) => (
-                <li key={mistake}>{mistake}</li>
-              ))}
-            </ul>
+            {exercise.commonMistakes.length > 0 ? (
+              <ul className="training-list">
+                {exercise.commonMistakes.map((mistake) => (
+                  <li key={mistake}>{mistake}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                Exercise-specific mistake notes are still being expanded for this page. If you use the movement,
+                keep the setup repeatable and compare it to related exercises if something feels awkward or hard
+                to standardize.
+              </p>
+            )}
           </article>
         </div>
       </section>
@@ -451,6 +587,13 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
           </div>
         </section>
       ) : null}
+
+      <RelatedTrainingTools
+        title="Related calculators for this exercise."
+        description="Use these calculators when you want to connect the exercise itself to calories, protein, strength targets, or training volume."
+        toolSlugs={getExerciseRelatedToolSlugs(exercise)}
+        sourcePage={`exercise_detail_${exercise.slug}_related_tools`}
+      />
 
       <section className="section">
         <div className="section-head">

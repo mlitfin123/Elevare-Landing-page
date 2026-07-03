@@ -44,6 +44,161 @@ function normalizeBoolean(value) {
   return value === true;
 }
 
+function uniqueValues(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function inferBenefitsFromExercise(exercise) {
+  const benefits = [`Builds strength and control through the ${exercise.primaryMuscleGroup ?? "full-body"} region.`];
+
+  if (exercise.isCompound) {
+    benefits.push("Trains multiple joints at once, which can make your sessions more efficient.");
+  } else {
+    benefits.push("Makes it easier to focus on one area when you want extra practice or volume.");
+  }
+
+  if (exercise.exerciseType === "stretching") {
+    benefits.push("Can improve mobility and help you move more comfortably through the target range.");
+  } else if (exercise.exerciseType === "cardio") {
+    benefits.push("Adds conditioning work that can support general fitness and work capacity.");
+  } else {
+    benefits.push("Gives you a repeatable way to track progress inside Logbook over time.");
+  }
+
+  return benefits;
+}
+
+function applyExerciseOverrides(exercise) {
+  const normalizedName = exercise.name.toLowerCase();
+
+  const setPrimaryMuscleGroup = (primaryMuscleGroup, secondaryMuscleGroups = exercise.secondaryMuscleGroups) => {
+    exercise.primaryMuscleGroup = primaryMuscleGroup;
+    exercise.secondaryMuscleGroups = uniqueValues(
+      secondaryMuscleGroups.filter((group) => group && group !== primaryMuscleGroup),
+    );
+  };
+
+  const setMovementPattern = (movementPattern) => {
+    exercise.movementPattern = movementPattern;
+  };
+
+  const setExerciseType = (exerciseType) => {
+    exercise.exerciseType = exerciseType;
+  };
+
+  const setCompoundStatus = (isCompound) => {
+    exercise.isCompound = isCompound;
+  };
+
+  if (/\b(sit[- ]?up|crunch|plank|rollout|leg raise|woodchop)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("core", exercise.secondaryMuscleGroups);
+    setMovementPattern("core");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(hip thrust|glute bridge|pull through)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("glutes", ["legs"]);
+    setMovementPattern("hinge");
+    setExerciseType("strength");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\bdeadlift\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("legs", uniqueValues([...exercise.secondaryMuscleGroups, "back", "glutes"]));
+    setMovementPattern("hinge");
+    setExerciseType("strength");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(squat|lunge|leg press|leg curls?|leg extension)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("legs", uniqueValues([...exercise.secondaryMuscleGroups, "glutes"]));
+    setExerciseType("strength");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(bench dips|dips - triceps version|jm press)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("arms", ["chest", "shoulders"]);
+    setMovementPattern("horizontal-push");
+    setExerciseType("strength");
+    setCompoundStatus(true);
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(bicep curls?|hammer curls?|preacher curls?|concentration curls?|barbell curls?|close-grip ez bar curls?|alternate .*curls?|zottman curls?|drag curls?)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("arms", []);
+    setMovementPattern("elbow-flexion");
+    setExerciseType("strength");
+    setCompoundStatus(false);
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if ((/\b(triceps|pushdown|skull crusher|kickback)\b/.test(normalizedName) || normalizedName.includes("triceps extension"))
+    && !/\bleg extension\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("arms", []);
+    setMovementPattern("elbow-extension");
+    setExerciseType("strength");
+    setCompoundStatus(false);
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(upright row|rear delt|rear-delt|lateral raise|laterals|shoulder press|shoulder raise|arnold press|face pull|row to neck)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("shoulders", uniqueValues([...exercise.secondaryMuscleGroups, "arms", "back"]));
+    if (/\b(shoulder press|arnold press)\b/.test(normalizedName)) {
+      setMovementPattern("vertical-push");
+    }
+    setExerciseType("strength");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(pulldown|pull ?up|chin ?up|row)\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("back", uniqueValues([...exercise.secondaryMuscleGroups, "arms"]));
+    setMovementPattern("pull");
+    setExerciseType("strength");
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (normalizedName.includes("close-grip barbell bench press")) {
+    setPrimaryMuscleGroup("arms", ["chest", "shoulders"]);
+    setMovementPattern("horizontal-push");
+    setExerciseType("strength");
+    setCompoundStatus(true);
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if ((/\b(flye?s?|pec deck|butterfly)\b/.test(normalizedName) && !/\breverse\b/.test(normalizedName)) || normalizedName.includes("cable fly")) {
+    setPrimaryMuscleGroup("chest", uniqueValues([...exercise.secondaryMuscleGroups, "shoulders", "arms"]));
+    setMovementPattern("chest-fly");
+    setExerciseType("strength");
+    setCompoundStatus(false);
+    exercise.secondaryMuscleGroups = [];
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  if (/\b(bench press|floor press|board press|pin press|chest press|pushups?|guillotine bench|chest dip)\b/.test(normalizedName)
+    || /\bclose-grip dumbbell press\b/.test(normalizedName)) {
+    setPrimaryMuscleGroup("chest", ["shoulders", "arms"]);
+    setMovementPattern("horizontal-push");
+    setExerciseType("strength");
+    setCompoundStatus(true);
+    exercise.benefits = inferBenefitsFromExercise(exercise);
+    return exercise;
+  }
+
+  exercise.benefits = inferBenefitsFromExercise(exercise);
+  return exercise;
+}
+
 function normalizeNumber(value) {
   if (typeof value === "number") {
     return value;
@@ -55,6 +210,271 @@ function normalizeNumber(value) {
 
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+const LOW_QUALITY_SUBSTITUTION_PATTERN =
+  /\b(with chains|with bands|reverse band|guillotine|behind the head|behind the neck|palms-down|palms-up|plate movers)\b/i;
+
+const EXERCISE_RELATIONSHIP_OVERRIDES = {
+  "bench-press-powerlifting": {
+    alternatives: ["Barbell Bench Press - Medium Grip", "Dumbbell Bench Press", "Cable Chest Press"],
+    variations: ["Barbell Bench Press - Medium Grip", "Barbell Incline Bench Press - Medium Grip", "Dumbbell Bench Press"],
+  },
+  "barbell-incline-bench-press-medium-grip": {
+    alternatives: ["Dumbbell Bench Press", "Cable Chest Press", "Pushups"],
+    variations: ["Barbell Bench Press - Medium Grip", "Decline Barbell Bench Press", "Hammer Grip Incline DB Bench Press"],
+  },
+  "close-grip-barbell-bench-press": {
+    alternatives: ["Bench Dips", "Dips - Triceps Version"],
+    variations: ["Bench Dips", "Dips - Triceps Version"],
+  },
+  "dumbbell-bicep-curl": {
+    alternatives: ["Alternate Hammer Curl", "Concentration Curls", "Barbell Curl"],
+    variations: ["Alternate Hammer Curl", "Concentration Curls", "Barbell Curl"],
+  },
+  "dumbbell-one-arm-triceps-extension": {
+    alternatives: ["Reverse Grip Triceps Pushdown", "Cable Rope Overhead Triceps Extension", "Decline Dumbbell Triceps Extension"],
+    variations: ["Reverse Grip Triceps Pushdown", "Cable Rope Overhead Triceps Extension", "Decline Dumbbell Triceps Extension"],
+  },
+  "flat-bench-cable-flyes": {
+    alternatives: ["Dumbbell Flyes", "Incline Dumbbell Flyes", "Decline Dumbbell Flyes"],
+    variations: ["Incline Cable Chest Press", "Standing Cable Chest Press", "Cable Chest Press"],
+  },
+};
+
+function getExerciseFamilyTags(exerciseName) {
+  const normalizedName = exerciseName.toLowerCase();
+  const tags = new Set();
+
+  const familyMatchers = [
+    ["bench-press", /\bbench press\b/],
+    ["incline-press", /\bincline\b.*\b(bench press|press)\b|\bhammer grip incline db bench press\b/],
+    ["decline-press", /\bdecline\b.*\b(bench press|press)\b/],
+    ["chest-press", /\bchest press\b/],
+    ["push-up", /\bpush ?ups?\b/],
+    ["dip", /\bdips?\b/],
+    ["deadlift", /\bdeadlift\b/],
+    ["squat", /\bsquat\b/],
+    ["lunge", /\blunge\b/],
+    ["row", /\brow\b/],
+    ["pulldown", /\bpull ?down\b/],
+    ["pull-up", /\bpull ?up\b/],
+    ["curl", /\bcurls?\b/],
+    ["pushdown", /\bpush ?down\b/],
+    ["extension", /\bextensions?\b/],
+    ["raise", /\braise\b/],
+    ["fly", /\bflye?s?\b|\bpec deck\b/],
+  ];
+
+  for (const [tag, pattern] of familyMatchers) {
+    if (pattern.test(normalizedName)) {
+      tags.add(tag);
+    }
+  }
+
+  return [...tags];
+}
+
+function normalizeMovementPatternForCompatibility(exercise) {
+  const pattern = (exercise.movementPattern ?? "general").toLowerCase();
+  const name = exercise.name.toLowerCase();
+
+  if (["horizontal-push", "vertical-push", "elbow-flexion", "elbow-extension", "chest-fly"].includes(pattern)) {
+    return pattern;
+  }
+
+  if (pattern === "press") {
+    if (/\b(bench press|floor press|board press|pin press|chest press|push ?ups?|bench dips|dips - triceps version|jm press)\b/.test(name)) {
+      return "horizontal-push";
+    }
+
+    if (/\b(shoulder press|push press|arnold)\b/.test(name)) {
+      return "vertical-push";
+    }
+  }
+
+  if (pattern === "curl") return "elbow-flexion";
+  if (pattern === "extension") return "elbow-extension";
+
+  if (pattern === "raise") {
+    if ((/\b(flye?s?|pec deck)\b/.test(name) || /\bbutterfly\b/.test(name)) && !/\breverse\b/.test(name) && exercise.primaryMuscleGroup === "chest") {
+      return "chest-fly";
+    }
+  }
+
+  return pattern || "general";
+}
+
+function sharesExerciseFamily(left, right) {
+  const leftTags = getExerciseFamilyTags(left.name);
+  const rightTags = getExerciseFamilyTags(right.name);
+
+  return leftTags.some((tag) => rightTags.includes(tag));
+}
+
+function sharesEquipment(left, right) {
+  return left.equipment.some((item) => right.equipment.includes(item));
+}
+
+function sharesTrainingRole(left, right) {
+  if (left.isCompound !== right.isCompound) {
+    return false;
+  }
+
+  const leftPattern = normalizeMovementPatternForCompatibility(left);
+  const rightPattern = normalizeMovementPatternForCompatibility(right);
+
+  if (leftPattern === rightPattern) {
+    return true;
+  }
+
+  return left.exerciseType === right.exerciseType && sharesExerciseFamily(left, right);
+}
+
+function hasUnsafeSubstitutionMismatch(base, candidate) {
+  const basePattern = normalizeMovementPatternForCompatibility(base);
+  const candidatePattern = normalizeMovementPatternForCompatibility(candidate);
+
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return true;
+  }
+
+  if (basePattern === "horizontal-push" && ["elbow-flexion", "elbow-extension"].includes(candidatePattern)) {
+    return true;
+  }
+
+  if (basePattern === "elbow-flexion" && candidatePattern !== "elbow-flexion") {
+    return true;
+  }
+
+  if (basePattern === "elbow-extension" && candidatePattern !== "elbow-extension") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "chest" && base.isCompound && candidate.primaryMuscleGroup === "arms") {
+    return true;
+  }
+
+  if (base.primaryMuscleGroup === "arms" && base.isCompound && !candidate.isCompound) {
+    return true;
+  }
+
+  if (base.isCompound && !candidate.isCompound && ["horizontal-push", "vertical-push", "pull", "hinge", "squat"].includes(basePattern)) {
+    return true;
+  }
+
+  if (!base.isCompound && candidate.isCompound && ["elbow-flexion", "elbow-extension", "chest-fly"].includes(basePattern)) {
+    return true;
+  }
+
+  return false;
+}
+
+function getSubstitutionCompatibilityScore(base, candidate) {
+  if (hasUnsafeSubstitutionMismatch(base, candidate)) {
+    return -1;
+  }
+
+  const basePattern = normalizeMovementPatternForCompatibility(base);
+  const candidatePattern = normalizeMovementPatternForCompatibility(candidate);
+  const sameMovementPattern = candidatePattern === basePattern;
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovementPattern && !sameFamily) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (candidate.primaryMuscleGroup === base.primaryMuscleGroup) score += 5;
+  if (sameMovementPattern) score += 4;
+  if (sameFamily) score += 3;
+  if (sharesEquipment(base, candidate)) score += 2;
+  if (candidate.isCompound === base.isCompound) score += 2;
+  if (sharesTrainingRole(base, candidate)) score += 1;
+  if (candidate.exerciseType === base.exerciseType) score += 1;
+  if (candidate.difficulty === base.difficulty) score += 1;
+  if (LOW_QUALITY_SUBSTITUTION_PATTERN.test(candidate.name)) score -= 4;
+
+  return score;
+}
+
+function getVariationCompatibilityScore(base, candidate) {
+  if (candidate.slug === base.slug || candidate.primaryMuscleGroup !== base.primaryMuscleGroup) {
+    return -1;
+  }
+
+  const basePattern = normalizeMovementPatternForCompatibility(base);
+  const candidatePattern = normalizeMovementPatternForCompatibility(candidate);
+  const sameMovementPattern = candidatePattern === basePattern;
+  const sameFamily = sharesExerciseFamily(base, candidate);
+
+  if (!sameMovementPattern && !sameFamily) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (sameFamily) score += 4;
+  if (sameMovementPattern) score += 3;
+  if (sharesEquipment(base, candidate)) score += 3;
+  if (candidate.isCompound === base.isCompound) score += 2;
+  if (candidate.difficulty === base.difficulty) score += 1;
+  if (LOW_QUALITY_SUBSTITUTION_PATTERN.test(candidate.name)) score -= 4;
+
+  return score;
+}
+
+function buildRelationshipList(base, exercises, kind, limit = 3) {
+  const override = EXERCISE_RELATIONSHIP_OVERRIDES[base.slug]?.[kind] ?? [];
+
+  const overrideMatches = override
+    .map((name) => exercises.find((candidate) => candidate.name === name) ?? null)
+    .filter(Boolean);
+
+  const scoredMatches = exercises
+    .filter((candidate) => candidate.slug !== base.slug)
+    .map((candidate) => ({
+      candidate,
+      score:
+        kind === "alternatives"
+          ? getSubstitutionCompatibilityScore(base, candidate)
+          : getVariationCompatibilityScore(base, candidate),
+    }))
+    .filter((entry) => entry.score >= (kind === "alternatives" ? 10 : 8))
+    .sort((left, right) => right.score - left.score || left.candidate.name.localeCompare(right.candidate.name))
+    .map((entry) => entry.candidate);
+
+  return [...overrideMatches, ...scoredMatches]
+    .filter((candidate, index, collection) => collection.findIndex((entry) => entry.slug === candidate.slug) === index)
+    .slice(0, limit)
+    .map((candidate) => candidate.name);
+}
+
+function rebuildExerciseRelationships(exercises) {
+  return exercises.map((exercise) => ({
+    ...exercise,
+    alternatives: buildRelationshipList(exercise, exercises, "alternatives"),
+    variations: buildRelationshipList(exercise, exercises, "variations"),
+  }));
+}
+
+function normalizeTrainingSnapshot(snapshot) {
+  const exercises = rebuildExerciseRelationships(snapshot.exercises.map((exercise) => applyExerciseOverrides({
+    ...exercise,
+    secondaryMuscleGroups: normalizeTextArray(exercise.secondaryMuscleGroups),
+    equipment: normalizeTextArray(exercise.equipment),
+    instructions: normalizeTextArray(exercise.instructions),
+    commonMistakes: normalizeTextArray(exercise.commonMistakes),
+    benefits: normalizeTextArray(exercise.benefits),
+    alternatives: normalizeTextArray(exercise.alternatives),
+    variations: normalizeTextArray(exercise.variations),
+  })));
+
+  return {
+    ...snapshot,
+    exercises,
+  };
 }
 
 async function readExistingSnapshot() {
@@ -121,7 +541,7 @@ async function fetchAllPages(table, select, extraParams = {}, order = "name.asc"
 }
 
 function sanitizeExercise(row) {
-  return {
+  const exercise = {
     id: row.id,
     name: cleanText(row.name),
     slug: cleanText(row.slug),
@@ -144,6 +564,8 @@ function sanitizeExercise(row) {
     createdAt: normalizeText(row.created_at),
     updatedAt: normalizeText(row.updated_at),
   };
+
+  return applyExerciseOverrides(exercise);
 }
 
 function sanitizeWorkoutTemplate(row) {
@@ -282,23 +704,35 @@ async function fetchTrainingSnapshot() {
 async function main() {
   const existingSnapshot = await readExistingSnapshot();
   const bootstrapSnapshot = await readBootstrapSnapshot();
-  const bestFallbackSnapshot =
+  const normalizedExistingSnapshot =
     existingSnapshot && Array.isArray(existingSnapshot.exercises) && existingSnapshot.exercises.length > 0
-      ? existingSnapshot
-      : bootstrapSnapshot ?? existingSnapshot ?? emptySnapshot;
+      ? normalizeTrainingSnapshot(existingSnapshot)
+      : null;
+  const normalizedBootstrapSnapshot =
+    bootstrapSnapshot && Array.isArray(bootstrapSnapshot.exercises) && bootstrapSnapshot.exercises.length > 0
+      ? normalizeTrainingSnapshot(bootstrapSnapshot)
+      : null;
+  const bestFallbackSnapshot =
+    normalizedBootstrapSnapshot
+    ?? normalizedExistingSnapshot
+    ?? normalizeTrainingSnapshot(emptySnapshot);
 
   if (!serviceRoleKey) {
     await writeSnapshot(bestFallbackSnapshot);
     console.log(
       `Skipped training data refresh because SUPABASE_SERVICE_ROLE_KEY is not set. Using ${
-        bestFallbackSnapshot === bootstrapSnapshot ? "the shared bootstrap" : "the existing"
+        bestFallbackSnapshot === normalizedBootstrapSnapshot
+          ? "the shared bootstrap"
+          : normalizedExistingSnapshot
+            ? "the existing"
+            : "the empty fallback"
       } training snapshot instead.`,
     );
     return;
   }
 
   try {
-    const snapshot = await fetchTrainingSnapshot();
+    const snapshot = normalizeTrainingSnapshot(await fetchTrainingSnapshot());
     await writeSnapshot(snapshot);
     console.log(
       `Generated training data for ${snapshot.exercises.length} exercises and ${snapshot.workoutTemplates.length} workout templates.`,
@@ -307,9 +741,9 @@ async function main() {
     await writeSnapshot(bestFallbackSnapshot);
     console.warn(
       `Fell back to ${
-        bestFallbackSnapshot === bootstrapSnapshot
+        bestFallbackSnapshot === normalizedBootstrapSnapshot
           ? "the shared bootstrap"
-          : existingSnapshot
+          : normalizedExistingSnapshot
             ? "the previous"
             : "an empty"
       } training snapshot because Supabase training data could not be loaded.`,
