@@ -14,6 +14,8 @@ import {
   getNormalizedExerciseMovementPattern,
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
+  matchesPrimaryMuscleCategory,
+  normalizeMuscleGroup,
   type ExerciseRecord,
   type WorkoutTemplateExerciseRecord,
   type WorkoutTemplateRecord,
@@ -118,9 +120,14 @@ function slugDuplicates(values: string[]) {
 }
 
 function isClearlyRelevantSecondaryMatch(exercise: ExerciseRecord, categorySlug: string) {
-  return categorySlug === "glutes"
-    && exercise.secondaryMuscleGroups.includes("glutes")
-    && exercise.primaryMuscleGroup === "legs"
+  const normalizedCategory = normalizeMuscleGroup(categorySlug);
+  const normalizedSecondaries = exercise.secondaryMuscleGroups
+    .map((group) => normalizeMuscleGroup(group))
+    .filter((group): group is string => group != null);
+
+  return normalizedCategory === "glutes"
+    && normalizedSecondaries.includes("glutes")
+    && matchesPrimaryMuscleCategory(exercise, "legs")
     && ["hinge", "squat", "single-leg", "general"].includes(exercise.movementPattern ?? "general");
 }
 
@@ -231,7 +238,7 @@ function main() {
     getExercisesByCategorySlug(trainingSnapshot.exercises, category.slug)
       .filter(
         (exercise) =>
-          exercise.primaryMuscleGroup !== category.slug && !isClearlyRelevantSecondaryMatch(exercise, category.slug),
+          !matchesPrimaryMuscleCategory(exercise, category.slug) && !isClearlyRelevantSecondaryMatch(exercise, category.slug),
       )
       .map((exercise) => `${category.slug}: ${exercise.name} (${exercise.slug})`),
   );

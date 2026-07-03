@@ -220,6 +220,24 @@ const exerciseCategoryMap = new Map(
 );
 const workoutGoalMap = new Map(WORKOUT_GOALS.map((goal) => [goal.slug, goal]));
 
+const CANONICAL_MUSCLE_GROUP_ALIASES = new Map<string, string>([
+  ["chest", "chest"],
+  ["back", "back"],
+  ["leg", "legs"],
+  ["legs", "legs"],
+  ["shoulder", "shoulders"],
+  ["shoulders", "shoulders"],
+  ["arm", "arms"],
+  ["arms", "arms"],
+  ["core", "core"],
+  ["abs", "core"],
+  ["abdominal", "core"],
+  ["abdominals", "core"],
+  ["glute", "glutes"],
+  ["glutes", "glutes"],
+  ["gluteus", "glutes"],
+]);
+
 export function titleCase(value: string) {
   return value
     .split(/[\s-]+/)
@@ -286,6 +304,30 @@ export function isWorkoutGoalSlug(slug: string) {
 
 export function getWorkoutGoalInfo(slug: string) {
   return workoutGoalMap.get(slug) ?? null;
+}
+
+export function normalizeMuscleGroup(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  return CANONICAL_MUSCLE_GROUP_ALIASES.get(normalized) ?? normalized;
+}
+
+export function matchesPrimaryMuscleCategory(exercise: ExerciseRecord, muscleGroup: string) {
+  const normalizedCategory = normalizeMuscleGroup(muscleGroup);
+
+  if (!normalizedCategory) {
+    return false;
+  }
+
+  return normalizeMuscleGroup(exercise.primaryMuscleGroup) === normalizedCategory;
 }
 
 function matchesQuery(haystackParts: Array<string | null | undefined>, query: string) {
@@ -398,12 +440,22 @@ function sharesTrainingRole(left: ExerciseRecord, right: ExerciseRecord) {
 }
 
 function isClearlyRelevantSecondaryMatch(exercise: ExerciseRecord, muscleGroup: string) {
-  if (!exercise.secondaryMuscleGroups.includes(muscleGroup)) {
+  const normalizedCategory = normalizeMuscleGroup(muscleGroup);
+
+  if (!normalizedCategory) {
     return false;
   }
 
-  if (muscleGroup === "glutes") {
-    return exercise.primaryMuscleGroup === "legs"
+  const normalizedSecondaries = exercise.secondaryMuscleGroups
+    .map((group) => normalizeMuscleGroup(group))
+    .filter((group): group is string => group != null);
+
+  if (!normalizedSecondaries.includes(normalizedCategory)) {
+    return false;
+  }
+
+  if (normalizedCategory === "glutes") {
+    return matchesPrimaryMuscleCategory(exercise, "legs")
       && ["hinge", "squat", "single-leg", "general"].includes(exercise.movementPattern ?? "general");
   }
 
@@ -539,7 +591,7 @@ export function filterExercisesByMuscleGroup(exercises: ExerciseRecord[], muscle
   if (!muscleGroup || muscleGroup === "all") return exercises;
 
   return exercises.filter(
-    (exercise) => exercise.primaryMuscleGroup === muscleGroup,
+    (exercise) => matchesPrimaryMuscleCategory(exercise, muscleGroup),
   );
 }
 
@@ -557,7 +609,7 @@ export function getExercisesByCategorySlug(exercises: ExerciseRecord[], slug: st
   }
 
   return exercises.filter(
-    (exercise) => exercise.primaryMuscleGroup === category.slug,
+    (exercise) => matchesPrimaryMuscleCategory(exercise, category.slug),
   );
 }
 
@@ -568,7 +620,7 @@ export function getSupportingExercisesByCategorySlug(exercises: ExerciseRecord[]
   }
 
   return exercises.filter(
-    (exercise) => exercise.primaryMuscleGroup !== category.slug && isClearlyRelevantSecondaryMatch(exercise, category.slug),
+    (exercise) => !matchesPrimaryMuscleCategory(exercise, category.slug) && isClearlyRelevantSecondaryMatch(exercise, category.slug),
   );
 }
 

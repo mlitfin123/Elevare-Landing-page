@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
+  getSupportingExercisesByCategorySlug,
   getRelatedWorkoutTemplatesForExercise,
   groupWorkoutExercisesByDay,
   joinTemplateExercises,
@@ -219,6 +220,98 @@ const exercises: ExerciseRecord[] = [
     createdAt: null,
     updatedAt: null,
   },
+  {
+    id: "ex-10",
+    name: "Machine Chest Press",
+    slug: "machine-chest-press",
+    primaryMuscleGroup: "Chest",
+    secondaryMuscleGroups: ["Shoulders", "Arms"],
+    equipment: ["machine"],
+    movementPattern: "horizontal-push",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-11",
+    name: "Upper Chest Squeeze Press",
+    slug: "upper-chest-squeeze-press",
+    primaryMuscleGroup: "upper chest",
+    secondaryMuscleGroups: ["arms"],
+    equipment: ["dumbbell"],
+    movementPattern: "horizontal-push",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-12",
+    name: "Barbell Split Squat",
+    slug: "barbell-split-squat",
+    primaryMuscleGroup: "legs",
+    secondaryMuscleGroups: ["glutes"],
+    equipment: ["barbell"],
+    movementPattern: "single-leg",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
+  {
+    id: "ex-13",
+    name: "Glute Bridge",
+    slug: "glute-bridge",
+    primaryMuscleGroup: "glutes",
+    secondaryMuscleGroups: ["legs"],
+    equipment: ["bodyweight"],
+    movementPattern: "hinge",
+    difficulty: "beginner",
+    exerciseType: "strength",
+    isCompound: true,
+    instructions: [],
+    commonMistakes: [],
+    benefits: [],
+    alternatives: [],
+    variations: [],
+    seoTitle: null,
+    seoDescription: null,
+    source: null,
+    sourceLicense: null,
+    createdAt: null,
+    updatedAt: null,
+  },
 ];
 
 const workoutTemplates: WorkoutTemplateRecord[] = [
@@ -300,11 +393,38 @@ const templateExercises: WorkoutTemplateExerciseRecord[] = [
 test("getExercisesByCategorySlug filters by muscle and equipment categories", () => {
   assert.deepEqual(
     getExercisesByCategorySlug(exercises, "chest").map((exercise) => exercise.slug),
-    ["bench-press", "dumbbell-bench-press", "cable-chest-press", "pushups", "flat-bench-cable-flyes"],
+    ["bench-press", "dumbbell-bench-press", "cable-chest-press", "pushups", "flat-bench-cable-flyes", "machine-chest-press"],
   );
   assert.deepEqual(
     getExercisesByCategorySlug(exercises, "cable").map((exercise) => exercise.slug),
     ["seated-cable-row", "cable-chest-press", "flat-bench-cable-flyes"],
+  );
+});
+
+test("getExercisesByCategorySlug uses exact normalized primary muscle matches only", () => {
+  assert.deepEqual(
+    getExercisesByCategorySlug(exercises, "chest").map((exercise) => exercise.slug),
+    ["bench-press", "dumbbell-bench-press", "cable-chest-press", "pushups", "flat-bench-cable-flyes", "machine-chest-press"],
+  );
+
+  assert.equal(
+    getExercisesByCategorySlug(exercises, "chest").some((exercise) => exercise.slug === "close-grip-barbell-bench-press"),
+    false,
+  );
+  assert.equal(
+    getExercisesByCategorySlug(exercises, "chest").some((exercise) => exercise.slug === "upper-chest-squeeze-press"),
+    false,
+  );
+});
+
+test("getSupportingExercisesByCategorySlug keeps secondary-only matches out of the main list", () => {
+  assert.deepEqual(
+    getSupportingExercisesByCategorySlug(exercises, "glutes").map((exercise) => exercise.slug),
+    ["barbell-split-squat"],
+  );
+  assert.equal(
+    getExercisesByCategorySlug(exercises, "glutes").some((exercise) => exercise.slug === "barbell-split-squat"),
+    false,
   );
 });
 
