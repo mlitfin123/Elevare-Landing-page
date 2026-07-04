@@ -2,12 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 const navigation = [
-  { href: "/apps/", label: "Apps" },
   { href: "/calculators/", label: "Tools" },
-  { href: "/tools/workout-generator/", label: "Workout Finder" },
+  { href: "/exercises/", label: "Exercises" },
+  { href: "/workouts/", label: "Workouts" },
   { href: "/nutrition/", label: "Nutrition" },
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/blog/", label: "Insights" },
+  { href: "/apps/", label: "Apps" },
+  { href: "/blog/", label: "Blog" },
+  { href: "/#waitlist", label: "Elevare Waitlist" },
 ];
 
 export function Header() {
@@ -26,8 +27,8 @@ export function Header() {
             />
           </span>
           <span className="brand-copy">
-            <span className="brand-word">Elevare</span>
-            <span className="brand-sub">Founding Waitlist</span>
+            <span className="brand-word">ElevareFit</span>
+            <span className="brand-sub">Tools, workouts, apps</span>
           </span>
         </Link>
 
@@ -37,8 +38,8 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link className="button-link" href="/#waitlist">
-            Join Waitlist
+          <Link className="button-link" href="/logbook/">
+            Get Logbook
           </Link>
         </nav>
       </div>

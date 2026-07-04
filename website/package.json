@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Next.js content hub for the Elevare ecosystem.",
+  "description": "Next.js content hub for ElevareFit tools, apps, workouts, exercises, and nutrition resources.",
   "scripts": {
     "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
     "dev": "next dev",

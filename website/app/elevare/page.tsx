@@ -5,7 +5,7 @@ import { buildMetadata } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "Elevare",
   description:
-    "Elevare is the coaching marketplace in the ecosystem, built to connect members and coaches with more clarity.",
+    "Elevare is the coming-soon coaching marketplace on ElevareFit, built to help people find the right trainer or coach.",
   pathname: "/elevare",
 });
 
@@ -14,10 +14,10 @@ export default function ElevarePage() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">Elevare</div>
-        <h1>A marketplace built around fit, clarity, and better coaching discovery.</h1>
+        <h1>The coming-soon marketplace for finding the right trainer or coach.</h1>
         <p>
-          Elevare is built to help members discover coaches with more confidence and help coaches get in front
-          of the right people with more clarity.
+          Elevare is one upcoming part of ElevareFit, built to help members discover better-fit coaching
+          support and help coaches get in front of the right people with more clarity.
         </p>
         <div className="button-row">
           <TrackedLink
@@ -63,16 +63,16 @@ export default function ElevarePage() {
 
           <article className="panel">
             <span className="stat-label">Status</span>
-            <h3>Marketplace in progress</h3>
-            <p>Actively being developed as the relationship layer in the ecosystem.</p>
+            <h3>Coming soon</h3>
+            <p>Actively being developed as the marketplace layer inside the broader ElevareFit platform.</p>
           </article>
         </div>
       </section>
 
       <Callout title="Where Elevare fits">
         <p>
-          Elevare turns the ecosystem outward. Tracking and prep matter most when they connect people to the
-          right support, and Elevare is the piece built to make that connection easier.
+          Elevare is the part of the platform focused on personal guidance. The goal is to make coach discovery
+          feel clearer once the marketplace opens, without making the entire website only about the waitlist.
         </p>
       </Callout>
     </div>

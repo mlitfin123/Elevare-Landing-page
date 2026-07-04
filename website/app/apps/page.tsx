@@ -5,7 +5,7 @@ import { buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "Apps",
   description:
-    "Explore Logbook, StageLab, and Elevare as one connected fitness performance ecosystem.",
+    "Explore the ElevareFit apps for tracking, competition prep, and coming-soon coaching support.",
   pathname: "/apps",
 });
 
@@ -32,35 +32,33 @@ export default function AppsPage() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">Apps</div>
-        <h1>One ecosystem for tracking, prep, and coaching.</h1>
+        <h1>Apps built for tracking, prep, and coaching support.</h1>
         <p>
-          Elevare Fit LLC is building a connected set of products across the day-to-day habit of training,
-          the structure of competition prep, and the marketplace layer that helps people find the right
-          coaching support.
+          Explore the ElevareFit app lineup across day-to-day training, competition prep, and the coming-soon
+          marketplace layer for finding the right coach.
         </p>
         <div className="button-row">
           <TrackedLink
             className="button button-primary"
-            href="/blog"
+            href="/calculators"
             eventName="cta_click"
             eventParams={{
-              cta_name: "Read insights",
+              cta_name: "Explore free tools",
               cta_context: "apps_hero",
             }}
           >
-            Read insights
+            Explore free tools
           </TrackedLink>
           <TrackedLink
             className="button button-secondary"
-            href="/elevare"
+            href="/blog"
             eventName="cta_click"
             eventParams={{
-              cta_name: "Explore Elevare",
+              cta_name: "Read the blog",
               cta_context: "apps_hero",
-              product: "Elevare",
             }}
           >
-            Explore Elevare
+            Read the blog
           </TrackedLink>
         </div>
       </section>

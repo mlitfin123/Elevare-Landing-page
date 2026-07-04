@@ -6,7 +6,7 @@ import { buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "Logbook",
   description:
-    "Logbook is the fitness tracking app in the Elevare ecosystem, built for clean training visibility.",
+    "Logbook is the ElevareFit tracking app for nutrition, workouts, body weight, and progress visibility.",
   pathname: "/logbook",
 });
 
@@ -19,8 +19,8 @@ export default function LogbookPage() {
         <div className="eyebrow">Logbook</div>
         <h1>Track workouts without turning tracking into another job.</h1>
         <p>
-          Logbook is the tracking layer of the Elevare ecosystem, built to make training simpler to record,
-          easier to review, and more consistent over time.
+          Logbook is the main tracking app on ElevareFit, built to make training, nutrition, and progress
+          easier to record, review, and repeat with consistency.
         </p>
         <div className="button-row">
           <ProductCtaButtons product="Logbook" context="logbook_hero" />
@@ -29,12 +29,12 @@ export default function LogbookPage() {
             href="/blog"
             eventName="cta_click"
             eventParams={{
-              cta_name: "Read insights",
+              cta_name: "Read the blog",
               cta_context: "logbook_hero",
               product: "Logbook",
             }}
           >
-            Read insights
+            Read the blog
           </TrackedLink>
         </div>
       </section>
@@ -56,15 +56,15 @@ export default function LogbookPage() {
           <article className="panel">
             <span className="stat-label">Status</span>
             <h3>{logbook.status}</h3>
-            <p>Available now on the App Store and Google Play as part of the wider Elevare product ecosystem.</p>
+            <p>Available now on the App Store and Google Play through the wider ElevareFit platform.</p>
           </article>
         </div>
       </section>
 
       <Callout title="Where Logbook fits">
         <p>
-          Logbook is about the day-to-day habit of training. It focuses on capturing the work itself so the rest
-          of the ecosystem can build on real behavior rather than vague intent.
+          Logbook focuses on the day-to-day habit of training. It helps you capture the work itself so your
+          nutrition, workouts, and progress are easier to review from a clean baseline.
         </p>
         <div className="hero-actions">
           <TrackedLink

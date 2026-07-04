@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const siteConfig = {
-  name: "Elevare",
-  title: "Elevare",
+  name: "ElevareFit",
+  title: "ElevareFit",
   description:
-    "Join the Elevare waitlist and explore the connected ecosystem around coaching, tracking, and prep.",
+    "ElevareFit is a fitness platform with free tools, exercise guides, workout templates, nutrition resources, and apps for tracking and prep.",
   url: "https://www.elevarefit.org",
   waitlist: {
     endpoint: "https://yozfzsudbcqjttepjnyg.supabase.co/functions/v1/resend-waitlist",
@@ -79,8 +79,8 @@ export const productConfig: Record<
     slug: "elevare",
     title: "Elevare",
     description:
-      "A coaching marketplace built to help members find the right coach and help coaches get discovered by the right people.",
-    status: "Waitlist open",
+      "A coming-soon coaching marketplace built to help people find the right trainer or coach and help coaches get discovered by the right clients.",
+    status: "Coming soon",
     idealUser:
       "People looking for coaching and coaches looking for better discovery and fit.",
     ctaLabel: "Join the Elevare waitlist",

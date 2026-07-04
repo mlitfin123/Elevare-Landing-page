@@ -5,7 +5,7 @@ import { buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "StageLab",
   description:
-    "StageLab is the competition prep and performance workflow app in the Elevare ecosystem, now available on iOS.",
+    "StageLab is the ElevareFit competition prep app for physique-focused athletes and coaches, now available on iOS.",
   pathname: "/stagelab",
 });
 
@@ -18,8 +18,8 @@ export default function StageLabPage() {
         <div className="eyebrow">StageLab</div>
         <h1>Competition prep, structured like a system instead of a scramble.</h1>
         <p>
-          StageLab is the prep layer of the ecosystem, built for people who need more deliberate structure around
-          performance phases, competition timing, and execution.
+          StageLab is the prep-focused app on ElevareFit, built for people who need more deliberate structure
+          around performance phases, competition timing, and execution.
         </p>
         <div className="button-row">
           <TrackedLink
@@ -73,7 +73,7 @@ export default function StageLabPage() {
 
       <Callout title="Where StageLab fits">
         <p>
-          StageLab is for the higher-stakes part of performance planning, where timing, progression, and
+          StageLab is for the higher-stakes side of performance planning, where timing, progression, and
           execution matter more and the margin for noise is smaller.
         </p>
       </Callout>

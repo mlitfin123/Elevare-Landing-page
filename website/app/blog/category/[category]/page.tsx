@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 
   return buildMetadata({
     title: `${category} articles`,
-    description: `Browse published ${category} articles across the Elevare ecosystem.`,
+    description: `Browse published ${category} articles across training, nutrition, tracking, and prep on ElevareFit.`,
     pathname: `/blog/category/${category}`,
   });
 }

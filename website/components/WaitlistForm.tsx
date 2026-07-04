@@ -10,11 +10,11 @@ const HONEYPOT_FIELD_NAME = "website";
 const audienceConfig = {
   MEMBER: {
     roleValue: "Member",
-    note: "Members will hear when Elevare launches, where it is available, and when they can start exploring coaches.",
+    note: "Members will hear when Elevare opens, where it is available, and when they can start exploring trainer and coach options.",
   },
   COACH: {
     roleValue: "Coach",
-    note: "Coaches will hear when Elevare launches, when they can join, and how to start reaching new clients.",
+    note: "Coaches will hear when Elevare opens, when they can join, and how to start reaching people looking for support.",
   },
 } as const;
 
@@ -98,9 +98,9 @@ export function WaitlistForm() {
 
   return (
     <aside className="waitlist-card" id="waitlist">
-      <div className="card-kicker">Join the list</div>
-      <h2>Join the waitlist.</h2>
-      <p>Sign up as a member or coach to hear when Elevare launches and when you can get started.</p>
+      <div className="card-kicker">Elevare marketplace</div>
+      <h2>Join the Elevare waitlist.</h2>
+      <p>Sign up as a member or coach to hear when the marketplace opens and when early access starts.</p>
 
       <div className="audience-switcher" role="tablist" aria-label="Audience">
         {(["MEMBER", "COACH"] as const).map((role) => {
@@ -180,7 +180,7 @@ export function WaitlistForm() {
                 {isLoading ? "Submitting..." : "Join the waitlist"}
               </button>
               <p className="fine-print">
-                We will only use your email to send Elevare launch updates. You can unsubscribe anytime.
+                We will only use your email to send Elevare waitlist updates. You can unsubscribe anytime.
               </p>
               <div
                 className={`form-feedback${feedback ? ` is-${feedbackType}` : ""}`}
@@ -195,8 +195,8 @@ export function WaitlistForm() {
             <span className="success-tag">Waitlist</span>
             <h3>Confirmed</h3>
             <p>
-              You&apos;re on the list. We will reach out as launch access opens up. Keep an eye on your inbox
-              for updates.
+              You&apos;re on the list. We will reach out as early access opens up. Keep an eye on your inbox
+              for marketplace updates.
             </p>
             <button type="button" className="btn btn-secondary" onClick={resetForm}>
               Use a different email
@@ -207,16 +207,16 @@ export function WaitlistForm() {
 
       <div className="micro-trust">
         <div className="micro-item">
-          <strong>Launch updates</strong>
-          <span>Stay in the loop as we get closer to opening access.</span>
+          <strong>Early access</strong>
+          <span>Stay in the loop as the marketplace gets closer to launch.</span>
         </div>
         <div className="micro-item">
-          <strong>Better discovery</strong>
-          <span>We are making it easier to find coaches who match your goals.</span>
+          <strong>Member and coach updates</strong>
+          <span>Get the rollout details that match the role you signed up with.</span>
         </div>
         <div className="micro-item">
-          <strong>Easy booking</strong>
-          <span>Designed to help you move from browsing to booking more smoothly.</span>
+          <strong>Smarter matching</strong>
+          <span>Elevare is built to make finding the right fit feel clearer and simpler.</span>
         </div>
       </div>
     </aside>
