@@ -66,7 +66,7 @@ export default function HomePage() {
           <article className="proof-card">
             <span className="proof-label">Free tools</span>
             <div className="proof-value">Calculators, workouts, and guides</div>
-            <p className="proof-copy">Use practical resources today instead of landing on a placeholder page.</p>
+            <p className="proof-copy">Use practical resources designed to help you make smarter fitness decisions.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Logbook</span>
@@ -86,8 +86,8 @@ export default function HomePage() {
           <div className="eyebrow">Free fitness tools</div>
           <h2 className="section-title">Start with tools you can use right now.</h2>
           <p className="section-copy">
-            ElevareFit is built to be useful today. Explore free calculators, exercise guides, workout
-            templates, and restaurant nutrition resources that support everyday progress.
+            Explore free calculators, exercise guides, workout templates, and restaurant nutrition resources
+            that support everyday progress.
           </p>
         </div>
 
@@ -285,17 +285,17 @@ export default function HomePage() {
           <div className="eyebrow">Elevare marketplace coming soon</div>
           <h2 className="section-title">Looking for personal guidance?</h2>
           <p className="section-copy">
-            Elevare is one upcoming part of the ElevareFit platform. It is being built as a trainer and coach
-            marketplace designed to help people find the right fitness professional with more clarity.
+            Elevare is a trainer and coach marketplace designed to help people find the right fitness
+            professional with more clarity.
           </p>
         </div>
 
         <div className="landing-hero">
           <div className="hero-copy">
-            <h2 className="section-title">Keep the waitlist visible without making it the whole site.</h2>
+            <h2 className="section-title">Get early access to Elevare.</h2>
             <p>
-              If you want personal support instead of self-guided tools, join the Elevare waitlist to hear
-              when marketplace access opens for members and coaches.
+              If you are looking for personal support, join the waitlist to hear when marketplace access opens
+              for members and coaches.
             </p>
             <div className="hero-proof" aria-label="Why join the Elevare waitlist">
               <article className="proof-card">
@@ -311,7 +311,7 @@ export default function HomePage() {
               <article className="proof-card">
                 <span className="proof-label">Coming soon</span>
                 <div className="proof-value">Marketplace access updates</div>
-                <p className="proof-copy">Join now so you are not waiting to hear about the next release step.</p>
+                <p className="proof-copy">Be first to hear when early access and rollout updates become available.</p>
               </article>
             </div>
             <div className="hero-actions">

@@ -16,8 +16,8 @@ export default function ElevarePage() {
         <div className="eyebrow">Elevare</div>
         <h1>The coming-soon marketplace for finding the right trainer or coach.</h1>
         <p>
-          Elevare is one upcoming part of ElevareFit, built to help members discover better-fit coaching
-          support and help coaches get in front of the right people with more clarity.
+          Elevare is built to help members discover better-fit coaching support and help coaches get in front
+          of the right people with more clarity.
         </p>
         <div className="button-row">
           <TrackedLink
@@ -71,8 +71,8 @@ export default function ElevarePage() {
 
       <Callout title="Where Elevare fits">
         <p>
-          Elevare is the part of the platform focused on personal guidance. The goal is to make coach discovery
-          feel clearer once the marketplace opens, without making the entire website only about the waitlist.
+          Elevare is focused on making coach discovery feel clearer, so members can find support with more
+          confidence and coaches can connect with better-fit clients.
         </p>
       </Callout>
     </div>
