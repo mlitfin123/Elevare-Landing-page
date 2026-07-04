@@ -4,6 +4,7 @@ import { getAllCategories, getAllPosts } from "../lib/blog.ts";
 import { buildRestaurantSummaries, getPopularRestaurants, type NutritionProduct } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
+  deduplicateExercises,
   EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
   WORKOUT_GOALS,
@@ -183,13 +184,14 @@ function main() {
     exercises: [],
     workoutTemplates: [],
   });
+  const deduplicatedExercises = deduplicateExercises(trainingSnapshot.exercises);
 
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
 
   const sitemapFiles: Array<{ name: string; entries: SitemapEntry[] }> = [
     { name: "site", entries: buildSiteEntries() },
     { name: "calculators", entries: buildCalculatorEntries() },
-    { name: "exercises", entries: buildExerciseEntries(trainingSnapshot.exercises) },
+    { name: "exercises", entries: buildExerciseEntries(deduplicatedExercises) },
     { name: "workouts", entries: buildWorkoutEntries(trainingSnapshot.workoutTemplates) },
     { name: "nutrition", entries: buildNutritionEntries(nutritionProducts) },
     { name: "blog", entries: buildBlogEntries() },

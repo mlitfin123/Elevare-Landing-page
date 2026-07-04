@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 import {
+  deduplicateExercises,
   EMPTY_TRAINING_SNAPSHOT,
   type ExerciseRecord,
   type TrainingDataSnapshot,
@@ -20,7 +21,7 @@ function readTrainingDataFile(): TrainingDataSnapshot {
 
   return {
     generatedAt: parsed.generatedAt ?? null,
-    exercises: parsed.exercises ?? [],
+    exercises: deduplicateExercises(parsed.exercises ?? []),
     workoutTemplates: parsed.workoutTemplates ?? [],
     workoutTemplateExercises: parsed.workoutTemplateExercises ?? [],
   };

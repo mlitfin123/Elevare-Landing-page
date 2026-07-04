@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  deduplicateExercises,
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
   getSupportingExercisesByCategorySlug,
@@ -425,6 +426,104 @@ test("getSupportingExercisesByCategorySlug keeps secondary-only matches out of t
   assert.equal(
     getExercisesByCategorySlug(exercises, "glutes").some((exercise) => exercise.slug === "barbell-split-squat"),
     false,
+  );
+});
+
+test("deduplicateExercises prefers the canonical slug when the dataset contains hash-suffixed duplicates", () => {
+  const duplicateExercises: ExerciseRecord[] = [
+    {
+      ...exercises[0]!,
+      id: "bench-dup-1",
+      name: "Bench Press - Powerlifting",
+      slug: "bench-press-powerlifting-fcc9710c",
+      difficulty: "intermediate",
+      createdAt: "2026-07-03T21:48:52.921754+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "bench-dup-2",
+      name: "Bench Press - Powerlifting",
+      slug: "bench-press-powerlifting",
+      difficulty: "intermediate",
+      createdAt: "2026-06-17T15:46:35.373546+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "barbell-bench-dup-1",
+      name: "Barbell Bench Press - Medium Grip",
+      slug: "barbell-bench-press-medium-grip-77f3f617",
+      createdAt: "2026-07-03T21:48:52.921754+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "barbell-bench-dup-2",
+      name: "Barbell Bench Press - Medium Grip",
+      slug: "barbell-bench-press-medium-grip",
+      createdAt: "2026-06-17T15:46:35.373546+00:00",
+    },
+  ];
+
+  assert.deepEqual(
+    deduplicateExercises(duplicateExercises).map((exercise) => exercise.slug),
+    ["bench-press-powerlifting", "barbell-bench-press-medium-grip"],
+  );
+});
+
+test("getExercisesByCategorySlug returns each canonical chest exercise only once", () => {
+  const duplicateChestExercises: ExerciseRecord[] = [
+    {
+      ...exercises[0]!,
+      id: "around-the-worlds-canonical",
+      name: "Around The Worlds",
+      slug: "around-the-worlds",
+      equipment: ["dumbbell"],
+      movementPattern: "general",
+      createdAt: "2026-06-17T15:46:35.373546+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "around-the-worlds-duplicate",
+      name: "Around The Worlds",
+      slug: "around-the-worlds-abf70144",
+      equipment: ["dumbbell"],
+      movementPattern: "general",
+      createdAt: "2026-07-03T21:48:52.921754+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "barbell-bench-canonical",
+      name: "Barbell Bench Press - Medium Grip",
+      slug: "barbell-bench-press-medium-grip",
+      createdAt: "2026-06-17T15:46:35.373546+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "barbell-bench-duplicate",
+      name: "Barbell Bench Press - Medium Grip",
+      slug: "barbell-bench-press-medium-grip-77f3f617",
+      createdAt: "2026-07-03T21:48:52.921754+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "bench-powerlifting-canonical",
+      name: "Bench Press - Powerlifting",
+      slug: "bench-press-powerlifting",
+      difficulty: "intermediate",
+      createdAt: "2026-06-17T15:46:35.373546+00:00",
+    },
+    {
+      ...exercises[0]!,
+      id: "bench-powerlifting-duplicate",
+      name: "Bench Press - Powerlifting",
+      slug: "bench-press-powerlifting-fcc9710c",
+      difficulty: "intermediate",
+      createdAt: "2026-07-03T21:48:52.921754+00:00",
+    },
+  ];
+
+  assert.deepEqual(
+    getExercisesByCategorySlug(duplicateChestExercises, "chest").map((exercise) => exercise.slug),
+    ["around-the-worlds", "barbell-bench-press-medium-grip", "bench-press-powerlifting"],
   );
 });
 

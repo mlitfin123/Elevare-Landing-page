@@ -8,6 +8,8 @@ import {
 } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
+  deduplicateExercises,
+  EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
   getExerciseSubstitutionCompatibilityScore,
   WORKOUT_GOALS,
@@ -15,6 +17,7 @@ import {
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
   matchesPrimaryMuscleCategory,
+  normalizeExerciseName,
   normalizeMuscleGroup,
   type ExerciseRecord,
   type WorkoutTemplateExerciseRecord,
@@ -159,6 +162,7 @@ function main() {
     workoutTemplates: [],
     workoutTemplateExercises: [],
   });
+  trainingSnapshot.exercises = deduplicateExercises(trainingSnapshot.exercises);
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
   const posts = getAllPosts();
   const restaurants = buildRestaurantSummaries(nutritionProducts);
@@ -230,6 +234,10 @@ function main() {
     ),
   ];
 
+  const duplicateExerciseNames = slugDuplicates(trainingSnapshot.exercises.map((exercise) => normalizeExerciseName(exercise.name))).map(
+    ([name, count]) => `exercise name "${name}" appears ${count} times after snapshot normalization`,
+  );
+
   const shortExerciseContent = trainingSnapshot.exercises
     .filter((exercise) => getExerciseContentScore(exercise) < 10)
     .map((exercise) => `${exercise.name} (${exercise.slug}) score=${getExerciseContentScore(exercise)}`);
@@ -242,6 +250,21 @@ function main() {
       )
       .map((exercise) => `${category.slug}: ${exercise.name} (${exercise.slug})`),
   );
+
+  const categoryDuplicateIssues = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].flatMap((category) => {
+    const categoryExercises = getExercisesByCategorySlug(trainingSnapshot.exercises, category.slug);
+    const duplicateIds = slugDuplicates(categoryExercises.map((exercise) => exercise.id)).map(
+      ([id, count]) => `${category.slug}: duplicate id ${id} rendered ${count} times`,
+    );
+    const duplicateCategorySlugs = slugDuplicates(categoryExercises.map((exercise) => exercise.slug)).map(
+      ([slug, count]) => `${category.slug}: duplicate slug ${slug} rendered ${count} times`,
+    );
+    const duplicateNames = slugDuplicates(categoryExercises.map((exercise) => normalizeExerciseName(exercise.name))).map(
+      ([name, count]) => `${category.slug}: duplicate name "${name}" rendered ${count} times`,
+    );
+
+    return [...duplicateIds, ...duplicateCategorySlugs, ...duplicateNames];
+  });
 
   const substitutionMismatches = trainingSnapshot.exercises.flatMap((exercise) =>
     getExerciseSubstitutions(exercise, trainingSnapshot.exercises, 3)
@@ -419,6 +442,7 @@ function main() {
   console.log(`URLs returning non-200 in static export: ${non200Urls.length}`);
 
   printSection("Duplicate slugs", duplicateSlugs);
+  printSection("Duplicate exercise names", duplicateExerciseNames.slice(0, 50));
   printSection("Missing canonical", missingCanonical.slice(0, 25));
   printSection("Missing meta title", missingMetaTitle.slice(0, 25));
   printSection("Missing meta description", missingMetaDescription.slice(0, 25));
@@ -426,6 +450,7 @@ function main() {
   printSection("Exercise pages with very short content", shortExerciseContent.slice(0, 50));
   printSection("Bench press classification issues", benchPressClassificationIssues.slice(0, 50));
   printSection("Category mismatches", categoryMismatches.slice(0, 50));
+  printSection("Category pages with duplicate exercise cards", categoryDuplicateIssues.slice(0, 50));
   printSection("Workout substitutions with mismatched muscle groups", substitutionMismatches.slice(0, 50));
   printSection("Incompatible named exercise alternatives", incompatibleNamedAlternatives.slice(0, 50));
   printSection("Pressing movements pointing to arm-isolation alternatives", pressingToArmIsolationIssues.slice(0, 50));

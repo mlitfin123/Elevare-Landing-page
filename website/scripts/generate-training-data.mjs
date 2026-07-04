@@ -48,6 +48,156 @@ function uniqueValues(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+const DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN = /-[0-9a-f]{8}$/i;
+
+function normalizeExerciseName(value) {
+  return cleanText(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function slugifyExerciseName(value) {
+  return normalizeExerciseName(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizeExerciseSlug(value) {
+  return cleanText(value).toLowerCase().replace(/-+/g, "-");
+}
+
+function getCanonicalExerciseSlug(exercise) {
+  const normalizedSlug = normalizeExerciseSlug(exercise.slug);
+  const normalizedNameSlug = slugifyExerciseName(exercise.name);
+  const strippedSlug = normalizedSlug.replace(DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN, "");
+
+  if (normalizedNameSlug && strippedSlug === normalizedNameSlug) {
+    return strippedSlug;
+  }
+
+  return normalizedSlug;
+}
+
+function getNormalizedEquipmentSignature(exercise) {
+  return [...new Set((exercise.equipment ?? []).map((item) => cleanText(item).toLowerCase()).filter(Boolean))]
+    .sort()
+    .join("|");
+}
+
+function getExerciseCanonicalIdentityKey(exercise) {
+  return [
+    getCanonicalExerciseSlug(exercise),
+    normalizeExerciseName(exercise.name),
+    normalizeText(exercise.primaryMuscleGroup) ?? "",
+    normalizeText(exercise.exerciseType) ?? "",
+    exercise.isCompound ? "compound" : "isolation",
+    getNormalizedEquipmentSignature(exercise),
+  ].join("|");
+}
+
+function getExerciseContentCompletenessScore(exercise) {
+  return (
+    exercise.instructions.length * 4
+    + exercise.commonMistakes.length * 3
+    + exercise.benefits.length * 2
+    + exercise.alternatives.length
+    + exercise.variations.length
+    + (exercise.seoTitle ? 2 : 0)
+    + (exercise.seoDescription ? 2 : 0)
+    + (exercise.source ? 1 : 0)
+  );
+}
+
+function parseIsoTimestamp(value) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+}
+
+function compareExerciseRecordPreference(left, right) {
+  const leftSlug = normalizeExerciseSlug(left.slug);
+  const rightSlug = normalizeExerciseSlug(right.slug);
+  const leftCanonicalSlug = getCanonicalExerciseSlug(left);
+  const rightCanonicalSlug = getCanonicalExerciseSlug(right);
+  const leftCanonicalNameSlug = slugifyExerciseName(left.name);
+  const rightCanonicalNameSlug = slugifyExerciseName(right.name);
+  const leftHasDuplicateSuffix =
+    leftCanonicalSlug !== leftSlug && DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN.test(leftSlug);
+  const rightHasDuplicateSuffix =
+    rightCanonicalSlug !== rightSlug && DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN.test(rightSlug);
+
+  if (leftHasDuplicateSuffix !== rightHasDuplicateSuffix) {
+    return leftHasDuplicateSuffix ? -1 : 1;
+  }
+
+  const leftMatchesCanonicalName = leftCanonicalSlug === leftCanonicalNameSlug;
+  const rightMatchesCanonicalName = rightCanonicalSlug === rightCanonicalNameSlug;
+
+  if (leftMatchesCanonicalName !== rightMatchesCanonicalName) {
+    return leftMatchesCanonicalName ? 1 : -1;
+  }
+
+  const completenessDifference =
+    getExerciseContentCompletenessScore(left) - getExerciseContentCompletenessScore(right);
+
+  if (completenessDifference !== 0) {
+    return completenessDifference;
+  }
+
+  const createdAtDifference = parseIsoTimestamp(right.createdAt) - parseIsoTimestamp(left.createdAt);
+
+  if (createdAtDifference !== 0) {
+    return createdAtDifference;
+  }
+
+  const updatedAtDifference = parseIsoTimestamp(right.updatedAt) - parseIsoTimestamp(left.updatedAt);
+
+  if (updatedAtDifference !== 0) {
+    return updatedAtDifference;
+  }
+
+  const slugLengthDifference = right.slug.length - left.slug.length;
+
+  if (slugLengthDifference !== 0) {
+    return slugLengthDifference;
+  }
+
+  return right.id.localeCompare(left.id);
+}
+
+function deduplicateExercises(exercises) {
+  const uniqueById = new Map();
+
+  for (const exercise of exercises) {
+    const current = uniqueById.get(exercise.id);
+
+    if (!current || compareExerciseRecordPreference(exercise, current) > 0) {
+      uniqueById.set(exercise.id, exercise);
+    }
+  }
+
+  const orderedKeys = [];
+  const bestByCanonicalIdentity = new Map();
+
+  for (const exercise of uniqueById.values()) {
+    const canonicalKey = getExerciseCanonicalIdentityKey(exercise);
+    const current = bestByCanonicalIdentity.get(canonicalKey);
+
+    if (!current) {
+      orderedKeys.push(canonicalKey);
+      bestByCanonicalIdentity.set(canonicalKey, exercise);
+      continue;
+    }
+
+    if (compareExerciseRecordPreference(exercise, current) > 0) {
+      bestByCanonicalIdentity.set(canonicalKey, exercise);
+    }
+  }
+
+  return orderedKeys.map((key) => bestByCanonicalIdentity.get(key));
+}
+
 function inferBenefitsFromExercise(exercise) {
   const benefits = [`Builds strength and control through the ${exercise.primaryMuscleGroup ?? "full-body"} region.`];
 
@@ -460,7 +610,7 @@ function rebuildExerciseRelationships(exercises) {
 }
 
 function normalizeTrainingSnapshot(snapshot) {
-  const exercises = rebuildExerciseRelationships(snapshot.exercises.map((exercise) => applyExerciseOverrides({
+  const normalizedExercises = snapshot.exercises.map((exercise) => applyExerciseOverrides({
     ...exercise,
     secondaryMuscleGroups: normalizeTextArray(exercise.secondaryMuscleGroups),
     equipment: normalizeTextArray(exercise.equipment),
@@ -469,7 +619,8 @@ function normalizeTrainingSnapshot(snapshot) {
     benefits: normalizeTextArray(exercise.benefits),
     alternatives: normalizeTextArray(exercise.alternatives),
     variations: normalizeTextArray(exercise.variations),
-  })));
+  }));
+  const exercises = rebuildExerciseRelationships(deduplicateExercises(normalizedExercises));
 
   return {
     ...snapshot,

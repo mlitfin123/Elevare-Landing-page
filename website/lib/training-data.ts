@@ -238,6 +238,8 @@ const CANONICAL_MUSCLE_GROUP_ALIASES = new Map<string, string>([
   ["gluteus", "glutes"],
 ]);
 
+const DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN = /-[0-9a-f]{8}$/i;
+
 export function titleCase(value: string) {
   return value
     .split(/[\s-]+/)
@@ -318,6 +320,60 @@ export function normalizeMuscleGroup(value: string | null | undefined) {
   }
 
   return CANONICAL_MUSCLE_GROUP_ALIASES.get(normalized) ?? normalized;
+}
+
+export function normalizeExerciseName(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function slugifyExerciseName(value: string) {
+  return normalizeExerciseName(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizeExerciseSlug(value: string) {
+  return value.trim().toLowerCase().replace(/-+/g, "-");
+}
+
+export function getCanonicalExerciseSlug(exercise: Pick<ExerciseRecord, "name" | "slug">) {
+  const normalizedSlug = normalizeExerciseSlug(exercise.slug);
+  const normalizedNameSlug = slugifyExerciseName(exercise.name);
+  const strippedSlug = normalizedSlug.replace(DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN, "");
+
+  if (normalizedNameSlug && strippedSlug === normalizedNameSlug) {
+    return strippedSlug;
+  }
+
+  return normalizedSlug;
+}
+
+function getNormalizedEquipmentSignature(exercise: Pick<ExerciseRecord, "equipment">) {
+  return [...new Set(exercise.equipment.map((item) => item.trim().toLowerCase()).filter(Boolean))]
+    .sort()
+    .join("|");
+}
+
+function getExerciseContentCompletenessScore(exercise: ExerciseRecord) {
+  return (
+    exercise.instructions.length * 4
+    + exercise.commonMistakes.length * 3
+    + exercise.benefits.length * 2
+    + exercise.alternatives.length
+    + exercise.variations.length
+    + (exercise.seoTitle ? 2 : 0)
+    + (exercise.seoDescription ? 2 : 0)
+    + (exercise.source ? 1 : 0)
+  );
+}
+
+function parseIsoTimestamp(value: string | null) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 }
 
 export function matchesPrimaryMuscleCategory(exercise: ExerciseRecord, muscleGroup: string) {
@@ -407,6 +463,100 @@ export function getNormalizedExerciseMovementPattern(exercise: ExerciseRecord) {
   }
 
   return pattern || "general";
+}
+
+export function getExerciseCanonicalIdentityKey(exercise: ExerciseRecord) {
+  return [
+    getCanonicalExerciseSlug(exercise),
+    normalizeExerciseName(exercise.name),
+    normalizeMuscleGroup(exercise.primaryMuscleGroup) ?? "",
+    exercise.exerciseType ?? "",
+    exercise.isCompound ? "compound" : "isolation",
+    getNormalizedEquipmentSignature(exercise),
+  ].join("|");
+}
+
+function compareExerciseRecordPreference(left: ExerciseRecord, right: ExerciseRecord) {
+  const leftSlug = normalizeExerciseSlug(left.slug);
+  const rightSlug = normalizeExerciseSlug(right.slug);
+  const leftCanonicalSlug = getCanonicalExerciseSlug(left);
+  const rightCanonicalSlug = getCanonicalExerciseSlug(right);
+  const leftCanonicalNameSlug = slugifyExerciseName(left.name);
+  const rightCanonicalNameSlug = slugifyExerciseName(right.name);
+  const leftHasDuplicateSuffix =
+    leftCanonicalSlug !== leftSlug && DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN.test(leftSlug);
+  const rightHasDuplicateSuffix =
+    rightCanonicalSlug !== rightSlug && DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN.test(rightSlug);
+
+  if (leftHasDuplicateSuffix !== rightHasDuplicateSuffix) {
+    return leftHasDuplicateSuffix ? -1 : 1;
+  }
+
+  const leftMatchesCanonicalName = leftCanonicalSlug === leftCanonicalNameSlug;
+  const rightMatchesCanonicalName = rightCanonicalSlug === rightCanonicalNameSlug;
+
+  if (leftMatchesCanonicalName !== rightMatchesCanonicalName) {
+    return leftMatchesCanonicalName ? 1 : -1;
+  }
+
+  const completenessDifference =
+    getExerciseContentCompletenessScore(left) - getExerciseContentCompletenessScore(right);
+
+  if (completenessDifference !== 0) {
+    return completenessDifference;
+  }
+
+  const createdAtDifference = parseIsoTimestamp(right.createdAt) - parseIsoTimestamp(left.createdAt);
+
+  if (createdAtDifference !== 0) {
+    return createdAtDifference;
+  }
+
+  const updatedAtDifference = parseIsoTimestamp(right.updatedAt) - parseIsoTimestamp(left.updatedAt);
+
+  if (updatedAtDifference !== 0) {
+    return updatedAtDifference;
+  }
+
+  const slugLengthDifference = right.slug.length - left.slug.length;
+
+  if (slugLengthDifference !== 0) {
+    return slugLengthDifference;
+  }
+
+  return right.id.localeCompare(left.id);
+}
+
+export function deduplicateExercises(exercises: ExerciseRecord[]) {
+  const uniqueById = new Map<string, ExerciseRecord>();
+
+  for (const exercise of exercises) {
+    const current = uniqueById.get(exercise.id);
+
+    if (!current || compareExerciseRecordPreference(exercise, current) > 0) {
+      uniqueById.set(exercise.id, exercise);
+    }
+  }
+
+  const orderedKeys: string[] = [];
+  const bestByCanonicalIdentity = new Map<string, ExerciseRecord>();
+
+  for (const exercise of uniqueById.values()) {
+    const canonicalKey = getExerciseCanonicalIdentityKey(exercise);
+    const current = bestByCanonicalIdentity.get(canonicalKey);
+
+    if (!current) {
+      orderedKeys.push(canonicalKey);
+      bestByCanonicalIdentity.set(canonicalKey, exercise);
+      continue;
+    }
+
+    if (compareExerciseRecordPreference(exercise, current) > 0) {
+      bestByCanonicalIdentity.set(canonicalKey, exercise);
+    }
+  }
+
+  return orderedKeys.map((key) => bestByCanonicalIdentity.get(key)!);
 }
 
 function sharesExerciseFamily(left: ExerciseRecord, right: ExerciseRecord) {
@@ -588,16 +738,18 @@ export function searchExercises(exercises: ExerciseRecord[], query: string) {
 }
 
 export function filterExercisesByMuscleGroup(exercises: ExerciseRecord[], muscleGroup: string) {
-  if (!muscleGroup || muscleGroup === "all") return exercises;
+  if (!muscleGroup || muscleGroup === "all") return deduplicateExercises(exercises);
 
-  return exercises.filter(
-    (exercise) => matchesPrimaryMuscleCategory(exercise, muscleGroup),
+  return deduplicateExercises(
+    exercises.filter(
+      (exercise) => matchesPrimaryMuscleCategory(exercise, muscleGroup),
+    ),
   );
 }
 
 export function filterExercisesByEquipment(exercises: ExerciseRecord[], equipment: string) {
-  if (!equipment || equipment === "all") return exercises;
-  return exercises.filter((exercise) => exercise.equipment.includes(equipment));
+  if (!equipment || equipment === "all") return deduplicateExercises(exercises);
+  return deduplicateExercises(exercises.filter((exercise) => exercise.equipment.includes(equipment)));
 }
 
 export function getExercisesByCategorySlug(exercises: ExerciseRecord[], slug: string) {
@@ -608,8 +760,10 @@ export function getExercisesByCategorySlug(exercises: ExerciseRecord[], slug: st
     return filterExercisesByEquipment(exercises, category.slug);
   }
 
-  return exercises.filter(
-    (exercise) => matchesPrimaryMuscleCategory(exercise, category.slug),
+  return deduplicateExercises(
+    exercises.filter(
+      (exercise) => matchesPrimaryMuscleCategory(exercise, category.slug),
+    ),
   );
 }
 
@@ -619,8 +773,17 @@ export function getSupportingExercisesByCategorySlug(exercises: ExerciseRecord[]
     return [];
   }
 
-  return exercises.filter(
-    (exercise) => !matchesPrimaryMuscleCategory(exercise, category.slug) && isClearlyRelevantSecondaryMatch(exercise, category.slug),
+  const primaryCanonicalKeys = new Set(
+    getExercisesByCategorySlug(exercises, slug).map((exercise) => getExerciseCanonicalIdentityKey(exercise)),
+  );
+
+  return deduplicateExercises(
+    exercises.filter(
+      (exercise) =>
+        !matchesPrimaryMuscleCategory(exercise, category.slug)
+        && isClearlyRelevantSecondaryMatch(exercise, category.slug)
+        && !primaryCanonicalKeys.has(getExerciseCanonicalIdentityKey(exercise)),
+    ),
   );
 }
 
