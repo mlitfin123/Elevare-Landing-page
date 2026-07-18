@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { siteConfig } from "@/lib/site";
 
@@ -28,6 +28,8 @@ type WaitlistResponse = {
 
 export function WaitlistForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasTrackedSectionView = useRef(false);
   const [audience, setAudience] = useState<AudienceRole>("MEMBER");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,6 +40,39 @@ export function WaitlistForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const currentAudience = audienceConfig[audience];
+
+  useEffect(() => {
+    const section = sectionRef.current;
+
+    if (!section || hasTrackedSectionView.current) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+
+        if (!entry?.isIntersecting || hasTrackedSectionView.current) {
+          return;
+        }
+
+        hasTrackedSectionView.current = true;
+        trackEvent("section_view", {
+          section_name: "waitlist",
+          section_context: "home_marketplace",
+          product: "Elevare",
+        });
+        observer.disconnect();
+      },
+      {
+        threshold: 0.35,
+      },
+    );
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,6 +97,13 @@ export function WaitlistForm() {
 
       if (response.ok) {
         if (response.status !== "ignored") {
+          trackEvent("waitlist_submission", {
+            form_name: "waitlist",
+            role: currentAudience.roleValue.toLowerCase(),
+            lead_source: "website",
+            signup_state: response.status === "updated" ? "already_subscribed" : "success",
+          });
+
           trackEvent("generate_lead", {
             form_name: "waitlist",
             role: currentAudience.roleValue.toLowerCase(),
@@ -97,7 +139,7 @@ export function WaitlistForm() {
   }
 
   return (
-    <aside className="waitlist-card" id="waitlist">
+    <aside ref={sectionRef} className="waitlist-card" id="waitlist">
       <div className="card-kicker">Elevare marketplace</div>
       <h2>Join the Elevare waitlist.</h2>
       <p>Sign up as a member or coach to hear when the marketplace opens and when early access starts.</p>

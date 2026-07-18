@@ -206,6 +206,26 @@ select {
   transform: scale(0.98);
 }
 
+.hero-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 4px;
+  color: var(--brand-bright);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.hero-text-link:hover {
+  color: var(--text);
+}
+
 .btn-primary,
 .button-primary {
   color: #f7fbfd;
@@ -386,6 +406,31 @@ select {
   padding: 24px;
 }
 
+.proof-card-link,
+.next-step-card,
+.product-visual-card {
+  transition:
+    transform 0.12s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.proof-card-link,
+.next-step-card {
+  display: grid;
+  align-content: start;
+  height: 100%;
+}
+
+.proof-card-link:hover,
+.next-step-card:hover,
+.product-visual-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(116, 200, 214, 0.28);
+  background: linear-gradient(180deg, rgba(18, 18, 31, 0.92), rgba(10, 10, 18, 0.96));
+}
+
 .article-shell,
 .waitlist-card,
 .final-card {
@@ -438,6 +483,24 @@ select {
 .footer-meta,
 .footer-copy {
   color: var(--muted);
+}
+
+.proof-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--brand-bright);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.proof-card-link .proof-action,
+.next-step-card .proof-action {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .waitlist-card {
@@ -621,8 +684,16 @@ select {
   padding-top: 22px;
 }
 
+.section-compact {
+  padding-top: 16px;
+}
+
 .section-head {
   margin-bottom: 18px;
+}
+
+.section-head-compact {
+  margin-bottom: 14px;
 }
 
 .section-title,
@@ -637,6 +708,10 @@ select {
   max-width: 720px;
   color: var(--muted);
   font-size: 17px;
+}
+
+.section-title-compact {
+  font-size: clamp(24px, 4vw, 34px);
 }
 
 .card-index {
@@ -654,6 +729,55 @@ select {
   gap: 16px;
 }
 
+.product-side-stack {
+  align-content: start;
+}
+
+.product-visual-card {
+  display: block;
+  padding: 20px;
+}
+
+.product-visual-frame {
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(9, 9, 20, 0.88);
+  border: 1px solid rgba(42, 42, 62, 0.82);
+}
+
+.product-visual-frame img {
+  width: 100%;
+  height: auto;
+}
+
+.product-visual-frame-tall {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+}
+
+.product-visual-frame-tall img {
+  width: min(100%, 230px);
+  border-radius: 22px;
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.32);
+}
+
+.product-caption {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.product-caption strong {
+  font-size: 15px;
+}
+
+.product-caption span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .final-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -664,6 +788,49 @@ select {
 
 .blog-grid {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.hero-overview-grid .proof-card,
+.marketplace-grid .proof-card {
+  height: 100%;
+}
+
+.next-step-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.status-row {
+  margin-bottom: 12px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(116, 200, 214, 0.22);
+  background: rgba(79, 153, 168, 0.1);
+  color: var(--brand-bright);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.marketplace-copy {
+  padding-top: 4px;
+}
+
+.marketplace-intro {
+  max-width: 580px;
+}
+
+.marketplace-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 700px;
 }
 
 .tool-hero h1,
@@ -1446,6 +1613,15 @@ select {
   .waitlist-card {
     max-width: 540px;
   }
+
+  .hero-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .marketplace-grid,
+  .next-step-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1508,6 +1684,12 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .hero-overview-grid,
+  .marketplace-grid,
+  .next-step-grid {
+    grid-template-columns: 1fr;
+  }
+
   .nutrition-search-grid,
   .nutrition-filter-grid {
     grid-template-columns: 1fr;
@@ -1547,6 +1729,12 @@ select {
   .button,
   .button-link {
     width: 100%;
+  }
+
+  .hero-text-link {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 2px 0 0;
   }
 
   .hero-actions,
