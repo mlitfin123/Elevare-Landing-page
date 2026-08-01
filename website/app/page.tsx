@@ -394,7 +394,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="product-caption">
-                <strong>Live on iOS</strong>
+                <strong>Live on iOS and Android</strong>
                 <span>Use StageLab when prep timing, review quality, and adjustment structure matter more.</span>
               </div>
             </TrackedLink>

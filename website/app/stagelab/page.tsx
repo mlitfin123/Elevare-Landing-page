@@ -1,3 +1,4 @@
+import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { Callout } from "@/components/Callout";
 import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, productConfig } from "@/lib/site";
@@ -5,7 +6,7 @@ import { buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "StageLab",
   description:
-    "StageLab is the ElevareFit competition prep app for physique-focused athletes and coaches, now available on iOS.",
+    "StageLab is the ElevareFit competition prep app for physique-focused athletes and coaches, now available on iOS and Android.",
   pathname: "/stagelab",
 });
 
@@ -22,18 +23,7 @@ export default function StageLabPage() {
           around performance phases, competition timing, and execution.
         </p>
         <div className="button-row">
-          <TrackedLink
-            className="button button-store"
-            href={stageLab.ctaHref}
-            eventName="cta_click"
-            eventParams={{
-              cta_name: stageLab.ctaLabel,
-              cta_context: "stagelab_hero",
-              product: "StageLab",
-            }}
-          >
-            {stageLab.ctaLabel}
-          </TrackedLink>
+          <ProductCtaButtons product="StageLab" context="stagelab_hero" />
           <TrackedLink
             className="button button-secondary"
             href="/blog/category/prep-files"
@@ -65,8 +55,8 @@ export default function StageLabPage() {
 
           <article className="panel">
             <span className="stat-label">Status</span>
-            <h3>Live on iOS</h3>
-            <p>Available now on the App Store for coaches and competitors who want more structure in prep.</p>
+            <h3>Live on iOS and Android</h3>
+            <p>Available now on the App Store and Google Play for coaches and competitors who want more structure in prep.</p>
           </article>
         </div>
       </section>

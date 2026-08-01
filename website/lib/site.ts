@@ -62,7 +62,7 @@ export const productConfig: Record<
     title: "StageLab",
     description:
       "A competition prep app built for more deliberate structure, cleaner feedback loops, and better planning.",
-    status: "Live on iOS",
+    status: "Live on iOS and Android",
     idealUser:
       "Coaches and competitors who think in systems, prep phases, and performance structure.",
     ctaLabel: "Download on the App Store",
@@ -72,6 +72,11 @@ export const productConfig: Record<
         label: "Download on the App Store",
         href: "https://apps.apple.com/app/stagelab-competition-prep/id6764351799",
         store: "ios",
+      },
+      {
+        label: "Get it on Google Play",
+        href: "https://play.google.com/store/apps/details?id=com.stagelab.app",
+        store: "android",
       },
     ],
   },
