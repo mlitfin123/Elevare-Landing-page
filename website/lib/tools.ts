@@ -316,7 +316,7 @@ export const tools = [
     intro:
       "Use this BMI calculator to estimate body mass index from height and weight with either metric or imperial units.",
     group: "nutrition",
-    relatedSlugs: ["body-fat-calculator", "lean-body-mass-calculator", "ideal-body-weight-calculator", "goal-weight-timeline-calculator"],
+    relatedSlugs: ["body-fat-calculator", "body-fat-caliper-calculator", "lean-body-mass-calculator", "ideal-body-weight-calculator"],
     whyItMatters: "get a quick size-to-height screening metric that is easy to compare over time",
     bestFor: "regular users who want a simple general health checkpoint before moving to more detailed body composition tools",
     howToUse: "enter height and weight using the unit system you already track with",
@@ -333,7 +333,7 @@ export const tools = [
     intro:
       "Use this body fat calculator to estimate body fat percentage from body measurements using the U.S. Navy method.",
     group: "nutrition",
-    relatedSlugs: ["lean-body-mass-calculator", "bmi-calculator", "goal-weight-timeline-calculator", "contest-prep-countdown"],
+    relatedSlugs: ["body-fat-caliper-calculator", "lean-body-mass-calculator", "bmi-calculator", "goal-weight-timeline-calculator"],
     whyItMatters: "estimate body composition from measurements when scale weight alone is not telling the full story",
     bestFor: "people who want a practical body fat checkpoint without using a lab or scan",
     howToUse: "measure the required body parts consistently and use the same unit each time",
@@ -343,6 +343,25 @@ export const tools = [
     resultName: "body fat estimate",
   }),
   buildCopy({
+    slug: "body-fat-caliper-calculator",
+    title: "Body Fat Caliper Test",
+    metaDescription:
+      "Estimate body fat percentage with Jackson-Pollock 3-site, 4-site, or 7-site skinfold caliper formulas.",
+    intro:
+      "Use this body fat caliper test to estimate body fat percentage with 3-site, 4-site, or 7-site Jackson-Pollock skinfold measurements.",
+    group: "nutrition",
+    relatedSlugs: ["body-fat-calculator", "lean-body-mass-calculator", "bmi-calculator", "contest-prep-countdown"],
+    whyItMatters: "estimate body composition from caliper measurements when you want a more hands-on checkpoint than scale weight alone",
+    bestFor: "people who use skinfold calipers and want a repeatable body fat estimate between bigger checkpoints",
+    howToUse:
+      "choose the protocol you want to use, take the required skinfold sites carefully, enter each reading in millimeters, and stay consistent with who is doing the measurements",
+    whatToDoNext: "Use the result to compare trends over time, then pair it with photos, bodyweight, performance, and how lean you actually look.",
+    accuracyNote:
+      "caliper readings can shift a lot with poor pinch technique, inconsistent site placement, hydration, and who is taking the measurement",
+    resultName: "caliper-based body fat estimate",
+    questionLead: "body fat caliper test",
+  }),
+  buildCopy({
     slug: "lean-body-mass-calculator",
     title: "Lean Body Mass Calculator",
     metaDescription:
@@ -350,7 +369,7 @@ export const tools = [
     intro:
       "Use this lean body mass calculator to estimate how much of your bodyweight is lean tissue instead of body fat.",
     group: "nutrition",
-    relatedSlugs: ["body-fat-calculator", "protein-calculator", "bmi-calculator", "ideal-body-weight-calculator"],
+    relatedSlugs: ["body-fat-calculator", "body-fat-caliper-calculator", "protein-calculator", "bmi-calculator"],
     whyItMatters: "see how much lean tissue you may be carrying instead of only focusing on total scale weight",
     bestFor: "users who track body composition and want a better way to think about protein, dieting, and muscle retention",
     howToUse: "enter current bodyweight and a realistic body fat percentage estimate",

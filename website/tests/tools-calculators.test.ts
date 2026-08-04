@@ -4,6 +4,7 @@ import {
   calculateBmi,
   calculateBmr,
   calculateBodyRecomposition,
+  calculateBodyFatCaliperPercentage,
   calculateBodyFatPercentage,
   calculateCalorieDifference,
   calculateCaloriesBurned,
@@ -97,6 +98,88 @@ test("calculateBodyFatPercentage estimates navy body fat for a male", () => {
 
   assert.equal(result.percentage, 17.5);
   assert.equal(result.category, "Fitness");
+});
+
+test("calculateBodyFatCaliperPercentage estimates Jackson-Pollock 3-site body fat for a male", () => {
+  const result = calculateBodyFatCaliperPercentage({
+    protocol: "threeSite",
+    sex: "male",
+    age: 30,
+    chest: 10,
+    abdomen: 20,
+    thigh: 15,
+  });
+
+  assert.deepEqual(result, {
+    percentage: 13.6,
+    category: "Athlete",
+    bodyDensity: 1.0677,
+    sumOfSkinfoldsMm: 45,
+    protocolLabel: "Jackson-Pollock 3-site (Chest, Abdomen, Thigh)",
+  });
+});
+
+test("calculateBodyFatCaliperPercentage estimates Jackson-Pollock 3-site body fat for a female", () => {
+  const result = calculateBodyFatCaliperPercentage({
+    protocol: "threeSite",
+    sex: "female",
+    age: 30,
+    triceps: 18,
+    suprailiac: 20,
+    thigh: 24,
+  });
+
+  assert.deepEqual(result, {
+    percentage: 24.8,
+    category: "Fitness",
+    bodyDensity: 1.0426,
+    sumOfSkinfoldsMm: 62,
+    protocolLabel: "Jackson-Pollock 3-site (Triceps, Suprailiac, Thigh)",
+  });
+});
+
+test("calculateBodyFatCaliperPercentage estimates Jackson-Pollock 4-site body fat", () => {
+  const result = calculateBodyFatCaliperPercentage({
+    protocol: "fourSite",
+    sex: "male",
+    age: 30,
+    abdomen: 20,
+    triceps: 12,
+    suprailiac: 14,
+    thigh: 15,
+  });
+
+  assert.deepEqual(result, {
+    percentage: 15,
+    category: "Fitness",
+    bodyDensity: null,
+    sumOfSkinfoldsMm: 61,
+    protocolLabel: "Jackson-Pollock 4-site (Abdomen, Triceps, Thigh, Suprailiac)",
+  });
+});
+
+test("calculateBodyFatCaliperPercentage estimates Jackson-Pollock 7-site body fat", () => {
+  const result = calculateBodyFatCaliperPercentage({
+    protocol: "sevenSite",
+    sex: "female",
+    age: 30,
+    chest: 12,
+    midaxillary: 10,
+    triceps: 18,
+    subscapular: 16,
+    abdomen: 22,
+    suprailiac: 20,
+    thigh: 24,
+  });
+
+  assert.deepEqual(result, {
+    percentage: 24.1,
+    category: "Fitness",
+    bodyDensity: 1.0442,
+    sumOfSkinfoldsMm: 122,
+    protocolLabel:
+      "Jackson-Pollock 7-site (Chest, Midaxillary, Triceps, Subscapular, Abdomen, Suprailiac, Thigh)",
+  });
 });
 
 test("calculateOneRepMax uses the Epley formula", () => {

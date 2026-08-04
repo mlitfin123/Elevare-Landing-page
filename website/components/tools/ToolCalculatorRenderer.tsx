@@ -35,6 +35,8 @@ import {
   ACTIVITY_FACTORS,
   ACTIVITY_MET_VALUES,
   calculateBmr,
+  type BodyFatCaliperProtocol,
+  calculateBodyFatCaliperPercentage,
   calculateBodyFatPercentage,
   calculateCalorieTargets,
   calculateCaloriesBurned,
@@ -715,6 +717,209 @@ function BodyFatCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
   );
 }
 
+function BodyFatCaliperCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
+  const [protocol, setProtocol] = useState<BodyFatCaliperProtocol>("threeSite");
+  const [sex, setSex] = useState<Sex>("male");
+  const [age, setAge] = useState("30");
+  const [chest, setChest] = useState("10");
+  const [abdomen, setAbdomen] = useState("20");
+  const [thigh, setThigh] = useState("15");
+  const [triceps, setTriceps] = useState("18");
+  const [suprailiac, setSuprailiac] = useState("20");
+  const [midaxillary, setMidaxillary] = useState("12");
+  const [subscapular, setSubscapular] = useState("16");
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ReturnType<typeof calculateBodyFatCaliperPercentage> | null>(null);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const parsedAge = parseNumber(age);
+    const parsedChest = parseNumber(chest);
+    const parsedAbdomen = parseNumber(abdomen);
+    const parsedThigh = parseNumber(thigh);
+    const parsedTriceps = parseNumber(triceps);
+    const parsedSuprailiac = parseNumber(suprailiac);
+    const parsedMidaxillary = parseNumber(midaxillary);
+    const parsedSubscapular = parseNumber(subscapular);
+
+    if (!isPositive(parsedAge) || !isPositive(parsedThigh)) {
+      setError("Enter a valid age and thigh skinfold before calculating body fat.");
+      return;
+    }
+
+    if (protocol === "threeSite") {
+      if (sex === "male" && (!isPositive(parsedChest) || !isPositive(parsedAbdomen))) {
+        setError("Male 3-site calculations require chest, abdomen, and thigh skinfolds in millimeters.");
+        return;
+      }
+
+      if (sex === "female" && (!isPositive(parsedTriceps) || !isPositive(parsedSuprailiac))) {
+        setError("Female 3-site calculations require triceps, suprailiac, and thigh skinfolds in millimeters.");
+        return;
+      }
+    }
+
+    if (protocol === "fourSite" && (!isPositive(parsedAbdomen) || !isPositive(parsedTriceps) || !isPositive(parsedSuprailiac))) {
+      setError("The 4-site caliper method requires abdomen, triceps, suprailiac, and thigh skinfolds in millimeters.");
+      return;
+    }
+
+    if (
+      protocol === "sevenSite" &&
+      (!isPositive(parsedChest) ||
+        !isPositive(parsedAbdomen) ||
+        !isPositive(parsedTriceps) ||
+        !isPositive(parsedSuprailiac) ||
+        !isPositive(parsedMidaxillary) ||
+        !isPositive(parsedSubscapular))
+    ) {
+      setError(
+        "The 7-site caliper method requires chest, midaxillary, triceps, subscapular, abdomen, suprailiac, and thigh skinfolds in millimeters.",
+      );
+      return;
+    }
+
+    setError(null);
+    setResult(
+      calculateBodyFatCaliperPercentage({
+        protocol,
+        sex,
+        age: parsedAge,
+        thigh: parsedThigh,
+        chest: protocol === "threeSite" && sex === "female" ? undefined : parsedChest,
+        abdomen: protocol === "threeSite" && sex === "female" ? undefined : parsedAbdomen,
+        triceps: protocol === "threeSite" && sex === "male" ? undefined : parsedTriceps,
+        suprailiac: protocol === "threeSite" && sex === "male" ? undefined : parsedSuprailiac,
+        midaxillary: protocol === "sevenSite" ? parsedMidaxillary : undefined,
+        subscapular: protocol === "sevenSite" ? parsedSubscapular : undefined,
+      }),
+    );
+  };
+
+  return (
+    <ToolFormCard
+      title="Estimate body fat from skinfold calipers."
+      description="Switch between Jackson-Pollock 3-site, 4-site, and 7-site protocols. The 3-site method is the default and all caliper measurements should be entered in millimeters."
+    >
+      <form className="tool-form" onSubmit={handleSubmit}>
+        <div className="tool-form-grid">
+          <Field label="Protocol">
+            <SelectInput
+              value={protocol}
+              onChange={(event) => setProtocol(event.target.value as BodyFatCaliperProtocol)}
+            >
+              <option value="threeSite">3-site</option>
+              <option value="fourSite">4-site</option>
+              <option value="sevenSite">7-site</option>
+            </SelectInput>
+          </Field>
+          <Field label="Sex">
+            <SelectInput value={sex} onChange={(event) => setSex(event.target.value as Sex)}>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </SelectInput>
+          </Field>
+          <Field label="Age">
+            <TextInput type="number" min="18" value={age} onChange={(event) => setAge(event.target.value)} />
+          </Field>
+          {protocol === "threeSite" && sex === "male" ? (
+            <>
+              <Field label="Chest skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={chest} onChange={(event) => setChest(event.target.value)} />
+              </Field>
+              <Field label="Abdomen skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={abdomen} onChange={(event) => setAbdomen(event.target.value)} />
+              </Field>
+            </>
+          ) : null}
+          {protocol === "threeSite" && sex === "female" ? (
+            <>
+              <Field label="Triceps skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={triceps} onChange={(event) => setTriceps(event.target.value)} />
+              </Field>
+              <Field label="Suprailiac skinfold (mm)">
+                <TextInput
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={suprailiac}
+                  onChange={(event) => setSuprailiac(event.target.value)}
+                />
+              </Field>
+            </>
+          ) : null}
+          {protocol !== "threeSite" ? (
+            <>
+              <Field label="Abdomen skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={abdomen} onChange={(event) => setAbdomen(event.target.value)} />
+              </Field>
+              <Field label="Triceps skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={triceps} onChange={(event) => setTriceps(event.target.value)} />
+              </Field>
+              <Field label="Suprailiac skinfold (mm)">
+                <TextInput
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={suprailiac}
+                  onChange={(event) => setSuprailiac(event.target.value)}
+                />
+              </Field>
+            </>
+          ) : null}
+          <Field label="Thigh skinfold (mm)">
+            <TextInput type="number" min="1" step="0.1" value={thigh} onChange={(event) => setThigh(event.target.value)} />
+          </Field>
+          {protocol === "sevenSite" ? (
+            <>
+              <Field label="Chest skinfold (mm)">
+                <TextInput type="number" min="1" step="0.1" value={chest} onChange={(event) => setChest(event.target.value)} />
+              </Field>
+              <Field label="Midaxillary skinfold (mm)">
+                <TextInput
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={midaxillary}
+                  onChange={(event) => setMidaxillary(event.target.value)}
+                />
+              </Field>
+              <Field label="Subscapular skinfold (mm)">
+                <TextInput
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={subscapular}
+                  onChange={(event) => setSubscapular(event.target.value)}
+                />
+              </Field>
+            </>
+          ) : null}
+        </div>
+
+        <FormActions toolSlug={toolSlug}>
+          <FormError message={error} />
+        </FormActions>
+      </form>
+
+      {result ? (
+        <ResultCard title="Estimated body fat from calipers">
+          <ResultGrid>
+            <ResultMetric label="Estimated body fat" value={`${result.percentage}%`} />
+            <ResultMetric label="Category" value={result.category} />
+            <ResultMetric label="Skinfold sum" value={`${result.sumOfSkinfoldsMm} mm`} />
+            {result.bodyDensity != null ? (
+              <ResultMetric label="Body density" value={result.bodyDensity.toFixed(4)} />
+            ) : null}
+          </ResultGrid>
+          <p>{result.protocolLabel}</p>
+        </ResultCard>
+      ) : null}
+    </ToolFormCard>
+  );
+}
+
 function OneRepMaxCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
   const [weight, setWeight] = useState("225");
   const [reps, setReps] = useState("5");
@@ -1101,6 +1306,8 @@ export function ToolCalculatorRenderer({ toolSlug }: { toolSlug: ToolSlug }) {
       return <PaceCalculator toolSlug={toolSlug} />;
     case "body-fat-calculator":
       return <BodyFatCalculator toolSlug={toolSlug} />;
+    case "body-fat-caliper-calculator":
+      return <BodyFatCaliperCalculator toolSlug={toolSlug} />;
     case "bmi-calculator":
       return <BmiCalculator toolSlug={toolSlug} />;
     case "lean-body-mass-calculator":

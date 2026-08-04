@@ -65,6 +65,7 @@ export type BodyFatCategory =
   | "Fitness"
   | "Average"
   | "Above average";
+export type BodyFatCaliperProtocol = "threeSite" | "fourSite" | "sevenSite";
 
 export type PaceUnit = "mi" | "km";
 export type PaceMode = "pace" | "time" | "distance";
@@ -245,6 +246,97 @@ export function calculateBodyFatPercentage({
   return {
     percentage: roundTo(percentage, 1),
     category: getBodyFatCategory(sex, percentage),
+  };
+}
+
+export function calculateBodyFatCaliperPercentage({
+  protocol,
+  sex,
+  age,
+  chest,
+  abdomen,
+  thigh,
+  triceps,
+  suprailiac,
+  midaxillary,
+  subscapular,
+}: {
+  protocol: BodyFatCaliperProtocol;
+  sex: Sex;
+  age: number;
+  chest?: number;
+  abdomen?: number;
+  thigh: number;
+  triceps?: number;
+  suprailiac?: number;
+  midaxillary?: number;
+  subscapular?: number;
+}) {
+  let sumOfSkinfoldsMm = 0;
+  let bodyDensity: number | null = null;
+  let percentage = 0;
+  let protocolLabel = "";
+
+  if (protocol === "threeSite") {
+    if (sex === "male") {
+      if (!chest || !abdomen) {
+        throw new Error("Chest and abdomen measurements are required for the male 3-site caliper formula.");
+      }
+
+      sumOfSkinfoldsMm = chest + abdomen + thigh;
+      bodyDensity =
+        1.10938 -
+        0.0008267 * sumOfSkinfoldsMm +
+        0.0000016 * sumOfSkinfoldsMm ** 2 -
+        0.0002574 * age;
+      protocolLabel = "Jackson-Pollock 3-site (Chest, Abdomen, Thigh)";
+    } else {
+      if (!triceps || !suprailiac) {
+        throw new Error("Triceps and suprailiac measurements are required for the female 3-site caliper formula.");
+      }
+
+      sumOfSkinfoldsMm = triceps + suprailiac + thigh;
+      bodyDensity =
+        1.0994921 -
+        0.0009929 * sumOfSkinfoldsMm +
+        0.0000023 * sumOfSkinfoldsMm ** 2 -
+        0.0001392 * age;
+      protocolLabel = "Jackson-Pollock 3-site (Triceps, Suprailiac, Thigh)";
+    }
+  } else if (protocol === "fourSite") {
+    if (!abdomen || !triceps || !suprailiac) {
+      throw new Error("Abdomen, triceps, thigh, and suprailiac measurements are required for the 4-site caliper formula.");
+    }
+
+    sumOfSkinfoldsMm = abdomen + triceps + suprailiac + thigh;
+    percentage =
+      sex === "male"
+        ? 0.29288 * sumOfSkinfoldsMm - 0.0005 * sumOfSkinfoldsMm ** 2 + 0.15845 * age - 5.76377
+        : 0.29669 * sumOfSkinfoldsMm - 0.00043 * sumOfSkinfoldsMm ** 2 + 0.02963 * age + 1.4072;
+    protocolLabel = "Jackson-Pollock 4-site (Abdomen, Triceps, Thigh, Suprailiac)";
+  } else {
+    if (!chest || !abdomen || !triceps || !suprailiac || !midaxillary || !subscapular) {
+      throw new Error(
+        "Chest, midaxillary, triceps, subscapular, abdomen, suprailiac, and thigh measurements are required for the 7-site caliper formula.",
+      );
+    }
+
+    sumOfSkinfoldsMm = chest + midaxillary + triceps + subscapular + abdomen + suprailiac + thigh;
+    bodyDensity =
+      sex === "male"
+        ? 1.112 - 0.00043499 * sumOfSkinfoldsMm + 0.00000055 * sumOfSkinfoldsMm ** 2 - 0.00028826 * age
+        : 1.097 - 0.00046971 * sumOfSkinfoldsMm + 0.00000056 * sumOfSkinfoldsMm ** 2 - 0.00012828 * age;
+    protocolLabel = "Jackson-Pollock 7-site (Chest, Midaxillary, Triceps, Subscapular, Abdomen, Suprailiac, Thigh)";
+  }
+
+  const calculatedPercentage = bodyDensity != null ? 495 / bodyDensity - 450 : percentage;
+
+  return {
+    percentage: roundTo(calculatedPercentage, 1),
+    category: getBodyFatCategory(sex, calculatedPercentage),
+    bodyDensity: bodyDensity != null ? roundTo(bodyDensity, 4) : null,
+    sumOfSkinfoldsMm: roundTo(sumOfSkinfoldsMm, 1),
+    protocolLabel,
   };
 }
 

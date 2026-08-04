@@ -1,8 +1,8 @@
 import { StructuredData } from "@/components/StructuredData";
-import { TrackedLink } from "@/components/TrackedLink";
+import { CalculatorDirectory } from "@/components/tools/CalculatorDirectory";
 import { WorkoutGeneratorFeature } from "@/components/tools/WorkoutGeneratorFeature";
 import { buildMetadata, absoluteUrl } from "@/lib/site";
-import { getCalculatorPath, getToolsByGroup, TOOL_GROUPS, tools } from "@/lib/tools";
+import { getCalculatorPath, tools } from "@/lib/tools";
 
 export const metadata = buildMetadata({
   title: "Fitness Calculators",
@@ -15,8 +15,6 @@ export const metadata = buildMetadata({
     follow: true,
   },
 });
-
-const orderedGroups = ["nutrition", "strength", "prep"] as const;
 
 export default function ToolsIndexPage() {
   const structuredData = {
@@ -54,42 +52,7 @@ export default function ToolsIndexPage() {
       </section>
 
       <WorkoutGeneratorFeature sourcePage="tools_index" />
-
-      {orderedGroups.map((groupKey) => {
-        const group = TOOL_GROUPS[groupKey];
-        const groupTools = getToolsByGroup(groupKey);
-
-        return (
-          <section key={group.slug} className="section">
-            <div className="section-head">
-              <div className="eyebrow">{group.title}</div>
-              <h2 className="section-title">{group.title}</h2>
-              <p className="section-copy">{group.description}</p>
-            </div>
-
-            <div className="tool-index-grid">
-              {groupTools.map((tool) => (
-                <article key={tool.slug} className="panel tool-index-card">
-                  <span className="meta-pill">{group.title}</span>
-                  <h3>{tool.title}</h3>
-                  <p>{tool.metaDescription}</p>
-                  <TrackedLink
-                    className="button button-secondary"
-                    href={getCalculatorPath(tool.slug)}
-                    eventName="tool_open"
-                    eventParams={{
-                      tool_slug: tool.slug,
-                      source_page: "tools_index",
-                    }}
-                  >
-                    Open tool
-                  </TrackedLink>
-                </article>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      <CalculatorDirectory sourcePage="tools_index" />
     </div>
   );
 }
