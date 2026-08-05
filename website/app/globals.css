@@ -1511,6 +1511,20 @@ select {
   margin: 28px auto;
 }
 
+.article-screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+  width: min(100%, 760px);
+  margin: 28px auto;
+}
+
+.article-screenshot-grid .article-screenshot-frame {
+  width: 100%;
+  margin: 0;
+}
+
 .article-body a {
   color: var(--brand-bright);
   text-decoration: underline;
@@ -1635,6 +1649,11 @@ select {
   }
 
   .article-screenshot-frame {
+    width: min(100%, 310px);
+  }
+
+  .article-screenshot-grid {
+    grid-template-columns: 1fr;
     width: min(100%, 310px);
   }
 }
