@@ -255,7 +255,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             <div className="eyebrow">Services offered</div>
             <h2 className="section-title">A quick look at how this profile works.</h2>
             <p className="section-copy">
-              These services are informational listings only. Booking and checkout are not part of this marketplace MVP.
+              Review the services, delivery options, and pricing details this professional currently offers.
             </p>
           </div>
 
