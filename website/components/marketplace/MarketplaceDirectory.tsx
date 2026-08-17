@@ -174,6 +174,9 @@ function MarketplaceDirectoryState({
   );
   const [rotatedCategoryCards, setRotatedCategoryCards] = useState<ProfessionalCategoryRecord[] | null>(null);
   const [visibleProfileCount, setVisibleProfileCount] = useState(INITIAL_VISIBLE_PROFILE_COUNT);
+  const [hasStartedSearch, setHasStartedSearch] = useState(
+    Boolean(fixedCategorySlug) || hasMeaningfulMarketplaceSearch(initialFilters, fixedCategorySlug),
+  );
 
   const defaultCategoryCards = useMemo(
     () => (topCategories && topCategories.length > 0 ? topCategories : categories.slice(0, 8)),
@@ -235,6 +238,7 @@ function MarketplaceDirectoryState({
     [appliedFilters, currentCategorySlug, professionals],
   );
   const hasMeaningfulSearch = hasMeaningfulMarketplaceSearch(appliedFilters, fixedCategorySlug);
+  const shouldShowResults = Boolean(fixedCategorySlug) || hasMeaningfulSearch || hasStartedSearch;
   const fallbackGroups = useMemo(
     () =>
       exactResults.length === 0 && hasMeaningfulSearch
@@ -264,18 +268,22 @@ function MarketplaceDirectoryState({
   );
   const remainingExactResults = Math.max(0, exactResults.length - visibleExactResults.length);
   const advancedFiltersActive = draftFilters.serviceMode !== "all" || draftFilters.specialty !== "all";
-  const resultsHeading = hasMeaningfulSearch
-    ? exactResults.length > 0
-      ? "Results"
-      : "No exact matches yet"
-    : currentCategory?.label ?? "Explore Elevare";
-  const resultsDescription = hasMeaningfulSearch
-    ? exactResults.length > 0
-      ? "These reviewed profiles match your current search filters."
-      : "We couldn't find someone matching every filter, so here are some other options."
-    : currentCategory
-      ? "Reviewed profiles in this category appear here by default so you can start comparing fit right away."
-      : "Reviewed profiles appear here by default so you can start exploring right away.";
+  const resultsHeading = !shouldShowResults
+    ? "Search Elevare"
+    : hasMeaningfulSearch
+      ? exactResults.length > 0
+        ? "Results"
+        : "No exact matches yet"
+      : currentCategory?.label ?? "Explore Elevare";
+  const resultsDescription = !shouldShowResults
+    ? "Choose a category, location, specialty, or search term above to view reviewed professionals."
+    : hasMeaningfulSearch
+      ? exactResults.length > 0
+        ? "These reviewed profiles match your current search filters."
+        : "We couldn't find someone matching every filter, so here are some other options."
+      : currentCategory
+        ? "Reviewed profiles in this category appear here by default so you can start comparing fit right away."
+        : "Search the marketplace to view reviewed professionals.";
 
   useEffect(() => {
     setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
@@ -358,6 +366,7 @@ function MarketplaceDirectoryState({
       });
     }
 
+    setHasStartedSearch(true);
     setAppliedFilters(nextFilters);
     router.replace(buildSearchUrl(pathname, nextFilters, fixedCategorySlug), { scroll: false });
     scrollToResults();
@@ -379,6 +388,7 @@ function MarketplaceDirectoryState({
     const nextFilters = buildInitialFilters(new URLSearchParams(), fixedCategorySlug);
     setDraftFilters(nextFilters);
     setAppliedFilters(nextFilters);
+    setHasStartedSearch(Boolean(fixedCategorySlug));
     setShowAdvancedFilters(false);
     router.replace(buildSearchUrl(pathname, nextFilters, fixedCategorySlug), { scroll: false });
   }
@@ -583,7 +593,15 @@ function MarketplaceDirectoryState({
           <p className="section-copy">{resultsDescription}</p>
         </div>
 
-        {exactResults.length > 0 ? (
+        {!shouldShowResults ? (
+          <article className="callout marketplace-empty-callout">
+            <span className="meta-pill">Search to view professionals</span>
+            <h2>Start with a search.</h2>
+            <p>
+              Profiles will appear here after you search by category, location, specialty, service mode, or keyword.
+            </p>
+          </article>
+        ) : exactResults.length > 0 ? (
           <>
             <div className="training-results-head marketplace-results-head">
               <strong>
