@@ -993,6 +993,12 @@ select {
   margin-bottom: 18px;
 }
 
+.marketplace-results-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-start;
+}
+
 .marketplace-empty-callout,
 .marketplace-demand-callout,
 .marketplace-fallback-group {
@@ -1019,6 +1025,10 @@ select {
 .account-list {
   display: grid;
   gap: 16px;
+}
+
+.marketplace-report-stack {
+  margin-top: 12px;
 }
 
 .marketplace-inline-form {
