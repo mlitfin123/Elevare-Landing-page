@@ -1424,6 +1424,22 @@ select {
   accent-color: var(--brand-bright);
 }
 
+.professional-attestation {
+  align-items: flex-start;
+  line-height: 1.55;
+}
+
+.professional-attestation input {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+.professional-attestation a {
+  color: var(--brand-bright);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .nested-editor-card {
   padding: 20px;
 }

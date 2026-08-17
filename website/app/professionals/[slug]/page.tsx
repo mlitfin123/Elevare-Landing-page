@@ -300,6 +300,11 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             </p>
             <InquiryForm professional={professional} />
             <ReportProfileForm professional={professional} />
+            <div className="form-note">
+              Elevare is a marketplace, not this professional&apos;s employer or service provider. Profile approval is
+              not an endorsement or a guarantee of qualifications, safety, or results. Confirm current credentials,
+              licensing, insurance, and suitability before engaging services.
+            </div>
           </article>
         </div>
       </section>

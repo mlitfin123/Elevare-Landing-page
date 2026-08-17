@@ -232,6 +232,7 @@ export function ProfessionalProfileEditor() {
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [isPubliclyListed, setIsPubliclyListed] = useState(false);
   const [statusMessageOverride, setStatusMessageOverride] = useState<string | null>(null);
+  const [hasAcceptedProfessionalTerms, setHasAcceptedProfessionalTerms] = useState(false);
   const selectedCategoryStableIds = useMemo(
     () =>
       buildDistinctValues([
@@ -513,6 +514,12 @@ export function ProfessionalProfileEditor() {
       return;
     }
 
+    if (nextStatus === "pending_review" && !hasAcceptedProfessionalTerms) {
+      setFeedback("Confirm the professional marketplace terms before submitting your profile for review.");
+      setFeedbackType("error");
+      return;
+    }
+
     setIsSaving(true);
     setFeedback(null);
 
@@ -744,6 +751,7 @@ export function ProfessionalProfileEditor() {
       }
 
       if (nextStatus === "pending_review") {
+        setHasAcceptedProfessionalTerms(false);
         trackEvent("professional_profile_submitted", {
           profile_slug: profileSlug,
         });
@@ -1236,6 +1244,21 @@ export function ProfessionalProfileEditor() {
             Add credential
           </button>
         </div>
+
+        <label className="checkbox-row professional-attestation">
+          <input
+            type="checkbox"
+            checked={hasAcceptedProfessionalTerms}
+            onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)}
+          />
+          <span>
+            I certify that my profile and credentials are accurate, that I am an independent professional rather
+            than an Elevare employee or agent, and that I will maintain all licenses, insurance, and authorizations
+            required for my services. I agree to the{" "}
+            <Link href="/terms-of-service.html">Terms of Service</Link> and{" "}
+            <Link href="/privacy-policy.html">Privacy Policy</Link>.
+          </span>
+        </label>
 
         <div className="form-actions">
           <div className="button-row">

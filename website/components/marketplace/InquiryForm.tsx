@@ -228,6 +228,11 @@ export function InquiryForm({ professional }: InquiryFormProps) {
                 rows={4}
               />
             </label>
+            <div className="form-note field-full">
+              Share only the information needed for this request. Do not include medical records, account passwords,
+              payment card details, or other highly sensitive information. Your request will be shared with the
+              independent professional you contact.
+            </div>
           </div>
 
           <div className="form-actions">
