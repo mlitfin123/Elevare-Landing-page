@@ -8,7 +8,7 @@ const navigation = [
   { href: "/nutrition/", label: "Nutrition" },
   { href: "/apps/", label: "Apps" },
   { href: "/blog/", label: "Blog" },
-  { href: "/#waitlist", label: "Elevare Waitlist" },
+  { href: "/professionals/", label: "Find Support" },
 ];
 
 export function Header() {
@@ -38,8 +38,8 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link className="button-link" href="/logbook/">
-            Get Logbook
+          <Link className="button-link" href="/sign-in/">
+            Sign In
           </Link>
         </nav>
       </div>

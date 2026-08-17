@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Next.js content hub for ElevareFit tools, apps, workouts, exercises, and nutrition resources.",
   "scripts": {
-    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
+    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/generate-marketplace-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
@@ -23,6 +23,7 @@
   ],
   "license": "UNLICENSED",
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "gray-matter": "^4.0.3",
     "next": "^16.2.4",
     "next-mdx-remote": "^6.0.0",

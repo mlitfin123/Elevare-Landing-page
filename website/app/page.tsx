@@ -2,19 +2,28 @@ import Image from "next/image";
 import { BlogCard } from "@/components/BlogCard";
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { TrackedLink } from "@/components/TrackedLink";
-import { WaitlistForm } from "@/components/WaitlistForm";
 import { getAllPosts } from "@/lib/blog";
+import { getMarketplaceCategories, getMarketplaceProfessionals } from "@/lib/marketplace";
+import { countEligibleMarketplaceProfiles, findTopCategories, formatMarketplaceSocialProofCount } from "@/lib/marketplace-helpers";
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
   title: "Fitness Tools, Apps, and Resources",
   description:
-    "Explore free calculators, workout templates, exercise guides, nutrition resources, and fitness apps built to help you make progress.",
+    "Explore free calculators, workout templates, exercise guides, nutrition resources, fitness apps, and the Elevare marketplace.",
   pathname: "/",
 });
 
-export default function HomePage() {
+export default async function HomePage() {
   const latestPosts = getAllPosts().slice(0, 3);
+  const [categories, professionals] = await Promise.all([
+    getMarketplaceCategories(),
+    getMarketplaceProfessionals(),
+  ]);
+  const topCategories = findTopCategories(categories, professionals, 4);
+  const marketplaceSocialProof = formatMarketplaceSocialProofCount(
+    countEligibleMarketplaceProfiles(professionals),
+  );
 
   return (
     <div className="container">
@@ -51,15 +60,15 @@ export default function HomePage() {
           </TrackedLink>
           <TrackedLink
             className="hero-text-link"
-            href="/#waitlist"
+            href="/professionals/"
             eventName="cta_click"
             eventParams={{
-              cta_name: "Join the Elevare waitlist",
+              cta_name: "Find your match",
               cta_context: "home_hero",
               product: "Elevare",
             }}
           >
-            Join the Elevare waitlist
+            Find your match
           </TrackedLink>
         </div>
 
@@ -166,18 +175,18 @@ export default function HomePage() {
           </TrackedLink>
           <TrackedLink
             className="panel next-step-card"
-            href="/#waitlist"
+            href="/professionals"
             eventName="next_step_click"
             eventParams={{
-              next_step: "find_or_become_a_coach",
+              next_step: "find_or_become_a_professional",
               next_step_context: "home_next_step",
               product: "Elevare",
             }}
           >
             <span className="stat-label">Elevare</span>
             <h3>I want to find or become a coach</h3>
-            <p>Join the waitlist for the upcoming marketplace built around clearer coach discovery and fit.</p>
-            <span className="proof-action">Join the waitlist</span>
+            <p>Browse profiles now, or create your public profile if you want to join the marketplace.</p>
+            <span className="proof-action">Open the marketplace</span>
           </TrackedLink>
         </div>
       </section>
@@ -413,50 +422,89 @@ export default function HomePage() {
       <section className="section" id="marketplace">
         <div className="section-head">
           <div className="eyebrow">Elevare marketplace</div>
-          <h2 className="section-title">Coaching discovery for members and coaches, coming soon.</h2>
+          <h2 className="section-title">Find support or join as a pro.</h2>
           <p className="section-copy">
-            Elevare is the upcoming marketplace for people looking for coaching support and coaches who want a
-            better-fit way to get discovered.
+            Elevare is the marketplace layer for browsing reviewed profiles, saving good-fit options, and sending
+            consultation requests without turning discovery into guesswork.
           </p>
         </div>
 
         <div className="landing-hero">
           <div className="hero-copy marketplace-copy">
-            <div className="status-row">
-              <span className="status-chip">Coming soon</span>
-            </div>
             <p className="marketplace-intro">
-              Join the waitlist if you want updates on member access, coach onboarding, and rollout timing as
-              the marketplace gets closer to launch.
+              Clients can browse publicly and create an account only when they want to save a profile or send a
+              request. Pros can create a profile, add services and credentials, and submit it for approval.
             </p>
             <div className="hero-proof marketplace-grid" aria-label="Who Elevare is for">
               <article className="proof-card">
-                <span className="proof-label">Members</span>
-                <div className="proof-value">Find a better-fit coach</div>
-                <p className="proof-copy">Join if you want early updates when member access and coach discovery open.</p>
+                <span className="proof-label">Clients</span>
+                <div className="proof-value">Browse by fit, not just hype</div>
+                <p className="proof-copy">Compare category, service mode, specialties, location, and pricing context before reaching out.</p>
               </article>
               <article className="proof-card">
-                <span className="proof-label">Coaches</span>
-                <div className="proof-value">Get discovered more clearly</div>
-                <p className="proof-copy">Join if you want rollout details, coach access updates, and onboarding timing.</p>
+                <span className="proof-label">For pros</span>
+                <div className="proof-value">Create a clearer public profile</div>
+                <p className="proof-copy">Build a listing that shows categories, specialties, credentials, and flexible services in one place.</p>
               </article>
             </div>
             <div className="hero-actions">
               <TrackedLink
-                className="btn btn-secondary"
-                href="/elevare"
+                className="btn btn-primary"
+                href="/professionals/"
                 eventName="cta_click"
                 eventParams={{
-                  cta_name: "Learn more about Elevare",
-                  cta_context: "home_waitlist_section",
+                  cta_name: "Find your match",
+                  cta_context: "home_marketplace_section",
                   product: "Elevare",
                 }}
               >
-                Learn more about Elevare
+                Find your match
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href="/account/professional-profile/"
+                eventName="cta_click"
+                eventParams={{
+                  cta_name: "Join as a Pro",
+                  cta_context: "home_marketplace_section",
+                  product: "Elevare",
+                }}
+              >
+                Join as a Pro
               </TrackedLink>
             </div>
           </div>
-          <WaitlistForm />
+
+          <aside className="waitlist-card marketplace-side-card">
+            <div className="card-kicker">Marketplace snapshot</div>
+            <h2>Browse by category.</h2>
+            <p>
+              Start with the kind of support you want, then narrow by location, service mode, and specialty.
+            </p>
+            <div className="micro-trust marketplace-category-list">
+              {topCategories.map((category) => (
+                <TrackedLink
+                  key={category.slug}
+                  className="proof-card proof-card-link compact-category-card"
+                  href={`/professionals/${category.slug}`}
+                  eventName="professional_category_selected"
+                  eventParams={{
+                    source_page: "home_marketplace",
+                    category: category.slug,
+                  }}
+                >
+                  <span className="proof-label">{category.label}</span>
+                  <p className="proof-copy">{category.shortDescription}</p>
+                  <span className="proof-action">Browse</span>
+                </TrackedLink>
+              ))}
+            </div>
+            <div className="form-note">
+              {marketplaceSocialProof
+                ? `${marketplaceSocialProof} are currently available in the public directory.`
+                : "Browse by category, location, and specialty to narrow the right fit."}
+            </div>
+          </aside>
         </div>
       </section>
 

@@ -5,7 +5,7 @@ import { buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "Apps",
   description:
-    "Explore the ElevareFit apps for tracking, competition prep, and coming-soon coaching support.",
+    "Explore the ElevareFit apps and marketplace for tracking, competition prep, and finding the right support.",
   pathname: "/apps",
 });
 
@@ -23,7 +23,7 @@ const productCards = [
   {
     key: "Elevare" as const,
     description:
-      "A coaching marketplace built to help members find the right coach and help coaches get discovered by the right people.",
+      "A marketplace built to help people find the right support and help pros get discovered more clearly.",
   },
 ];
 
@@ -34,8 +34,8 @@ export default function AppsPage() {
         <div className="eyebrow">Apps</div>
         <h1>Apps built for tracking, prep, and coaching support.</h1>
         <p>
-          Explore the ElevareFit app lineup across day-to-day training, competition prep, and the coming-soon
-          marketplace layer for finding the right coach.
+          Explore the ElevareFit app lineup across day-to-day tracking, competition prep, and the marketplace
+          layer for finding the right support.
         </p>
         <div className="button-row">
           <TrackedLink

@@ -6,16 +6,18 @@ const supabaseUrl = process.env.SUPABASE_URL ?? `https://${projectRef}.supabase.
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const pageSize = 1000;
 
-if (!serviceRoleKey) {
-  throw new Error(
-    "SUPABASE_SERVICE_ROLE_KEY is required to generate nutrition data from the existing Logbook database.",
-  );
-}
-
 const generatedDir = path.join(process.cwd(), ".generated");
 const publicDir = path.join(process.cwd(), "public");
 const generatedDataPath = path.join(generatedDir, "nutrition-data.json");
 const searchIndexPath = path.join(publicDir, "nutrition-search-index.json");
+
+async function readExistingProducts() {
+  try {
+    return JSON.parse(await fs.readFile(generatedDataPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
 
 async function fetchProductsPage(offset) {
   const params = new URLSearchParams({
@@ -118,36 +120,66 @@ function buildSearchIndex(products) {
 }
 
 async function main() {
+  const existingProducts = await readExistingProducts();
+  const fallbackProducts = Array.isArray(existingProducts) ? existingProducts : [];
+
+  if (!serviceRoleKey) {
+    await fs.mkdir(generatedDir, { recursive: true });
+    await fs.mkdir(publicDir, { recursive: true });
+    await fs.writeFile(generatedDataPath, JSON.stringify(fallbackProducts, null, 2));
+    await fs.writeFile(searchIndexPath, JSON.stringify(buildSearchIndex(fallbackProducts)));
+    console.log(
+      `Skipped nutrition data refresh because SUPABASE_SERVICE_ROLE_KEY is not set. Using ${
+        fallbackProducts.length > 0 ? "the existing" : "an empty"
+      } nutrition snapshot instead.`,
+    );
+    return;
+  }
+
   const products = [];
   let offset = 0;
 
-  while (true) {
-    const batch = await fetchProductsPage(offset);
+  try {
+    while (true) {
+      const batch = await fetchProductsPage(offset);
 
-    if (!Array.isArray(batch) || batch.length === 0) {
-      break;
-    }
-
-    for (const product of batch) {
-      const sanitized = sanitizeProduct(product);
-
-      if (sanitized) {
-        products.push(sanitized);
+      if (!Array.isArray(batch) || batch.length === 0) {
+        break;
       }
+
+      for (const product of batch) {
+        const sanitized = sanitizeProduct(product);
+
+        if (sanitized) {
+          products.push(sanitized);
+        }
+      }
+
+      if (batch.length < pageSize) {
+        break;
+      }
+
+      offset += pageSize;
     }
 
-    if (batch.length < pageSize) {
-      break;
-    }
+    await fs.mkdir(generatedDir, { recursive: true });
+    await fs.mkdir(publicDir, { recursive: true });
+    await fs.writeFile(generatedDataPath, JSON.stringify(products, null, 2));
+    await fs.writeFile(searchIndexPath, JSON.stringify(buildSearchIndex(products)));
 
-    offset += pageSize;
+    console.log(`Generated nutrition data for ${products.length} restaurant items.`);
+  } catch (error) {
+    await fs.mkdir(generatedDir, { recursive: true });
+    await fs.mkdir(publicDir, { recursive: true });
+    await fs.writeFile(generatedDataPath, JSON.stringify(fallbackProducts, null, 2));
+    await fs.writeFile(searchIndexPath, JSON.stringify(buildSearchIndex(fallbackProducts)));
+    console.warn(
+      `Fell back to ${
+        fallbackProducts.length > 0 ? "the existing" : "an empty"
+      } nutrition snapshot because the nutrition data could not be loaded.`,
+    );
+    console.warn(error instanceof Error ? error.message : error);
   }
-
-  await fs.mkdir(generatedDir, { recursive: true });
-  await fs.writeFile(generatedDataPath, JSON.stringify(products, null, 2));
-  await fs.writeFile(searchIndexPath, JSON.stringify(buildSearchIndex(products)));
-
-  console.log(`Generated nutrition data for ${products.length} restaurant items.`);
 }
 
 await main();

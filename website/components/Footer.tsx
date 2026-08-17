@@ -7,6 +7,7 @@ export function Footer() {
         <div className="footer-brand">
           <div className="footer-copy">&copy; {new Date().getFullYear()} ElevareFit. All rights reserved.</div>
           <div className="footer-meta">Elevare Fit LLC</div>
+          <div className="footer-meta">Elevare for iOS &amp; Android - Coming Soon</div>
         </div>
 
         <nav className="footer-links" aria-label="Footer">
@@ -16,7 +17,8 @@ export function Footer() {
           <Link href="/nutrition/">Nutrition</Link>
           <Link href="/apps/">Apps</Link>
           <Link href="/blog/">Blog</Link>
-          <Link href="/#waitlist">Elevare Waitlist</Link>
+          <Link href="/professionals/">Find Support</Link>
+          <Link href="/sign-in/">Sign In</Link>
           <Link href="/privacy-policy.html">Privacy Policy</Link>
           <Link href="/terms-of-service.html">Terms of Service</Link>
           <a href="mailto:mlitfin@elevarefit.org">Contact</a>

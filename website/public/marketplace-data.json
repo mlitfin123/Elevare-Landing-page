@@ -1,0 +1,182 @@
+{
+  "generatedAt": "2026-08-17T15:16:11.976Z",
+  "categories": [
+    {
+      "id": "personal_training",
+      "stableId": "personal_training",
+      "slug": "personal-training",
+      "publicSlug": "personal-training",
+      "label": "Personal Training",
+      "headline": "Personal training",
+      "shortDescription": "Exercise instruction, coaching, and accountability for everyday fitness, strength, and body-composition goals.",
+      "sortOrder": 10,
+      "isActive": true
+    },
+    {
+      "id": "strength_conditioning",
+      "stableId": "strength_conditioning",
+      "slug": "strength-conditioning",
+      "publicSlug": "strength-conditioning",
+      "label": "Strength & Conditioning",
+      "headline": "Strength and conditioning",
+      "shortDescription": "Performance-minded training for strength, power, speed, and resilient athletic development.",
+      "sortOrder": 20,
+      "isActive": true
+    },
+    {
+      "id": "bodybuilding_physique",
+      "stableId": "bodybuilding_physique",
+      "slug": "bodybuilding-physique",
+      "publicSlug": "bodybuilding-physique",
+      "label": "Bodybuilding & Physique",
+      "headline": "Bodybuilding and physique coaching",
+      "shortDescription": "Coaching for muscle building, physique development, contest prep, and stage presentation.",
+      "sortOrder": 30,
+      "isActive": true
+    },
+    {
+      "id": "strength_sports",
+      "stableId": "strength_sports",
+      "slug": "strength-sports",
+      "publicSlug": "strength-sports",
+      "label": "Strength Sports",
+      "headline": "Strength sports coaching",
+      "shortDescription": "Coaching for powerlifting, Olympic weightlifting, strongman, and strength competition prep.",
+      "sortOrder": 40,
+      "isActive": true
+    },
+    {
+      "id": "running_endurance",
+      "stableId": "running_endurance",
+      "slug": "running-endurance",
+      "publicSlug": "running-endurance",
+      "label": "Running & Endurance",
+      "headline": "Running and endurance coaching",
+      "shortDescription": "Structured support for running, endurance development, race preparation, and aerobic performance.",
+      "sortOrder": 50,
+      "isActive": true
+    },
+    {
+      "id": "sports_performance",
+      "stableId": "sports_performance",
+      "slug": "sports-performance",
+      "publicSlug": "sports-performance",
+      "label": "Sports Performance",
+      "headline": "Sports performance coaching",
+      "shortDescription": "Training focused on speed, explosiveness, conditioning, and sport-specific athletic performance.",
+      "sortOrder": 60,
+      "isActive": true
+    },
+    {
+      "id": "nutrition",
+      "stableId": "nutrition",
+      "slug": "nutrition",
+      "publicSlug": "nutrition",
+      "label": "Nutrition",
+      "headline": "Nutrition coaching",
+      "shortDescription": "Nutrition strategy, habit change, and food-structure support for health, body composition, and performance.",
+      "sortOrder": 70,
+      "isActive": true
+    },
+    {
+      "id": "dietetics",
+      "stableId": "dietetics",
+      "slug": "dietetics",
+      "publicSlug": "dietetics",
+      "label": "Dietetics",
+      "headline": "Dietetics support",
+      "shortDescription": "Credentialed dietetics support where regulated nutrition credentials materially matter.",
+      "sortOrder": 80,
+      "isActive": true
+    },
+    {
+      "id": "health_wellness_coaching",
+      "stableId": "health_wellness_coaching",
+      "slug": "health-wellness-coaching",
+      "publicSlug": "health-wellness-coaching",
+      "label": "Health & Wellness Coaching",
+      "headline": "Health and wellness coaching",
+      "shortDescription": "Support for sustainable habits, accountability, lifestyle structure, and general wellbeing.",
+      "sortOrder": 90,
+      "isActive": true
+    },
+    {
+      "id": "life_mindset_coaching",
+      "stableId": "life_mindset_coaching",
+      "slug": "life-mindset-coaching",
+      "publicSlug": "life-mindset-coaching",
+      "label": "Life & Mindset Coaching",
+      "headline": "Life and mindset coaching",
+      "shortDescription": "Coaching centered on motivation, confidence, accountability, and personal growth.",
+      "sortOrder": 100,
+      "isActive": true
+    },
+    {
+      "id": "yoga",
+      "stableId": "yoga",
+      "slug": "yoga",
+      "publicSlug": "yoga",
+      "label": "Yoga",
+      "headline": "Yoga",
+      "shortDescription": "Yoga instruction for movement, flexibility, breath, and mind-body practice.",
+      "sortOrder": 110,
+      "isActive": true
+    },
+    {
+      "id": "pilates",
+      "stableId": "pilates",
+      "slug": "pilates",
+      "publicSlug": "pilates",
+      "label": "Pilates",
+      "headline": "Pilates",
+      "shortDescription": "Pilates instruction for strength, control, posture, and movement quality.",
+      "sortOrder": 120,
+      "isActive": true
+    },
+    {
+      "id": "mobility_movement",
+      "stableId": "mobility_movement",
+      "slug": "mobility-movement",
+      "publicSlug": "mobility-movement",
+      "label": "Mobility, Flexibility & Movement",
+      "headline": "Mobility, flexibility, and movement coaching",
+      "shortDescription": "Support for mobility, flexibility, movement quality, and non-medical corrective exercise.",
+      "sortOrder": 130,
+      "isActive": true
+    },
+    {
+      "id": "mindfulness_breathwork",
+      "stableId": "mindfulness_breathwork",
+      "slug": "mindfulness-breathwork",
+      "publicSlug": "mindfulness-breathwork",
+      "label": "Meditation, Mindfulness & Breathwork",
+      "headline": "Meditation, mindfulness, and breathwork",
+      "shortDescription": "Breath, mindfulness, and meditation support for focus, relaxation, and everyday regulation.",
+      "sortOrder": 140,
+      "isActive": true
+    },
+    {
+      "id": "recovery_bodywork",
+      "stableId": "recovery_bodywork",
+      "slug": "recovery-bodywork",
+      "publicSlug": "recovery-bodywork",
+      "label": "Recovery & Bodywork",
+      "headline": "Recovery and bodywork",
+      "shortDescription": "Recovery-oriented services such as massage, assisted stretching, and non-medical bodywork support.",
+      "sortOrder": 150,
+      "isActive": true
+    },
+    {
+      "id": "special_population_fitness",
+      "stableId": "special_population_fitness",
+      "slug": "special-population-fitness",
+      "publicSlug": "special-population-fitness",
+      "label": "Special Population Fitness",
+      "headline": "Special population fitness",
+      "shortDescription": "Fitness support for clients who need a lower-impact, age-aware, or more adaptive training approach.",
+      "sortOrder": 160,
+      "isActive": true
+    }
+  ],
+  "professionals": []
+}

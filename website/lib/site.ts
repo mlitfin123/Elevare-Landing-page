@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "ElevareFit",
   title: "ElevareFit",
   description:
-    "ElevareFit is a fitness platform with free tools, exercise guides, workout templates, nutrition resources, and apps for tracking and prep.",
+    "ElevareFit is a fitness platform with free tools, exercise guides, workout templates, nutrition resources, tracking apps, and a marketplace for finding the right support.",
   url: "https://www.elevarefit.org",
   waitlist: {
     endpoint: "https://yozfzsudbcqjttepjnyg.supabase.co/functions/v1/resend-waitlist",
@@ -19,6 +19,12 @@ export type ProductStoreLink = {
   label: string;
   href: string;
   store: "ios" | "android";
+};
+
+export type UpcomingPlatformLink = {
+  label: "iOS" | "Android";
+  available: boolean;
+  url?: string;
 };
 
 export const productConfig: Record<
@@ -84,14 +90,44 @@ export const productConfig: Record<
     slug: "elevare",
     title: "Elevare",
     description:
-      "A coming-soon coaching marketplace built to help people find the right trainer or coach and help coaches get discovered by the right clients.",
-    status: "Coming soon",
+      "A marketplace built to help people find the right health, fitness, or wellness support and help good-fit profiles get discovered more clearly.",
+    status: "Web live - iOS & Android coming soon",
     idealUser:
-      "People looking for coaching and coaches looking for better discovery and fit.",
-    ctaLabel: "Join the Elevare waitlist",
-    ctaHref: "/#waitlist",
+      "People looking for support and coaches, trainers, and wellness providers who want a clearer discovery path.",
+    ctaLabel: "Find your match",
+    ctaHref: "/professionals",
   },
 };
+
+export const elevareMobileAppConfig = {
+  heading: "Elevare is coming to iOS & Android",
+  statusLabel: "Coming Soon",
+  description:
+    "Find, connect with, and manage your fitness and wellness support from anywhere. Your Elevare account and profile will carry over to the mobile app when it launches.",
+  webNowTitle: "Use Elevare on the web now.",
+  webNowDescription:
+    "Browse profiles, save good-fit options, and request consultations today so you do not need to start from scratch later.",
+  continuityTitle: "Your web account will be ready on mobile.",
+  continuityDescription:
+    "Join on the web now. Your Elevare account and profile will carry over to the mobile app when it launches.",
+  proTitle: "Build your presence before the app launches.",
+  proDescription:
+    "Create your Elevare profile now so you're ready to be discovered as the marketplace expands to iOS and Android.",
+  proCarryOverDescription:
+    "Your public profile details will carry over when the mobile app launches.",
+  platforms: [
+    {
+      label: "iOS",
+      available: false,
+      url: undefined,
+    },
+    {
+      label: "Android",
+      available: false,
+      url: undefined,
+    },
+  ] satisfies UpcomingPlatformLink[],
+} as const;
 
 function hasFileExtension(pathname: string) {
   return /\.[a-z0-9]+$/i.test(pathname);

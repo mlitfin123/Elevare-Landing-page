@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getAllCategories, getAllPosts } from "../lib/blog.ts";
+import { MARKETPLACE_CATEGORY_SEEDS } from "../lib/marketplace-categories.ts";
+import type { MarketplaceSnapshot, ProfessionalProfileRecord } from "../lib/marketplace-types.ts";
 import { buildRestaurantSummaries, getPopularRestaurants, type NutritionProduct } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
@@ -29,6 +31,7 @@ const publicDir = path.join(projectRoot, "public");
 const sitemapsDir = path.join(publicDir, "sitemaps");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
+const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
 const buildDate = new Date().toISOString();
 
 const staticSiteRoutes = ["/", "/apps", "/logbook", "/stagelab", "/elevare"] as const;
@@ -176,6 +179,30 @@ function buildBlogEntries() {
   ];
 }
 
+function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
+  const categories =
+    snapshot.categories.length > 0
+      ? snapshot.categories
+      : MARKETPLACE_CATEGORY_SEEDS.map((category) => ({
+          id: category.slug,
+          slug: category.slug,
+          label: category.label,
+          headline: category.headline,
+          shortDescription: category.shortDescription,
+          sortOrder: category.sortOrder,
+          isActive: true,
+        }));
+
+  const profileEntries = snapshot.professionals.map((professional: ProfessionalProfileRecord) =>
+    toSitemapEntry(`/professionals/${professional.profileSlug}`, professional.updatedAt ?? buildDate, "standard_index"),
+  );
+  const categoryEntries = categories.map((category) =>
+    toSitemapEntry(`/professionals/${category.slug}`, buildDate, "priority_index"),
+  );
+
+  return [toSitemapEntry("/professionals", buildDate, "priority_index"), ...categoryEntries, ...profileEntries];
+}
+
 function main() {
   const trainingSnapshot = readJsonFile<{
     exercises: ExerciseRecord[];
@@ -187,6 +214,11 @@ function main() {
   const deduplicatedExercises = deduplicateExercises(trainingSnapshot.exercises);
 
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
+  const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
+    generatedAt: null,
+    categories: [],
+    professionals: [],
+  });
 
   const sitemapFiles: Array<{ name: string; entries: SitemapEntry[] }> = [
     { name: "site", entries: buildSiteEntries() },
@@ -195,6 +227,7 @@ function main() {
     { name: "workouts", entries: buildWorkoutEntries(trainingSnapshot.workoutTemplates) },
     { name: "nutrition", entries: buildNutritionEntries(nutritionProducts) },
     { name: "blog", entries: buildBlogEntries() },
+    { name: "professionals", entries: buildMarketplaceEntries(marketplaceSnapshot) },
   ];
 
   for (const sitemap of sitemapFiles) {

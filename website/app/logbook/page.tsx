@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Callout } from "@/components/Callout";
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -15,27 +16,42 @@ export default function LogbookPage() {
 
   return (
     <div className="container">
-      <section className="hero">
-        <div className="eyebrow">Logbook</div>
-        <h1>Track workouts without turning tracking into another job.</h1>
-        <p>
-          Logbook is the main tracking app on ElevareFit, built to make training, nutrition, and progress
-          easier to record, review, and repeat with consistency.
-        </p>
-        <div className="button-row">
-          <ProductCtaButtons product="Logbook" context="logbook_hero" />
-          <TrackedLink
-            className="button button-secondary"
-            href="/blog"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Read the blog",
-              cta_context: "logbook_hero",
-              product: "Logbook",
-            }}
-          >
-            Read the blog
-          </TrackedLink>
+      <section className="hero product-hero">
+        <div className="product-hero-copy">
+          <div className="eyebrow">Logbook</div>
+          <h1>Track workouts without turning tracking into another job.</h1>
+          <p>
+            Logbook is the main tracking app on ElevareFit, built to make training, nutrition, and progress
+            easier to record, review, and repeat with consistency.
+          </p>
+          <div className="button-row">
+            <ProductCtaButtons product="Logbook" context="logbook_hero" />
+            <TrackedLink
+              className="button button-secondary"
+              href="/blog"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Read the blog",
+                cta_context: "logbook_hero",
+                product: "Logbook",
+              }}
+            >
+              Read the blog
+            </TrackedLink>
+          </div>
+        </div>
+
+        <div className="product-hero-visual">
+          <div className="product-hero-logo-frame">
+            <Image
+              src="/logbook-logo.png"
+              alt="Logbook app logo"
+              width={360}
+              height={360}
+              className="product-hero-logo product-hero-logo-square"
+              priority
+            />
+          </div>
         </div>
       </section>
 
