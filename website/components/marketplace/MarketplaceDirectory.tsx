@@ -11,15 +11,18 @@ import {
   buildProfessionalFallbackGroups,
   filterProfessionals,
   getCategoryBySlug,
-  getProfessionalsByCategory,
   getUniqueLocations,
-  getUniqueSpecialties,
   hasMeaningfulMarketplaceSearch,
   normalizeMarketplaceText,
   selectMarketplaceCategoryCards,
   sortProfessionals,
+  sortProfessionalsWithRandomizedTies,
   type ProfessionalDirectoryFilters,
 } from "@/lib/marketplace-helpers";
+import {
+  getMarketplaceTaxonomyCategoryByPublicSlug,
+  MARKETPLACE_TAXONOMY_CATEGORIES,
+} from "@/lib/marketplace-taxonomy";
 import type { ProfessionalCategoryRecord, ProfessionalProfileRecord } from "@/lib/marketplace-types";
 
 type MarketplaceDirectoryProps = {
@@ -92,17 +95,6 @@ function buildSearchUrl(
   return nextQuery ? `${pathname}?${nextQuery}` : pathname;
 }
 
-function hashMarketplaceSeed(value: string) {
-  let hash = 2166136261;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return hash >>> 0;
-}
-
 function buildResultsSeed(filters: ProfessionalDirectoryFilters, currentCategorySlug: string | null) {
   return [
     currentCategorySlug ?? filters.category,
@@ -111,17 +103,6 @@ function buildResultsSeed(filters: ProfessionalDirectoryFilters, currentCategory
     filters.specialty,
     normalizeMarketplaceText(filters.query)?.toLowerCase() ?? "",
   ].join("::");
-}
-
-function shuffleProfessionalsForDisplay(professionals: ProfessionalProfileRecord[], seed: string) {
-  return [...professionals]
-    .map((professional, index) => ({
-      professional,
-      seedWeight: hashMarketplaceSeed(`${seed}:${professional.id}:${professional.profileSlug}:${index}`),
-      baseIndex: index,
-    }))
-    .sort((left, right) => left.seedWeight - right.seedWeight || left.baseIndex - right.baseIndex)
-    .map((entry) => entry.professional);
 }
 
 function scrollToResults() {
@@ -238,26 +219,22 @@ function MarketplaceDirectoryState({
   );
   const exactResults = useMemo(
     () =>
-      sortProfessionals(filterProfessionals(professionals, appliedFilters), {
-        preferredCategorySlug: currentCategorySlug,
-        preferredLocation: appliedFilters.location !== "all" ? appliedFilters.location : null,
-        preferredServiceMode: appliedFilters.serviceMode !== "all" ? appliedFilters.serviceMode : null,
-        referenceSearchText:
-          normalizeMarketplaceText(appliedFilters.query)?.toLowerCase()
-          ?? normalizeMarketplaceText(appliedFilters.specialty)?.toLowerCase()
-          ?? null,
-      }),
+      sortProfessionalsWithRandomizedTies(
+        filterProfessionals(professionals, appliedFilters),
+        {
+          preferredCategorySlug: currentCategorySlug,
+          preferredLocation: appliedFilters.location !== "all" ? appliedFilters.location : null,
+          preferredServiceMode: appliedFilters.serviceMode !== "all" ? appliedFilters.serviceMode : null,
+          referenceSearchText:
+            normalizeMarketplaceText(appliedFilters.query)?.toLowerCase()
+            ?? normalizeMarketplaceText(appliedFilters.specialty)?.toLowerCase()
+            ?? null,
+        },
+        buildResultsSeed(appliedFilters, currentCategorySlug),
+      ),
     [appliedFilters, currentCategorySlug, professionals],
   );
   const hasMeaningfulSearch = hasMeaningfulMarketplaceSearch(appliedFilters, fixedCategorySlug);
-  const resultsSeed = useMemo(
-    () => buildResultsSeed(appliedFilters, currentCategorySlug),
-    [appliedFilters, currentCategorySlug],
-  );
-  const displayedExactResults = useMemo(
-    () => shuffleProfessionalsForDisplay(exactResults, resultsSeed),
-    [exactResults, resultsSeed],
-  );
   const fallbackGroups = useMemo(
     () =>
       exactResults.length === 0 && hasMeaningfulSearch
@@ -273,16 +250,19 @@ function MarketplaceDirectoryState({
   const hasInventory = professionals.length > 0;
   const locations = useMemo(() => getUniqueLocations(professionals), [professionals]);
   const specialtyCategorySlug = fixedCategorySlug ?? (draftFilters.category !== "all" ? draftFilters.category : null);
-  const specialtySourceProfessionals = useMemo(
-    () => (specialtyCategorySlug ? getProfessionalsByCategory(professionals, specialtyCategorySlug) : professionals),
-    [professionals, specialtyCategorySlug],
-  );
-  const specialties = useMemo(() => getUniqueSpecialties(specialtySourceProfessionals), [specialtySourceProfessionals]);
+  const specialties = useMemo(() => {
+    if (specialtyCategorySlug) {
+      return getMarketplaceTaxonomyCategoryByPublicSlug(specialtyCategorySlug)?.specialties ?? [];
+    }
+
+    return [...new Set(MARKETPLACE_TAXONOMY_CATEGORIES.flatMap((category) => category.specialties))]
+      .sort((left, right) => left.localeCompare(right));
+  }, [specialtyCategorySlug]);
   const visibleExactResults = useMemo(
-    () => displayedExactResults.slice(0, visibleProfileCount),
-    [displayedExactResults, visibleProfileCount],
+    () => exactResults.slice(0, visibleProfileCount),
+    [exactResults, visibleProfileCount],
   );
-  const remainingExactResults = Math.max(0, displayedExactResults.length - visibleExactResults.length);
+  const remainingExactResults = Math.max(0, exactResults.length - visibleExactResults.length);
   const advancedFiltersActive = draftFilters.serviceMode !== "all" || draftFilters.specialty !== "all";
   const resultsHeading = hasMeaningfulSearch
     ? exactResults.length > 0
@@ -299,7 +279,7 @@ function MarketplaceDirectoryState({
 
   useEffect(() => {
     setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
-  }, [resultsSeed]);
+  }, [appliedFilters, currentCategorySlug]);
 
   useEffect(() => {
     if (draftFilters.specialty === "all" || specialties.includes(draftFilters.specialty)) {
@@ -384,13 +364,13 @@ function MarketplaceDirectoryState({
   }
 
   function handleViewMoreProfiles() {
-    const nextVisibleCount = Math.min(visibleProfileCount + PROFILE_BATCH_SIZE, displayedExactResults.length);
+    const nextVisibleCount = Math.min(visibleProfileCount + PROFILE_BATCH_SIZE, exactResults.length);
 
     setVisibleProfileCount(nextVisibleCount);
     trackEvent("professional_results_expanded", {
       source_page: sourcePage,
       category: currentCategorySlug ?? "all",
-      total_results: displayedExactResults.length,
+      total_results: exactResults.length,
       visible_results: nextVisibleCount,
     });
   }
@@ -608,8 +588,8 @@ function MarketplaceDirectoryState({
             <div className="training-results-head marketplace-results-head">
               <strong>
                 {remainingExactResults > 0
-                  ? `Showing ${visibleExactResults.length.toLocaleString()} of ${displayedExactResults.length.toLocaleString()} profiles`
-                  : `${displayedExactResults.length.toLocaleString()} profiles`}
+                  ? `Showing ${visibleExactResults.length.toLocaleString()} of ${exactResults.length.toLocaleString()} profiles`
+                  : `${exactResults.length.toLocaleString()} profiles`}
               </strong>
               <span>
                 {remainingExactResults > 0

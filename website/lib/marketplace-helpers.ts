@@ -532,6 +532,53 @@ function getProfessionalRankingScore(
   return score;
 }
 
+function getProfessionalMatchScore(
+  professional: ProfessionalProfileRecord,
+  options: ProfessionalSortOptions = {},
+) {
+  let score = 0;
+
+  if (options.preferredCategorySlug && professionalMatchesCategory(professional, options.preferredCategorySlug)) {
+    score += 32;
+  }
+
+  if (options.preferredLocation) {
+    if (professionalMatchesLocation(professional, options.preferredLocation)) {
+      score += 20;
+    } else if (professionalMatchesBroaderLocation(professional, options.preferredLocation)) {
+      score += 12;
+    }
+  }
+
+  if (options.preferredServiceMode && professionalSupportsServiceMode(professional, options.preferredServiceMode)) {
+    score += 14;
+  }
+
+  if (options.preferOnline && professionalSupportsServiceMode(professional, "online")) {
+    score += 10;
+  }
+
+  if (
+    options.referenceSearchText
+    && buildProfessionalSearchText(professional).includes(options.referenceSearchText.trim().toLowerCase())
+  ) {
+    score += 8;
+  }
+
+  return score;
+}
+
+function hashMarketplaceSeed(value: string) {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
 function getRelatedMarketplaceCategorySlugs(categorySlug: string | null | undefined) {
   const normalizedCategory = normalizeMarketplaceText(categorySlug);
 
@@ -616,6 +663,36 @@ export function sortProfessionals(
 
     return left.displayName.localeCompare(right.displayName);
   });
+}
+
+export function sortProfessionalsWithRandomizedTies(
+  professionals: ProfessionalProfileRecord[],
+  options: ProfessionalSortOptions = {},
+  seed = "",
+) {
+  return [...professionals]
+    .map((professional, index) => ({
+      professional,
+      matchScore: getProfessionalMatchScore(professional, options),
+      randomWeight: hashMarketplaceSeed(`${seed}:${professional.id}:${professional.profileSlug}:${index}`),
+      index,
+    }))
+    .sort((left, right) => {
+      const matchDifference = right.matchScore - left.matchScore;
+
+      if (matchDifference !== 0) {
+        return matchDifference;
+      }
+
+      const randomDifference = left.randomWeight - right.randomWeight;
+
+      if (randomDifference !== 0) {
+        return randomDifference;
+      }
+
+      return left.index - right.index;
+    })
+    .map((entry) => entry.professional);
 }
 
 export function hasMeaningfulMarketplaceSearch(
