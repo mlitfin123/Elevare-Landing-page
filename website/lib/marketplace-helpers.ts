@@ -4,7 +4,14 @@ import type {
   ProfessionalCredentialRecord,
   ProfessionalProfileRecord,
 } from "@/lib/marketplace-types";
-import { MARKETPLACE_CATEGORY_RELATED_PUBLIC_SLUGS } from "@/lib/marketplace-taxonomy";
+import {
+  getMarketplaceTaxonomyCategoryByPublicSlug,
+  MARKETPLACE_CATEGORY_RELATED_PUBLIC_SLUGS,
+} from "@/lib/marketplace-taxonomy";
+import {
+  getMarketplaceCategoryProfessionalCount,
+  isPublicMarketplaceProfessional,
+} from "@/lib/marketplace-seo";
 
 export type ProfessionalDirectoryFilters = {
   category: string;
@@ -895,19 +902,21 @@ export function buildProfessionalSummary(professional: ProfessionalProfileRecord
 }
 
 export function buildCategoryFaqs(category: ProfessionalCategoryRecord) {
+  const categoryName = category.label.toLowerCase();
+
   return [
     {
-      question: `What should I look for before hiring ${category.label.toLowerCase()}?`,
+      question: `What should I look for in a ${categoryName} professional?`,
       answer:
         "Start with category fit, service mode, specialties, pricing structure, and whether that person's communication style feels aligned with your goals.",
     },
     {
-      question: `Can I browse ${category.label.toLowerCase()} before creating an account?`,
+      question: `Can I browse ${categoryName} profiles before creating an account?`,
       answer:
         "Yes. The public directory and reviewed profiles are open to browse before you sign in.",
     },
     {
-      question: `Do all ${category.label.toLowerCase()} work the same way?`,
+      question: `Do all ${categoryName} professionals work the same way?`,
       answer:
         "No. Some offer in-person sessions, some work online, and others use hybrid models with very different pricing and service structures.",
     },
@@ -920,7 +929,13 @@ export function buildCategoryFaqs(category: ProfessionalCategoryRecord) {
 }
 
 export function buildCategoryIntro(category: ProfessionalCategoryRecord) {
-  return `${category.label} on Elevare are listed so people can compare fit more clearly before reaching out. Use the directory to review specialties, service modes, location coverage, pricing context, and whether someone looks like the right match for your goals.`;
+  const taxonomy = getMarketplaceTaxonomyCategoryByPublicSlug(category.slug);
+  const specialtyExamples = taxonomy?.specialties.slice(0, 4).join(", ");
+  const categoryDescription = category.shortDescription ?? category.headline;
+
+  return `${categoryDescription} Browse reviewed profiles on Elevare and compare specialties, service modes, location coverage, and pricing context before reaching out.${
+    specialtyExamples ? ` Common focus areas include ${specialtyExamples}.` : ""
+  }`;
 }
 
 export function isMarketplaceSnapshotPopulated(snapshot: MarketplaceSnapshot) {
@@ -930,19 +945,14 @@ export function isMarketplaceSnapshotPopulated(snapshot: MarketplaceSnapshot) {
 export const MARKETPLACE_SOCIAL_PROOF_MINIMUM = 500;
 
 export function countEligibleMarketplaceProfiles(professionals: ProfessionalProfileRecord[]) {
-  return professionals.filter((professional) => professional.approvalStatus === "approved" && professional.isActive)
-    .length;
+  return professionals.filter(isPublicMarketplaceProfessional).length;
 }
 
 function getEligibleCategoryProfessionalCount(
   category: ProfessionalCategoryRecord,
   professionals: ProfessionalProfileRecord[],
 ) {
-  return professionals.filter((professional) =>
-    professional.approvalStatus === "approved"
-    && professional.isActive
-    && professional.categories.some((entry) => entry.slug === category.slug),
-  ).length;
+  return getMarketplaceCategoryProfessionalCount(category, professionals);
 }
 
 function shuffleMarketplaceCategories(categories: ProfessionalCategoryRecord[]) {
@@ -1021,6 +1031,36 @@ export function findTopCategories(
 }
 
 export function buildProfessionalSchema(professional: ProfessionalProfileRecord, siteUrl: string) {
+  const areaServed = (
+    professional.serviceArea ?? [professional.city, professional.state].filter(Boolean).join(", ")
+  ) || undefined;
+  const address = professional.city || professional.state
+    ? {
+        "@type": "PostalAddress",
+        addressLocality: professional.city ?? undefined,
+        addressRegion: professional.state ?? undefined,
+      }
+    : undefined;
+  const offers = professional.services
+    .filter((service) => service.isActive)
+    .map((service) => ({
+      "@type": "Offer",
+      name: service.name,
+      description: service.description ?? undefined,
+      price: service.price ?? undefined,
+      priceCurrency: service.price != null ? professional.pricingCurrency : undefined,
+    }));
+  const credentials = professional.credentials
+    .filter((credential) => credential.verificationStatus === "verified")
+    .map((credential) => ({
+      "@type": "EducationalOccupationalCredential",
+      name: credential.credentialName,
+      recognizedBy: {
+        "@type": "Organization",
+        name: credential.organizationName,
+      },
+    }));
+
   return {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -1029,8 +1069,11 @@ export function buildProfessionalSchema(professional: ProfessionalProfileRecord,
     description: professional.bio,
     image: professional.profilePhotoUrl ?? undefined,
     url: `${siteUrl}/professionals/${professional.profileSlug}/`,
-    areaServed: formatLocationLabel(professional),
+    areaServed,
     knowsAbout: professional.specialties,
+    address,
+    ...(offers.length > 0 ? { makesOffer: offers } : {}),
+    ...(credentials.length > 0 ? { hasCredential: credentials } : {}),
   };
 }
 
@@ -1039,17 +1082,26 @@ export function buildDirectorySchema(
   professionals: ProfessionalProfileRecord[],
   siteUrl: string,
 ) {
+  const publicProfessionals = professionals.filter(isPublicMarketplaceProfessional).slice(0, 24);
+
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Elevare Professional Directory",
     url: `${siteUrl}/professionals/`,
-    hasPart: professionals.slice(0, 24).map((professional, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: professional.displayName,
-      url: `${siteUrl}/professionals/${professional.profileSlug}/`,
-    })),
+    ...(publicProfessionals.length > 0
+      ? {
+          mainEntity: {
+            "@type": "ItemList",
+            itemListElement: publicProfessionals.map((professional, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              name: professional.displayName,
+              url: `${siteUrl}/professionals/${professional.profileSlug}/`,
+            })),
+          },
+        }
+      : {}),
     about: categories.map((category) => category.label),
   };
 }

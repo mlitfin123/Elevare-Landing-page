@@ -8,9 +8,9 @@ import { countEligibleMarketplaceProfiles, findTopCategories, formatMarketplaceS
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
-  title: "Fitness Tools, Apps, and Resources",
+  title: "Elevare | Find Trainers, Coaches & Wellness Support",
   description:
-    "Explore free calculators, workout templates, exercise guides, nutrition resources, fitness apps, and the Elevare marketplace.",
+    "Discover personal trainers, nutrition coaches, bodybuilding coaches, life coaches, wellness specialists, and more on Elevare.",
   pathname: "/",
 });
 
@@ -29,10 +29,10 @@ export default async function HomePage() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">ElevareFit</div>
-        <h1>Fitness tools to help you train, eat, and make progress.</h1>
+        <h1>Find the right support for your goals.</h1>
         <p>
-          Use free calculators, workouts, exercise guides, nutrition resources, and tracking apps built to
-          make fitness easier to follow.
+          Discover trainers, coaches, nutrition and wellness professionals, plus free fitness tools and
+          tracking apps that help make progress easier to follow.
         </p>
         <div className="hero-actions">
           <TrackedLink

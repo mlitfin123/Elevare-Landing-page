@@ -58,6 +58,7 @@ export type ProfessionalProfileRecord = {
   availabilitySummary: string | null;
   approvalStatus: string;
   isActive: boolean;
+  isPublic: boolean;
   identityVerificationStatus: string;
   reviewFeedbackPublic: string | null;
   lastSubmittedAt: string | null;

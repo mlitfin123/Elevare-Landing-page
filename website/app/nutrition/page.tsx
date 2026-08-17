@@ -1,6 +1,7 @@
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { LogbookCTA } from "@/components/nutrition/LogbookCTA";
+import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { NutritionDisclaimer } from "@/components/nutrition/NutritionDisclaimer";
 import { NutritionSearch } from "@/components/nutrition/NutritionSearch";
 import { PopularRestaurantLinks } from "@/components/nutrition/PopularRestaurantLinks";
@@ -158,6 +159,12 @@ export default async function NutritionIndexPage() {
       />
 
       <LogbookCTA context="nutrition_index" />
+      <MarketplaceSupportCta
+        href="/professionals/nutrition/"
+        label="Find nutrition support"
+        context="nutrition_index"
+        title="Want help applying nutrition information to your goals?"
+      />
       <NutritionDisclaimer />
     </div>
   );

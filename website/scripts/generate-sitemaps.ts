@@ -3,6 +3,10 @@ import path from "node:path";
 import { getAllCategories, getAllPosts } from "../lib/blog.ts";
 import { MARKETPLACE_CATEGORY_SEEDS } from "../lib/marketplace-categories.ts";
 import type { MarketplaceSnapshot, ProfessionalProfileRecord } from "../lib/marketplace-types.ts";
+import {
+  isMarketplaceCategoryIndexable,
+  isPublicMarketplaceProfessional,
+} from "../lib/marketplace-seo.ts";
 import { buildRestaurantSummaries, getPopularRestaurants, type NutritionProduct } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
@@ -34,7 +38,15 @@ const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.j
 const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
 const buildDate = new Date().toISOString();
 
-const staticSiteRoutes = ["/", "/apps", "/logbook", "/stagelab", "/elevare"] as const;
+const staticSiteRoutes = [
+  "/",
+  "/apps",
+  "/logbook",
+  "/stagelab",
+  "/elevare",
+  "/privacy-policy.html",
+  "/terms-of-service.html",
+] as const;
 const restaurantNutritionViews = ["high-protein", "low-calorie", "under-500-calories", "low-carb"] as const;
 const fastFoodNutritionViews = ["high-protein", "low-calorie", "under-500-calories"] as const;
 
@@ -182,23 +194,28 @@ function buildBlogEntries() {
 function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
   const categories =
     snapshot.categories.length > 0
-      ? snapshot.categories
-      : MARKETPLACE_CATEGORY_SEEDS.map((category) => ({
-          id: category.slug,
-          slug: category.slug,
-          label: category.label,
+       ? snapshot.categories
+       : MARKETPLACE_CATEGORY_SEEDS.map((category) => ({
+           id: category.slug,
+           stableId: category.stableId,
+           slug: category.slug,
+           publicSlug: category.publicSlug,
+           label: category.label,
           headline: category.headline,
           shortDescription: category.shortDescription,
           sortOrder: category.sortOrder,
           isActive: true,
         }));
 
-  const profileEntries = snapshot.professionals.map((professional: ProfessionalProfileRecord) =>
+  const publicProfessionals = snapshot.professionals.filter(isPublicMarketplaceProfessional);
+  const profileEntries = publicProfessionals.map((professional: ProfessionalProfileRecord) =>
     toSitemapEntry(`/professionals/${professional.profileSlug}`, professional.updatedAt ?? buildDate, "standard_index"),
   );
-  const categoryEntries = categories.map((category) =>
-    toSitemapEntry(`/professionals/${category.slug}`, buildDate, "priority_index"),
-  );
+  const categoryEntries = categories
+    .filter((category) => isMarketplaceCategoryIndexable(category, publicProfessionals))
+    .map((category) =>
+      toSitemapEntry(`/professionals/${category.slug}`, buildDate, "priority_index"),
+    );
 
   return [toSitemapEntry("/professionals", buildDate, "priority_index"), ...categoryEntries, ...profileEntries];
 }

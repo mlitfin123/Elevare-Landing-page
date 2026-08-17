@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import remarkGfm from "remark-gfm";
 import { ArticleLayout } from "@/components/ArticleLayout";
 import { ProductCTA } from "@/components/ProductCTA";
+import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { StructuredData } from "@/components/StructuredData";
 import { getAllPosts, getBlogFeaturedImagePath, getPostBySlug } from "@/lib/blog";
 import { absoluteUrl, buildMetadata, siteConfig } from "@/lib/site";
+import { getContextualMarketplaceLink } from "@/lib/marketplace-seo";
 import { getMDXComponents } from "@/mdx-components";
 
 type BlogPostPageProps = {
@@ -36,6 +38,7 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
 
   const featuredImagePath = getBlogFeaturedImagePath(post.slug);
   const featuredImageUrl = featuredImagePath ? absoluteUrl(featuredImagePath) : undefined;
+  const socialImageUrl = featuredImageUrl ?? absoluteUrl("/logo_transparent.png");
 
   return {
     ...buildMetadata({
@@ -43,16 +46,17 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       description: post.description,
       pathname: `/blog/${post.slug}`,
       type: "article",
+      imageUrl: socialImageUrl,
     }),
     openGraph: {
-      title: post.title,
+      title: `${post.title} | ${siteConfig.title}`,
       description: post.description,
       url: absoluteUrl(`/blog/${post.slug}`),
       siteName: siteConfig.title,
       type: "article",
       publishedTime: post.date,
       tags: [post.category, post.product],
-      ...(featuredImageUrl ? { images: [{ url: featuredImageUrl, alt: post.title }] } : {}),
+      images: [{ url: socialImageUrl, alt: post.title }],
     },
   };
 }
@@ -121,6 +125,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const components = getMDXComponents({});
   const structuredData = buildBlogStructuredData(post);
+  const marketplaceLink = getContextualMarketplaceLink(post.category, post.product);
 
   return (
     <div className="container">
@@ -139,6 +144,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </ArticleLayout>
 
       {!post.hasInlineProductCTA ? <ProductCTA product={post.product} context={`blog_post_${post.slug}`} /> : null}
+      <MarketplaceSupportCta
+        href={marketplaceLink.href}
+        label={marketplaceLink.label}
+        context={`blog_post_${post.slug}`}
+      />
     </div>
   );
 }

@@ -227,6 +227,9 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
 
   return {
     ...professional,
+    isPublic:
+      professional.isPublic
+      ?? (professional.approvalStatus === "approved" && professional.isActive),
     specialties: uniqueStrings([
       ...(professional.specialties ?? []),
       ...[...impliedSpecialties],
@@ -549,6 +552,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       availabilitySummary: buildAvailabilitySummaryText(row.availability_summary),
       approvalStatus: "approved",
       isActive: true,
+      isPublic: true,
       identityVerificationStatus: "verified",
       reviewFeedbackPublic: null,
       lastSubmittedAt: null,

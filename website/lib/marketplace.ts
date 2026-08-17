@@ -8,6 +8,7 @@ import {
   type ProfessionalCategoryRecord,
   type ProfessionalProfileRecord,
 } from "@/lib/marketplace-types";
+import { isPublicMarketplaceProfessional } from "@/lib/marketplace-seo";
 
 const generatedDataPath = path.join(process.cwd(), ".generated", "marketplace-data.json");
 
@@ -43,7 +44,7 @@ export const getMarketplaceCategories = cache(async (): Promise<ProfessionalCate
 
 export const getMarketplaceProfessionals = cache(async (): Promise<ProfessionalProfileRecord[]> => {
   const snapshot = await getMarketplaceSnapshot();
-  return [...snapshot.professionals];
+  return snapshot.professionals.filter(isPublicMarketplaceProfessional);
 });
 
 export async function getMarketplaceCategoryBySlug(slug: string) {

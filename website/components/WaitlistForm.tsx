@@ -10,11 +10,11 @@ const HONEYPOT_FIELD_NAME = "website";
 const audienceConfig = {
   MEMBER: {
     roleValue: "Member",
-    note: "Members will hear when Elevare opens, where it is available, and when they can start exploring trainer and coach options.",
+    note: "Members receive useful marketplace updates and news about ways to discover the right support.",
   },
   COACH: {
     roleValue: "Coach",
-    note: "Coaches will hear when Elevare opens, when they can join, and how to start reaching people looking for support.",
+    note: "Coaches receive marketplace updates, profile guidance, and news about new discovery features.",
   },
 } as const;
 
@@ -141,8 +141,8 @@ export function WaitlistForm() {
   return (
     <aside ref={sectionRef} className="waitlist-card" id="waitlist">
       <div className="card-kicker">Elevare marketplace</div>
-      <h2>Join the Elevare waitlist.</h2>
-      <p>Sign up as a member or coach to hear when the marketplace opens and when early access starts.</p>
+      <h2>Get Elevare updates.</h2>
+      <p>Choose the updates most relevant to you and hear about new marketplace and mobile-app features.</p>
 
       <div className="audience-switcher" role="tablist" aria-label="Audience">
         {(["MEMBER", "COACH"] as const).map((role) => {
@@ -219,10 +219,10 @@ export function WaitlistForm() {
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                {isLoading ? "Submitting..." : "Join the waitlist"}
+                {isLoading ? "Submitting..." : "Subscribe for updates"}
               </button>
               <p className="fine-print">
-                We will only use your email to send Elevare waitlist updates. You can unsubscribe anytime.
+                We will only use your email to send Elevare updates. You can unsubscribe anytime.
               </p>
               <div
                 className={`form-feedback${feedback ? ` is-${feedbackType}` : ""}`}

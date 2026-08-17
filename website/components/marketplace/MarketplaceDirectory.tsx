@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ElevareMobileAppSection } from "@/components/marketplace/ElevareMobileAppSection";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { MarketplaceDemandForm } from "@/components/marketplace/MarketplaceDemandForm";
 import { ProfessionalCard } from "@/components/marketplace/ProfessionalCard";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -45,6 +45,7 @@ type MarketplaceDirectoryProps = {
 type MarketplaceDirectoryStateProps = MarketplaceDirectoryProps & {
   initialFilters: ProfessionalDirectoryFilters;
   pathname: string;
+  onSearchUrlChange: (url: string) => void;
 };
 
 const RESULTS_SECTION_ID = "professionals-results";
@@ -116,13 +117,24 @@ function scrollToResults() {
 
 export function MarketplaceDirectory(props: MarketplaceDirectoryProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const searchParamsKey = searchParams.toString();
+  const [searchParamsKey, setSearchParamsKey] = useState("");
   const initialFilters = useMemo(
     () => buildInitialFilters(new URLSearchParams(searchParamsKey), props.fixedCategorySlug),
     [props.fixedCategorySlug, searchParamsKey],
   );
   const hasTrackedView = useRef(false);
+
+  useEffect(() => {
+    const syncSearchParams = () => setSearchParamsKey(window.location.search.slice(1));
+    const frame = window.requestAnimationFrame(syncSearchParams);
+
+    window.addEventListener("popstate", syncSearchParams);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("popstate", syncSearchParams);
+    };
+  }, []);
 
   useEffect(() => {
     if (hasTrackedView.current) {
@@ -137,12 +149,40 @@ export function MarketplaceDirectory(props: MarketplaceDirectoryProps) {
     hasTrackedView.current = true;
   }, [props.fixedCategorySlug, props.professionals.length, props.sourcePage]);
 
+  useEffect(() => {
+    const attributeName = "data-marketplace-filter-robots";
+    const existingMeta = document.head.querySelector<HTMLMetaElement>(`meta[${attributeName}]`);
+
+    if (!searchParamsKey) {
+      existingMeta?.remove();
+      return;
+    }
+
+    const robotsMeta = existingMeta ?? document.createElement("meta");
+    robotsMeta.name = "robots";
+    robotsMeta.content = "noindex, follow";
+    robotsMeta.setAttribute(attributeName, "true");
+
+    if (!existingMeta) {
+      document.head.appendChild(robotsMeta);
+    }
+
+    return () => {
+      robotsMeta.remove();
+    };
+  }, [searchParamsKey]);
+
+  function handleSearchUrlChange(url: string) {
+    setSearchParamsKey(new URL(url, window.location.origin).search.slice(1));
+  }
+
   return (
     <MarketplaceDirectoryState
       key={`${pathname}:${props.fixedCategorySlug ?? "all"}:${searchParamsKey}`}
       {...props}
       initialFilters={initialFilters}
       pathname={pathname}
+      onSearchUrlChange={handleSearchUrlChange}
     />
   );
 }
@@ -165,6 +205,7 @@ function MarketplaceDirectoryState({
   categorySectionDescription = "Browse by category first, then narrow by location, service mode, or specialty if you need to.",
   initialFilters,
   pathname,
+  onSearchUrlChange,
 }: MarketplaceDirectoryStateProps) {
   const router = useRouter();
   const [draftFilters, setDraftFilters] = useState<ProfessionalDirectoryFilters>(initialFilters);
@@ -285,27 +326,6 @@ function MarketplaceDirectoryState({
         ? "Reviewed profiles in this category appear here by default so you can start comparing fit right away."
         : "Search the marketplace to view reviewed professionals.";
 
-  useEffect(() => {
-    setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
-  }, [appliedFilters, currentCategorySlug]);
-
-  useEffect(() => {
-    if (draftFilters.specialty === "all" || specialties.includes(draftFilters.specialty)) {
-      return;
-    }
-
-    setDraftFilters((current) => {
-      if (current.specialty === "all" || specialties.includes(current.specialty)) {
-        return current;
-      }
-
-      return {
-        ...current,
-        specialty: "all",
-      };
-    });
-  }, [draftFilters.specialty, specialties]);
-
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -367,8 +387,11 @@ function MarketplaceDirectoryState({
     }
 
     setHasStartedSearch(true);
+    setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
     setAppliedFilters(nextFilters);
-    router.replace(buildSearchUrl(pathname, nextFilters, fixedCategorySlug), { scroll: false });
+    const nextUrl = buildSearchUrl(pathname, nextFilters, fixedCategorySlug);
+    router.replace(nextUrl, { scroll: false });
+    onSearchUrlChange(nextUrl);
     scrollToResults();
   }
 
@@ -389,8 +412,11 @@ function MarketplaceDirectoryState({
     setDraftFilters(nextFilters);
     setAppliedFilters(nextFilters);
     setHasStartedSearch(Boolean(fixedCategorySlug));
+    setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
     setShowAdvancedFilters(false);
-    router.replace(buildSearchUrl(pathname, nextFilters, fixedCategorySlug), { scroll: false });
+    const nextUrl = buildSearchUrl(pathname, nextFilters, fixedCategorySlug);
+    router.replace(nextUrl, { scroll: false });
+    onSearchUrlChange(nextUrl);
   }
 
   return (
@@ -447,11 +473,21 @@ function MarketplaceDirectoryState({
                   <span className="field-label">Category</span>
                   <select
                     value={draftFilters.category}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const nextCategory = event.target.value;
+                      const nextSpecialties = nextCategory === "all"
+                        ? MARKETPLACE_TAXONOMY_CATEGORIES.flatMap((category) => category.specialties)
+                        : getMarketplaceTaxonomyCategoryByPublicSlug(nextCategory)?.specialties ?? [];
+
                       setDraftFilters((current) => ({
                         ...current,
-                        category: event.target.value,
-                      }))}
+                        category: nextCategory,
+                        specialty:
+                          current.specialty === "all" || nextSpecialties.includes(current.specialty)
+                            ? current.specialty
+                            : "all",
+                      }));
+                    }}
                   >
                     <option value="all">All categories</option>
                     {categories.map((category) => (

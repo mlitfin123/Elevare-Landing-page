@@ -64,9 +64,9 @@ export default async function ElevarePage() {
           </article>
 
           <article className="panel">
-            <span className="stat-label">MVP scope</span>
-            <h3>Discovery and lead generation first.</h3>
-            <p>Elevare focuses on discovery, saved profiles, and consultation requests without forcing booking or checkout too early.</p>
+            <span className="stat-label">How it works</span>
+            <h3>Discover, compare, and connect.</h3>
+            <p>Browse reviewed profiles, save promising options, and send consultation requests when the fit looks right.</p>
           </article>
         </div>
       </section>

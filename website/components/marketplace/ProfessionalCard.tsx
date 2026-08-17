@@ -51,7 +51,15 @@ export function ProfessionalCard({
             <img
               className="professional-avatar-image"
               src={professional.profilePhotoUrl}
-              alt={`${professional.displayName} profile photo`}
+              alt={`${professional.displayName}, ${professional.professionalTitle || categoryList || "professional"}${
+                formatLocationLabel(professional) !== "Location not listed"
+                  ? ` in ${formatLocationLabel(professional)}`
+                  : ""
+              }`}
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="professional-avatar-fallback" aria-hidden="true">

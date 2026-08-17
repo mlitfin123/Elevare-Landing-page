@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "ElevareFit",
   title: "ElevareFit",
   description:
-    "ElevareFit is a fitness platform with free tools, exercise guides, workout templates, nutrition resources, tracking apps, and a marketplace for finding the right support.",
+    "Discover trainers, coaches, nutrition professionals, wellness specialists, free fitness tools, and tracking apps on ElevareFit.",
   url: "https://www.elevarefit.org",
   waitlist: {
     endpoint: "https://yozfzsudbcqjttepjnyg.supabase.co/functions/v1/resend-waitlist",
@@ -150,6 +150,41 @@ export function absoluteUrl(pathname: string) {
   return new URL(normalizeSitePath(pathname), siteConfig.url).toString();
 }
 
+function buildPageTitle(title: string) {
+  const alreadyBranded = /(^Elevare(?:Fit)?\s*\|)|\|\s*Elevare(?:Fit)?$/i.test(title);
+  return alreadyBranded ? title : `${title} | ${siteConfig.title}`;
+}
+
+export function buildSiteStructuredData() {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": `${siteConfig.url}/#organization`,
+      name: "Elevare Fit LLC",
+      alternateName: siteConfig.name,
+      url: siteConfig.url,
+      logo: absoluteUrl("/logo_transparent.png"),
+      email: "mlitfin@elevarefit.org",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": `${siteConfig.url}/#website`,
+      name: siteConfig.name,
+      url: siteConfig.url,
+      publisher: {
+        "@id": `${siteConfig.url}/#organization`,
+      },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${absoluteUrl("/professionals/")}?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ];
+}
+
 export function buildMetadata({
   title,
   description,
@@ -157,6 +192,7 @@ export function buildMetadata({
   canonicalPath,
   type = "website",
   robots,
+  imageUrl,
 }: {
   title: string;
   description: string;
@@ -164,27 +200,36 @@ export function buildMetadata({
   canonicalPath?: string;
   type?: "website" | "article";
   robots?: Metadata["robots"];
+  imageUrl?: string;
 }): Metadata {
   const canonical = normalizeSitePath(canonicalPath ?? pathname);
   const url = absoluteUrl(canonical);
+  const pageTitle = buildPageTitle(title);
+  const socialImage = imageUrl
+    ? imageUrl.startsWith("/") ? absoluteUrl(imageUrl) : imageUrl
+    : absoluteUrl("/logo_transparent.png");
 
   return {
-    title,
+    title: {
+      absolute: pageTitle,
+    },
     description,
     alternates: {
       canonical,
     },
     openGraph: {
-      title,
+      title: pageTitle,
       description,
       url,
       siteName: siteConfig.title,
       type,
+      images: [{ url: socialImage, alt: pageTitle }],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: pageTitle,
       description,
+      images: [socialImage],
     },
     robots,
   };

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { InquiryForm } from "@/components/marketplace/InquiryForm";
+import { MarketplaceCategoryResources } from "@/components/marketplace/MarketplaceCategoryResources";
 import { MarketplaceDirectory } from "@/components/marketplace/MarketplaceDirectory";
 import { ProfessionalCard } from "@/components/marketplace/ProfessionalCard";
 import { ProfessionalSaveButton } from "@/components/marketplace/ProfessionalSaveButton";
@@ -28,7 +29,14 @@ import {
   getProfessionalInitials,
   getProfessionalPublicBadges,
   getRelatedProfessionals,
+  getProfessionalsByCategory,
 } from "@/lib/marketplace-helpers";
+import {
+  buildMarketplaceCategoryMetaDescription,
+  buildMarketplaceProfessionalMetaDescription,
+  getMarketplaceCategorySeoLabel,
+  isMarketplaceCategoryIndexable,
+} from "@/lib/marketplace-seo";
 import { absoluteUrl, buildMetadata, siteConfig } from "@/lib/site";
 
 type ProfessionalRoutePageProps = {
@@ -53,9 +61,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
   const { slug } = await params;
-  const [category, professional] = await Promise.all([
+  const [category, professional, professionals] = await Promise.all([
     getMarketplaceCategoryBySlug(slug),
     getMarketplaceProfessionalBySlug(slug),
+    getMarketplaceProfessionals(),
   ]);
 
   if (professional) {
@@ -63,19 +72,21 @@ export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
     const title = professional.professionalTitle || professional.categories[0]?.label || "Profile";
 
     return buildMetadata({
-      title: `${professional.displayName} - ${title} in ${location}`,
-      description: professional.bio || `${professional.displayName} is listed on Elevare in ${location}.`,
+      title: `${professional.displayName} - ${title}${location !== "Location not listed" ? ` in ${location}` : ""} | Elevare`,
+      description: buildMarketplaceProfessionalMetaDescription(professional),
       pathname: `/professionals/${professional.profileSlug}`,
+      imageUrl: professional.profilePhotoUrl ?? undefined,
     });
   }
 
   if (category) {
+    const isIndexable = isMarketplaceCategoryIndexable(category, professionals);
+
     return buildMetadata({
-      title: `${category.label} | Elevare`,
-      description:
-        category.shortDescription
-        ?? `Browse reviewed ${category.label.toLowerCase()} on Elevare and compare fit before reaching out.`,
+      title: `${getMarketplaceCategorySeoLabel(category)} | Elevare`,
+      description: buildMarketplaceCategoryMetaDescription(category),
       pathname: `/professionals/${category.slug}`,
+      robots: isIndexable ? undefined : { index: false, follow: true },
     });
   }
 
@@ -83,6 +94,7 @@ export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
     title: "Profile page not found",
     description: "The requested marketplace profile could not be found.",
     pathname: `/professionals/${slug}`,
+    robots: { index: false, follow: false },
   });
 }
 
@@ -100,24 +112,40 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
   const yearsExperience = formatYearsExperience(professional.yearsExperience);
   const priceSummary = formatPriceSummary(professional);
   const publicBadges = getProfessionalPublicBadges(professional);
+  const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
+  const profileLocation = formatLocationLabel(professional);
+  const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || primaryCategory?.label || "professional"}${
+    profileLocation !== "Location not listed" ? ` in ${profileLocation}` : ""
+  }`;
+  const breadcrumbItems = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Find Support",
+      item: absoluteUrl("/professionals"),
+    },
+    ...(primaryCategory
+      ? [
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: primaryCategory.label,
+            item: absoluteUrl(`/professionals/${primaryCategory.slug}`),
+          },
+        ]
+      : []),
+    {
+      "@type": "ListItem",
+      position: primaryCategory ? 3 : 2,
+      name: professional.displayName,
+      item: absoluteUrl(`/professionals/${professional.profileSlug}`),
+    },
+  ];
   const structuredData = [
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Find Support",
-          item: absoluteUrl("/professionals"),
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: professional.displayName,
-          item: absoluteUrl(`/professionals/${professional.profileSlug}`),
-        },
-      ],
+      itemListElement: breadcrumbItems,
     },
     buildProfessionalSchema(professional, siteConfig.url),
   ];
@@ -126,10 +154,37 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
     <div className="container">
       <StructuredData data={structuredData} />
 
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <TrackedLink href="/professionals/" eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
+          Find Support
+        </TrackedLink>
+        {primaryCategory ? (
+          <>
+            <span aria-hidden="true">/</span>
+            <TrackedLink
+              href={`/professionals/${primaryCategory.slug}/`}
+              eventName="breadcrumb_click"
+              eventParams={{ destination: primaryCategory.slug }}
+            >
+              {primaryCategory.label}
+            </TrackedLink>
+          </>
+        ) : null}
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{professional.displayName}</span>
+      </nav>
+
       <section className="hero professional-hero">
         <div className="professional-hero-media">
           {professional.profilePhotoUrl ? (
-            <img src={professional.profilePhotoUrl} alt={`${professional.displayName} profile photo`} />
+            <img
+              src={professional.profilePhotoUrl}
+              alt={profilePhotoAlt}
+              width={360}
+              height={360}
+              decoding="async"
+              fetchPriority="high"
+            />
           ) : (
             <div className="professional-avatar-fallback professional-avatar-fallback-large">
               {getProfessionalInitials(professional.displayName)}
@@ -199,7 +254,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
         <div className="marketplace-detail-grid">
           <article className="panel">
             <span className="stat-label">Profile details</span>
-            <h3>What to know before you reach out</h3>
+            <h2 className="panel-title">What to know before you reach out</h2>
             <ul>
               <li>
                 <strong>Location:</strong> {formatLocationLabel(professional)}
@@ -238,7 +293,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
 
           <article className="panel">
             <span className="stat-label">Request consultation</span>
-            <h3>Start the conversation with context.</h3>
+            <h2 className="panel-title">Start the conversation with context.</h2>
             <p>
               Send a short request with your goal, preferred service mode, and any helpful background. The
               person you contact can review it inside their Elevare account.
@@ -349,6 +404,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       ) : null}
 
       <section className="section">
+        <h2 className="sr-only">Related ElevareFit resources</h2>
         <div className="grid-3">
           <article className="panel">
             <span className="stat-label">Related resource</span>
@@ -417,13 +473,45 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
   }
 
   const faqs = buildCategoryFaqs(category);
+  const categoryProfessionals = getProfessionalsByCategory(professionals, category.slug);
   const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Find Support",
+          item: absoluteUrl("/professionals"),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: category.label,
+          item: absoluteUrl(`/professionals/${category.slug}`),
+        },
+      ],
+    },
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: category.label,
       url: absoluteUrl(`/professionals/${category.slug}`),
       description: category.shortDescription ?? buildCategoryIntro(category),
+      ...(categoryProfessionals.length > 0
+        ? {
+            mainEntity: {
+              "@type": "ItemList",
+              itemListElement: categoryProfessionals.slice(0, 24).map((professional, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: professional.displayName,
+                url: absoluteUrl(`/professionals/${professional.profileSlug}`),
+              })),
+            },
+          }
+        : {}),
     },
     {
       "@context": "https://schema.org",
@@ -442,6 +530,14 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
   return (
     <div className="container">
       <StructuredData data={structuredData} />
+
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <TrackedLink href="/professionals/" eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
+          Find Support
+        </TrackedLink>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{category.label}</span>
+      </nav>
 
       <Suspense fallback={null}>
         <MarketplaceDirectory
@@ -473,6 +569,8 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
           ))}
         </div>
       </section>
+
+      <MarketplaceCategoryResources categorySlug={category.slug} />
     </div>
   );
 }

@@ -4,7 +4,8 @@ import Script from "next/script";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
-import { siteConfig } from "@/lib/site";
+import { StructuredData } from "@/components/StructuredData";
+import { buildSiteStructuredData, siteConfig } from "@/lib/site";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -44,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${dmSans.variable} ${dmMono.variable}`}>
+        <StructuredData data={buildSiteStructuredData()} />
         {googleAnalyticsId ? (
           <>
             <Script

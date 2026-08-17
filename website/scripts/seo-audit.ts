@@ -2,6 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { getAllPosts } from "../lib/blog.ts";
 import {
+  getMarketplaceCategoryProfessionalCount,
+  isPublicMarketplaceProfessional,
+} from "../lib/marketplace-seo.ts";
+import type {
+  MarketplaceSnapshot,
+  ProfessionalCategoryRecord,
+} from "../lib/marketplace-types.ts";
+import {
   buildRestaurantSummaries,
   getRestaurantSlugMap,
   type NutritionProduct,
@@ -39,6 +47,7 @@ const sitemapIndexPath = fs.existsSync(path.join(outDir, "sitemap.xml"))
   : path.join(publicDir, "sitemap.xml");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
+const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
   try {
@@ -122,6 +131,23 @@ function slugDuplicates(values: string[]) {
   return [...counts.entries()].filter(([, count]) => count > 1);
 }
 
+function duplicateMetadata(values: Array<{ url: string; value: string }>) {
+  const urlsByValue = new Map<string, string[]>();
+
+  for (const entry of values) {
+    if (!entry.value) {
+      continue;
+    }
+
+    const normalizedValue = entry.value.trim().toLowerCase();
+    urlsByValue.set(normalizedValue, [...(urlsByValue.get(normalizedValue) ?? []), entry.url]);
+  }
+
+  return [...urlsByValue.entries()]
+    .filter(([, urls]) => urls.length > 1)
+    .map(([value, urls]) => `"${value}" -> ${urls.join(", ")}`);
+}
+
 function isClearlyRelevantSecondaryMatch(exercise: ExerciseRecord, categorySlug: string) {
   const normalizedCategory = normalizeMuscleGroup(categorySlug);
   const normalizedSecondaries = exercise.secondaryMuscleGroups
@@ -164,6 +190,11 @@ function main() {
   });
   trainingSnapshot.exercises = deduplicateExercises(trainingSnapshot.exercises);
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
+  const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
+    generatedAt: null,
+    categories: [],
+    professionals: [],
+  });
   const posts = getAllPosts();
   const restaurants = buildRestaurantSummaries(nutritionProducts);
   const restaurantLookup = getRestaurantSlugMap(nutritionProducts);
@@ -188,6 +219,8 @@ function main() {
   const missingMetaDescription: string[] = [];
   const unexpectedNoindex: string[] = [];
   const linkGraph = new Map<string, string[]>();
+  const pageTitles: Array<{ url: string; value: string }> = [];
+  const pageDescriptions: Array<{ url: string; value: string }> = [];
 
   for (const url of canonicalPageUrls) {
     const html = readHtmlForUrl(url);
@@ -210,6 +243,9 @@ function main() {
       missingMetaDescription.push(url);
     }
 
+    pageTitles.push({ url, value: title });
+    pageDescriptions.push({ url, value: description });
+
     if (!canonical || canonical !== absoluteUrl(sitePath)) {
       missingCanonical.push(url);
     }
@@ -220,6 +256,9 @@ function main() {
 
     linkGraph.set(sitePath, extractInternalLinks(html));
   }
+
+  const duplicateMetaTitles = duplicateMetadata(pageTitles);
+  const duplicateMetaDescriptions = duplicateMetadata(pageDescriptions);
 
   const duplicateSlugs = [
     ...slugDuplicates(trainingSnapshot.exercises.map((exercise) => exercise.slug)).map(
@@ -399,6 +438,7 @@ function main() {
     "/calculators/",
     "/exercises/",
     "/nutrition/",
+    "/professionals/",
     "/workouts/",
     ...EXERCISE_MUSCLE_CATEGORIES.map((category) => normalizeSitePath(`/exercises/${category.slug}`)),
     ...WORKOUT_GOALS.map((goal) => normalizeSitePath(`/workouts/${goal.slug}`)),
@@ -434,15 +474,128 @@ function main() {
     .filter((restaurant) => restaurantLookup.nameBySlug.get(restaurant.slug) == null)
     .map((restaurant) => restaurant.slug);
 
+  const publicMarketplaceProfessionals = marketplaceSnapshot.professionals.filter(isPublicMarketplaceProfessional);
+  const sitemapSitePaths = new Set(canonicalPageUrls.map((url) => toSitePathFromUrl(url)));
+  const marketplaceCategoriesByPath = new Map<string, ProfessionalCategoryRecord>(
+    marketplaceSnapshot.categories.map((category) => [
+      normalizeSitePath(`/professionals/${category.slug}`),
+      category,
+    ]),
+  );
+  const emptyMarketplaceCategoriesInSitemap = [...marketplaceCategoriesByPath.entries()]
+    .filter(
+      ([sitePath, category]) =>
+        sitemapSitePaths.has(sitePath)
+        && getMarketplaceCategoryProfessionalCount(category, publicMarketplaceProfessionals) === 0,
+    )
+    .map(([sitePath]) => absoluteUrl(sitePath));
+  const nonPublicMarketplaceProfilesInSitemap = marketplaceSnapshot.professionals
+    .filter(
+      (professional) =>
+        !isPublicMarketplaceProfessional(professional)
+        && sitemapSitePaths.has(normalizeSitePath(`/professionals/${professional.profileSlug}`)),
+    )
+    .map((professional) => professional.profileSlug);
+  const publicMarketplaceProfilesMissingFromSitemap = publicMarketplaceProfessionals
+    .filter(
+      (professional) =>
+        !sitemapSitePaths.has(normalizeSitePath(`/professionals/${professional.profileSlug}`)),
+    )
+    .map((professional) => professional.profileSlug);
+  const privateMarketplaceFieldLeaks = publicMarketplaceProfessionals.flatMap((professional) => {
+    const profileUrl = absoluteUrl(`/professionals/${professional.profileSlug}`);
+    const html = readHtmlForUrl(profileUrl);
+
+    if (!html) {
+      return [];
+    }
+
+    return [
+      "approvalStatus",
+      "identityVerificationStatus",
+      "lastSubmittedAt",
+      "reviewFeedbackPublic",
+      "userId",
+    ]
+      .filter((field) => html.includes(field))
+      .map((field) => `${professional.profileSlug}: serialized private field ${field}`);
+  });
+  const marketplaceDirectoryHtml = readHtmlForUrl(absoluteUrl("/professionals/"));
+  const marketplaceDirectoryRenderingIssues = [
+    marketplaceDirectoryHtml?.includes("BAILOUT_TO_CLIENT_SIDE_RENDERING")
+      ? "Directory export contains a client-side rendering bailout"
+      : null,
+    !marketplaceDirectoryHtml?.includes("Find the right support for your goals")
+      ? "Directory H1 is missing from initial HTML"
+      : null,
+    !marketplaceSnapshot.categories.some((category) =>
+      marketplaceDirectoryHtml?.includes(`/professionals/${category.slug}/`),
+    )
+      ? "Directory has no category links in initial HTML"
+      : null,
+  ].filter((issue): issue is string => issue != null);
+  const marketplaceCategoryRenderingIssues = marketplaceSnapshot.categories.flatMap((category) => {
+    const categoryUrl = absoluteUrl(`/professionals/${category.slug}`);
+    const html = readHtmlForUrl(categoryUrl);
+    const publicCount = getMarketplaceCategoryProfessionalCount(category, publicMarketplaceProfessionals);
+    const robots = html ? extractRobots(html) : "";
+    const issues: string[] = [];
+
+    if (!html) {
+      return [`${category.slug}: exported category page is missing`];
+    }
+
+    if (!html.includes(category.label)) {
+      issues.push(`${category.slug}: category heading is missing from initial HTML`);
+    }
+
+    if (publicCount === 0 && !robots.includes("noindex")) {
+      issues.push(`${category.slug}: empty category should be noindex`);
+    }
+
+    if (publicCount > 0 && robots.includes("noindex")) {
+      issues.push(`${category.slug}: populated category should be indexable`);
+    }
+
+    return issues;
+  });
+  const marketplaceProfileRenderingIssues = publicMarketplaceProfessionals.flatMap((professional) => {
+    const profileUrl = absoluteUrl(`/professionals/${professional.profileSlug}`);
+    const html = readHtmlForUrl(profileUrl);
+
+    if (!html) {
+      return [`${professional.profileSlug}: exported profile page is missing`];
+    }
+
+    const issues: string[] = [];
+
+    if (!html.includes(professional.displayName)) {
+      issues.push(`${professional.profileSlug}: profile name is missing from initial HTML`);
+    }
+
+    if (extractCanonical(html) !== profileUrl) {
+      issues.push(`${professional.profileSlug}: canonical does not match public profile URL`);
+    }
+
+    if (extractRobots(html).includes("noindex")) {
+      issues.push(`${professional.profileSlug}: eligible public profile is noindex`);
+    }
+
+    return issues;
+  });
+
   console.log("SEO Audit Summary");
   console.log("-----------------");
   console.log(`Total exported HTML pages: ${totalHtmlFiles}`);
   console.log(`Sitemap files discovered: ${sitemapUrls.length}`);
   console.log(`Sitemap URLs discovered: ${canonicalPageUrls.length}`);
   console.log(`URLs returning non-200 in static export: ${non200Urls.length}`);
+  console.log(`Eligible public marketplace profiles: ${publicMarketplaceProfessionals.length}`);
 
   printSection("Duplicate slugs", duplicateSlugs);
   printSection("Duplicate exercise names", duplicateExerciseNames.slice(0, 50));
+  printSection("Duplicate meta titles", duplicateMetaTitles.slice(0, 25));
+  printSection("Duplicate meta descriptions", duplicateMetaDescriptions.slice(0, 25));
   printSection("Missing canonical", missingCanonical.slice(0, 25));
   printSection("Missing meta title", missingMetaTitle.slice(0, 25));
   printSection("Missing meta description", missingMetaDescription.slice(0, 25));
@@ -457,6 +610,13 @@ function main() {
   printSection("Bench Press-Focused Workout substitution issues", benchWorkoutSubstitutionIssues.slice(0, 50));
   printSection("Pages not linked from any hub", pagesNotLinkedFromHub.slice(0, 50));
   printSection("Unknown restaurant slugs", unknownRestaurantSlugs);
+  printSection("Empty marketplace category pages in sitemap", emptyMarketplaceCategoriesInSitemap);
+  printSection("Non-public marketplace profiles in sitemap", nonPublicMarketplaceProfilesInSitemap);
+  printSection("Public marketplace profiles missing from sitemap", publicMarketplaceProfilesMissingFromSitemap);
+  printSection("Private marketplace fields serialized into public profile pages", privateMarketplaceFieldLeaks);
+  printSection("Marketplace directory rendering issues", marketplaceDirectoryRenderingIssues);
+  printSection("Marketplace category rendering issues", marketplaceCategoryRenderingIssues);
+  printSection("Marketplace profile rendering issues", marketplaceProfileRenderingIssues);
 }
 
 function walkHtmlFiles(directory: string): string[] {

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { StructuredData } from "@/components/StructuredData";
+import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { ExerciseCard } from "@/components/training/ExerciseCard";
 import { RelatedTrainingTools } from "@/components/training/RelatedTrainingTools";
 import { TrainingLogbookCta } from "@/components/training/TrainingLogbookCta";
@@ -618,6 +619,12 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
         title="Track this exercise for free in Logbook."
         description="Once the movement is in your plan, use Logbook to record sets, reps, load, and progress without guessing what happened last week."
         ctaContext={`exercise_detail_${exercise.slug}`}
+      />
+      <MarketplaceSupportCta
+        href="/professionals/strength-conditioning/"
+        label="Find a strength and conditioning coach"
+        context={`exercise_detail_${exercise.slug}`}
+        title="Want help choosing and progressing this exercise?"
       />
     </div>
   );

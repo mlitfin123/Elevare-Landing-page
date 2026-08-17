@@ -12,9 +12,9 @@ import {
 import { buildMetadata, siteConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
-  title: "Find Trainers, Coaches, and Wellness Support",
+  title: "Find Trainers, Coaches & Wellness Experts | Elevare",
   description:
-    "Browse reviewed personal trainers, coaches, nutrition professionals, dietitians, and wellness specialists on Elevare.",
+    "Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare.",
   pathname: "/professionals",
 });
 
