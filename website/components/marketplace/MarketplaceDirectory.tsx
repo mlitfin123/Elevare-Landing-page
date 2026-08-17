@@ -269,14 +269,14 @@ function MarketplaceDirectoryState({
   const remainingExactResults = Math.max(0, exactResults.length - visibleExactResults.length);
   const advancedFiltersActive = draftFilters.serviceMode !== "all" || draftFilters.specialty !== "all";
   const resultsHeading = !shouldShowResults
-    ? "Search Elevare"
+    ? "Find the right support"
     : hasMeaningfulSearch
       ? exactResults.length > 0
         ? "Results"
         : "No exact matches yet"
       : currentCategory?.label ?? "Explore Elevare";
   const resultsDescription = !shouldShowResults
-    ? "Choose a category, location, specialty, or search term above to view reviewed professionals."
+    ? "Use the filters above to browse reviewed professionals by category, location, specialty, service mode, or keyword."
     : hasMeaningfulSearch
       ? exactResults.length > 0
         ? "These reviewed profiles match your current search filters."
@@ -595,10 +595,10 @@ function MarketplaceDirectoryState({
 
         {!shouldShowResults ? (
           <article className="callout marketplace-empty-callout">
-            <span className="meta-pill">Search to view professionals</span>
-            <h2>Start with a search.</h2>
+            <span className="meta-pill">Browse reviewed professionals</span>
+            <h2>Start by refining your search.</h2>
             <p>
-              Profiles will appear here after you search by category, location, specialty, service mode, or keyword.
+              Matching profiles will appear here once you choose a category, location, specialty, service mode, or keyword.
             </p>
           </article>
         ) : exactResults.length > 0 ? (
