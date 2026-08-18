@@ -213,8 +213,13 @@ export function formatPriceSummary({
   priceFrom,
   priceTo,
   pricingBasis,
+  contactForPricing,
   pricingCurrency = "USD",
-}: Pick<ProfessionalProfileRecord, "priceFrom" | "priceTo" | "pricingBasis" | "pricingCurrency">) {
+}: Pick<ProfessionalProfileRecord, "priceFrom" | "priceTo" | "pricingBasis" | "pricingCurrency" | "contactForPricing">) {
+  if (contactForPricing) {
+    return "Contact for pricing";
+  }
+
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: pricingCurrency || "USD",

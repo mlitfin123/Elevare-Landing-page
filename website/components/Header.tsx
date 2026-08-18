@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { AuthNavigationLink } from "@/components/AuthNavigationLink";
 
 const navigation = [
   { href: "/calculators/", label: "Tools" },
@@ -38,9 +39,7 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link className="button-link" href="/sign-in/">
-            Sign In
-          </Link>
+          <AuthNavigationLink className="button-link" />
         </nav>
       </div>
     </header>

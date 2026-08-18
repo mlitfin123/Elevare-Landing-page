@@ -112,6 +112,18 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
   const yearsExperience = formatYearsExperience(professional.yearsExperience);
   const priceSummary = formatPriceSummary(professional);
   const publicBadges = getProfessionalPublicBadges(professional);
+  const clientStatusLabel = professional.clientAcceptanceStatus === "waitlist"
+    ? "Accepting waitlist requests"
+    : professional.clientAcceptanceStatus === "not_accepting"
+      ? "Not accepting new clients"
+      : "Accepting new clients";
+  const profileLinks = [
+    { label: "Website", href: professional.websiteUrl },
+    { label: "Instagram", href: professional.socialLinks.instagram },
+    { label: "TikTok", href: professional.socialLinks.tiktok },
+    { label: "YouTube", href: professional.socialLinks.youtube },
+    { label: "LinkedIn", href: professional.socialLinks.linkedin },
+  ].filter((entry): entry is { label: string; href: string } => Boolean(entry.href));
   const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
   const profileLocation = formatLocationLabel(professional);
   const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || primaryCategory?.label || "professional"}${
@@ -275,6 +287,9 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
                   <strong>Availability:</strong> {professional.availabilitySummary}
                 </li>
               ) : null}
+              <li>
+                <strong>New clients:</strong> {clientStatusLabel}
+              </li>
             </ul>
 
             {professional.specialties.length > 0 ? (
@@ -336,13 +351,39 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
                   {service.price != null ? (
                     <li>
                       <strong>Pricing:</strong>{" "}
-                      {service.priceTo && service.priceTo > service.price
+                      {service.contactForPricing
+                        ? "Contact for pricing"
+                        : service.priceTo && service.priceTo > service.price
                         ? `$${service.price}-$${service.priceTo}${service.pricingBasis ? `/${service.pricingBasis}` : ""}`
                         : `$${service.price}${service.pricingBasis ? `/${service.pricingBasis}` : ""}`}
                     </li>
+                  ) : service.contactForPricing ? (
+                    <li><strong>Pricing:</strong> Contact for pricing</li>
                   ) : null}
                 </ul>
               </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {profileLinks.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <div className="eyebrow">Links</div>
+            <h2 className="section-title">Learn more about this professional.</h2>
+          </div>
+          <div className="button-row">
+            {profileLinks.map((entry) => (
+              <TrackedLink
+                key={entry.label}
+                className="button button-secondary"
+                href={entry.href}
+                eventName="professional_external_link_click"
+                eventParams={{ professional_slug: professional.profileSlug, link_type: entry.label.toLowerCase() }}
+              >
+                {entry.label}
+              </TrackedLink>
             ))}
           </div>
         </section>

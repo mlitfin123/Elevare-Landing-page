@@ -43,6 +43,7 @@ export function buildAvailabilitySummaryText(value: unknown) {
   const record = value as {
     days?: unknown;
     windows?: unknown;
+    details?: unknown;
   };
 
   const dayLabel = Array.isArray(record.days)
@@ -62,7 +63,8 @@ export function buildAvailabilitySummaryText(value: unknown) {
     return `${dayLabel} · ${windowLabel}`;
   }
 
-  return dayLabel || windowLabel || null;
+  const details = typeof record.details === "string" ? normalizeText(record.details) : null;
+  return [dayLabel || windowLabel, details].filter(Boolean).join(" - ") || null;
 }
 
 export function parseBudgetInput(value: string) {

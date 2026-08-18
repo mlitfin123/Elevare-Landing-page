@@ -28,7 +28,7 @@ export function SignOutButton() {
 
   return (
     <button type="button" className="button button-secondary" onClick={handleSignOut} disabled={isSubmitting}>
-      {isSubmitting ? "Signing out..." : "Sign out"}
+      {isSubmitting ? "Logging out..." : "Log out"}
     </button>
   );
 }

@@ -51,8 +51,23 @@ type MarketplaceCredentialJson = {
   credential_type: string | null;
   issuing_body: string | null;
   credential_number: string | null;
+  issue_date: string | null;
   expiration_date: string | null;
   verification_status: string | null;
+};
+
+type MarketplaceServiceJson = {
+  id: string;
+  name: string;
+  description: string | null;
+  service_mode: string | null;
+  duration_minutes: number | null;
+  price_min_cents: number | null;
+  price_max_cents: number | null;
+  pricing_basis: string | null;
+  contact_for_pricing: boolean | null;
+  sort_order: number | null;
+  is_active: boolean | null;
 };
 
 type MarketplaceLocationJson = {
@@ -100,6 +115,14 @@ type MarketplacePublicTrainerRow = {
   insured_verified_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  client_acceptance_status: string | null;
+  typical_availability: string[] | null;
+  availability_details: string | null;
+  website_url: string | null;
+  social_links: unknown;
+  pricing_basis: string | null;
+  contact_for_pricing: boolean | null;
+  service_offerings: unknown;
 };
 
 function normalizeText(value: unknown) {
@@ -131,6 +154,18 @@ function parseObjectArray<T>(value: unknown) {
   }
 
   return value.filter((entry) => entry && typeof entry === "object") as T[];
+}
+
+function parseStringObject(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {} as Record<string, string>;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, entry]) => [key, normalizeText(entry)] as const)
+      .filter((entry): entry is [string, string] => Boolean(entry[1])),
+  );
 }
 
 function uniqueStrings(values: Array<string | null | undefined>) {
@@ -245,7 +280,15 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
       || impliedServiceModes.has("online")
       || impliedServiceModes.has("hybrid"),
     categories: normalizedCategories,
-    services: mapServiceRecords(professional.id, normalizedCategories),
+    contactForPricing: professional.contactForPricing ?? false,
+    typicalAvailability: professional.typicalAvailability ?? [],
+    availabilityDetails: professional.availabilityDetails ?? null,
+    clientAcceptanceStatus: professional.clientAcceptanceStatus ?? "accepting",
+    websiteUrl: professional.websiteUrl ?? null,
+    socialLinks: professional.socialLinks ?? {},
+    services: professional.services?.length
+      ? professional.services.map((service) => ({ ...service, contactForPricing: service.contactForPricing ?? false }))
+      : mapServiceRecords(professional.id, normalizedCategories),
   };
 }
 
@@ -378,7 +421,7 @@ function mapCredentialRows(
     organizationName: normalizeText(row.issuing_body) ?? "Credentialing organization",
     credentialName: normalizeText(row.credential_name) ?? "Credential",
     credentialType: normalizeText(row.credential_type),
-    issueDate: null,
+    issueDate: normalizeText(row.issue_date),
     expirationDate: normalizeText(row.expiration_date),
     verificationStatus: normalizeText(row.verification_status) ?? "unverified",
   }));
@@ -398,9 +441,32 @@ function mapServiceRecords(
     price: null,
     priceTo: null,
     pricingBasis: null,
+    contactForPricing: false,
     sortOrder: index,
     isActive: true,
   }));
+}
+
+function mapServiceOfferingRows(
+  trainerProfileId: string,
+  rows: MarketplaceServiceJson[],
+): ProfessionalServiceRecord[] {
+  return rows
+    .filter((row) => row.is_active !== false)
+    .map((row, index) => ({
+      id: row.id,
+      professionalProfileId: trainerProfileId,
+      name: normalizeText(row.name) ?? "Service",
+      description: normalizeText(row.description),
+      serviceMode: normalizeText(row.service_mode),
+      durationMinutes: normalizeNumber(row.duration_minutes),
+      price: normalizeCurrency(row.price_min_cents),
+      priceTo: normalizeCurrency(row.price_max_cents),
+      pricingBasis: normalizeText(row.pricing_basis),
+      contactForPricing: Boolean(row.contact_for_pricing),
+      sortOrder: normalizeNumber(row.sort_order) ?? index,
+      isActive: true,
+    }));
 }
 
 async function buildSnapshot(): Promise<MarketplaceSnapshot> {
@@ -518,6 +584,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
     });
 
     const specialties = uniqueStrings([
+      ...parseStringArray(row.goal_tags),
       humanizeMarketplaceValue(row.primary_specialty),
       ...parseStringArray(row.secondary_specialties).map((entry) => humanizeMarketplaceValue(entry)),
       ...[...impliedSpecialties],
@@ -548,8 +615,14 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       priceFrom: normalizeCurrency(row.price_min_cents),
       priceTo: normalizeCurrency(row.price_max_cents),
       pricingCurrency: "USD",
-      pricingBasis: null,
+      pricingBasis: normalizeText(row.pricing_basis),
+      contactForPricing: Boolean(row.contact_for_pricing),
       availabilitySummary: buildAvailabilitySummaryText(row.availability_summary),
+      typicalAvailability: parseStringArray(row.typical_availability),
+      availabilityDetails: normalizeText(row.availability_details),
+      clientAcceptanceStatus: normalizeText(row.client_acceptance_status) ?? "accepting",
+      websiteUrl: normalizeText(row.website_url),
+      socialLinks: parseStringObject(row.social_links),
       approvalStatus: "approved",
       isActive: true,
       isPublic: true,
@@ -561,7 +634,12 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
         row.trainer_profile_id,
         parseObjectArray<MarketplaceCredentialJson>(row.certifications),
       ),
-      services: mapServiceRecords(row.trainer_profile_id, professionalCategories),
+      services: parseObjectArray<MarketplaceServiceJson>(row.service_offerings).length > 0
+        ? mapServiceOfferingRows(
+            row.trainer_profile_id,
+            parseObjectArray<MarketplaceServiceJson>(row.service_offerings),
+          )
+        : mapServiceRecords(row.trainer_profile_id, professionalCategories),
       createdAt: normalizeText(row.created_at),
       updatedAt: normalizeText(row.updated_at),
     };

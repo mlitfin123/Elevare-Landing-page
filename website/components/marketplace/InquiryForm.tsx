@@ -3,7 +3,12 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
-import { getMarketplaceAppUserByAuthId, parseGoalTags } from "@/lib/marketplace-account";
+import {
+  CLIENT_TIMELINE_OPTIONS,
+  normalizeClientGoalTags,
+  normalizeClientTimeline,
+} from "@/lib/client-preferences";
+import { getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import type { ProfessionalProfileRecord } from "@/lib/marketplace-types";
@@ -21,7 +26,10 @@ export function InquiryForm({ professional }: InquiryFormProps) {
   const [serviceInterest, setServiceInterest] = useState("");
   const [goal, setGoal] = useState("");
   const [preferredServiceMode, setPreferredServiceMode] = useState("");
+  const [startTimeline, setStartTimeline] = useState("");
   const [message, setMessage] = useState("");
+  const [hasLoadedPreferences, setHasLoadedPreferences] = useState(false);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
 
@@ -33,7 +41,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
     [professional.categories, professional.services],
   );
 
-  function handleStart() {
+  async function handleStart() {
     if (!isConfigured) {
       setFeedback("Marketplace auth is not configured yet.");
       setFeedbackType("error");
@@ -51,6 +59,45 @@ export function InquiryForm({ professional }: InquiryFormProps) {
       professional_slug: professional.profileSlug,
       professional_name: professional.displayName,
     });
+
+    if (hasLoadedPreferences) return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    setIsLoadingPreferences(true);
+
+    try {
+      const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
+      if (!appUser) return;
+
+      const { data } = await supabase
+        .from("client_profiles")
+        .select("goal_tags,goals,preferred_modality,start_timeline,preference_notes")
+        .eq("user_id", appUser.id)
+        .maybeSingle();
+
+      setClientFirstName((current) => current || appUser.first_name || "");
+
+      if (data) {
+        const savedGoals = normalizeClientGoalTags(data.goal_tags, data.goals);
+        setGoal((current) => current || savedGoals.join(", "));
+        setPreferredServiceMode((current) => {
+          if (current) return current;
+          if (data.preferred_modality === "both") return "hybrid";
+          return data.preferred_modality === "in_person" || data.preferred_modality === "online"
+            ? data.preferred_modality
+            : "";
+        });
+        setStartTimeline((current) => current || normalizeClientTimeline(data.start_timeline));
+        setMessage((current) => current || data.preference_notes || "");
+      }
+    } catch {
+      // Prefill is a convenience; the request form remains usable if it cannot load.
+    } finally {
+      setHasLoadedPreferences(true);
+      setIsLoadingPreferences(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -102,8 +149,6 @@ export function InquiryForm({ professional }: InquiryFormProps) {
           .upsert(
             {
               user_id: appUser.id,
-              goals: parseGoalTags(goal),
-              preferred_modality: preferredServiceMode || null,
             },
             {
               onConflict: "user_id",
@@ -133,11 +178,13 @@ export function InquiryForm({ professional }: InquiryFormProps) {
         service_interest: serviceInterest.trim() || null,
         goal: goal.trim(),
         preferred_service_mode: preferredServiceMode || null,
+        start_timeline: startTimeline || null,
         message: message.trim() || null,
         metadata: {
           source: "website_marketplace",
           pathname,
           professional_slug: professional.profileSlug,
+          start_timeline: startTimeline || null,
         },
       });
 
@@ -151,6 +198,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
       setMessage("");
       setServiceInterest("");
       setPreferredServiceMode("");
+      setStartTimeline("");
       trackEvent("professional_inquiry_submitted", {
         professional_slug: professional.profileSlug,
         professional_name: professional.displayName,
@@ -171,6 +219,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
 
       {isOpen ? (
         <form className="marketplace-inline-form" onSubmit={handleSubmit}>
+          {isLoadingPreferences ? <div className="form-note">Loading your saved preferences...</div> : null}
           <div className="field-grid">
             <label className="field">
               <span className="field-label">First name</span>
@@ -215,7 +264,17 @@ export function InquiryForm({ professional }: InquiryFormProps) {
                 <option value="">Select one</option>
                 <option value="in_person">In person</option>
                 <option value="online">Online</option>
-                <option value="hybrid">Hybrid</option>
+                <option value="hybrid">Either</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span className="field-label">When would you like to start?</span>
+              <select value={startTimeline} onChange={(event) => setStartTimeline(event.target.value)}>
+                <option value="">No preference</option>
+                {CLIENT_TIMELINE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </label>
 

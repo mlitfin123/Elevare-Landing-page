@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthNavigationLink } from "@/components/AuthNavigationLink";
 
 export function Footer() {
   return (
@@ -18,7 +19,7 @@ export function Footer() {
           <Link href="/apps/">Apps</Link>
           <Link href="/blog/">Blog</Link>
           <Link href="/professionals/">Find Support</Link>
-          <Link href="/sign-in/">Sign In</Link>
+          <AuthNavigationLink />
           <Link href="/privacy-policy.html">Privacy Policy</Link>
           <Link href="/terms-of-service.html">Terms of Service</Link>
           <a href="mailto:mlitfin@elevarefit.org">Contact</a>
