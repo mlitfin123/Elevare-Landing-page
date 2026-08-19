@@ -20,6 +20,8 @@ export type ProfessionalCredentialRecord = {
   issueDate: string | null;
   expirationDate: string | null;
   verificationStatus: string;
+  countryCode: string | null;
+  jurisdiction: string | null;
 };
 
 export type ProfessionalServiceRecord = {
@@ -35,6 +37,7 @@ export type ProfessionalServiceRecord = {
   contactForPricing: boolean;
   sortOrder: number;
   isActive: boolean;
+  currencyCode: string;
 };
 
 export type ProfessionalProfileRecord = {
@@ -47,8 +50,11 @@ export type ProfessionalProfileRecord = {
   bio: string;
   yearsExperience: number | null;
   specialties: string[];
+  countryCode: string;
   city: string | null;
   state: string | null;
+  postalCode: string | null;
+  serviceRadiusMeters: number | null;
   serviceArea: string | null;
   remoteAvailable: boolean;
   serviceModes: string[];
@@ -80,6 +86,7 @@ export type ClientProfileRecord = {
   id: string;
   userId: string;
   firstName: string | null;
+  countryCode: string;
   city: string | null;
   state: string | null;
   legacyGoals: string[];
@@ -90,6 +97,7 @@ export type ClientProfileRecord = {
   budgetRange: string | null;
   budgetBasis: string | null;
   preferredRadius: number | null;
+  preferredRadiusMeters: number | null;
   startTimeline: string | null;
   supportFrequency: string | null;
   preferenceNotes: string | null;

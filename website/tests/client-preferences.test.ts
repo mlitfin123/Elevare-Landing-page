@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CLIENT_CATEGORY_DESCRIPTIONS,
+  CLIENT_GOAL_ALIASES,
   CLIENT_GOAL_OPTIONS,
   getBudgetCents,
   normalizeClientBudgetRange,
   normalizeClientGoalTags,
   normalizeClientTimeline,
+  shouldShowClientRadius,
   toClientServiceMode,
   toDatabaseServiceMode,
 } from "../lib/client-preferences.ts";
@@ -24,10 +26,31 @@ test("structured goals preserve new values and safely map legacy fitness goals",
     "Build Muscle",
   ]);
   assert.deepEqual(normalizeClientGoalTags([], ["fat_loss", "competition_prep"]), [
-    "Lose Body Fat",
+    "Weight Loss / Fat Loss",
     "Prepare for a Competition",
   ]);
+  assert.deepEqual(
+    normalizeClientGoalTags(
+      ["Lose Weight", "Lose Body Fat", "Improve General Fitness", "Improve Conditioning"],
+      [],
+    ),
+    ["Weight Loss / Fat Loss", "Improve Fitness & Conditioning"],
+  );
+  assert.equal(CLIENT_GOAL_OPTIONS.length, 20);
   assert.ok(CLIENT_GOAL_OPTIONS.includes("Other"));
+});
+
+test("every retired goal label maps to a visible consolidated option", () => {
+  for (const canonicalGoal of Object.values(CLIENT_GOAL_ALIASES)) {
+    assert.ok(CLIENT_GOAL_OPTIONS.includes(canonicalGoal));
+  }
+});
+
+test("travel radius is only relevant to service modes with an in-person option", () => {
+  assert.equal(shouldShowClientRadius("in_person"), true);
+  assert.equal(shouldShowClientRadius("either"), true);
+  assert.equal(shouldShowClientRadius("online"), false);
+  assert.equal(shouldShowClientRadius(""), false);
 });
 
 test("budget selections generate matching legacy cent values", () => {

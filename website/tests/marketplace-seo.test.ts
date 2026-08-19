@@ -3,10 +3,13 @@ import test from "node:test";
 import {
   buildMarketplaceCategoryMetaDescription,
   buildMarketplaceProfessionalMetaDescription,
+  buildMarketplaceProfessionalSeoTitle,
+  getIndexableMarketplaceProfessionals,
   getMarketplaceCategoryProfessionalCount,
   isMarketplaceCategoryIndexable,
-  isMarketplaceLocationCategoryIndexable,
+  isMarketplaceFilteredSearch,
   isPublicMarketplaceProfessional,
+  isSeoLocationPageEligible,
 } from "../lib/marketplace-seo.ts";
 import type {
   ProfessionalCategoryRecord,
@@ -66,6 +69,9 @@ function createProfessional(
     createdAt: null,
     updatedAt: null,
     ...overrides,
+    countryCode: overrides.countryCode ?? "US",
+    postalCode: overrides.postalCode ?? null,
+    serviceRadiusMeters: overrides.serviceRadiusMeters ?? null,
   };
 }
 
@@ -91,7 +97,7 @@ test("category inventory only counts eligible public professionals", () => {
   assert.equal(isMarketplaceCategoryIndexable(category, professionals.slice(1)), false);
 });
 
-test("future location pages require enough eligible inventory", () => {
+test("future location pages require an explicit inventory policy and unique content", () => {
   const professionals = [
     createProfessional({ id: "one" }),
     createProfessional({ id: "two", profileSlug: "sam-lee" }),
@@ -99,14 +105,38 @@ test("future location pages require enough eligible inventory", () => {
   ];
 
   assert.equal(
-    isMarketplaceLocationCategoryIndexable({ category, professionals, city: "Miami" }),
+    isSeoLocationPageEligible({
+      category,
+      professionals,
+      countryCode: "US",
+      city: "Miami",
+      region: "Florida",
+      hasUniqueContent: true,
+      hasMeaningfulSearchIntent: true,
+      inventoryMeetsRequirement: (count) => count >= 3,
+    }),
     true,
   );
   assert.equal(
-    isMarketplaceLocationCategoryIndexable({
+    isSeoLocationPageEligible({
       category,
-      professionals: professionals.slice(0, 2),
+      professionals,
+      countryCode: "US",
       city: "Miami",
+      hasUniqueContent: false,
+      hasMeaningfulSearchIntent: true,
+      inventoryMeetsRequirement: (count) => count >= 1,
+    }),
+    false,
+  );
+  assert.equal(
+    isSeoLocationPageEligible({
+      category,
+      professionals,
+      countryCode: "US",
+      city: "Miami",
+      hasUniqueContent: true,
+      hasMeaningfulSearchIntent: true,
     }),
     false,
   );
@@ -120,4 +150,84 @@ test("marketplace metadata is descriptive and bounded", () => {
   assert.ok(categoryDescription.length <= 160);
   assert.match(professionalDescription, /Alex Morgan/);
   assert.ok(professionalDescription.length <= 160);
+});
+
+test("profile titles use natural local locations and avoid U.S.-only assumptions", () => {
+  const localMode = { remoteAvailable: false, serviceModes: ["in_person"] };
+
+  assert.equal(
+    buildMarketplaceProfessionalSeoTitle(createProfessional({
+      ...localMode,
+      displayName: "John Smith",
+      professionalTitle: "Personal Trainer",
+      city: "Miami",
+      state: "Florida",
+      countryCode: "US",
+    })),
+    "John Smith \u2014 Personal Trainer in Miami, FL | Elevare",
+  );
+  assert.equal(
+    buildMarketplaceProfessionalSeoTitle(createProfessional({
+      ...localMode,
+      displayName: "Sarah Jones",
+      professionalTitle: "Nutrition Coach",
+      city: "Toronto",
+      state: "ON",
+      countryCode: "CA",
+      pricingCurrency: "CAD",
+    })),
+    "Sarah Jones \u2014 Nutrition Coach in Toronto, Ontario | Elevare",
+  );
+  assert.equal(
+    buildMarketplaceProfessionalSeoTitle(createProfessional({
+      ...localMode,
+      displayName: "Alex Brown",
+      professionalTitle: "Life Coach",
+      city: "London",
+      state: null,
+      countryCode: "GB",
+      pricingCurrency: "GBP",
+    })),
+    "Alex Brown \u2014 Life Coach in London | Elevare",
+  );
+});
+
+test("online-only profile metadata does not force a home city", () => {
+  const professional = createProfessional({
+    displayName: "Jane Smith",
+    professionalTitle: "Competition Prep Coach",
+    city: "Miami",
+    state: "FL",
+    countryCode: "US",
+    remoteAvailable: true,
+    serviceModes: ["online"],
+  });
+
+  assert.equal(
+    buildMarketplaceProfessionalSeoTitle(professional),
+    "Jane Smith \u2014 Online Competition Prep Coach | Elevare",
+  );
+  assert.doesNotMatch(buildMarketplaceProfessionalMetaDescription(professional), /Miami/);
+  assert.match(buildMarketplaceProfessionalMetaDescription(professional), /online competition prep coach/i);
+});
+
+test("sitemap profile selection is country agnostic and approval aware", () => {
+  const professionals = [
+    createProfessional({ id: "us", countryCode: "US" }),
+    createProfessional({ id: "ca", profileSlug: "ca-profile", countryCode: "CA" }),
+    createProfessional({ id: "gb", profileSlug: "gb-profile", countryCode: "GB" }),
+    createProfessional({ id: "au", profileSlug: "au-profile", countryCode: "AU" }),
+    createProfessional({ id: "pending", profileSlug: "pending", countryCode: "CA", approvalStatus: "pending_review" }),
+  ];
+
+  assert.deepEqual(
+    getIndexableMarketplaceProfessionals(professionals).map((professional) => professional.id),
+    ["us", "ca", "gb", "au"],
+  );
+});
+
+test("filtered marketplace queries remain non-canonical search views", () => {
+  assert.equal(isMarketplaceFilteredSearch(""), false);
+  assert.equal(isMarketplaceFilteredSearch("country=CA"), true);
+  assert.equal(isMarketplaceFilteredSearch("country=CA&city=Toronto&category=nutrition"), true);
 });

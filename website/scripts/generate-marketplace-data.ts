@@ -14,6 +14,11 @@ import {
   type ProfessionalProfileRecord,
   type ProfessionalServiceRecord,
 } from "../lib/marketplace-types.ts";
+import {
+  getDefaultCurrencyCode,
+  normalizeCountryCode,
+  normalizeCurrencyCode,
+} from "../lib/marketplace-location.ts";
 
 const supabaseUrl = process.env.SECOND_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SECOND_SUPABASE_URL ?? null;
 const serviceRoleKey = process.env.SECOND_SUPABASE_SERVICE_ROLE_KEY ?? null;
@@ -54,6 +59,8 @@ type MarketplaceCredentialJson = {
   issue_date: string | null;
   expiration_date: string | null;
   verification_status: string | null;
+  credential_country_code?: string | null;
+  credential_jurisdiction?: string | null;
 };
 
 type MarketplaceServiceJson = {
@@ -68,6 +75,7 @@ type MarketplaceServiceJson = {
   contact_for_pricing: boolean | null;
   sort_order: number | null;
   is_active: boolean | null;
+  currency_code?: string | null;
 };
 
 type MarketplaceLocationJson = {
@@ -123,6 +131,18 @@ type MarketplacePublicTrainerRow = {
   pricing_basis: string | null;
   contact_for_pricing: boolean | null;
   service_offerings: unknown;
+};
+
+type MarketplaceInternationalTrainerRow = {
+  trainer_profile_id: string;
+  country_code: string | null;
+  location_city: string | null;
+  location_region: string | null;
+  postal_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  service_radius_meters: number | null;
+  currency_code: string | null;
 };
 
 function normalizeText(value: unknown) {
@@ -259,6 +279,11 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
         return left.sortOrder - right.sortOrder || left.label.localeCompare(right.label);
       }),
   );
+  const countryCode = normalizeCountryCode(professional.countryCode, "");
+  const pricingCurrency = normalizeCurrencyCode(
+    professional.pricingCurrency,
+    getDefaultCurrencyCode(countryCode),
+  );
 
   return {
     ...professional,
@@ -286,9 +311,25 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
     clientAcceptanceStatus: professional.clientAcceptanceStatus ?? "accepting",
     websiteUrl: professional.websiteUrl ?? null,
     socialLinks: professional.socialLinks ?? {},
+    countryCode,
+    postalCode: professional.postalCode ?? null,
+    serviceRadiusMeters: professional.serviceRadiusMeters ?? null,
+    pricingCurrency,
+    credentials: (professional.credentials ?? []).map((credential) => ({
+      ...credential,
+      countryCode: credential.countryCode ?? null,
+      jurisdiction: credential.jurisdiction ?? null,
+    })),
     services: professional.services?.length
-      ? professional.services.map((service) => ({ ...service, contactForPricing: service.contactForPricing ?? false }))
-      : mapServiceRecords(professional.id, normalizedCategories),
+      ? professional.services.map((service) => ({
+          ...service,
+          contactForPricing: service.contactForPricing ?? false,
+          currencyCode: normalizeCurrencyCode(service.currencyCode, pricingCurrency),
+        }))
+      : mapServiceRecords(professional.id, normalizedCategories).map((service) => ({
+          ...service,
+          currencyCode: pricingCurrency,
+        })),
   };
 }
 
@@ -424,6 +465,8 @@ function mapCredentialRows(
     issueDate: normalizeText(row.issue_date),
     expirationDate: normalizeText(row.expiration_date),
     verificationStatus: normalizeText(row.verification_status) ?? "unverified",
+    countryCode: normalizeText(row.credential_country_code),
+    jurisdiction: normalizeText(row.credential_jurisdiction),
   }));
 }
 
@@ -444,6 +487,7 @@ function mapServiceRecords(
     contactForPricing: false,
     sortOrder: index,
     isActive: true,
+    currencyCode: "USD",
   }));
 }
 
@@ -466,6 +510,7 @@ function mapServiceOfferingRows(
       contactForPricing: Boolean(row.contact_for_pricing),
       sortOrder: normalizeNumber(row.sort_order) ?? index,
       isActive: true,
+      currencyCode: normalizeCurrencyCode(row.currency_code),
     }));
 }
 
@@ -477,7 +522,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
     return fallback;
   }
 
-  const [categoryRows, trainerRows] = await Promise.all([
+  const [categoryRows, trainerRows, internationalRows] = await Promise.all([
     fetchAllPages<MarketplaceCategoryRow>(
       "marketplace_service_categories_v1",
       "*",
@@ -490,7 +535,16 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       {},
       "updated_at.desc,display_name.asc",
     ),
+    fetchAllPages<MarketplaceInternationalTrainerRow>(
+      "marketplace_public_trainer_international_v1",
+      "*",
+      {},
+      "trainer_profile_id.asc",
+    ),
   ]);
+  const internationalByProfileId = new Map(
+    internationalRows.map((row) => [row.trainer_profile_id, row]),
+  );
 
   const categoryMap = new Map(
     fallback.categories.map((category) => [category.stableId, category]),
@@ -525,6 +579,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
   const categoriesByStableId = new Map(categories.map((category) => [category.stableId, category]));
 
   const professionals = trainerRows.map((row) => {
+    const international = internationalByProfileId.get(row.trainer_profile_id) ?? null;
     const categoryRowsForProfile = parseObjectArray<MarketplaceCategoryJson>(row.service_categories);
     const impliedServiceModes = new Set<string>();
     const impliedSpecialties = new Set<string>();
@@ -593,6 +648,25 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       ...parseStringArray(row.delivery_modes),
       ...[...impliedServiceModes],
     ]);
+    const serviceOfferingRows = parseObjectArray<MarketplaceServiceJson>(row.service_offerings);
+    const services = serviceOfferingRows.length > 0
+      ? mapServiceOfferingRows(row.trainer_profile_id, serviceOfferingRows)
+      : mapServiceRecords(row.trainer_profile_id, professionalCategories);
+    const servicePrices = services
+      .map((service) => service.price)
+      .filter((price): price is number => price != null);
+    const servicePriceMaximums = services
+      .map((service) => service.priceTo ?? service.price)
+      .filter((price): price is number => price != null);
+    const servicePricingBases = uniqueStrings(services.map((service) => service.pricingBasis));
+    const profilePriceFrom = normalizeCurrency(row.price_min_cents);
+    const profilePriceTo = normalizeCurrency(row.price_max_cents);
+    const countryCode = normalizeCountryCode(international?.country_code, "");
+    const pricingCurrency = normalizeCurrencyCode(
+      international?.currency_code,
+      getDefaultCurrencyCode(countryCode),
+    );
+    const localizedServices = services.map((service) => ({ ...service, currencyCode: pricingCurrency }));
 
     return {
       id: row.trainer_profile_id,
@@ -607,16 +681,20 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       bio: normalizeText(row.bio) ?? "",
       yearsExperience: normalizeNumber(row.years_experience),
       specialties,
-      city: normalizeText(row.location_city),
-      state: normalizeText(row.location_state),
+      countryCode,
+      city: normalizeText(international?.location_city) ?? normalizeText(row.location_city),
+      state: normalizeText(international?.location_region) ?? normalizeText(row.location_state),
+      postalCode: normalizeText(international?.postal_code),
+      serviceRadiusMeters: normalizeNumber(international?.service_radius_meters),
       serviceArea: buildServiceArea(row.available_locations, row.locations),
       remoteAvailable: serviceModes.includes("online") || serviceModes.includes("hybrid"),
       serviceModes,
-      priceFrom: normalizeCurrency(row.price_min_cents),
-      priceTo: normalizeCurrency(row.price_max_cents),
-      pricingCurrency: "USD",
-      pricingBasis: normalizeText(row.pricing_basis),
-      contactForPricing: Boolean(row.contact_for_pricing),
+      priceFrom: profilePriceFrom ?? (servicePrices.length > 0 ? Math.min(...servicePrices) : null),
+      priceTo: profilePriceTo ?? (servicePriceMaximums.length > 0 ? Math.max(...servicePriceMaximums) : null),
+      pricingCurrency,
+      pricingBasis: normalizeText(row.pricing_basis) ?? (servicePricingBases.length === 1 ? servicePricingBases[0] : null),
+      contactForPricing: Boolean(row.contact_for_pricing)
+        || (profilePriceFrom == null && servicePrices.length === 0 && services.some((service) => service.contactForPricing)),
       availabilitySummary: buildAvailabilitySummaryText(row.availability_summary),
       typicalAvailability: parseStringArray(row.typical_availability),
       availabilityDetails: normalizeText(row.availability_details),
@@ -634,12 +712,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
         row.trainer_profile_id,
         parseObjectArray<MarketplaceCredentialJson>(row.certifications),
       ),
-      services: parseObjectArray<MarketplaceServiceJson>(row.service_offerings).length > 0
-        ? mapServiceOfferingRows(
-            row.trainer_profile_id,
-            parseObjectArray<MarketplaceServiceJson>(row.service_offerings),
-          )
-        : mapServiceRecords(row.trainer_profile_id, professionalCategories),
+      services: localizedServices,
       createdAt: normalizeText(row.created_at),
       updatedAt: normalizeText(row.updated_at),
     };

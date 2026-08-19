@@ -184,7 +184,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
           <h1 id="account-heading">Your Elevare account</h1>
           <p>
             {visibleProfessionalProfile
-              ? "Manage your marketplace activity, preferences, Pro profile, and client requests."
+              ? "Manage your marketplace activity, Pro profile, and client requests."
               : "Manage your preferences, saved profiles, and consultation requests."}
           </p>
         </div>

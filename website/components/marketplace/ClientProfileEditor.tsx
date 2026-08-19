@@ -9,7 +9,6 @@ import {
   CLIENT_CATEGORY_DESCRIPTIONS,
   CLIENT_EXPERIENCE_OPTIONS,
   CLIENT_GOAL_OPTIONS,
-  CLIENT_RADIUS_OPTIONS,
   CLIENT_SERVICE_MODE_OPTIONS,
   CLIENT_SUPPORT_FREQUENCY_OPTIONS,
   CLIENT_TIMELINE_OPTIONS,
@@ -17,16 +16,32 @@ import {
   normalizeClientBudgetRange,
   normalizeClientGoalTags,
   normalizeClientTimeline,
+  shouldShowClientRadius,
   toClientServiceMode,
   toDatabaseServiceMode,
 } from "@/lib/client-preferences";
 import { getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
+import {
+  COMMON_CURRENCY_CODES,
+  distanceToMeters,
+  getCountryOptions,
+  getDefaultCurrencyCode,
+  getDistanceOptions,
+  getDistanceUnit,
+  getRegionLabel,
+  getRegionOptions,
+  metersToDistance,
+  metersToMiles,
+  normalizeCountryCode,
+  normalizeCurrencyCode,
+  normalizeRegionValue,
+} from "@/lib/marketplace-location";
 import { MARKETPLACE_TAXONOMY_CATEGORIES } from "@/lib/marketplace-taxonomy";
-import { US_STATE_OPTIONS, normalizeStateValue } from "@/lib/professional-profile";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ClientProfileFormState = {
   firstName: string;
+  countryCode: string;
   city: string;
   state: string;
   goals: string[];
@@ -37,6 +52,7 @@ type ClientProfileFormState = {
   experienceLevel: string;
   budgetRange: string;
   budgetBasis: string;
+  budgetCurrencyCode: string;
   supportFrequency: string;
   notes: string;
   savedBudgetRange: string;
@@ -47,6 +63,7 @@ type ClientProfileFormState = {
 
 const initialFormState: ClientProfileFormState = {
   firstName: "",
+  countryCode: "US",
   city: "",
   state: "",
   goals: [],
@@ -57,6 +74,7 @@ const initialFormState: ClientProfileFormState = {
   experienceLevel: "",
   budgetRange: "",
   budgetBasis: "",
+  budgetCurrencyCode: "USD",
   supportFrequency: "",
   notes: "",
   savedBudgetRange: "",
@@ -73,6 +91,7 @@ function buildSavedBudgetLabel(
   range: unknown,
   minCents: unknown,
   maxCents: unknown,
+  currencyCode = "USD",
 ) {
   const legacyLabels: Record<string, string> = {
     "50_70": "$50-$70",
@@ -81,20 +100,36 @@ function buildSavedBudgetLabel(
     "120_plus": "$120+",
   };
 
-  if (typeof range === "string" && legacyLabels[range]) return legacyLabels[range];
+  if (currencyCode === "USD" && typeof range === "string" && legacyLabels[range]) return legacyLabels[range];
 
   const min = typeof minCents === "number" ? minCents / 100 : null;
   const max = typeof maxCents === "number" ? maxCents / 100 : null;
-  if (min != null && max != null) return `$${min}-$${max}`;
-  if (min != null) return `$${min}+`;
-  if (max != null) return `Up to $${max}`;
+  const formatter = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: normalizeCurrencyCode(currencyCode),
+    maximumFractionDigits: 0,
+  });
+  if (min != null && max != null) return `${formatter.format(min)}-${formatter.format(max)}`;
+  if (min != null) return `${formatter.format(min)}+`;
+  if (max != null) return `Up to ${formatter.format(max)}`;
   return "Saved budget";
+}
+
+const MARKETPLACE_COUNTRY_OPTIONS = getCountryOptions();
+
+function getBudgetOptionLabel(
+  option: (typeof CLIENT_BUDGET_RANGE_OPTIONS)[number],
+  currencyCode: string,
+) {
+  if (option.minCents == null && option.maxCents == null) return option.label;
+  return buildSavedBudgetLabel(option.value, option.minCents, option.maxCents, currencyCode);
 }
 
 export function ClientProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const [form, setForm] = useState<ClientProfileFormState>(initialFormState);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCategoryEditorOpen, setIsCategoryEditorOpen] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
 
@@ -134,33 +169,47 @@ export function ClientProfileEditor() {
             ),
         );
 
+        const interestedCategories = Array.isArray(data.interested_service_category_slugs)
+          ? data.interested_service_category_slugs.filter(
+              (entry: unknown): entry is string => typeof entry === "string",
+            )
+          : [];
+        const countryCode = normalizeCountryCode(data.country_code);
+        const distanceUnit = getDistanceUnit(countryCode);
+        const preferredRadius = typeof data.preferred_radius_meters === "number"
+          ? metersToDistance(data.preferred_radius_meters, distanceUnit)
+          : typeof data.preferred_radius_miles === "number"
+            ? metersToDistance(distanceToMeters(data.preferred_radius_miles, "mi"), distanceUnit)
+            : null;
+        const budgetCurrencyCode = normalizeCurrencyCode(
+          data.budget_currency_code,
+          getDefaultCurrencyCode(countryCode),
+        );
+
         setForm({
           firstName: appUser.first_name ?? "",
+          countryCode,
           city: data.location_city ?? "",
-          state: normalizeStateValue(data.location_state),
+          state: normalizeRegionValue(countryCode, data.location_state),
           goals: normalizeClientGoalTags(data.goal_tags, data.goals),
-          interestedCategories: Array.isArray(data.interested_service_category_slugs)
-            ? data.interested_service_category_slugs.filter(
-                (entry: unknown): entry is string => typeof entry === "string",
-              )
-            : [],
+          interestedCategories,
           preferredServiceMode: toClientServiceMode(data.preferred_modality),
-          preferredRadius: typeof data.preferred_radius_miles === "number"
-            ? String(data.preferred_radius_miles)
-            : "",
+          preferredRadius: preferredRadius == null ? "" : String(Math.round(preferredRadius * 10) / 10),
           startTimeline: normalizeClientTimeline(data.start_timeline),
           experienceLevel: data.experience_context ?? data.fitness_level ?? "",
           budgetRange: hasSavedLegacyBudget ? "__saved__" : normalizeClientBudgetRange(data.budget_range),
           budgetBasis: data.budget_basis ?? "",
+          budgetCurrencyCode,
           supportFrequency: data.support_frequency ?? "",
           notes: data.preference_notes ?? "",
           savedBudgetRange: typeof data.budget_range === "string" ? data.budget_range : "",
           savedBudgetMinCents: typeof data.budget_min === "number" ? data.budget_min : null,
           savedBudgetMaxCents: typeof data.budget_max === "number" ? data.budget_max : null,
           savedBudgetLabel: hasSavedLegacyBudget
-            ? buildSavedBudgetLabel(data.budget_range, data.budget_min, data.budget_max)
+            ? buildSavedBudgetLabel(data.budget_range, data.budget_min, data.budget_max, budgetCurrencyCode)
             : "",
         });
+        setIsCategoryEditorOpen(interestedCategories.length === 0);
       })
       .catch(() => {
         if (isMounted) {
@@ -207,19 +256,22 @@ export function ClientProfileEditor() {
       const legacyFitnessLevel = ["beginner", "intermediate", "advanced"].includes(form.experienceLevel)
         ? form.experienceLevel
         : null;
-      const preferredRadius = form.preferredServiceMode === "online" || !form.preferredRadius
+      const preferredRadiusMeters = !shouldShowClientRadius(form.preferredServiceMode) || !form.preferredRadius
         ? null
-        : Number(form.preferredRadius);
+        : distanceToMeters(Number(form.preferredRadius), getDistanceUnit(form.countryCode));
+      const countryCode = normalizeCountryCode(form.countryCode);
 
       const { error } = await supabase.from("client_profiles").upsert(
         {
           user_id: appUser.id,
+          country_code: countryCode,
           location_city: form.city.trim() || null,
           location_state: form.state || null,
           goal_tags: form.goals,
           interested_service_category_slugs: form.interestedCategories,
           preferred_modality: toDatabaseServiceMode(form.preferredServiceMode),
-          preferred_radius_miles: preferredRadius,
+          preferred_radius_meters: preferredRadiusMeters,
+          preferred_radius_miles: preferredRadiusMeters == null ? null : Math.round(metersToMiles(preferredRadiusMeters)),
           start_timeline: form.startTimeline || null,
           experience_context: form.experienceLevel || null,
           fitness_level: legacyFitnessLevel,
@@ -227,6 +279,7 @@ export function ClientProfileEditor() {
           budget_basis: form.budgetBasis || null,
           budget_min: budgetMinCents,
           budget_max: budgetMaxCents,
+          budget_currency_code: normalizeCurrencyCode(form.budgetCurrencyCode, getDefaultCurrencyCode(countryCode)),
           support_frequency: form.supportFrequency || null,
           preference_notes: form.notes.trim() || null,
         },
@@ -280,9 +333,12 @@ export function ClientProfileEditor() {
     );
   }
 
-  const hasLegacyRadius = Boolean(
-    form.preferredRadius
-      && !CLIENT_RADIUS_OPTIONS.some((option) => option.value === form.preferredRadius),
+  const distanceOptions = getDistanceOptions(form.countryCode);
+  const hasLegacyRadius = Boolean(form.preferredRadius && !distanceOptions.some((option) => option.value === form.preferredRadius));
+  const regionOptions = getRegionOptions(form.countryCode);
+  const regionLabel = getRegionLabel(form.countryCode);
+  const selectedCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) =>
+    form.interestedCategories.includes(category.stableId),
   );
 
   return (
@@ -290,7 +346,7 @@ export function ClientProfileEditor() {
       <div className="professional-profile-builder client-preference-builder">
         <article className="panel professional-builder-intro">
           <div className="eyebrow">Private marketplace preferences</div>
-          <h2 className="section-title">Keep your marketplace preferences private.</h2>
+          <h2 className="section-title">Your marketplace preferences</h2>
           <p className="section-copy">
             These preferences help Elevare surface better-fit profiles and give providers more context when you reach out.
           </p>
@@ -313,25 +369,59 @@ export function ClientProfileEditor() {
               />
             </label>
             <label className="field">
+              <span className="field-label">Country</span>
+              <select
+                autoComplete="country"
+                value={form.countryCode}
+                onChange={(event) => setForm((current) => {
+                  const countryCode = normalizeCountryCode(event.target.value);
+                  const previousDefaultCurrency = getDefaultCurrencyCode(current.countryCode);
+                  return {
+                    ...current,
+                    countryCode,
+                    state: "",
+                    preferredRadius: "",
+                    budgetCurrencyCode: current.budgetCurrencyCode === previousDefaultCurrency
+                      ? getDefaultCurrencyCode(countryCode)
+                      : current.budgetCurrencyCode,
+                  };
+                })}
+              >
+                {MARKETPLACE_COUNTRY_OPTIONS.map((country) => (
+                  <option key={country.code} value={country.code}>{country.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
               <span className="field-label">City</span>
               <input
                 type="text"
                 value={form.city}
                 onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
-                placeholder="Miami"
+                placeholder={form.countryCode === "US" ? "Miami" : "City"}
               />
             </label>
             <label className="field">
-              <span className="field-label">State</span>
-              <select
-                value={form.state}
-                onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}
-              >
-                <option value="">Select state</option>
-                {US_STATE_OPTIONS.map(([abbreviation, name]) => (
-                  <option key={abbreviation} value={abbreviation}>{name}</option>
-                ))}
-              </select>
+              <span className="field-label">{regionLabel}</span>
+              {regionOptions.length > 0 ? (
+                <select
+                  autoComplete="address-level1"
+                  value={form.state}
+                  onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}
+                >
+                  <option value="">Select {regionLabel.toLowerCase()}</option>
+                  {regionOptions.map(([code, name]) => (
+                    <option key={code} value={code}>{name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  autoComplete="address-level1"
+                  value={form.state}
+                  onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}
+                  placeholder={form.countryCode === "GB" ? "Greater London (optional)" : `${regionLabel} (optional)`}
+                />
+              )}
             </label>
           </div>
         </article>
@@ -340,7 +430,10 @@ export function ClientProfileEditor() {
           <div className="section-head section-head-compact">
             <div className="eyebrow">Your goals</div>
             <h3 className="section-title section-title-compact">What would you like help with?</h3>
-            <p className="section-copy section-copy-compact">Choose as many as you need. This is not a medical intake form.</p>
+            <p className="section-copy section-copy-compact">Choose as many as you need, or skip this for now.</p>
+            <span className="client-selection-count" aria-live="polite">
+              {form.goals.length > 0 ? `${form.goals.length} selected` : "Optional"}
+            </span>
           </div>
           <div className="toggle-row client-goal-grid">
             {CLIENT_GOAL_OPTIONS.map((goal) => {
@@ -353,7 +446,8 @@ export function ClientProfileEditor() {
                   aria-pressed={isActive}
                   onClick={() => setForm((current) => ({ ...current, goals: toggleSelection(current.goals, goal) }))}
                 >
-                  {goal}
+                  <span>{goal}</span>
+                  {isActive ? <span className="toggle-chip-state" aria-hidden="true">Selected</span> : null}
                 </button>
               );
             })}
@@ -364,28 +458,59 @@ export function ClientProfileEditor() {
           <div className="section-head section-head-compact">
             <div className="eyebrow">Support types</div>
             <h3 className="section-title section-title-compact">What kind of support are you interested in?</h3>
-            <p className="section-copy section-copy-compact">Choose any that seem relevant. You can always change this later.</p>
+            <p className="section-copy section-copy-compact">Choose any that seem relevant, or skip this if you&apos;re not sure.</p>
+            <span className="client-selection-count" aria-live="polite">
+              {form.interestedCategories.length > 0 ? `${form.interestedCategories.length} selected` : "Optional"}
+            </span>
           </div>
-          <div className="selectable-grid client-category-grid">
-            {MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => {
-              const isActive = form.interestedCategories.includes(category.stableId);
-              return (
-                <button
-                  key={category.stableId}
-                  type="button"
-                  className={`selectable-card${isActive ? " is-active" : ""}`}
-                  aria-pressed={isActive}
-                  onClick={() => setForm((current) => ({
-                    ...current,
-                    interestedCategories: toggleSelection(current.interestedCategories, category.stableId),
-                  }))}
-                >
-                  <strong>{category.label}</strong>
-                  <span>{CLIENT_CATEGORY_DESCRIPTIONS[category.stableId] ?? category.shortDescription}</span>
-                </button>
-              );
-            })}
-          </div>
+          {!isCategoryEditorOpen && selectedCategories.length > 0 ? (
+            <div className="client-selection-summary">
+              <div>
+                <span className="stat-label">Interested in</span>
+                <div className="client-selection-tags">
+                  {selectedCategories.map((category) => (
+                    <span key={category.stableId} className="meta-pill">{category.label}</span>
+                  ))}
+                </div>
+              </div>
+              <button type="button" className="button button-secondary" onClick={() => setIsCategoryEditorOpen(true)}>
+                Edit Categories
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="selectable-grid client-category-grid">
+                {MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => {
+                  const isActive = form.interestedCategories.includes(category.stableId);
+                  return (
+                    <button
+                      key={category.stableId}
+                      type="button"
+                      className={`selectable-card${isActive ? " is-active" : ""}`}
+                      aria-pressed={isActive}
+                      onClick={() => setForm((current) => ({
+                        ...current,
+                        interestedCategories: toggleSelection(current.interestedCategories, category.stableId),
+                      }))}
+                    >
+                      <span className="client-category-card-head">
+                        <strong>{category.label}</strong>
+                        {isActive ? <span className="client-card-state" aria-hidden="true">Selected</span> : null}
+                      </span>
+                      <span>{CLIENT_CATEGORY_DESCRIPTIONS[category.stableId] ?? category.shortDescription}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedCategories.length > 0 ? (
+                <div className="client-category-actions">
+                  <button type="button" className="button button-secondary" onClick={() => setIsCategoryEditorOpen(false)}>
+                    Done Choosing Categories
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
         </article>
 
         <article className="panel profile-form-section">
@@ -401,7 +526,7 @@ export function ClientProfileEditor() {
                 onChange={(event) => setForm((current) => ({
                   ...current,
                   preferredServiceMode: event.target.value,
-                  preferredRadius: event.target.value === "online" ? "" : current.preferredRadius,
+                  preferredRadius: shouldShowClientRadius(event.target.value) ? current.preferredRadius : "",
                 }))}
               >
                 <option value="">No preference</option>
@@ -410,7 +535,7 @@ export function ClientProfileEditor() {
                 ))}
               </select>
             </label>
-            {form.preferredServiceMode !== "online" ? (
+            {shouldShowClientRadius(form.preferredServiceMode) ? (
               <label className="field">
                 <span className="field-label">How far are you willing to travel?</span>
                 <select
@@ -418,11 +543,12 @@ export function ClientProfileEditor() {
                   onChange={(event) => setForm((current) => ({ ...current, preferredRadius: event.target.value }))}
                 >
                   {hasLegacyRadius ? (
-                    <option value={form.preferredRadius}>{form.preferredRadius} miles (saved preference)</option>
+                    <option value={form.preferredRadius}>{form.preferredRadius} {getDistanceUnit(form.countryCode) === "mi" ? "miles" : "km"} (saved preference)</option>
                   ) : null}
-                  {CLIENT_RADIUS_OPTIONS.map((option) => (
+                  {distanceOptions.map((option) => (
                     <option key={option.value || "none"} value={option.value}>{option.label}</option>
                   ))}
+                  <option value="">No preference</option>
                 </select>
               </label>
             ) : null}
@@ -460,11 +586,23 @@ export function ClientProfileEditor() {
                 value={form.experienceLevel}
                 onChange={(event) => setForm((current) => ({ ...current, experienceLevel: event.target.value }))}
               >
-                <option value="">No preference</option>
+                <option value="">Not sure / Not applicable</option>
                 {CLIENT_EXPERIENCE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
+            </label>
+            <label className="field">
+              <span className="field-label">Budget currency</span>
+              <input
+                list="client-budget-currency-options"
+                maxLength={3}
+                value={form.budgetCurrencyCode}
+                onChange={(event) => setForm((current) => ({ ...current, budgetCurrencyCode: event.target.value.toUpperCase() }))}
+              />
+              <datalist id="client-budget-currency-options">
+                {COMMON_CURRENCY_CODES.map((code) => <option key={code} value={code} />)}
+              </datalist>
             </label>
             <label className="field">
               <span className="field-label">Approximate budget</span>
@@ -477,7 +615,7 @@ export function ClientProfileEditor() {
                   <option value="__saved__">{form.savedBudgetLabel} (saved preference)</option>
                 ) : null}
                 {CLIENT_BUDGET_RANGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>{getBudgetOptionLabel(option, form.budgetCurrencyCode)}</option>
                 ))}
               </select>
             </label>
@@ -512,6 +650,9 @@ export function ClientProfileEditor() {
           <div className="section-head section-head-compact">
             <div className="eyebrow">Optional context</div>
             <h3 className="section-title section-title-compact">Anything else you&apos;d like us to know?</h3>
+            <p className="section-copy section-copy-compact">
+              Tell us anything that would help someone understand what you&apos;re looking for.
+            </p>
           </div>
           <label className="field">
             <span className="field-label">Additional details</span>

@@ -21,8 +21,9 @@ import {
   formatApprovalStatusLabel,
   formatCategoryList,
   formatIdentityVerificationLabel,
-  formatLocationLabel,
+  formatPublicLocationLabel,
   formatPriceSummary,
+  formatServicePriceSummary,
   formatServiceModeLabel,
   formatYearsExperience,
   getCredentialPublicStatus,
@@ -34,6 +35,7 @@ import {
 import {
   buildMarketplaceCategoryMetaDescription,
   buildMarketplaceProfessionalMetaDescription,
+  buildMarketplaceProfessionalSeoTitle,
   getMarketplaceCategorySeoLabel,
   isMarketplaceCategoryIndexable,
 } from "@/lib/marketplace-seo";
@@ -68,11 +70,8 @@ export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
   ]);
 
   if (professional) {
-    const location = formatLocationLabel(professional);
-    const title = professional.professionalTitle || professional.categories[0]?.label || "Profile";
-
     return buildMetadata({
-      title: `${professional.displayName} - ${title}${location !== "Location not listed" ? ` in ${location}` : ""} | Elevare`,
+      title: buildMarketplaceProfessionalSeoTitle(professional),
       description: buildMarketplaceProfessionalMetaDescription(professional),
       pathname: `/professionals/${professional.profileSlug}`,
       imageUrl: professional.profilePhotoUrl ?? undefined,
@@ -125,10 +124,8 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
     { label: "LinkedIn", href: professional.socialLinks.linkedin },
   ].filter((entry): entry is { label: string; href: string } => Boolean(entry.href));
   const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
-  const profileLocation = formatLocationLabel(professional);
-  const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || primaryCategory?.label || "professional"}${
-    profileLocation !== "Location not listed" ? ` in ${profileLocation}` : ""
-  }`;
+  const profileLocation = formatPublicLocationLabel(professional);
+  const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || primaryCategory?.label || "professional"}, ${profileLocation}`;
   const breadcrumbItems = [
     {
       "@type": "ListItem",
@@ -242,7 +239,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             </article>
             <article className="proof-card">
               <span className="proof-label">Location</span>
-              <div className="proof-value">{formatLocationLabel(professional)}</div>
+              <div className="proof-value">{profileLocation}</div>
               <p className="proof-copy">Service area and availability context for this profile.</p>
             </article>
             <article className="proof-card">
@@ -269,7 +266,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             <h2 className="panel-title">What to know before you reach out</h2>
             <ul>
               <li>
-                <strong>Location:</strong> {formatLocationLabel(professional)}
+                <strong>Location:</strong> {profileLocation}
               </li>
               <li>
                 <strong>Service modes:</strong>{" "}
@@ -348,17 +345,11 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
                       <strong>Duration:</strong> {service.durationMinutes} minutes
                     </li>
                   ) : null}
-                  {service.price != null ? (
+                  {service.price != null || service.contactForPricing ? (
                     <li>
                       <strong>Pricing:</strong>{" "}
-                      {service.contactForPricing
-                        ? "Contact for pricing"
-                        : service.priceTo && service.priceTo > service.price
-                        ? `$${service.price}-$${service.priceTo}${service.pricingBasis ? `/${service.pricingBasis}` : ""}`
-                        : `$${service.price}${service.pricingBasis ? `/${service.pricingBasis}` : ""}`}
+                      {formatServicePriceSummary(service)}
                     </li>
-                  ) : service.contactForPricing ? (
-                    <li><strong>Pricing:</strong> Contact for pricing</li>
                   ) : null}
                 </ul>
               </article>

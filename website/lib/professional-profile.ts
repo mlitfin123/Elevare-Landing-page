@@ -1,20 +1,10 @@
-export const US_STATE_OPTIONS = [
-  ["AL", "Alabama"], ["AK", "Alaska"], ["AZ", "Arizona"], ["AR", "Arkansas"],
-  ["CA", "California"], ["CO", "Colorado"], ["CT", "Connecticut"], ["DE", "Delaware"],
-  ["DC", "District of Columbia"], ["FL", "Florida"], ["GA", "Georgia"], ["HI", "Hawaii"],
-  ["ID", "Idaho"], ["IL", "Illinois"], ["IN", "Indiana"], ["IA", "Iowa"],
-  ["KS", "Kansas"], ["KY", "Kentucky"], ["LA", "Louisiana"], ["ME", "Maine"],
-  ["MD", "Maryland"], ["MA", "Massachusetts"], ["MI", "Michigan"], ["MN", "Minnesota"],
-  ["MS", "Mississippi"], ["MO", "Missouri"], ["MT", "Montana"], ["NE", "Nebraska"],
-  ["NV", "Nevada"], ["NH", "New Hampshire"], ["NJ", "New Jersey"], ["NM", "New Mexico"],
-  ["NY", "New York"], ["NC", "North Carolina"], ["ND", "North Dakota"], ["OH", "Ohio"],
-  ["OK", "Oklahoma"], ["OR", "Oregon"], ["PA", "Pennsylvania"], ["RI", "Rhode Island"],
-  ["SC", "South Carolina"], ["SD", "South Dakota"], ["TN", "Tennessee"], ["TX", "Texas"],
-  ["UT", "Utah"], ["VT", "Vermont"], ["VA", "Virginia"], ["WA", "Washington"],
-  ["WV", "West Virginia"], ["WI", "Wisconsin"], ["WY", "Wyoming"],
-  ["AS", "American Samoa"], ["GU", "Guam"], ["MP", "Northern Mariana Islands"],
-  ["PR", "Puerto Rico"], ["VI", "U.S. Virgin Islands"],
-] as const;
+import {
+  normalizeCurrencyCode,
+  normalizeRegionValue,
+  isRegionRequired,
+} from "./marketplace-location.ts";
+
+export { US_STATE_OPTIONS } from "./marketplace-location.ts";
 
 export const SERVICE_MODE_OPTIONS = [
   { value: "in_person", label: "In person" },
@@ -45,6 +35,28 @@ export const ACCEPTANCE_OPTIONS = [
   { value: "not_accepting", label: "No" },
 ] as const;
 
+export const PROFESSIONAL_LANGUAGE_SUGGESTIONS = [
+  "English",
+  "Spanish",
+  "French",
+  "Portuguese",
+  "Haitian Creole",
+  "Mandarin",
+  "Cantonese",
+  "Arabic",
+  "Hindi",
+  "Other",
+] as const;
+
+export type ProfessionalSectionId = "about" | "offer" | "work" | "pricing" | "credentials" | "links";
+
+export type ProfileCompletenessItem = {
+  id: string;
+  label: string;
+  section: ProfessionalSectionId;
+  complete: boolean;
+};
+
 export type ProfileCompletenessInput = {
   name: string;
   professionalTitle: string;
@@ -53,25 +65,77 @@ export type ProfileCompletenessInput = {
   primaryCategory: string;
   specialties: string[];
   serviceModes: string[];
+  countryCode: string;
   city: string;
   state: string;
   services: Array<{ name: string }>;
-  hasPricing: boolean;
   availability: string[];
   acceptanceStatus: string;
 };
 
+type CategoryWithSpecialties = {
+  specialties: readonly string[];
+};
+
+type ServicePricingInput = {
+  priceFrom: string;
+  priceTo: string;
+  pricingBasis: string;
+  contactForPricing: boolean;
+  currencyCode?: string;
+};
+
+export function collectCategorySpecialties(categories: readonly CategoryWithSpecialties[]) {
+  return [...new Set(categories.flatMap((category) => category.specialties))];
+}
+
+export function retainAvailableSpecialties(
+  selectedSpecialties: readonly string[],
+  categories: readonly CategoryWithSpecialties[],
+) {
+  const available = new Set(collectCategorySpecialties(categories));
+  return selectedSpecialties.filter((specialty) => available.has(specialty));
+}
+
+export function hasServiceLevelPricing(services: readonly ServicePricingInput[]) {
+  return services.some((service) => service.contactForPricing || Boolean(service.priceFrom.trim()));
+}
+
+export function formatServicePricingSummary(service: ServicePricingInput) {
+  if (service.contactForPricing) return "Contact for pricing";
+  if (!service.priceFrom.trim()) return "Pricing not listed";
+
+  const formatter = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: normalizeCurrencyCode(service.currencyCode),
+    maximumFractionDigits: 0,
+  });
+  const basis = service.pricingBasis ? `/${service.pricingBasis}` : "";
+  if (service.priceTo.trim() && Number(service.priceTo) > Number(service.priceFrom)) {
+    return `${formatter.format(Number(service.priceFrom))}-${formatter.format(Number(service.priceTo))}${basis}`;
+  }
+  return `${formatter.format(Number(service.priceFrom))}${basis}`;
+}
+
+export function formatCredentialVerificationStatus(
+  value: string | null | undefined,
+  expirationDate?: string,
+  today = new Date(),
+) {
+  if (expirationDate) {
+    const expiration = new Date(`${expirationDate}T23:59:59`);
+    if (!Number.isNaN(expiration.getTime()) && expiration < today) return "Expired";
+  }
+
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "verified" || normalized === "approved") return "Verified";
+  if (normalized === "rejected") return "Rejected";
+  if (normalized === "pending" || normalized === "pending_review") return "Pending Verification";
+  return "Unverified";
+}
+
 export function normalizeStateValue(value: string | null | undefined) {
-  const normalizedValue = value?.trim();
-  if (!normalizedValue) return "";
-
-  const matchingState = US_STATE_OPTIONS.find(
-    ([abbreviation, name]) =>
-      abbreviation.toLowerCase() === normalizedValue.toLowerCase()
-      || name.toLowerCase() === normalizedValue.toLowerCase(),
-  );
-
-  return matchingState?.[0] ?? normalizedValue;
+  return normalizeRegionValue("US", value);
 }
 
 export function isValidOptionalUrl(value: string) {
@@ -122,28 +186,31 @@ export function deriveLegacySpecialties(primaryCategory: string, specialties: st
 }
 
 export function calculateProfileCompleteness(input: ProfileCompletenessInput) {
-  const checks = [
-    { label: "Add your name", complete: Boolean(input.name.trim()) },
-    { label: "Add a professional title", complete: Boolean(input.professionalTitle.trim()) },
-    { label: "Add a profile photo", complete: Boolean(input.profilePhotoUrl.trim()) },
-    { label: "Write your bio", complete: Boolean(input.bio.trim()) },
-    { label: "Choose a primary category", complete: Boolean(input.primaryCategory) },
-    { label: "Choose at least one specialty", complete: input.specialties.length > 0 },
-    { label: "Choose how you work", complete: input.serviceModes.length > 0 },
+  const checks: ProfileCompletenessItem[] = [
+    { id: "name", label: "Add your name", section: "about", complete: Boolean(input.name.trim()) },
+    { id: "professionalTitle", label: "Add a professional title", section: "about", complete: Boolean(input.professionalTitle.trim()) },
+    { id: "photo", label: "Add a profile photo", section: "about", complete: Boolean(input.profilePhotoUrl.trim()) },
+    { id: "bio", label: "Write your bio", section: "about", complete: Boolean(input.bio.trim()) },
+    { id: "primaryCategory", label: "Choose a primary category", section: "offer", complete: Boolean(input.primaryCategory) },
+    { id: "specialties", label: "Choose at least one specialty", section: "offer", complete: input.specialties.length > 0 },
+    { id: "serviceModes", label: "Choose how you work", section: "work", complete: input.serviceModes.length > 0 },
     {
+      id: "location",
       label: "Add your service location or choose online",
-      complete: input.serviceModes.includes("online") || input.serviceModes.includes("hybrid")
-        || Boolean(input.city.trim() && input.state.trim()),
+      section: "work",
+      complete: input.serviceModes.includes("in_person") || input.serviceModes.includes("hybrid")
+        ? Boolean(input.city.trim() && (!isRegionRequired(input.countryCode) || input.state.trim()))
+        : input.serviceModes.includes("online"),
     },
-    { label: "Add at least one service", complete: input.services.some((service) => service.name.trim()) },
-    { label: "Add pricing or choose contact for pricing", complete: input.hasPricing },
-    { label: "Add typical availability", complete: input.availability.length > 0 },
-    { label: "Set your new-client status", complete: Boolean(input.acceptanceStatus) },
+    { id: "services", label: "Add at least one service", section: "offer", complete: input.services.some((service) => service.name.trim()) },
+    { id: "availability", label: "Add typical availability", section: "work", complete: input.availability.length > 0 },
+    { id: "acceptance", label: "Set your new-client status", section: "work", complete: Boolean(input.acceptanceStatus) },
   ];
 
   const completed = checks.filter((check) => check.complete).length;
   return {
     percent: Math.round((completed / checks.length) * 100),
     missing: checks.filter((check) => !check.complete).map((check) => check.label),
+    items: checks,
   };
 }

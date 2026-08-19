@@ -2,6 +2,8 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
@@ -12,6 +14,7 @@ export function AuthPanel() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [hasAcceptedLegalTerms, setHasAcceptedLegalTerms] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +32,12 @@ export function AuthPanel() {
 
     if (mode === "sign-up" && password !== confirmPassword) {
       setFeedback("Passwords do not match.");
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasAcceptedLegalTerms) {
+      setFeedback("Please agree to the Terms of Service and Privacy Policy to create an account.");
       setFeedbackType("error");
       return;
     }
@@ -63,6 +72,14 @@ export function AuthPanel() {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: {
+            legal_acceptance: true,
+            legal_acceptance_source: "website_signup",
+            terms_version: TERMS_VERSION,
+            privacy_version: PRIVACY_VERSION,
+          },
+        },
       });
 
       if (error) {
@@ -141,16 +158,29 @@ export function AuthPanel() {
           </label>
 
           {mode === "sign-up" ? (
-            <label className="field field-full">
-              <span className="field-label">Confirm password</span>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Confirm password"
-                required
-              />
-            </label>
+            <>
+              <label className="field field-full">
+                <span className="field-label">Confirm password</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Confirm password"
+                  required
+                />
+              </label>
+              <label className="checkbox-row professional-attestation field-full">
+                <input
+                  type="checkbox"
+                  checked={hasAcceptedLegalTerms}
+                  onChange={(event) => setHasAcceptedLegalTerms(event.target.checked)}
+                />
+                <span>
+                  I agree to the <Link href="/terms-of-service.html">Terms of Service</Link> and acknowledge the{" "}
+                  <Link href="/privacy-policy.html">Privacy Policy</Link>.
+                </span>
+              </label>
+            </>
           ) : null}
         </div>
 
@@ -160,7 +190,11 @@ export function AuthPanel() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="button button-primary" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="button button-primary"
+            disabled={isSubmitting || (mode === "sign-up" && !hasAcceptedLegalTerms)}
+          >
             {isSubmitting ? "Submitting..." : mode === "sign-in" ? "Sign in" : "Create account"}
           </button>
           {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}

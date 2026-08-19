@@ -7,6 +7,7 @@ import { MarketplaceDemandForm } from "@/components/marketplace/MarketplaceDeman
 import { ProfessionalCard } from "@/components/marketplace/ProfessionalCard";
 import { TrackedLink } from "@/components/TrackedLink";
 import { trackEvent } from "@/lib/analytics";
+import { isMarketplaceFilteredSearch } from "@/lib/marketplace-seo";
 import {
   buildProfessionalFallbackGroups,
   filterProfessionals,
@@ -153,7 +154,7 @@ export function MarketplaceDirectory(props: MarketplaceDirectoryProps) {
     const attributeName = "data-marketplace-filter-robots";
     const existingMeta = document.head.querySelector<HTMLMetaElement>(`meta[${attributeName}]`);
 
-    if (!searchParamsKey) {
+    if (!isMarketplaceFilteredSearch(searchParamsKey)) {
       existingMeta?.remove();
       return;
     }

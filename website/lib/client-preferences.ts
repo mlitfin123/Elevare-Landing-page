@@ -1,31 +1,46 @@
 export const CLIENT_GOAL_OPTIONS = [
   "Build Muscle",
-  "Lose Weight",
-  "Lose Body Fat",
+  "Weight Loss / Fat Loss",
   "Get Stronger",
   "Body Recomposition",
-  "Improve General Fitness",
-  "Improve Conditioning",
+  "Improve Fitness & Conditioning",
   "Improve Endurance",
   "Improve Running",
   "Prepare for a Race",
   "Prepare for a Competition",
   "Improve Athletic Performance",
-  "Improve Mobility",
-  "Improve Flexibility",
+  "Mobility & Flexibility",
   "Improve Nutrition",
-  "Build Healthier Habits",
-  "Increase Accountability",
+  "Healthy Habits & Lifestyle",
+  "Accountability",
   "Improve Confidence",
-  "Reduce Everyday Stress",
-  "Improve Mindfulness",
-  "Improve General Wellness",
+  "Stress & Mindfulness",
+  "General Wellness",
   "Healthy Aging",
-  "Learn to Exercise",
-  "Return to Exercise",
-  "Lifestyle Change",
+  "Learn / Return to Exercise",
   "Other",
 ] as const;
+
+export type ClientGoal = (typeof CLIENT_GOAL_OPTIONS)[number];
+
+export const CLIENT_GOAL_ALIASES: Readonly<Record<string, ClientGoal>> = {
+  "Lose Weight": "Weight Loss / Fat Loss",
+  "Lose Body Fat": "Weight Loss / Fat Loss",
+  "Improve General Fitness": "Improve Fitness & Conditioning",
+  "Improve Fitness": "Improve Fitness & Conditioning",
+  "Improve Conditioning": "Improve Fitness & Conditioning",
+  "Improve Mobility": "Mobility & Flexibility",
+  "Improve Flexibility": "Mobility & Flexibility",
+  "Build Healthier Habits": "Healthy Habits & Lifestyle",
+  "Lifestyle Change": "Healthy Habits & Lifestyle",
+  "Improve Lifestyle": "Healthy Habits & Lifestyle",
+  "Increase Accountability": "Accountability",
+  "Reduce Everyday Stress": "Stress & Mindfulness",
+  "Improve Mindfulness": "Stress & Mindfulness",
+  "Improve General Wellness": "General Wellness",
+  "Learn to Exercise": "Learn / Return to Exercise",
+  "Return to Exercise": "Learn / Return to Exercise",
+};
 
 export const CLIENT_SERVICE_MODE_OPTIONS = [
   { value: "in_person", label: "In Person" },
@@ -99,15 +114,18 @@ export const CLIENT_CATEGORY_DESCRIPTIONS: Record<string, string> = {
 };
 
 const LEGACY_GOAL_LABELS: Record<string, string> = {
-  fat_loss: "Lose Body Fat",
+  fat_loss: "Weight Loss / Fat Loss",
   muscle_gain_body_recomposition: "Body Recomposition",
   strength_training: "Get Stronger",
-  general_fitness: "Improve General Fitness",
-  beginner_coaching: "Learn to Exercise",
-  mobility_flexibility: "Improve Mobility",
+  general_fitness: "Improve Fitness & Conditioning",
+  womens_fitness: "Improve Fitness & Conditioning",
+  beginner_coaching: "Learn / Return to Exercise",
+  mobility_flexibility: "Mobility & Flexibility",
   athletic_performance: "Improve Athletic Performance",
   senior_fitness: "Healthy Aging",
+  injury_aware_training: "Learn / Return to Exercise",
   competition_prep: "Prepare for a Competition",
+  online_coaching: "Accountability",
 };
 
 const LEGACY_BUDGET_RANGES: Record<string, string> = {
@@ -125,6 +143,10 @@ export function toClientServiceMode(value: unknown) {
 export function toDatabaseServiceMode(value: string) {
   if (value === "either") return "both";
   return value === "in_person" || value === "online" ? value : null;
+}
+
+export function shouldShowClientRadius(value: string) {
+  return value === "in_person" || value === "either" || value === "both" || value === "hybrid";
 }
 
 export function normalizeClientTimeline(value: unknown) {
@@ -148,7 +170,9 @@ export function getBudgetCents(value: string) {
 
 export function normalizeClientGoalTags(structuredGoals: unknown, legacyGoals: unknown) {
   if (Array.isArray(structuredGoals)) {
-    const values = structuredGoals.filter((entry): entry is string => typeof entry === "string" && Boolean(entry.trim()));
+    const values = structuredGoals
+      .filter((entry): entry is string => typeof entry === "string" && Boolean(entry.trim()))
+      .map((entry) => CLIENT_GOAL_ALIASES[entry.trim()] ?? entry.trim());
     if (values.length > 0) return [...new Set(values)];
   }
 

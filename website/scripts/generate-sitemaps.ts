@@ -4,8 +4,8 @@ import { getAllCategories, getAllPosts } from "../lib/blog.ts";
 import { MARKETPLACE_CATEGORY_SEEDS } from "../lib/marketplace-categories.ts";
 import type { MarketplaceSnapshot, ProfessionalProfileRecord } from "../lib/marketplace-types.ts";
 import {
+  getIndexableMarketplaceProfessionals,
   isMarketplaceCategoryIndexable,
-  isPublicMarketplaceProfessional,
 } from "../lib/marketplace-seo.ts";
 import { buildRestaurantSummaries, getPopularRestaurants, type NutritionProduct } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
@@ -207,7 +207,7 @@ function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
           isActive: true,
         }));
 
-  const publicProfessionals = snapshot.professionals.filter(isPublicMarketplaceProfessional);
+  const publicProfessionals = getIndexableMarketplaceProfessionals(snapshot.professionals);
   const profileEntries = publicProfessionals.map((professional: ProfessionalProfileRecord) =>
     toSitemapEntry(`/professionals/${professional.profileSlug}`, professional.updatedAt ?? buildDate, "standard_index"),
   );

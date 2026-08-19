@@ -3,6 +3,11 @@ import type {
   ProfessionalProfileRecord,
 } from "./marketplace-types.ts";
 import { getMarketplaceTaxonomyCategoryByPublicSlug } from "./marketplace-taxonomy.ts";
+import {
+  formatSeoLocation,
+  getRegionDisplayName,
+  normalizeCountryCode,
+} from "./marketplace-location.ts";
 
 export type MarketplaceResourceLink = {
   href: string;
@@ -77,6 +82,23 @@ export function isPublicMarketplaceProfessional(professional: ProfessionalProfil
   return professional.approvalStatus === "approved" && professional.isActive && professional.isPublic;
 }
 
+export function getIndexableMarketplaceProfessionals(professionals: ProfessionalProfileRecord[]) {
+  return professionals.filter(isPublicMarketplaceProfessional);
+}
+
+export function isOnlineOnlyMarketplaceProfessional(professional: ProfessionalProfileRecord) {
+  const modes = new Set(professional.serviceModes);
+  const offersOnline = professional.remoteAvailable || modes.has("online");
+  const offersLocal = modes.has("in_person") || modes.has("hybrid");
+
+  return offersOnline && !offersLocal;
+}
+
+export function isMarketplaceFilteredSearch(value: string | URLSearchParams) {
+  const params = typeof value === "string" ? new URLSearchParams(value) : value;
+  return params.toString().length > 0;
+}
+
 export function getMarketplaceCategoryProfessionalCount(
   category: ProfessionalCategoryRecord,
   professionals: ProfessionalProfileRecord[],
@@ -97,23 +119,39 @@ export function isMarketplaceCategoryIndexable(
   return category.isActive && getMarketplaceCategoryProfessionalCount(category, professionals) > 0;
 }
 
-export function isMarketplaceLocationCategoryIndexable({
+export function isSeoLocationPageEligible({
   category,
   professionals,
+  countryCode,
   city,
-  state,
-  minimumProfiles = 3,
+  region,
+  hasUniqueContent,
+  hasMeaningfulSearchIntent,
+  inventoryMeetsRequirement,
 }: {
   category: ProfessionalCategoryRecord;
   professionals: ProfessionalProfileRecord[];
-  city: string;
-  state?: string;
-  minimumProfiles?: number;
+  countryCode?: string;
+  city?: string;
+  region?: string;
+  hasUniqueContent: boolean;
+  hasMeaningfulSearchIntent: boolean;
+  inventoryMeetsRequirement?: (approvedPublicInventory: number) => boolean;
 }) {
-  const normalizedCity = city.trim().toLowerCase();
-  const normalizedState = state?.trim().toLowerCase();
+  if (
+    !category.isActive
+    || !hasUniqueContent
+    || !hasMeaningfulSearchIntent
+    || !inventoryMeetsRequirement
+  ) {
+    return false;
+  }
 
-  return professionals.filter((professional) => {
+  const normalizedCountry = normalizeCountryCode(countryCode, "");
+  const normalizedCity = city?.trim().toLowerCase();
+  const normalizedRegion = getRegionDisplayName(normalizedCountry, region).toLowerCase();
+
+  const approvedPublicInventory = professionals.filter((professional) => {
     if (!isPublicMarketplaceProfessional(professional)) {
       return false;
     }
@@ -121,11 +159,17 @@ export function isMarketplaceLocationCategoryIndexable({
     const matchesCategory = professional.categories.some(
       (entry) => entry.stableId === category.stableId || entry.slug === category.slug,
     );
-    const matchesCity = professional.city?.trim().toLowerCase() === normalizedCity;
-    const matchesState = !normalizedState || professional.state?.trim().toLowerCase() === normalizedState;
+    const matchesCountry = !normalizedCountry
+      || normalizeCountryCode(professional.countryCode, "") === normalizedCountry;
+    const matchesCity = !normalizedCity
+      || professional.city?.trim().toLowerCase() === normalizedCity;
+    const matchesRegion = !normalizedRegion
+      || getRegionDisplayName(professional.countryCode, professional.state).toLowerCase() === normalizedRegion;
 
-    return matchesCategory && matchesCity && matchesState;
-  }).length >= minimumProfiles;
+    return matchesCategory && matchesCountry && matchesCity && matchesRegion;
+  }).length;
+
+  return inventoryMeetsRequirement(approvedPublicInventory);
 }
 
 export function getMarketplaceCategorySeoLabel(category: ProfessionalCategoryRecord) {
@@ -143,11 +187,34 @@ export function buildMarketplaceCategoryMetaDescription(category: ProfessionalCa
 
 export function buildMarketplaceProfessionalMetaDescription(professional: ProfessionalProfileRecord) {
   const role = professional.professionalTitle || professional.categories[0]?.label || "professional";
-  const location = [professional.city, professional.state].filter(Boolean).join(", ");
-  const locationText = location ? ` in ${location}` : "";
-  const description = `View ${professional.displayName}'s ${role} profile${locationText}, including specialties, services, credentials, and consultation details on Elevare.`;
+  const normalizedRole = role.trim().toLowerCase();
+  const location = formatSeoLocation({
+    city: professional.city,
+    region: professional.state,
+    countryCode: professional.countryCode,
+  });
+  const description = isOnlineOnlyMarketplaceProfessional(professional)
+    ? `Explore ${professional.displayName}'s online ${normalizedRole} services, specialties, credentials, and availability on Elevare.`
+    : `View ${professional.displayName}'s ${normalizedRole} services, specialties, credentials, and availability${location ? ` in ${location}` : ""} on Elevare.`;
 
   return description.length <= 160 ? description : `${description.slice(0, 157).trimEnd()}...`;
+}
+
+export function buildMarketplaceProfessionalSeoTitle(professional: ProfessionalProfileRecord) {
+  const role = professional.professionalTitle || professional.categories[0]?.label || "Professional";
+
+  if (isOnlineOnlyMarketplaceProfessional(professional)) {
+    const onlineRole = /^online\s/i.test(role) ? role : `Online ${role}`;
+    return `${professional.displayName} \u2014 ${onlineRole} | Elevare`;
+  }
+
+  const location = formatSeoLocation({
+    city: professional.city,
+    region: professional.state,
+    countryCode: professional.countryCode,
+  });
+
+  return `${professional.displayName} \u2014 ${role}${location ? ` in ${location}` : ""} | Elevare`;
 }
 
 export function getMarketplaceCategoryResources(categorySlug: string) {

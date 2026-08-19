@@ -3,6 +3,7 @@ import type {
   ProfessionalCategoryRecord,
   ProfessionalCredentialRecord,
   ProfessionalProfileRecord,
+  ProfessionalServiceRecord,
 } from "@/lib/marketplace-types";
 import {
   getMarketplaceTaxonomyCategoryByPublicSlug,
@@ -10,8 +11,16 @@ import {
 } from "@/lib/marketplace-taxonomy";
 import {
   getMarketplaceCategoryProfessionalCount,
+  isOnlineOnlyMarketplaceProfessional,
   isPublicMarketplaceProfessional,
 } from "@/lib/marketplace-seo";
+import {
+  formatMarketplaceLocation,
+  formatPublicLocation,
+  getCountryDisplayName,
+  getRegionDisplayName,
+  normalizeCountryCode,
+} from "@/lib/marketplace-location";
 
 export type ProfessionalDirectoryFilters = {
   category: string;
@@ -179,22 +188,31 @@ export function buildProfessionalSlugFromName(name: string) {
 }
 
 export function formatLocationLabel(professional: ProfessionalProfileRecord) {
-  const city = normalizeMarketplaceText(professional.city);
-  const state = normalizeMarketplaceText(professional.state);
+  const location = formatMarketplaceLocation({
+    city: professional.city,
+    region: professional.state,
+    countryCode: professional.countryCode,
+  });
 
-  if (city && state) {
-    return `${city}, ${state}`;
-  }
-
-  if (city) {
-    return city;
-  }
-
-  if (state) {
-    return state;
-  }
+  if (location) return location;
 
   if (professional.remoteAvailable || professional.serviceModes.includes("online")) {
+    return "Online";
+  }
+
+  return "Location flexible";
+}
+
+export function formatPublicLocationLabel(professional: ProfessionalProfileRecord) {
+  const location = formatPublicLocation({
+    city: professional.city,
+    region: professional.state,
+    countryCode: professional.countryCode,
+  });
+
+  if (location) return location;
+
+  if (isOnlineOnlyMarketplaceProfessional(professional)) {
     return "Online";
   }
 
@@ -237,6 +255,31 @@ export function formatPriceSummary({
   }
 
   return null;
+}
+
+export function formatServicePriceSummary({
+  price,
+  priceTo,
+  pricingBasis,
+  contactForPricing,
+  currencyCode,
+}: Pick<ProfessionalServiceRecord, "price" | "priceTo" | "pricingBasis" | "contactForPricing" | "currencyCode">) {
+  if (contactForPricing) return "Contact for pricing";
+  if (price == null) return null;
+
+  const formatter = new Intl.NumberFormat("en", {
+    style: "currency",
+    currency: currencyCode || "USD",
+    maximumFractionDigits: 0,
+  });
+  const basis = normalizeMarketplaceText(pricingBasis);
+  const suffix = basis ? `/${basis}` : "";
+
+  if (priceTo != null && priceTo > price) {
+    return `${formatter.format(price)}-${formatter.format(priceTo)}${suffix}`;
+  }
+
+  return `${formatter.format(price)}${suffix}`;
 }
 
 export function hasVerifiedCredential(credentials: ProfessionalCredentialRecord[]) {
@@ -332,6 +375,9 @@ export function buildProfessionalSearchText(professional: ProfessionalProfileRec
     professional.bio,
     professional.city,
     professional.state,
+    getRegionDisplayName(professional.countryCode, professional.state),
+    professional.countryCode,
+    getCountryDisplayName(professional.countryCode),
     professional.serviceArea,
     professional.specialties.join(" "),
     professional.categories.map((category) => category.label).join(" "),
@@ -416,7 +462,14 @@ function professionalMatchesLocation(
     return professionalSupportsServiceMode(professional, "online");
   }
 
-  const profileLocation = [professional.city, professional.state, professional.serviceArea]
+  const profileLocation = [
+    professional.city,
+    professional.state,
+    getRegionDisplayName(professional.countryCode, professional.state),
+    professional.countryCode,
+    getCountryDisplayName(professional.countryCode),
+    professional.serviceArea,
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -436,13 +489,19 @@ function professionalMatchesBroaderLocation(
 
   const professionalCity = normalizeMarketplaceText(professional.city)?.toLowerCase() ?? null;
   const professionalState = normalizeMarketplaceText(professional.state)?.toLowerCase() ?? null;
+  const professionalRegion = normalizeMarketplaceText(
+    getRegionDisplayName(professional.countryCode, professional.state),
+  )?.toLowerCase() ?? null;
   const serviceArea = normalizeMarketplaceText(professional.serviceArea)?.toLowerCase() ?? null;
 
   if (parsedLocation.city && professionalCity && parsedLocation.city === professionalCity) {
     return true;
   }
 
-  if (parsedLocation.state && professionalState && parsedLocation.state === professionalState) {
+  if (
+    parsedLocation.state
+    && (parsedLocation.state === professionalState || parsedLocation.state === professionalRegion)
+  ) {
     return true;
   }
 
@@ -825,13 +884,12 @@ export function getUniqueLocations(professionals: ProfessionalProfileRecord[]) {
   const locations = new Set<string>();
 
   for (const professional of professionals) {
-    if (professional.city && professional.state) {
-      locations.add(`${professional.city}, ${professional.state}`);
-    } else if (professional.city) {
-      locations.add(professional.city);
-    } else if (professional.state) {
-      locations.add(professional.state);
-    }
+    const location = formatMarketplaceLocation({
+      city: professional.city,
+      region: professional.state,
+      countryCode: professional.countryCode,
+    });
+    if (location) locations.add(location);
 
     if (professional.remoteAvailable || professional.serviceModes.includes("online")) {
       locations.add("Online");
@@ -1036,14 +1094,24 @@ export function findTopCategories(
 }
 
 export function buildProfessionalSchema(professional: ProfessionalProfileRecord, siteUrl: string) {
-  const areaServed = (
-    professional.serviceArea ?? [professional.city, professional.state].filter(Boolean).join(", ")
-  ) || undefined;
+  const countryCode = normalizeCountryCode(professional.countryCode, "");
+  const areaServed = isOnlineOnlyMarketplaceProfessional(professional)
+    ? "Online"
+    : (
+        professional.serviceArea
+        ?? formatPublicLocation({
+          city: professional.city,
+          region: professional.state,
+          countryCode,
+        })
+      ) || undefined;
   const address = professional.city || professional.state
     ? {
         "@type": "PostalAddress",
         addressLocality: professional.city ?? undefined,
-        addressRegion: professional.state ?? undefined,
+        addressRegion: getRegionDisplayName(countryCode, professional.state) || undefined,
+        addressCountry: countryCode || undefined,
+        postalCode: professional.postalCode ?? undefined,
       }
     : undefined;
   const offers = professional.services
@@ -1053,7 +1121,7 @@ export function buildProfessionalSchema(professional: ProfessionalProfileRecord,
       name: service.name,
       description: service.description ?? undefined,
       price: service.price ?? undefined,
-      priceCurrency: service.price != null ? professional.pricingCurrency : undefined,
+      priceCurrency: service.price != null ? service.currencyCode : undefined,
     }));
   const credentials = professional.credentials
     .filter((credential) => credential.verificationStatus === "verified")
