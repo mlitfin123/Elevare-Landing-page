@@ -237,7 +237,7 @@ export function MarketplaceDemandForm({
 
           <div className="form-actions">
             <button type="submit" className="button button-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Search Request"}
+              {isSubmitting ? "Saving..." : "Submit Search Request"}
             </button>
             {feedback ? (
               <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>

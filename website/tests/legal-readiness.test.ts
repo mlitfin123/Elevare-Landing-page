@@ -42,6 +42,12 @@ test("legal history is append-only to marketplace users and public credentials e
 
   assert.match(migration, /create table if not exists public\.user_legal_acceptance_history/);
   assert.match(migration, /submit_current_trainer_profile_for_review_attested/);
+  assert.match(migration, /document_key = 'terms_of_service'/);
+  assert.match(migration, /document_key = 'privacy_policy'/);
+  assert.match(migration, /after insert on public\.users/);
+  assert.doesNotMatch(migration, /terms_of_service_effective_date/);
+  assert.doesNotMatch(migration, /privacy_policy_effective_date/);
+  assert.doesNotMatch(migration, /signature_name/);
   assert.doesNotMatch(migration, /grant (?:insert|update|delete|all).*user_legal_acceptance_history to authenticated/i);
   assert.doesNotMatch(publicView, /document_url/);
   assert.doesNotMatch(publicView, /supporting_reference_url/);

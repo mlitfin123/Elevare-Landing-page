@@ -6,6 +6,7 @@ import type {
   ProfessionalServiceRecord,
 } from "@/lib/marketplace-types";
 import {
+  buildMarketplaceCategoryFaqs,
   getMarketplaceTaxonomyCategoryByPublicSlug,
   MARKETPLACE_CATEGORY_RELATED_PUBLIC_SLUGS,
 } from "@/lib/marketplace-taxonomy";
@@ -965,30 +966,7 @@ export function buildProfessionalSummary(professional: ProfessionalProfileRecord
 }
 
 export function buildCategoryFaqs(category: ProfessionalCategoryRecord) {
-  const categoryName = category.label.toLowerCase();
-
-  return [
-    {
-      question: `What should I look for in a ${categoryName} professional?`,
-      answer:
-        "Start with category fit, service mode, specialties, pricing structure, and whether that person's communication style feels aligned with your goals.",
-    },
-    {
-      question: `Can I browse ${categoryName} profiles before creating an account?`,
-      answer:
-        "Yes. The public directory and reviewed profiles are open to browse before you sign in.",
-    },
-    {
-      question: `Do all ${categoryName} professionals work the same way?`,
-      answer:
-        "No. Some offer in-person sessions, some work online, and others use hybrid models with very different pricing and service structures.",
-    },
-    {
-      question: `How do I request a consultation on Elevare?`,
-      answer:
-        "Open a profile, click Request Consultation, and send a short inquiry. The person you contact can review the request inside their Elevare account.",
-    },
-  ];
+  return buildMarketplaceCategoryFaqs(category.slug);
 }
 
 export function buildCategoryIntro(category: ProfessionalCategoryRecord) {

@@ -2,6 +2,8 @@ export type MarketplaceTaxonomyCategory = {
   stableId: string;
   publicSlug: string;
   label: string;
+  providerSingular: string;
+  providerPlural: string;
   headline: string;
   shortDescription: string;
   sortOrder: number;
@@ -20,6 +22,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "personal_training",
     publicSlug: "personal-training",
     label: "Personal Training",
+    providerSingular: "Personal Trainer",
+    providerPlural: "Personal Trainers",
     headline: "Personal training",
     shortDescription: "Exercise instruction, coaching, and accountability for everyday fitness, strength, and body-composition goals.",
     sortOrder: 10,
@@ -56,6 +60,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "strength_conditioning",
     publicSlug: "strength-conditioning",
     label: "Strength & Conditioning",
+    providerSingular: "Strength and Conditioning Coach",
+    providerPlural: "Strength and Conditioning Coaches",
     headline: "Strength and conditioning",
     shortDescription: "Performance-minded training for strength, power, speed, and resilient athletic development.",
     sortOrder: 20,
@@ -81,6 +87,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "bodybuilding_physique",
     publicSlug: "bodybuilding-physique",
     label: "Bodybuilding & Physique",
+    providerSingular: "Bodybuilding and Physique Coach",
+    providerPlural: "Bodybuilding and Physique Coaches",
     headline: "Bodybuilding and physique coaching",
     shortDescription: "Coaching for muscle building, physique development, contest prep, and stage presentation.",
     sortOrder: 30,
@@ -111,6 +119,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "strength_sports",
     publicSlug: "strength-sports",
     label: "Strength Sports",
+    providerSingular: "Strength Sports Coach",
+    providerPlural: "Strength Sports Coaches",
     headline: "Strength sports coaching",
     shortDescription: "Coaching for powerlifting, Olympic weightlifting, strongman, and strength competition prep.",
     sortOrder: 40,
@@ -135,6 +145,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "running_endurance",
     publicSlug: "running-endurance",
     label: "Running & Endurance",
+    providerSingular: "Running and Endurance Coach",
+    providerPlural: "Running and Endurance Coaches",
     headline: "Running and endurance coaching",
     shortDescription: "Structured support for running, endurance development, race preparation, and aerobic performance.",
     sortOrder: 50,
@@ -162,6 +174,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "sports_performance",
     publicSlug: "sports-performance",
     label: "Sports Performance",
+    providerSingular: "Sports Performance Coach",
+    providerPlural: "Sports Performance Coaches",
     headline: "Sports performance coaching",
     shortDescription: "Training focused on speed, explosiveness, conditioning, and sport-specific athletic performance.",
     sortOrder: 60,
@@ -187,6 +201,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "nutrition",
     publicSlug: "nutrition",
     label: "Nutrition",
+    providerSingular: "Nutrition Professional",
+    providerPlural: "Nutrition Professionals",
     headline: "Nutrition coaching",
     shortDescription: "Nutrition strategy, habit change, and food-structure support for health, body composition, and performance.",
     sortOrder: 70,
@@ -218,6 +234,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "dietetics",
     publicSlug: "dietetics",
     label: "Dietetics",
+    providerSingular: "Dietitian",
+    providerPlural: "Dietitians",
     headline: "Dietetics support",
     shortDescription: "Credentialed dietetics support where regulated nutrition credentials materially matter.",
     sortOrder: 80,
@@ -238,6 +256,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "health_wellness_coaching",
     publicSlug: "health-wellness-coaching",
     label: "Health & Wellness Coaching",
+    providerSingular: "Health and Wellness Coach",
+    providerPlural: "Health and Wellness Coaches",
     headline: "Health and wellness coaching",
     shortDescription: "Support for sustainable habits, accountability, lifestyle structure, and general wellbeing.",
     sortOrder: 90,
@@ -263,6 +283,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "life_mindset_coaching",
     publicSlug: "life-mindset-coaching",
     label: "Life & Mindset Coaching",
+    providerSingular: "Life and Mindset Coach",
+    providerPlural: "Life and Mindset Coaches",
     headline: "Life and mindset coaching",
     shortDescription: "Coaching centered on motivation, confidence, accountability, and personal growth.",
     sortOrder: 100,
@@ -288,6 +310,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "yoga",
     publicSlug: "yoga",
     label: "Yoga",
+    providerSingular: "Yoga Instructor",
+    providerPlural: "Yoga Instructors",
     headline: "Yoga",
     shortDescription: "Yoga instruction for movement, flexibility, breath, and mind-body practice.",
     sortOrder: 110,
@@ -313,6 +337,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "pilates",
     publicSlug: "pilates",
     label: "Pilates",
+    providerSingular: "Pilates Instructor",
+    providerPlural: "Pilates Instructors",
     headline: "Pilates",
     shortDescription: "Pilates instruction for strength, control, posture, and movement quality.",
     sortOrder: 120,
@@ -336,6 +362,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "mobility_movement",
     publicSlug: "mobility-movement",
     label: "Mobility, Flexibility & Movement",
+    providerSingular: "Mobility and Movement Coach",
+    providerPlural: "Mobility and Movement Coaches",
     headline: "Mobility, flexibility, and movement coaching",
     shortDescription: "Support for mobility, flexibility, movement quality, and non-medical corrective exercise.",
     sortOrder: 130,
@@ -362,6 +390,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "mindfulness_breathwork",
     publicSlug: "mindfulness-breathwork",
     label: "Meditation, Mindfulness & Breathwork",
+    providerSingular: "Mindfulness and Breathwork Practitioner",
+    providerPlural: "Mindfulness and Breathwork Practitioners",
     headline: "Meditation, mindfulness, and breathwork",
     shortDescription: "Breath, mindfulness, and meditation support for focus, relaxation, and everyday regulation.",
     sortOrder: 140,
@@ -386,6 +416,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "recovery_bodywork",
     publicSlug: "recovery-bodywork",
     label: "Recovery & Bodywork",
+    providerSingular: "Recovery and Bodywork Professional",
+    providerPlural: "Recovery and Bodywork Professionals",
     headline: "Recovery and bodywork",
     shortDescription: "Recovery-oriented services such as massage, assisted stretching, and non-medical bodywork support.",
     sortOrder: 150,
@@ -406,6 +438,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     stableId: "special_population_fitness",
     publicSlug: "special-population-fitness",
     label: "Special Population Fitness",
+    providerSingular: "Special Population Fitness Professional",
+    providerPlural: "Special Population Fitness Professionals",
     headline: "Special population fitness",
     shortDescription: "Fitness support for clients who need a lower-impact, age-aware, or more adaptive training approach.",
     sortOrder: 160,
@@ -526,6 +560,34 @@ export function getMarketplaceTaxonomyCategoryByStableId(stableId: string | null
 
 export function getMarketplaceTaxonomyCategoryByPublicSlug(publicSlug: string | null | undefined) {
   return publicSlug ? taxonomyByPublicSlug.get(publicSlug) ?? null : null;
+}
+
+export function buildMarketplaceCategoryFaqs(publicSlug: string | null | undefined) {
+  const category = getMarketplaceTaxonomyCategoryByPublicSlug(publicSlug);
+  const providerSingular = category?.providerSingular.toLowerCase() ?? "professional";
+  const providerPlural = category?.providerPlural.toLowerCase() ?? "professionals";
+
+  return [
+    {
+      question: `What should I look for when hiring a ${providerSingular}?`,
+      answer:
+        "Compare relevant experience, specialties, service format, pricing, credentials where applicable, and whether the provider's communication style aligns with your goals.",
+    },
+    {
+      question: `Can I browse ${providerSingular} profiles before creating an account?`,
+      answer: "Yes. The public directory and reviewed profiles are open to browse before you sign in.",
+    },
+    {
+      question: `Do all ${providerPlural} work the same way?`,
+      answer:
+        "No. Some offer in-person sessions, some work online, and others use hybrid models with very different pricing and service structures.",
+    },
+    {
+      question: "How do I request a consultation on Elevare?",
+      answer:
+        "Open a profile, click Request Consultation, and send a short inquiry. The person you contact can review the request inside their Elevare account.",
+    },
+  ];
 }
 
 export function getMarketplaceLegacyCategoryMapping(identifier: string | null | undefined) {

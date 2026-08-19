@@ -12,7 +12,7 @@ Professionals are independent providers. Marketplace profile review, identity re
 
 The existing `public.user_legal_acceptances` table remains the current acceptance record used by the Elevare application. The marketplace migration extends it with source, method, and optional country fields. An append-only `public.user_legal_acceptance_history` table preserves each recorded Terms and Privacy version. Existing rows are copied into history without forcing users to re-accept.
 
-Website signup records the current Terms and Privacy versions through Auth metadata. An Auth trigger writes that acceptance to the existing table, whose write-history trigger then creates the immutable audit record.
+Website signup records the current Terms and Privacy versions through Auth metadata. A trigger on the corresponding `public.users` record writes separate versioned `terms_of_service` and `privacy_policy` rows to the existing table, whose write-history trigger then creates the immutable paired audit record.
 
 Professional profile submission uses `submit_current_trainer_profile_for_review_attested`. The RPC calls the existing review-submission function, then records the canonical attestation version, exact text, user, profile, review request, acceptance time, source, and user-supplied country when known. The separate admin project remains the only approval and verification interface.
 

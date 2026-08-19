@@ -24,8 +24,8 @@ create table if not exists public.user_legal_acceptance_history (
   marketplace_user_id uuid,
   trainer_profile_id uuid,
   verification_request_id uuid,
-  terms_version date,
-  privacy_version date,
+  terms_version text,
+  privacy_version text,
   professional_attestation_version text,
   acceptance_text text,
   accepted_at timestamptz not null default timezone('utc', now()),
@@ -68,6 +68,12 @@ create unique index if not exists user_legal_acceptance_history_professional_sub
   )
   where acceptance_type = 'professional_attestation';
 
+-- Earlier drafts used date columns, while the live acceptance table stores
+-- document versions as text. Keep reruns compatible with either draft state.
+alter table public.user_legal_acceptance_history
+  alter column terms_version type text using terms_version::text,
+  alter column privacy_version type text using privacy_version::text;
+
 alter table public.user_legal_acceptance_history enable row level security;
 
 revoke all on table public.user_legal_acceptance_history from public, anon, authenticated;
@@ -92,13 +98,48 @@ security definer
 set search_path = public, auth, pg_temp
 as $$
 declare
-  linked_marketplace_user_id uuid;
+  linked_auth_user_id uuid;
+  terms_version_value text;
+  privacy_version_value text;
+  terms_accepted_at_value timestamptz;
+  privacy_accepted_at_value timestamptz;
+  accepted_at_value timestamptz;
 begin
-  select users.id
-  into linked_marketplace_user_id
+  select users.auth_id
+  into linked_auth_user_id
   from public.users as users
-  where users.auth_id = new.user_id
+  where users.id = new.user_id
   limit 1;
+
+  select
+    acceptance.document_version,
+    acceptance.accepted_at
+  into
+    terms_version_value,
+    terms_accepted_at_value
+  from public.user_legal_acceptances as acceptance
+  where acceptance.user_id = new.user_id
+    and acceptance.document_key = 'terms_of_service'
+  order by acceptance.accepted_at desc, acceptance.created_at desc
+  limit 1;
+
+  select
+    acceptance.document_version,
+    acceptance.accepted_at
+  into
+    privacy_version_value,
+    privacy_accepted_at_value
+  from public.user_legal_acceptances as acceptance
+  where acceptance.user_id = new.user_id
+    and acceptance.document_key = 'privacy_policy'
+  order by acceptance.accepted_at desc, acceptance.created_at desc
+  limit 1;
+
+  if terms_version_value is null or privacy_version_value is null then
+    return new;
+  end if;
+
+  accepted_at_value := greatest(terms_accepted_at_value, privacy_accepted_at_value);
 
   insert into public.user_legal_acceptance_history (
     acceptance_type,
@@ -111,16 +152,24 @@ begin
     acceptance_method,
     acceptance_source
   )
-  values (
+  select
     'terms_privacy',
+    linked_auth_user_id,
     new.user_id,
-    linked_marketplace_user_id,
-    new.terms_of_service_effective_date,
-    new.privacy_policy_effective_date,
-    greatest(new.terms_of_service_accepted_at, new.privacy_policy_accepted_at),
+    terms_version_value,
+    privacy_version_value,
+    accepted_at_value,
     new.acceptance_country_code,
     coalesce(nullif(new.acceptance_method, ''), 'existing_acceptance'),
     coalesce(nullif(new.acceptance_source, ''), 'existing_application')
+  where not exists (
+    select 1
+    from public.user_legal_acceptance_history as history
+    where history.acceptance_type = 'terms_privacy'
+      and history.marketplace_user_id = new.user_id
+      and history.terms_version = terms_version_value
+      and history.privacy_version = privacy_version_value
+      and history.accepted_at = accepted_at_value
   );
 
   return new;
@@ -150,27 +199,57 @@ insert into public.user_legal_acceptance_history (
 )
 select
   'terms_privacy',
-  acceptance.user_id,
+  users.auth_id,
   users.id,
-  acceptance.terms_of_service_effective_date,
-  acceptance.privacy_policy_effective_date,
-  greatest(acceptance.terms_of_service_accepted_at, acceptance.privacy_policy_accepted_at),
-  acceptance.acceptance_country_code,
-  coalesce(nullif(acceptance.acceptance_method, ''), 'existing_acceptance'),
-  coalesce(nullif(acceptance.acceptance_source, ''), 'existing_application')
-from public.user_legal_acceptances as acceptance
-left join public.users as users on users.auth_id = acceptance.user_id
+  terms.document_version,
+  privacy.document_version,
+  greatest(terms.accepted_at, privacy.accepted_at),
+  coalesce(privacy.acceptance_country_code, terms.acceptance_country_code),
+  coalesce(
+    nullif(privacy.acceptance_method, ''),
+    nullif(terms.acceptance_method, ''),
+    'existing_acceptance'
+  ),
+  coalesce(
+    nullif(privacy.acceptance_source, ''),
+    nullif(terms.acceptance_source, ''),
+    'existing_application'
+  )
+from public.users as users
+join lateral (
+  select
+    acceptance.document_version,
+    acceptance.accepted_at,
+    acceptance.acceptance_country_code,
+    acceptance.acceptance_method,
+    acceptance.acceptance_source
+  from public.user_legal_acceptances as acceptance
+  where acceptance.user_id = users.id
+    and acceptance.document_key = 'terms_of_service'
+  order by acceptance.accepted_at desc, acceptance.created_at desc
+  limit 1
+) as terms on true
+join lateral (
+  select
+    acceptance.document_version,
+    acceptance.accepted_at,
+    acceptance.acceptance_country_code,
+    acceptance.acceptance_method,
+    acceptance.acceptance_source
+  from public.user_legal_acceptances as acceptance
+  where acceptance.user_id = users.id
+    and acceptance.document_key = 'privacy_policy'
+  order by acceptance.accepted_at desc, acceptance.created_at desc
+  limit 1
+) as privacy on true
 where not exists (
   select 1
   from public.user_legal_acceptance_history as history
   where history.acceptance_type = 'terms_privacy'
-    and history.auth_user_id = acceptance.user_id
-    and history.terms_version = acceptance.terms_of_service_effective_date
-    and history.privacy_version = acceptance.privacy_policy_effective_date
-    and history.accepted_at = greatest(
-      acceptance.terms_of_service_accepted_at,
-      acceptance.privacy_policy_accepted_at
-    )
+    and history.marketplace_user_id = users.id
+    and history.terms_version = terms.document_version
+    and history.privacy_version = privacy.document_version
+    and history.accepted_at = greatest(terms.accepted_at, privacy.accepted_at)
 );
 
 create or replace function public.record_website_signup_legal_acceptance()
@@ -180,68 +259,165 @@ security definer
 set search_path = public, auth, pg_temp
 as $$
 declare
+  signup_metadata jsonb;
   supplied_country text;
-  signature_value text;
+  accepted_role_value text;
+  accepted_at_value timestamptz;
 begin
-  if lower(coalesce(new.raw_user_meta_data->>'legal_acceptance', 'false')) <> 'true'
-    or new.raw_user_meta_data->>'terms_version' <> '2026-08-18'
-    or new.raw_user_meta_data->>'privacy_version' <> '2026-08-18'
+  select
+    auth_user.raw_user_meta_data,
+    auth_user.created_at
+  into
+    signup_metadata,
+    accepted_at_value
+  from auth.users as auth_user
+  where auth_user.id = new.auth_id
+  limit 1;
+
+  if lower(coalesce(signup_metadata->>'legal_acceptance', 'false')) <> 'true'
+    or signup_metadata->>'terms_version' <> '2026-08-18'
+    or signup_metadata->>'privacy_version' <> '2026-08-18'
   then
     return new;
   end if;
 
-  supplied_country := upper(nullif(btrim(new.raw_user_meta_data->>'country_code'), ''));
+  supplied_country := upper(nullif(btrim(signup_metadata->>'country_code'), ''));
   if supplied_country is not null and supplied_country !~ '^[A-Z]{2}$' then
     supplied_country := null;
   end if;
 
-  signature_value := coalesce(
-    nullif(btrim(new.raw_user_meta_data->>'full_name'), ''),
-    nullif(btrim(concat_ws(
-      ' ',
-      new.raw_user_meta_data->>'first_name',
-      new.raw_user_meta_data->>'last_name'
-    )), ''),
-    nullif(lower(new.email), ''),
-    new.id::text
+  accepted_role_value := case
+    when lower(coalesce(
+      signup_metadata->>'accepted_role',
+      signup_metadata->>'role',
+      ''
+    )) in ('trainer', 'coach', 'professional')
+      then 'trainer'
+    else 'client'
+  end;
+
+  accepted_at_value := coalesce(
+    accepted_at_value,
+    timezone('utc', now())
   );
 
   insert into public.user_legal_acceptances (
     user_id,
-    signature_name,
-    privacy_policy_effective_date,
-    privacy_policy_accepted_at,
-    terms_of_service_effective_date,
-    terms_of_service_accepted_at,
+    document_key,
+    document_version,
+    accepted_role,
+    accepted_at,
     acceptance_source,
     acceptance_method,
     acceptance_country_code
   )
-  values (
+  select
     new.id,
-    signature_value,
-    '2026-08-18'::date,
-    timezone('utc', now()),
-    '2026-08-18'::date,
-    timezone('utc', now()),
+    'terms_of_service',
+    '2026-08-18',
+    accepted_role_value,
+    accepted_at_value,
     'website_signup',
     'checkbox',
     supplied_country
+  where not exists (
+    select 1
+    from public.user_legal_acceptances as existing
+    where existing.user_id = new.id
+      and existing.document_key = 'terms_of_service'
+      and existing.document_version = '2026-08-18'
+  );
+
+  insert into public.user_legal_acceptances (
+    user_id,
+    document_key,
+    document_version,
+    accepted_role,
+    accepted_at,
+    acceptance_source,
+    acceptance_method,
+    acceptance_country_code
   )
-  on conflict (user_id) do nothing;
+  select
+    new.id,
+    'privacy_policy',
+    '2026-08-18',
+    accepted_role_value,
+    accepted_at_value,
+    'website_signup',
+    'checkbox',
+    supplied_country
+  where not exists (
+    select 1
+    from public.user_legal_acceptances as existing
+    where existing.user_id = new.id
+      and existing.document_key = 'privacy_policy'
+      and existing.document_version = '2026-08-18'
+  );
 
   return new;
 end;
 $$;
 
 revoke all on function public.record_website_signup_legal_acceptance() from public, anon, authenticated;
-grant execute on function public.record_website_signup_legal_acceptance() to supabase_auth_admin;
 grant execute on function public.record_website_signup_legal_acceptance() to service_role;
 
 drop trigger if exists on_auth_user_created_record_legal_acceptance on auth.users;
-create trigger on_auth_user_created_record_legal_acceptance
-after insert on auth.users
+drop trigger if exists users_record_website_legal_acceptance on public.users;
+create trigger users_record_website_legal_acceptance
+after insert on public.users
 for each row execute function public.record_website_signup_legal_acceptance();
+
+-- Capture website signup metadata for users created after the frontend began
+-- sending versioned acceptance but before this migration was installed.
+insert into public.user_legal_acceptances (
+  user_id,
+  document_key,
+  document_version,
+  accepted_role,
+  accepted_at,
+  acceptance_source,
+  acceptance_method,
+  acceptance_country_code
+)
+select
+  users.id,
+  document.document_key,
+  document.document_version,
+  case
+    when lower(coalesce(
+      auth_user.raw_user_meta_data->>'accepted_role',
+      auth_user.raw_user_meta_data->>'role',
+      ''
+    )) in ('trainer', 'coach', 'professional')
+      then 'trainer'
+    else 'client'
+  end,
+  coalesce(auth_user.created_at, timezone('utc', now())),
+  'website_signup',
+  'checkbox',
+  case
+    when upper(nullif(btrim(auth_user.raw_user_meta_data->>'country_code'), '')) ~ '^[A-Z]{2}$'
+      then upper(nullif(btrim(auth_user.raw_user_meta_data->>'country_code'), ''))
+    else null
+  end
+from public.users as users
+join auth.users as auth_user on auth_user.id = users.auth_id
+cross join lateral (
+  values
+    ('terms_of_service'::text, auth_user.raw_user_meta_data->>'terms_version'),
+    ('privacy_policy'::text, auth_user.raw_user_meta_data->>'privacy_version')
+) as document(document_key, document_version)
+where lower(coalesce(auth_user.raw_user_meta_data->>'legal_acceptance', 'false')) = 'true'
+  and auth_user.raw_user_meta_data->>'terms_version' = '2026-08-18'
+  and auth_user.raw_user_meta_data->>'privacy_version' = '2026-08-18'
+  and not exists (
+    select 1
+    from public.user_legal_acceptances as existing
+    where existing.user_id = users.id
+      and existing.document_key = document.document_key
+      and existing.document_version = document.document_version
+  );
 
 create or replace function public.submit_current_trainer_profile_for_review_attested(
   requested_email text default null,
