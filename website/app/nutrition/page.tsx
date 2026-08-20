@@ -88,7 +88,7 @@ export default async function NutritionIndexPage() {
           <article className="proof-card">
             <span className="proof-label">Menu items</span>
             <div className="proof-value">{products.length.toLocaleString()}</div>
-            <p className="proof-copy">Calories and macros pulled from the existing verified restaurant dataset.</p>
+            <p className="proof-copy">Calories and macros pulled from the current restaurant nutrition dataset.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Popular searches</span>

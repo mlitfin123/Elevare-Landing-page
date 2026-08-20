@@ -13,7 +13,7 @@ export function MarketplaceSupportCta({
   label,
   context,
   title = "Want support that fits your goals?",
-  description = "Browse reviewed professionals on Elevare and compare specialties, service modes, and location before reaching out.",
+  description = "Browse published professional profiles on Elevare and compare specialties, service modes, and location before reaching out.",
 }: MarketplaceSupportCtaProps) {
   return (
     <aside className="callout marketplace-support-cta">

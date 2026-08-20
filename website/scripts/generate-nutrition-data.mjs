@@ -107,16 +107,21 @@ function sanitizeProduct(product) {
 }
 
 function buildSearchIndex(products) {
-  return products.map((product) => ({
-    id: product.id,
-    restaurantName: product.restaurantName,
-    productName: product.productName,
-    calories: product.calories,
-    proteinG: product.proteinG,
-    carbsG: product.carbsG,
-    fatG: product.fatG,
-    category: product.category,
-  }));
+  const restaurants = [...new Set(products.map((product) => product.restaurantName))].sort();
+  const restaurantIndex = new Map(restaurants.map((restaurant, index) => [restaurant, index]));
+
+  return {
+    r: restaurants,
+    i: products.map((product) => [
+      restaurantIndex.get(product.restaurantName),
+      product.productName,
+      product.calories,
+      product.proteinG,
+      product.carbsG,
+      product.fatG,
+      product.category,
+    ]),
+  };
 }
 
 async function main() {

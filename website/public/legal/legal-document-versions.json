@@ -1,0 +1,19 @@
+{
+  "generatedFrom": "immutable legal archive",
+  "documents": [
+    {
+      "documentKey": "terms_of_service",
+      "version": "2026-08-20",
+      "effectiveDate": "2026-08-20",
+      "archivePath": "/legal/archive/terms/2026-08-20.html",
+      "sha256": "3fb0e59316aac7a28f74cbf2ab574dec570d83e51ea0f08b6a56159134ee5308"
+    },
+    {
+      "documentKey": "privacy_policy",
+      "version": "2026-08-20",
+      "effectiveDate": "2026-08-20",
+      "archivePath": "/legal/archive/privacy/2026-08-20.html",
+      "sha256": "ccd40ed1462393629ace1ff25ed02218c61c55f5dc678c1553bc26263193c2e9"
+    }
+  ]
+}

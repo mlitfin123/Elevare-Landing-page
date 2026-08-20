@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useRef, useState } from "react";
 import { TrackedLink } from "@/components/TrackedLink";
 import { searchRestaurants, type RestaurantSummary } from "@/lib/nutrition-data";
 
@@ -15,6 +15,11 @@ type SearchIndexEntry = {
   category: string | null;
 };
 
+type CompactSearchIndex = {
+  r: string[];
+  i: Array<[number, string, number | null, number | null, number | null, number | null, string | null]>;
+};
+
 type NutritionSearchProps = {
   restaurants: RestaurantSummary[];
 };
@@ -27,29 +32,58 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
   const [restaurantQuery, setRestaurantQuery] = useState("");
   const [itemQuery, setItemQuery] = useState("");
   const [itemIndex, setItemIndex] = useState<SearchIndexEntry[]>([]);
+  const [itemIndexStatus, setItemIndexStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const itemIndexRequest = useRef<Promise<void> | null>(null);
   const deferredRestaurantQuery = useDeferredValue(restaurantQuery);
   const deferredItemQuery = useDeferredValue(itemQuery);
 
-  useEffect(() => {
-    let isMounted = true;
+  function loadItemIndex() {
+    if (itemIndexRequest.current || itemIndexStatus === "ready") {
+      return;
+    }
 
-    fetch("/nutrition-search-index.json")
-      .then((response) => response.json())
-      .then((data: SearchIndexEntry[]) => {
-        if (isMounted) {
-          setItemIndex(Array.isArray(data) ? data : []);
+    setItemIndexStatus("loading");
+    itemIndexRequest.current = fetch("/nutrition-search-index.json")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Nutrition search index could not be loaded.");
         }
+
+        return response.json() as Promise<CompactSearchIndex>;
+      })
+      .then((data) => {
+        if (!Array.isArray(data.r) || !Array.isArray(data.i)) {
+          throw new Error("Nutrition search index is invalid.");
+        }
+
+        setItemIndex(
+          data.i.flatMap((item, index) => {
+            const restaurantName = data.r[item[0]];
+
+            if (!restaurantName || !item[1]) {
+              return [];
+            }
+
+            return [{
+              id: `${item[0]}-${index}`,
+              restaurantName,
+              productName: item[1],
+              calories: item[2],
+              proteinG: item[3],
+              carbsG: item[4],
+              fatG: item[5],
+              category: item[6],
+            }];
+          }),
+        );
+        setItemIndexStatus("ready");
       })
       .catch(() => {
-        if (isMounted) {
-          setItemIndex([]);
-        }
+        itemIndexRequest.current = null;
+        setItemIndex([]);
+        setItemIndexStatus("error");
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  }
 
   const restaurantResults = useMemo(
     () => searchRestaurants(restaurants, deferredRestaurantQuery).slice(0, 8),
@@ -130,12 +164,24 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
               type="text"
               value={itemQuery}
               placeholder="Chicken bowl, grilled nuggets..."
-              onChange={(event) => setItemQuery(event.target.value)}
+              onFocus={loadItemIndex}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setItemQuery(nextValue);
+
+                if (nextValue.trim().length >= 2) {
+                  loadItemIndex();
+                }
+              }}
             />
           </label>
           <div className="nutrition-search-results">
             {deferredItemQuery.trim().length < 2 ? (
               <p className="footer-copy">Type at least 2 characters to search menu items.</p>
+            ) : itemIndexStatus === "loading" || itemIndexStatus === "idle" ? (
+              <p className="footer-copy">Loading menu item search...</p>
+            ) : itemIndexStatus === "error" ? (
+              <p className="footer-copy">Menu item search is temporarily unavailable. Try again.</p>
             ) : !itemResults.length ? (
               <p className="footer-copy">No menu items matched that search.</p>
             ) : (

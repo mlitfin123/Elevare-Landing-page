@@ -182,7 +182,7 @@ export function buildMarketplaceCategoryMetaDescription(category: ProfessionalCa
   const specialties = taxonomy?.specialties.slice(0, 3).join(", ");
   const suffix = specialties ? ` Compare support for ${specialties}, and more.` : " Compare specialties, service modes, and location.";
 
-  return `Browse reviewed ${label.toLowerCase()} on Elevare.${suffix}`;
+  return `Browse published ${label.toLowerCase()} on Elevare.${suffix}`;
 }
 
 export function buildMarketplaceProfessionalMetaDescription(professional: ProfessionalProfileRecord) {

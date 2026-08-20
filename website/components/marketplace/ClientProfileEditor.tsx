@@ -350,7 +350,7 @@ export function ClientProfileEditor() {
           <p className="section-copy">
             These preferences help Elevare surface better-fit profiles and give providers more context when you reach out.
           </p>
-          <p className="client-privacy-note"><strong>Your preferences are never publicly listed.</strong></p>
+          <p className="client-privacy-note"><strong>Your preferences are not shown on your public marketplace profile.</strong></p>
         </article>
 
         <article className="panel profile-form-section">
@@ -663,6 +663,10 @@ export function ClientProfileEditor() {
               placeholder="Tell us anything that would help someone understand what you're looking for."
             />
           </label>
+          <p className="form-note">
+            Do not include medical records, account passwords, payment card details, or other highly sensitive
+            information.
+          </p>
           <div className="form-actions">
             <button type="button" className="button button-primary" onClick={handleSave} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Preferences"}

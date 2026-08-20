@@ -12,6 +12,12 @@ export const siteConfig = {
   analytics: {
     googleAnalyticsId: "G-NL9H9SEZJ8",
   },
+  contacts: {
+    business: process.env.NEXT_PUBLIC_BUSINESS_EMAIL ?? "mlitfin@elevarefit.org",
+    support: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "mlitfin@elevarefit.org",
+    privacy: process.env.NEXT_PUBLIC_PRIVACY_EMAIL ?? "mlitfin@elevarefit.org",
+    legal: process.env.NEXT_PUBLIC_LEGAL_EMAIL ?? "mlitfin@elevarefit.org",
+  },
 };
 
 export type ProductName = "Logbook" | "StageLab" | "Elevare";
@@ -165,7 +171,7 @@ export function buildSiteStructuredData() {
       alternateName: siteConfig.name,
       url: siteConfig.url,
       logo: absoluteUrl("/logo_transparent.png"),
-      email: "mlitfin@elevarefit.org",
+      email: siteConfig.contacts.business,
     },
     {
       "@context": "https://schema.org",

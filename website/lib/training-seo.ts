@@ -16,6 +16,22 @@ const COMMON_EXERCISE_PATTERN =
 const LOW_PRIORITY_EXERCISE_PATTERN =
   /\b(with chains|with bands|reverse band|guillotine|medium grip|from deficit|to a bench|plate movers|behind the head|lying against an incline|palms-down|palms-up)\b/i;
 
+const CATEGORY_META_DESCRIPTIONS: Record<string, string> = {
+  chest: "Browse chest exercises for pressing strength and muscle growth, with clear form guidance, muscles worked, useful variations, and related workouts.",
+  back: "Explore back exercises for rows, pulldowns, lats, and upper-back strength, with form guidance, variations, related workouts, and practical training tools.",
+  legs: "Find leg exercises for quads, hamstrings, calves, and lower-body strength, including clear instructions, alternatives, and related workout templates.",
+  shoulders: "Browse shoulder exercises for pressing strength and delt development, with setup guidance, common mistakes, variations, and related workouts.",
+  arms: "Explore direct biceps and triceps exercises with clear form guidance, useful variations, common mistakes, and workout templates for arm training.",
+  core: "Find core exercises for bracing, trunk control, and abdominal training, with instructions, variations, related workouts, and practical fitness tools.",
+  glutes: "Browse glute exercises for hip extension, lower-body strength, and muscle development, with form guidance, alternatives, and related workouts.",
+  barbell: "Explore barbell exercises for measurable strength and muscle progression, with technique guidance, variations, related workouts, and training tools.",
+  dumbbell: "Browse dumbbell exercises for home and gym training, including presses, rows, lunges, curls, form guidance, and related workout templates.",
+  cable: "Find cable exercises for controlled strength and accessory work, with setup guidance, muscles worked, useful variations, and related workouts.",
+  machine: "Explore machine exercises for stable, repeatable strength training, with form guidance, target muscles, alternatives, and related workout templates.",
+  bodyweight: "Browse bodyweight exercises for home, travel, and beginner-friendly training, with clear instructions, progressions, and related workouts.",
+  kettlebell: "Find kettlebell exercises for strength, conditioning, and full-body training, with technique guidance, variations, and related workout templates.",
+};
+
 export const POPULAR_EXERCISE_SLUGS = [
   "barbell-bench-press-medium-grip",
   "dumbbell-bench-press",
@@ -543,6 +559,25 @@ export function getExerciseCategoryContent(category: ExerciseCategoryInfo): Exer
     relatedToolSlugs: ["calorie-calculator", "protein-calculator", "macro-calculator"],
     featuredExerciseSlugs: [],
   };
+}
+
+export function getExerciseCategoryMetaDescription(category: ExerciseCategoryInfo) {
+  return CATEGORY_META_DESCRIPTIONS[category.slug]
+    ?? `Browse ${category.label.toLowerCase()} exercises with clear form guidance, muscles worked, useful variations, and related workout templates.`;
+}
+
+export function buildExerciseMetadataTitle(exercise: ExerciseRecord) {
+  const name = exercise.name.trim().replace(/\s+exercise$/i, "");
+
+  if (name.length <= 36) {
+    return `${name}: Form & Muscles Worked`;
+  }
+
+  if (name.length <= 52) {
+    return `${name}: Form Guide`;
+  }
+
+  return name;
 }
 
 export function getExerciseContentScore(exercise: ExerciseRecord) {

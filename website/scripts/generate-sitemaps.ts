@@ -1,20 +1,37 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getAllCategories, getAllPosts } from "../lib/blog.ts";
+import {
+  getAllCategories,
+  getAllPosts,
+  getPostsByCategory,
+  isBlogCategoryIndexable,
+} from "../lib/blog.ts";
 import { MARKETPLACE_CATEGORY_SEEDS } from "../lib/marketplace-categories.ts";
 import type { MarketplaceSnapshot, ProfessionalProfileRecord } from "../lib/marketplace-types.ts";
 import {
   getIndexableMarketplaceProfessionals,
   isMarketplaceCategoryIndexable,
 } from "../lib/marketplace-seo.ts";
-import { buildRestaurantSummaries, getPopularRestaurants, type NutritionProduct } from "../lib/nutrition-data.ts";
+import {
+  applyNutritionVariant,
+  buildRestaurantSummaries,
+  getFastFoodItems,
+  getPopularRestaurants,
+  type NutritionProduct,
+} from "../lib/nutrition-data.ts";
+import {
+  isNutritionVariantIndexable,
+  restaurantNutritionViews,
+  fastFoodNutritionViews,
+} from "../lib/nutrition-pages.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
-  deduplicateExercises,
+  canonicalizeTrainingSnapshot,
   EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
   WORKOUT_GOALS,
   type ExerciseRecord,
+  type TrainingDataSnapshot,
   type WorkoutTemplateRecord,
 } from "../lib/training-data.ts";
 import {
@@ -26,7 +43,7 @@ import { getCalculatorPath, tools } from "../lib/tools.ts";
 
 type SitemapEntry = {
   url: string;
-  lastModified: string;
+  lastModified?: string;
   priority: IndexPriority;
 };
 
@@ -36,7 +53,6 @@ const sitemapsDir = path.join(publicDir, "sitemaps");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
 const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
-const buildDate = new Date().toISOString();
 
 const staticSiteRoutes = [
   "/",
@@ -44,11 +60,9 @@ const staticSiteRoutes = [
   "/logbook",
   "/stagelab",
   "/elevare",
-  "/privacy-policy.html",
-  "/terms-of-service.html",
+  "/privacy-policy/",
+  "/terms-of-service/",
 ] as const;
-const restaurantNutritionViews = ["high-protein", "low-calorie", "under-500-calories", "low-carb"] as const;
-const fastFoodNutritionViews = ["high-protein", "low-calorie", "under-500-calories"] as const;
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
   try {
@@ -69,18 +83,32 @@ function escapeXml(value: string) {
 
 function xmlDate(value: string | null | undefined) {
   if (!value) {
-    return buildDate;
+    return undefined;
   }
 
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? buildDate : parsed.toISOString();
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+function latestContentDate(values: Array<string | null | undefined>) {
+  const dates = values
+    .map((value) => xmlDate(value))
+    .filter((value): value is string => value != null)
+    .sort();
+
+  return dates.at(-1);
 }
 
 function buildUrlset(entries: SitemapEntry[]) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries
     .map(
-      (entry) =>
-        `  <url>\n    <loc>${escapeXml(entry.url)}</loc>\n    <lastmod>${entry.lastModified}</lastmod>\n  </url>`,
+      (entry) => {
+        const lastModified = entry.lastModified
+          ? `\n    <lastmod>${entry.lastModified}</lastmod>`
+          : "";
+
+        return `  <url>\n    <loc>${escapeXml(entry.url)}</loc>${lastModified}\n  </url>`;
+      },
     )
     .join("\n")}\n</urlset>\n`;
 }
@@ -89,12 +117,12 @@ function buildSitemapIndex(sitemapNames: string[]) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapNames
     .map(
       (name) =>
-        `  <sitemap>\n    <loc>${escapeXml(absoluteUrl(`/sitemaps/${name}.xml`))}</loc>\n    <lastmod>${buildDate}</lastmod>\n  </sitemap>`,
+        `  <sitemap>\n    <loc>${escapeXml(absoluteUrl(`/sitemaps/${name}.xml`))}</loc>\n  </sitemap>`,
     )
     .join("\n")}\n</sitemapindex>\n`;
 }
 
-function toSitemapEntry(pathname: string, lastModified = buildDate, priority: IndexPriority = "standard_index"): SitemapEntry {
+function toSitemapEntry(pathname: string, lastModified?: string, priority: IndexPriority = "standard_index"): SitemapEntry {
   return {
     url: absoluteUrl(normalizeSitePath(pathname)),
     lastModified,
@@ -106,20 +134,36 @@ function keepIndexableEntries(entries: SitemapEntry[]) {
   return entries.filter((entry) => entry.priority !== "low_priority");
 }
 
+function assertUniqueSitemapEntries(sitemaps: Array<{ name: string; entries: SitemapEntry[] }>) {
+  const ownerByUrl = new Map<string, string>();
+
+  for (const sitemap of sitemaps) {
+    for (const entry of keepIndexableEntries(sitemap.entries)) {
+      const existingOwner = ownerByUrl.get(entry.url);
+
+      if (existingOwner) {
+        throw new Error(`Duplicate sitemap URL ${entry.url} appears in ${existingOwner} and ${sitemap.name}.`);
+      }
+
+      ownerByUrl.set(entry.url, sitemap.name);
+    }
+  }
+}
+
 function writeFileSafely(filePath: string, contents: string) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, contents);
 }
 
 function buildSiteEntries() {
-  return staticSiteRoutes.map((route) => toSitemapEntry(route, buildDate, "priority_index"));
+  return staticSiteRoutes.map((route) => toSitemapEntry(route, undefined, "priority_index"));
 }
 
 function buildCalculatorEntries() {
   return [
-    toSitemapEntry("/calculators", buildDate, "priority_index"),
-    toSitemapEntry("/tools/workout-generator", buildDate, "priority_index"),
-    ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), buildDate, "priority_index")),
+    toSitemapEntry("/calculators", undefined, "priority_index"),
+    toSitemapEntry("/tools/workout-generator", undefined, "priority_index"),
+    ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), undefined, "priority_index")),
   ];
 }
 
@@ -128,50 +172,74 @@ function buildExerciseEntries(exercises: ExerciseRecord[]) {
     toSitemapEntry(`/exercises/${exercise.slug}`, xmlDate(exercise.updatedAt), getExerciseIndexPriority(exercise)),
   );
   const categoryPages = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) =>
-    toSitemapEntry(`/exercises/${category.slug}`, buildDate, "priority_index"),
+    toSitemapEntry(`/exercises/${category.slug}`, undefined, "priority_index"),
   );
 
-  return [toSitemapEntry("/exercises", buildDate, "priority_index"), ...categoryPages, ...exercisePages];
+  return [toSitemapEntry("/exercises", undefined, "priority_index"), ...categoryPages, ...exercisePages];
 }
 
 function buildWorkoutEntries(workouts: WorkoutTemplateRecord[]) {
   const workoutPages = workouts.map((workout) =>
     toSitemapEntry(`/workouts/${workout.slug}`, xmlDate(workout.updatedAt), getWorkoutIndexPriority(workout)),
   );
-  const goalPages = WORKOUT_GOALS.map((goal) => toSitemapEntry(`/workouts/${goal.slug}`, buildDate, "priority_index"));
+  const goalPages = WORKOUT_GOALS.map((goal) => toSitemapEntry(`/workouts/${goal.slug}`, undefined, "priority_index"));
 
-  return [toSitemapEntry("/workouts", buildDate, "priority_index"), ...goalPages, ...workoutPages];
+  return [toSitemapEntry("/workouts", undefined, "priority_index"), ...goalPages, ...workoutPages];
 }
 
 function buildNutritionEntries(products: NutritionProduct[]) {
   const restaurants = buildRestaurantSummaries(products);
   const popularRestaurants = getPopularRestaurants(restaurants);
-  const popularRestaurantSlugs = new Set(popularRestaurants.map((restaurant) => restaurant.slug));
+  const itemsByRestaurant = new Map<string, NutritionProduct[]>();
 
-  const restaurantPages = popularRestaurants.map((restaurant) =>
-    toSitemapEntry(
+  for (const product of products) {
+    const restaurant = restaurants.find((candidate) => candidate.name === product.restaurantName);
+
+    if (restaurant) {
+      itemsByRestaurant.set(restaurant.slug, [...(itemsByRestaurant.get(restaurant.slug) ?? []), product]);
+    }
+  }
+
+  const restaurantPages = popularRestaurants.map((restaurant) => {
+    const restaurantItems = itemsByRestaurant.get(restaurant.slug) ?? [];
+
+    return toSitemapEntry(
       `/nutrition/${restaurant.slug}`,
-      buildDate,
+      latestContentDate(restaurantItems.map((item) => item.updatedAt)),
       "priority_index",
-    ),
-  );
+    );
+  });
 
   const variantPages = popularRestaurants.flatMap((restaurant) =>
-    restaurantNutritionViews.map((view) =>
-      toSitemapEntry(
-        `/nutrition/${restaurant.slug}/${view}`,
-        buildDate,
-        popularRestaurantSlugs.has(restaurant.slug) ? "standard_index" : "low_priority",
-      ),
-    ),
+    restaurantNutritionViews.flatMap((view) => {
+      const variantItems = applyNutritionVariant(itemsByRestaurant.get(restaurant.slug) ?? [], view);
+
+      return isNutritionVariantIndexable(variantItems)
+        ? [toSitemapEntry(
+            `/nutrition/${restaurant.slug}/${view}`,
+            latestContentDate(variantItems.map((item) => item.updatedAt)),
+            "standard_index",
+          )]
+        : [];
+    }),
   );
 
-  const fastFoodPages = fastFoodNutritionViews.map((view) =>
-    toSitemapEntry(`/nutrition/fast-food/${view}`, buildDate, "priority_index"),
-  );
+  const fastFoodItems = getFastFoodItems(products);
+  const fastFoodPages = fastFoodNutritionViews.flatMap((view) => {
+    const variantItems = applyNutritionVariant(fastFoodItems, view);
+
+    return isNutritionVariantIndexable(variantItems)
+      ? [toSitemapEntry(
+          `/nutrition/fast-food/${view}`,
+          latestContentDate(variantItems.map((item) => item.updatedAt)),
+          "priority_index",
+        )]
+      : [];
+  });
 
   return [
-    toSitemapEntry("/nutrition", buildDate, "priority_index"),
+    toSitemapEntry("/nutrition", latestContentDate(products.map((item) => item.updatedAt)), "priority_index"),
+    toSitemapEntry("/nutrition/methodology", undefined, "standard_index"),
     ...restaurantPages,
     ...variantPages,
     ...fastFoodPages,
@@ -180,12 +248,15 @@ function buildNutritionEntries(products: NutritionProduct[]) {
 
 function buildBlogEntries() {
   const posts = getAllPosts();
-  const categoryPages = getAllCategories().map((category) =>
-    toSitemapEntry(`/blog/category/${category}`, buildDate, "standard_index"),
-  );
+  const categoryPages = getAllCategories()
+    .filter((category) => isBlogCategoryIndexable(category))
+    .map((category) => {
+      const categoryPosts = getPostsByCategory(category);
+      return toSitemapEntry(`/blog/category/${category}`, xmlDate(categoryPosts[0]?.date), "standard_index");
+    });
 
   return [
-    toSitemapEntry("/blog", buildDate, "priority_index"),
+    toSitemapEntry("/blog", xmlDate(posts[0]?.date), "priority_index"),
     ...categoryPages,
     ...posts.map((post) => toSitemapEntry(`/blog/${post.slug}`, xmlDate(post.date), "standard_index")),
   ];
@@ -209,26 +280,25 @@ function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
 
   const publicProfessionals = getIndexableMarketplaceProfessionals(snapshot.professionals);
   const profileEntries = publicProfessionals.map((professional: ProfessionalProfileRecord) =>
-    toSitemapEntry(`/professionals/${professional.profileSlug}`, professional.updatedAt ?? buildDate, "standard_index"),
+    toSitemapEntry(`/professionals/${professional.profileSlug}`, xmlDate(professional.updatedAt), "standard_index"),
   );
   const categoryEntries = categories
     .filter((category) => isMarketplaceCategoryIndexable(category, publicProfessionals))
     .map((category) =>
-      toSitemapEntry(`/professionals/${category.slug}`, buildDate, "priority_index"),
+      toSitemapEntry(`/professionals/${category.slug}`, undefined, "priority_index"),
     );
 
-  return [toSitemapEntry("/professionals", buildDate, "priority_index"), ...categoryEntries, ...profileEntries];
+  return [toSitemapEntry("/professionals", undefined, "priority_index"), ...categoryEntries, ...profileEntries];
 }
 
 function main() {
-  const trainingSnapshot = readJsonFile<{
-    exercises: ExerciseRecord[];
-    workoutTemplates: WorkoutTemplateRecord[];
-  }>(trainingDataPath, {
+  const trainingSnapshot = canonicalizeTrainingSnapshot(readJsonFile<TrainingDataSnapshot>(trainingDataPath, {
+    generatedAt: null,
     exercises: [],
     workoutTemplates: [],
-  });
-  const deduplicatedExercises = deduplicateExercises(trainingSnapshot.exercises);
+    workoutTemplateExercises: [],
+    workoutRedirects: [],
+  }));
 
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
   const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
@@ -240,12 +310,14 @@ function main() {
   const sitemapFiles: Array<{ name: string; entries: SitemapEntry[] }> = [
     { name: "site", entries: buildSiteEntries() },
     { name: "calculators", entries: buildCalculatorEntries() },
-    { name: "exercises", entries: buildExerciseEntries(deduplicatedExercises) },
+    { name: "exercises", entries: buildExerciseEntries(trainingSnapshot.exercises) },
     { name: "workouts", entries: buildWorkoutEntries(trainingSnapshot.workoutTemplates) },
     { name: "nutrition", entries: buildNutritionEntries(nutritionProducts) },
     { name: "blog", entries: buildBlogEntries() },
     { name: "professionals", entries: buildMarketplaceEntries(marketplaceSnapshot) },
   ];
+
+  assertUniqueSitemapEntries(sitemapFiles);
 
   for (const sitemap of sitemapFiles) {
     writeFileSafely(path.join(sitemapsDir, `${sitemap.name}.xml`), buildUrlset(keepIndexableEntries(sitemap.entries)));

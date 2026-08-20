@@ -1,4 +1,4 @@
-project_id = "yozfzsudbcqjttepjnyg"
+project_id = "elevare-marketplace-local"
 
 [functions.resend-waitlist]
 verify_jwt = false

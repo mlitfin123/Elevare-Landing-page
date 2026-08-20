@@ -18,7 +18,7 @@ export default async function ElevarePage() {
         <div className="eyebrow">Elevare</div>
         <h1>Find the right support for your goals.</h1>
         <p>
-          Elevare is the marketplace layer inside ElevareFit for browsing reviewed profiles, saving the people
+          Elevare is the marketplace layer inside ElevareFit for browsing published profiles, saving the people
           you want to compare, and sending lightweight consultation requests when the fit looks right.
         </p>
         <div className="button-row">
@@ -66,7 +66,7 @@ export default async function ElevarePage() {
           <article className="panel">
             <span className="stat-label">How it works</span>
             <h3>Discover, compare, and connect.</h3>
-            <p>Browse reviewed profiles, save promising options, and send consultation requests when the fit looks right.</p>
+            <p>Browse published profiles, save promising options, and send consultation requests when the fit looks right.</p>
           </article>
         </div>
       </section>

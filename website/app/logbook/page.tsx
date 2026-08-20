@@ -1,42 +1,94 @@
 import Image from "next/image";
 import { Callout } from "@/components/Callout";
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
+import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
-import { buildMetadata, productConfig } from "@/lib/site";
+import { absoluteUrl, buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
-  title: "Logbook",
+  title: "Logbook: Free Workout & Fitness Tracker",
   description:
-    "Logbook is the ElevareFit tracking app for nutrition, workouts, body weight, and progress visibility.",
+    "Track workouts, nutrition, macros, bodyweight, and progress with Logbook, a focused fitness tracker available free on iOS and Android.",
   pathname: "/logbook",
 });
+
+const faqs = [
+  {
+    question: "What can I track in Logbook?",
+    answer: "Logbook supports workout logging, exercise history, nutrition and macro tracking, bodyweight, and progress review in one fitness-tracking workflow.",
+  },
+  {
+    question: "Is Logbook free to use?",
+    answer: "Logbook is positioned as a free fitness tracker and can be downloaded from the Apple App Store and Google Play.",
+  },
+  {
+    question: "Can beginners use Logbook?",
+    answer: "Yes. Logbook is designed to keep daily tracking understandable for beginners while still giving experienced lifters and athletes a consistent record of their work.",
+  },
+  {
+    question: "Does Logbook create my training or nutrition plan?",
+    answer: "Logbook helps you record and review what you do. Its tracking data is informational and does not replace individualized medical, dietetic, or professional coaching advice.",
+  },
+  {
+    question: "Where can I download Logbook?",
+    answer: "Logbook is available for supported iOS devices on the App Store and Android devices on Google Play.",
+  },
+];
+
+function buildLogbookStructuredData() {
+  const storeLinks = productConfig.Logbook.storeLinks?.map((link) => link.href) ?? [];
+
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "MobileApplication",
+      "@id": `${absoluteUrl("/logbook")}#app`,
+      name: "Logbook",
+      description: "A free workout, nutrition, bodyweight, and fitness progress tracker.",
+      applicationCategory: "HealthApplication",
+      operatingSystem: "iOS, Android",
+      url: absoluteUrl("/logbook"),
+      image: absoluteUrl("/logbook-logo.png"),
+      downloadUrl: storeLinks,
+      sameAs: storeLinks,
+      publisher: { "@id": `${absoluteUrl("/")}#organization` },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: { "@type": "Answer", text: faq.answer },
+      })),
+    },
+  ];
+}
 
 export default function LogbookPage() {
   const logbook = productConfig.Logbook;
 
   return (
     <div className="container">
+      <StructuredData data={buildLogbookStructuredData()} />
+
       <section className="hero product-hero">
         <div className="product-hero-copy">
-          <div className="eyebrow">Logbook</div>
-          <h1>Track workouts without turning tracking into another job.</h1>
+          <div className="eyebrow">Logbook fitness tracker</div>
+          <h1>Track workouts, nutrition, and progress without the clutter.</h1>
           <p>
-            Logbook is the main tracking app on ElevareFit, built to make training, nutrition, and progress
-            easier to record, review, and repeat with consistency.
+            Logbook gives you one focused place to record training, food, macros, bodyweight, and the progress
+            behind your goals. It is built to make consistency easier, not turn tracking into another job.
           </p>
           <div className="button-row">
             <ProductCtaButtons product="Logbook" context="logbook_hero" />
             <TrackedLink
               className="button button-secondary"
-              href="/blog"
+              href="/calculators"
               eventName="cta_click"
-              eventParams={{
-                cta_name: "Read the blog",
-                cta_context: "logbook_hero",
-                product: "Logbook",
-              }}
+              eventParams={{ cta_name: "Explore free calculators", cta_context: "logbook_hero", product: "Logbook" }}
             >
-              Read the blog
+              Explore free calculators
             </TrackedLink>
           </div>
         </div>
@@ -45,9 +97,10 @@ export default function LogbookPage() {
           <div className="product-hero-logo-frame">
             <Image
               src="/logbook-logo.png"
-              alt="Logbook app logo"
+              alt="Logbook fitness tracker app logo"
               width={360}
               height={360}
+              sizes="(max-width: 720px) 240px, 360px"
               className="product-hero-logo product-hero-logo-square"
               priority
             />
@@ -57,58 +110,98 @@ export default function LogbookPage() {
 
       <section className="section">
         <div className="grid-3">
-          <article className="panel">
-            <span className="stat-label">Role</span>
-            <h3>Daily training visibility</h3>
-            <p>Built for workout logging, habit review, and more consistent training decisions.</p>
-          </article>
-
-          <article className="panel">
-            <span className="stat-label">Ideal user</span>
-            <h3>People who train regularly</h3>
-            <p>Lifters, athletes, and high-consistency users who want cleaner data on what they actually do.</p>
-          </article>
-
-          <article className="panel">
-            <span className="stat-label">Status</span>
-            <h3>{logbook.status}</h3>
-            <p>Available now on the App Store and Google Play through the wider ElevareFit platform.</p>
-          </article>
+          <article className="panel"><span className="stat-label">Workouts</span><h3>Keep a reliable training history</h3><p>Record exercises, sets, reps, and performance so each session has context from the one before it.</p></article>
+          <article className="panel"><span className="stat-label">Nutrition</span><h3>See calories and macros clearly</h3><p>Log food and review calories, protein, carbohydrates, and fat against the targets you are trying to follow.</p></article>
+          <article className="panel"><span className="stat-label">Availability</span><h3>{logbook.status}</h3><p>Download Logbook from the App Store or Google Play and keep your training record with you.</p></article>
         </div>
       </section>
 
-      <Callout title="Where Logbook fits">
+      <section className="section trust-layout">
+        <div className="trust-list">
+          <article className="panel">
+            <div className="eyebrow">A simple fitness tracker</div>
+            <h2>Your log should make the next decision easier.</h2>
+            <p>
+              Training and nutrition are difficult to evaluate when the details only live in memory. Logbook helps
+              turn daily effort into a record you can review. Instead of guessing whether a lift improved, whether
+              protein was consistent, or whether bodyweight is truly trending, you can look at the data you entered
+              and make the next decision from a clearer baseline.
+            </p>
+            <p>
+              The goal is not perfect tracking. It is a repeatable system that is simple enough to use on ordinary
+              days. A useful log makes patterns easier to notice without demanding a complicated spreadsheet or a
+              different app for every part of your routine.
+            </p>
+          </article>
+          <article className="panel">
+            <h2>Track bodyweight and progress over time</h2>
+            <p>
+              Daily weight can move for reasons that have little to do with body-fat change. Keeping a longer record
+              makes it easier to focus on the trend. Logbook connects that progress view with the workouts and
+              nutrition habits that influence it, so the number is not isolated from the work behind it.
+            </p>
+          </article>
+        </div>
+
+        <figure className="product-visual-card panel">
+          <div className="product-visual-frame">
+            <Image
+              src="/blog-posts/how-many-calories-should-i-eat-to-lose-weight/featured.webp"
+              alt="Illustration of calorie goals, a balanced meal, and a fitness tracking screen"
+              width={1200}
+              height={800}
+              sizes="(max-width: 900px) 92vw, 38vw"
+              loading="lazy"
+            />
+          </div>
+          <figcaption className="product-caption">
+            <strong>Calories are a starting point, not a verdict</strong>
+            <span>Use a consistent record to compare the plan with what happens over time.</span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section className="section">
+        <div className="section-heading"><div><div className="eyebrow">What you can track</div><h2>One record for the work you are already doing.</h2></div></div>
+        <div className="grid-3">
+          <article className="panel"><h3>Workouts and exercises</h3><p>Keep your training sessions organized and review previous performance before you repeat a movement.</p></article>
+          <article className="panel"><h3>Food, calories, and macros</h3><p>Build awareness around your intake without assuming that healthy food, one meal, or one estimate tells the full story.</p></article>
+          <article className="panel"><h3>Bodyweight and trends</h3><p>Compare changes over time instead of letting one high or low weigh-in decide whether your plan is working.</p></article>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-heading"><div><div className="eyebrow">How Logbook works</div><h2>Start small and build a usable history.</h2></div></div>
+        <div className="grid-3">
+          <article className="panel"><span className="stat-label">01</span><h3>Set your targets</h3><p>Choose the training and nutrition targets that match the plan you are following.</p></article>
+          <article className="panel"><span className="stat-label">02</span><h3>Log the day</h3><p>Record workouts, food, macros, and bodyweight while the details are still easy to remember.</p></article>
+          <article className="panel"><span className="stat-label">03</span><h3>Review the trend</h3><p>Use the history to spot patterns, measure consistency, and decide what deserves to change.</p></article>
+        </div>
+      </section>
+
+      <Callout title="Built for different fitness goals">
         <p>
-          Logbook focuses on the day-to-day habit of training. It helps you capture the work itself so your
-          nutrition, workouts, and progress are easier to review from a clean baseline.
+          Logbook can support people focused on general fitness, strength, physique improvement, bodyweight change,
+          or simply building a more consistent routine. It records the plan and results you enter; it does not make
+          medical diagnoses or replace individualized advice from a qualified professional.
         </p>
         <div className="hero-actions">
-          <TrackedLink
-            className="button button-secondary"
-            href="/exercises"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Browse exercises",
-              cta_context: "logbook_callout",
-              product: "Logbook",
-            }}
-          >
-            Browse exercises
-          </TrackedLink>
-          <TrackedLink
-            className="button button-secondary"
-            href="/workouts"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Browse workout templates",
-              cta_context: "logbook_callout",
-              product: "Logbook",
-            }}
-          >
-            Browse workout templates
-          </TrackedLink>
+          <TrackedLink className="button button-secondary" href="/exercises" eventName="cta_click" eventParams={{ cta_name: "Browse exercises", cta_context: "logbook_callout", product: "Logbook" }}>Browse exercises</TrackedLink>
+          <TrackedLink className="button button-secondary" href="/workouts" eventName="cta_click" eventParams={{ cta_name: "Browse workout templates", cta_context: "logbook_callout", product: "Logbook" }}>Browse workout templates</TrackedLink>
         </div>
       </Callout>
+
+      <section className="section" aria-labelledby="logbook-faqs">
+        <div className="section-heading"><div><div className="eyebrow">Frequently asked questions</div><h2 id="logbook-faqs">Logbook questions</h2></div></div>
+        <div className="tool-faq-grid">
+          {faqs.map((faq) => <article className="tool-faq-card panel" key={faq.question}><h3>{faq.question}</h3><p>{faq.answer}</p></article>)}
+        </div>
+      </section>
+
+      <section className="section final-card panel">
+        <div><div className="eyebrow">Start tracking</div><h2>Build a fitness record you can actually use.</h2></div>
+        <ProductCtaButtons product="Logbook" context="logbook_final" />
+      </section>
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Mono, DM_Sans } from "next/font/google";
-import Script from "next/script";
+import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { Footer } from "@/components/Footer";
-import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
 import { StructuredData } from "@/components/StructuredData";
 import { buildSiteStructuredData, siteConfig } from "@/lib/site";
@@ -46,24 +45,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${dmSans.variable} ${dmMono.variable}`}>
         <StructuredData data={buildSiteStructuredData()} />
-        {googleAnalyticsId ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
-                gtag('js', new Date());
-                gtag('config', '${googleAnalyticsId}', { send_page_view: false });
-              `}
-            </Script>
-          </>
-        ) : null}
-        {googleAnalyticsId ? <GoogleAnalyticsPageTracker measurementId={googleAnalyticsId} /> : null}
+        {googleAnalyticsId ? <AnalyticsConsent measurementId={googleAnalyticsId} /> : null}
         <div className="site-shell">
           <Header />
           <main className="page-main">{children}</main>

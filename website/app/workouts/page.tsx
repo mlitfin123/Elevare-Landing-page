@@ -1,4 +1,5 @@
 import { StructuredData } from "@/components/StructuredData";
+import { TrainingDisclaimer } from "@/components/ContentDisclaimer";
 import { TrainingLogbookCta } from "@/components/training/TrainingLogbookCta";
 import { WorkoutDirectory } from "@/components/training/WorkoutDirectory";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -157,6 +158,10 @@ export default async function WorkoutsIndexPage() {
           </article>
         </section>
       )}
+
+      <section className="section">
+        <TrainingDisclaimer />
+      </section>
 
       <TrainingLogbookCta
         title="Want to track your workouts for free in Logbook?"

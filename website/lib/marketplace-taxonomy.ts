@@ -575,7 +575,7 @@ export function buildMarketplaceCategoryFaqs(publicSlug: string | null | undefin
     },
     {
       question: `Can I browse ${providerSingular} profiles before creating an account?`,
-      answer: "Yes. The public directory and reviewed profiles are open to browse before you sign in.",
+      answer: "Yes. The public directory and published profiles are open to browse before you sign in.",
     },
     {
       question: `Do all ${providerPlural} work the same way?`,

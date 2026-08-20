@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Next.js content hub for ElevareFit tools, apps, workouts, exercises, and nutrition resources.",
   "scripts": {
-    "prebuild": "node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/generate-marketplace-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
+    "prebuild": "npm run legal:verify && node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/canonicalize-training-data.ts && node --experimental-strip-types ./scripts/generate-marketplace-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
@@ -13,7 +13,10 @@
     "lint": "eslint .",
     "test": "node --test --experimental-strip-types ./tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "seo:audit": "node --experimental-strip-types ./scripts/seo-audit.ts"
+    "seo:audit": "node --experimental-strip-types ./scripts/seo-audit.ts",
+    "images:optimize": "node ./scripts/optimize-seo-images.mjs",
+    "legal:archive": "node --experimental-strip-types ./scripts/generate-legal-archive.ts --initialize",
+    "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts"
   },
   "keywords": [
     "nextjs",

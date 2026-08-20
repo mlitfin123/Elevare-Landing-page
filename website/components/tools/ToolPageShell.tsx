@@ -1,6 +1,7 @@
 import { RelatedTools } from "@/components/tools/RelatedTools";
 import { StructuredData } from "@/components/StructuredData";
 import { ToolLogbookCta } from "@/components/tools/ToolLogbookCta";
+import { EstimateDisclaimer } from "@/components/ContentDisclaimer";
 import { absoluteUrl } from "@/lib/site";
 import { getCalculatorPath, toolMap, TOOL_GROUPS, type ToolSlug } from "@/lib/tools";
 
@@ -108,10 +109,7 @@ export function ToolPageShell({ toolSlug, children }: ToolPageShellProps) {
       </section>
 
       <section className="section">
-        <article className="callout tool-disclaimer-card">
-          <span className="meta-pill">Disclaimer</span>
-          <p>These estimates are for educational purposes only and are not medical advice.</p>
-        </article>
+        <EstimateDisclaimer />
       </section>
 
       <RelatedTools currentTool={toolSlug} />

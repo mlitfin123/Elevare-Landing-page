@@ -223,7 +223,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             <article className="proof-card">
               <span className="proof-label">Marketplace status</span>
               <div className="proof-value">{formatApprovalStatusLabel(professional.approvalStatus)}</div>
-              <p className="proof-copy">Only reviewed and active profiles are listed publicly.</p>
+              <p className="proof-copy">Only profiles reviewed for marketplace eligibility and currently active are listed publicly.</p>
             </article>
             <article className="proof-card">
               <span className="proof-label">Identity</span>
@@ -313,9 +313,9 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             <InquiryForm professional={professional} />
             <ReportProfileForm professional={professional} />
             <div className="form-note">
-              Elevare is a marketplace, not this professional&apos;s employer or service provider. Profile approval is
-              not an endorsement or a guarantee of qualifications, safety, or results. Confirm current credentials,
-              licensing, insurance, and suitability before engaging services.
+              Professionals are independent service providers and are not employees or agents of Elevare Fit LLC.
+              Profile approval does not constitute an endorsement or guarantee of services. Confirm current
+              credentials, licensing, insurance, and suitability before engaging a Professional.
             </div>
           </article>
         </div>

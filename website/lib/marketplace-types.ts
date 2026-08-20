@@ -42,7 +42,6 @@ export type ProfessionalServiceRecord = {
 
 export type ProfessionalProfileRecord = {
   id: string;
-  userId: string;
   displayName: string;
   profileSlug: string;
   profilePhotoUrl: string | null;

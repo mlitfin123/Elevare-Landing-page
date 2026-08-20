@@ -5,7 +5,8 @@ import { ArticleLayout } from "@/components/ArticleLayout";
 import { ProductCTA } from "@/components/ProductCTA";
 import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { StructuredData } from "@/components/StructuredData";
-import { getAllPosts, getBlogFeaturedImagePath, getPostBySlug } from "@/lib/blog";
+import { TrackedLink } from "@/components/TrackedLink";
+import { getAdjacentPosts, getAllPosts, getBlogFeaturedImagePath, getPostBySlug } from "@/lib/blog";
 import { absoluteUrl, buildMetadata, siteConfig } from "@/lib/site";
 import { getContextualMarketplaceLink } from "@/lib/marketplace-seo";
 import { getMDXComponents } from "@/mdx-components";
@@ -126,6 +127,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const components = getMDXComponents({});
   const structuredData = buildBlogStructuredData(post);
   const marketplaceLink = getContextualMarketplaceLink(post.category, post.product);
+  const prepNavigation = post.category === "prep-files" ? getAdjacentPosts(post) : null;
 
   return (
     <div className="container">
@@ -142,6 +144,72 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           }}
         />
       </ArticleLayout>
+
+      {prepNavigation ? (
+        <section className="section" aria-labelledby="prep-files-navigation">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">Continue the series</div>
+              <h2 id="prep-files-navigation">More Prep Files</h2>
+            </div>
+          </div>
+
+          <div className="grid-2">
+            {prepNavigation.previous ? (
+              <TrackedLink
+                className="panel link-panel"
+                href={`/blog/${prepNavigation.previous.slug}`}
+                eventName="article_click"
+                eventParams={{
+                  article_slug: prepNavigation.previous.slug,
+                  source_page: `prep_files_previous_${post.slug}`,
+                }}
+              >
+                <span className="stat-label">Previous</span>
+                <h3>{prepNavigation.previous.title}</h3>
+                <p>{prepNavigation.previous.description}</p>
+              </TrackedLink>
+            ) : null}
+
+            {prepNavigation.next ? (
+              <TrackedLink
+                className="panel link-panel"
+                href={`/blog/${prepNavigation.next.slug}`}
+                eventName="article_click"
+                eventParams={{
+                  article_slug: prepNavigation.next.slug,
+                  source_page: `prep_files_next_${post.slug}`,
+                }}
+              >
+                <span className="stat-label">Next</span>
+                <h3>{prepNavigation.next.title}</h3>
+                <p>{prepNavigation.next.description}</p>
+              </TrackedLink>
+            ) : null}
+          </div>
+
+          {prepNavigation.related.length > 0 ? (
+            <div className="related-links-block">
+              <h3>Related Prep Files</h3>
+              <div className="related-links-list">
+                {prepNavigation.related.map((relatedPost) => (
+                  <TrackedLink
+                    key={relatedPost.slug}
+                    href={`/blog/${relatedPost.slug}`}
+                    eventName="article_click"
+                    eventParams={{
+                      article_slug: relatedPost.slug,
+                      source_page: `prep_files_related_${post.slug}`,
+                    }}
+                  >
+                    {relatedPost.title}
+                  </TrackedLink>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {!post.hasInlineProductCTA ? <ProductCTA product={post.product} context={`blog_post_${post.slug}`} /> : null}
       <MarketplaceSupportCta

@@ -325,10 +325,11 @@ export default async function HomePage() {
               <span className="proof-label">Product preview</span>
               <div className="product-visual-frame">
                 <Image
-                  src="/blog-posts/how-many-calories-should-i-eat-to-lose-weight/featured.png"
+                  src="/blog-posts/how-many-calories-should-i-eat-to-lose-weight/featured.webp"
                   alt="Logbook product visual showing calorie tracking and daily targets"
-                  width={1536}
-                  height={1024}
+                  width={1200}
+                  height={800}
+                  sizes="(max-width: 900px) 92vw, 38vw"
                 />
               </div>
               <div className="product-caption">
@@ -424,7 +425,7 @@ export default async function HomePage() {
           <div className="eyebrow">Elevare marketplace</div>
           <h2 className="section-title">Find support or join as a pro.</h2>
           <p className="section-copy">
-            Elevare is the marketplace layer for browsing reviewed profiles, saving good-fit options, and sending
+            Elevare is the marketplace layer for browsing published profiles, saving good-fit options, and sending
             consultation requests without turning discovery into guesswork.
           </p>
         </div>

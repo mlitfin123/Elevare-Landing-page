@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Terms of Service</title>
+  <meta
+    name="description"
+    content="Read the Elevare terms of service."
+  >
+  <link rel="canonical" href="https://www.elevarefit.org/terms-of-service/">
+  <meta property="og:title" content="Elevare | Terms of Service">
+  <meta property="og:description" content="Read the Elevare terms of service.">
+  <meta property="og:url" content="https://www.elevarefit.org/terms-of-service/">
+  <meta property="og:type" content="website">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07070f;
+      --surface: #0f0f1a;
+      --surface-strong: #161624;
+      --border: #1e1e30;
+      --border-strong: #2a2a3e;
+      --text: #e8e8f4;
+      --muted: #8d90ab;
+      --muted-strong: #5a5a7a;
+      --brand: #4f99a8;
+      --brand-bright: #74c8d6;
+      --brand-line: rgba(116, 200, 214, 0.26);
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --max-width: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(79, 153, 168, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 10%, rgba(116, 200, 214, 0.12), transparent 24%),
+        linear-gradient(180deg, #090914 0%, #07070f 32%, #06060d 100%);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 120px 120px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 90%);
+      opacity: 0.4;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 0;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(7, 7, 15, 0.9), rgba(7, 7, 15, 0.56));
+      border-bottom: 1px solid rgba(42, 42, 62, 0.48);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 14px 24px rgba(79, 153, 168, 0.16));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-word {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      padding-left: 0.32em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .header-links a {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .header-links a:hover {
+      color: var(--text);
+      border-color: rgba(116, 200, 214, 0.18);
+      background: rgba(22, 22, 36, 0.82);
+    }
+
+    .page-shell {
+      padding: 56px 0 28px;
+    }
+
+    .hero-card,
+    .policy-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(22, 22, 36, 0.94), rgba(12, 12, 24, 0.96));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 38px;
+      margin-bottom: 24px;
+    }
+
+    .hero-card::after,
+    .policy-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(140deg, rgba(116, 200, 214, 0.1), transparent 42%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--brand-line);
+    }
+
+    h1 {
+      font-size: clamp(38px, 7vw, 64px);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin-bottom: 18px;
+    }
+
+    .intro {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .policy-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .policy-card {
+      padding: 28px;
+    }
+
+    .policy-card h2 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .policy-card p + p,
+    .policy-card ul {
+      margin-top: 12px;
+    }
+
+    .policy-card ul {
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .policy-card li + li {
+      margin-top: 8px;
+    }
+
+    .policy-card p {
+      color: var(--muted);
+    }
+
+    .site-footer {
+      padding: 0 0 28px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding-top: 22px;
+      border-top: 1px solid rgba(42, 42, 62, 0.86);
+    }
+
+    .footer-copy {
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 720px) {
+      .hero-card,
+      .policy-card {
+        padding: 24px;
+      }
+
+      .header-inner,
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="/" aria-label="Elevare home">
+        <img class="brand-mark" src="/logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Elevare Fit LLC</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Legal navigation">
+          <a href="/">Back to home</a>
+        <a href="/privacy-policy/">Privacy Policy</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Legal</div>
+        <h1>Terms of Service</h1>
+        <p class="intro">
+          By accessing or using Elevare's Services, you agree to these Terms of Service.
+        </p>
+        <div class="meta">Last updated August 20, 2026</div>
+      </section>
+
+      <div class="policy-grid">
+        <section class="policy-card">
+          <h2>Company</h2>
+          <p>Elevare Fit LLC.</p>
+        </section>
+
+          <section class="policy-card">
+            <h2>Introduction</h2>
+            <p>
+              Elevare is operated by Elevare Fit LLC ("Elevare Fit LLC," "we," "us," or "our").
+              By accessing or using Elevare's Services, you agree to these Terms.
+            </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>1. Platform Role</h2>
+          <p>
+            Elevare is a technology marketplace that facilitates connections and transactions between clients
+            and independent health, fitness, coaching, nutrition, and wellness service providers
+            ("Professionals").
+          </p>
+          <p>
+            Elevare is not a provider of the services listed by Professionals and does not supervise, direct,
+            employ, or control Professionals. Elevare does not determine how, when, or where a Professional
+            performs services and is not responsible for a Professional's acts, omissions, advice, or results.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>2. Eligibility</h2>
+          <p>You must be at least 18 years old and capable of entering a binding contract.</p>
+          <p>
+            Elevare may be accessed from various jurisdictions. Availability of particular services, profiles,
+            features, or categories may vary by location, and Elevare does not promise availability in every country.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>3. Accounts</h2>
+          <p>You are responsible for:</p>
+          <ul>
+            <li>Accurate information</li>
+            <li>Account security</li>
+            <li>All activity under your account</li>
+          </ul>
+          <p>We may suspend or terminate accounts at our discretion.</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>4. Professional Responsibilities</h2>
+          <p>Each Professional is solely responsible for:</p>
+          <ul>
+            <li>Providing services safely, competently, ethically, and within the Professional's lawful scope of practice</li>
+            <li>Maintaining all licenses, registrations, certifications, insurance, permits, and authorizations required for the services offered</li>
+            <li>Ensuring that profile information, credentials, availability, pricing, and claims remain accurate and current</li>
+            <li>Using professional titles lawfully and only where supported by the Professional's qualifications</li>
+            <li>Determining whether the Professional may lawfully provide each offered service in every jurisdiction where the service is provided</li>
+            <li>Complying with applicable professional, advertising, privacy, health, safety, consumer-protection, and recordkeeping laws</li>
+            <li>Reporting and paying all taxes and expenses arising from the Professional's independent business</li>
+          </ul>
+          <p>
+            Professionals may not use Elevare to offer services they are not legally qualified or authorized to
+            provide.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>5. Profile Review, Credentials, and No Endorsement</h2>
+          <p>
+            Elevare may review profiles for completeness, identity signals, marketplace eligibility, safety, or
+            compliance. Profile approval means only that a profile is eligible to appear in the marketplace at
+            that time. It is not employment, sponsorship, endorsement, a guarantee of quality, or verification of
+            every statement or credential.
+          </p>
+          <p>
+            Identity review and credential review are separate. A credential should be treated as verified only
+            when Elevare expressly labels that specific credential as verified. Users should independently confirm
+            a Professional's current qualifications, license status, insurance, and suitability before engaging
+            services. Credential verification reflects Elevare's review of the claimed credential; it does not mean
+            Elevare has determined that the credential authorizes services in every jurisdiction.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>6. Independent Businesses; No Employment or Agency</h2>
+          <p>
+            Professionals operate independent businesses and are not employees, agents, partners, joint venturers,
+            franchisees, or representatives of Elevare. Professionals are responsible for their own methods,
+            schedules, equipment, assistants, business expenses, insurance, permits, and taxes.
+          </p>
+          <p>
+            Professionals have no authority to make commitments, representations, or warranties on behalf of
+            Elevare. Nothing in these Terms creates an employment, fiduciary, partnership, or agency relationship
+            between Elevare and a Professional or between Elevare and a client.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>7. Professional-Client Relationship</h2>
+          <p>
+            Any service arrangement is between the client and the Professional. The Professional, not Elevare, is
+            responsible for evaluating whether a service is appropriate, obtaining informed consent where required,
+            establishing the terms of service, delivering the service, and maintaining any required records.
+          </p>
+          <p>
+            Elevare is not a party to a Professional's service agreement merely because Elevare provides discovery,
+            communication, scheduling, payment, or other marketplace features.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>8. Bookings, Payments, and Credits</h2>
+          <p>A. Payments</p>
+          <ul>
+            <li>Where payment features are available, payments may be processed by third parties such as Stripe</li>
+            <li>By purchasing, you authorize charges for the selected services and applicable fees</li>
+          </ul>
+          <p>B. Platform Fees</p>
+          <ul>
+            <li>Elevare may charge service fees or commissions</li>
+          </ul>
+          <p>C. Credits</p>
+          <ul>
+            <li>Refunds may be issued as platform credits</li>
+            <li>Credits may expire and are non-transferable unless stated otherwise</li>
+          </ul>
+          <p>D. Pricing</p>
+          <ul>
+            <li>Prices may be set by Professionals or the platform and may vary</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>9. Cancellations &amp; No-Shows</h2>
+          <ul>
+            <li>Policies may vary by Professional or service</li>
+            <li>Late cancellations or no-shows may result in forfeited payments</li>
+            <li>Elevare may mediate disputes but has final discretion</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>10. Regulated Services and Scope of Practice</h2>
+          <p>
+            Inclusion in a nutrition, dietetics, coaching, wellness, mobility, recovery, bodywork, or similar
+            category does not authorize a Professional to provide a regulated service. Professionals must not
+            diagnose, treat, prescribe, practice psychotherapy, provide medical nutrition therapy, perform massage
+            therapy, practice physical therapy, or provide any other licensed healthcare service unless they hold
+            every license and authorization required by applicable law.
+          </p>
+          <p>
+            Marketplace categories are organizational labels and are not representations that a service is medical,
+            therapeutic, licensed, or suitable for a particular condition.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>11. Remote Services and Geographic Restrictions</h2>
+          <p>
+            Laws may depend on where the client is located when a service is delivered. Professionals are solely
+            responsible for determining whether they may lawfully serve each client, including through online or
+            remote services, and must decline services where they lack required authorization.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>12. No Medical Advice or Emergency Services</h2>
+          <p>
+            Elevare does not provide medical, dietetic, mental-health, rehabilitation, physical-therapy, massage,
+            or other licensed healthcare services. Marketplace listings, messages, tools, and educational content
+            are not medical advice and are not a substitute for care from a qualified healthcare provider.
+          </p>
+          <p>
+            Elevare is not an emergency service. If you believe you are experiencing a medical or mental-health
+            emergency, contact 911 or the appropriate emergency service immediately.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>13. Assumption of Risk</h2>
+          <p>You acknowledge that:</p>
+          <ul>
+            <li>Training, nutrition changes, fitness, wellness, recovery, and bodywork activities may involve inherent risks, including injury, illness, adverse reactions, or death</li>
+            <li>You voluntarily assume all risks</li>
+            <li>You are responsible for consulting an appropriate healthcare provider before participation and for stopping activity when symptoms or safety concerns arise</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>14. User Due Diligence and Safety</h2>
+          <p>
+            Users are responsible for evaluating Professionals, asking appropriate questions, confirming credentials
+            with the relevant issuing organization or licensing board, and deciding whether to meet or participate.
+            Users should use reasonable precautions for in-person meetings and promptly report suspected fraud,
+            misconduct, unsafe behavior, or inaccurate credentials to Elevare.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>15. Professional Claims, Reviews, and Content</h2>
+          <p>
+            Professionals may not make false, misleading, deceptive, or unsubstantiated claims; guarantee health,
+            fitness, financial, or competition outcomes; misuse protected professional titles; or publish fabricated
+            or misleading reviews, testimonials, credentials, or before-and-after representations.
+          </p>
+          <p>
+            Users retain responsibility for content they submit and grant Elevare a nonexclusive license to host,
+            display, process, moderate, and distribute that content as necessary to operate and promote the Services.
+            Elevare may remove content or profiles that it reasonably believes violate these Terms or create legal,
+            safety, or marketplace-integrity concerns.
+          </p>
+        </section>
+
+          <section class="policy-card">
+            <h2>16. Release &amp; Waiver of Liability</h2>
+            <p>
+              To the maximum extent permitted by law, you release Elevare Fit LLC and its owners, officers, employees, and
+              affiliates from claims arising out of or relating to:
+          </p>
+          <ul>
+            <li>Services, advice, acts, omissions, representations, or content provided by Professionals</li>
+            <li>Interactions, agreements, payments, or disputes between users</li>
+            <li>Injuries, losses, property damage, or other outcomes connected with third-party services</li>
+          </ul>
+        </section>
+
+          <section class="policy-card">
+            <h2>17. Disclaimers and Limitation of Liability</h2>
+            <p>
+              The Services are provided "as is" and "as available." Elevare Fit LLC does not warrant that profiles,
+              credentials, availability, pricing, reviews, matching results, communications, or third-party services
+              are complete, current, accurate, safe, suitable, or available.
+            </p>
+            <p>
+              To the maximum extent permitted by law, Elevare Fit LLC will not be liable for indirect, incidental, special,
+              consequential, exemplary, or punitive damages, personal injury caused by a Professional, lost profits,
+              lost data, or the conduct of any user. Elevare Fit LLC's aggregate liability is limited to the greater of the
+              amount paid to Elevare Fit LLC by you during the preceding 3 months or $100.
+            </p>
+        </section>
+
+          <section class="policy-card">
+            <h2>18. Indemnification</h2>
+            <p>
+              To the maximum extent permitted by law, you agree to defend, indemnify, and hold harmless Elevare Fit LLC and its
+              owners, officers, employees, and affiliates from claims, liabilities, damages, losses, and reasonable
+              legal fees arising from your use of the Services, your content, your violation of these Terms or law,
+              or your acts or omissions.
+            </p>
+            <p>
+              Professionals additionally agree to indemnify Elevare Fit LLC for claims arising from their services,
+              professional advice, credentials, licensing status, advertising claims, taxes, insurance, client
+              relationships, or failure to comply with applicable professional requirements.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>19. Disputes Between Users</h2>
+          <p>
+            Elevare is not a party to disputes between clients and Professionals. We may assist but are not
+            obligated to investigate, mediate, or resolve disputes and do not guarantee recovery of payments or
+            losses.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>20. Prohibited Conduct</h2>
+          <p>You agree not to:</p>
+          <ul>
+            <li>Circumvent the platform to avoid fees</li>
+            <li>Misrepresent qualifications or identity</li>
+            <li>Offer unlawful, unlicensed, unsafe, or out-of-scope services</li>
+            <li>Make deceptive claims or manipulate reviews</li>
+            <li>Engage in harassment, fraud, or illegal conduct</li>
+          </ul>
+        </section>
+
+          <section class="policy-card">
+            <h2>21. Intellectual Property</h2>
+            <p>
+              All platform content is owned by Elevare Fit LLC or its licensors. You may not copy or distribute without
+              permission.
+            </p>
+            <p>
+              To report content that you believe infringes your copyright or other intellectual property rights,
+              email <a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a> with identification of the
+              protected work, the material at issue, its location in the Services, and your contact information.
+            </p>
+          </section>
+
+        <section class="policy-card">
+          <h2>22. Suspension and Termination</h2>
+          <p>
+            We may restrict visibility, remove content, suspend marketplace access, or terminate accounts where we
+            reasonably believe there is a violation of these Terms, a licensing or safety concern, suspected fraud,
+            legal risk, or harm to users or the marketplace.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>23. Arbitration &amp; Governing Law</h2>
+          <ul>
+            <li>Governed by Florida law</li>
+            <li>Disputes resolved via binding arbitration (except where prohibited)</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>24. Severability and Modifications</h2>
+          <p>
+            If any provision is found unenforceable, the remaining provisions remain in effect to the fullest extent
+            permitted by law.
+          </p>
+          <p>
+            We may update these Terms. We will post the revised Terms with an updated date and may present material
+            revisions for renewed acceptance where appropriate or required. Continued use after an update may
+            constitute acceptance to the extent permitted by law.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>25. Contact</h2>
+          <p>Elevare Fit LLC</p>
+          <p><a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+          <a href="/">Home</a>
+        <a href="/privacy-policy/">Privacy Policy</a>
+        <a href="mailto:mlitfin@elevarefit.org">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

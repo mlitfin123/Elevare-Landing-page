@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ArticleDisclaimer } from "@/components/ContentDisclaimer";
 import { formatDate, type BlogPost } from "@/lib/blog";
 
 type ArticleLayoutProps = {
@@ -17,6 +18,7 @@ export function ArticleLayout({ post, children }: ArticleLayoutProps) {
       <h1>{post.title}</h1>
       <p className="page-intro">{post.description}</p>
       <div className="article-body">{children}</div>
+      <ArticleDisclaimer />
     </article>
   );
 }

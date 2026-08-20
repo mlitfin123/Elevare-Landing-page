@@ -3,7 +3,7 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
+import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
@@ -15,6 +15,7 @@ export function AuthPanel() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [hasAcceptedLegalTerms, setHasAcceptedLegalTerms] = useState(false);
+  const [hasConfirmedAge, setHasConfirmedAge] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +39,12 @@ export function AuthPanel() {
 
     if (mode === "sign-up" && !hasAcceptedLegalTerms) {
       setFeedback("Please agree to the Terms of Service and Privacy Policy to create an account.");
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasConfirmedAge) {
+      setFeedback("Please confirm that you are at least 18 years old to create an account.");
       setFeedbackType("error");
       return;
     }
@@ -78,6 +85,9 @@ export function AuthPanel() {
             legal_acceptance_source: "website_signup",
             terms_version: TERMS_VERSION,
             privacy_version: PRIVACY_VERSION,
+            age_18_plus: true,
+            age_attestation_version: AGE_ATTESTATION_VERSION,
+            age_attestation_source: "website_signup",
           },
         },
       });
@@ -176,9 +186,17 @@ export function AuthPanel() {
                   onChange={(event) => setHasAcceptedLegalTerms(event.target.checked)}
                 />
                 <span>
-                  I agree to the <Link href="/terms-of-service.html">Terms of Service</Link> and acknowledge the{" "}
-                  <Link href="/privacy-policy.html">Privacy Policy</Link>.
+                  I agree to the <Link href="/terms-of-service/">Terms of Service</Link> and acknowledge the{" "}
+                  <Link href="/privacy-policy/">Privacy Policy</Link>.
                 </span>
+              </label>
+              <label className="checkbox-row professional-attestation field-full">
+                <input
+                  type="checkbox"
+                  checked={hasConfirmedAge}
+                  onChange={(event) => setHasConfirmedAge(event.target.checked)}
+                />
+                <span>I confirm that I am at least 18 years old.</span>
               </label>
             </>
           ) : null}
@@ -193,7 +211,7 @@ export function AuthPanel() {
           <button
             type="submit"
             className="button button-primary"
-            disabled={isSubmitting || (mode === "sign-up" && !hasAcceptedLegalTerms)}
+            disabled={isSubmitting || (mode === "sign-up" && (!hasAcceptedLegalTerms || !hasConfirmedAge))}
           >
             {isSubmitting ? "Submitting..." : mode === "sign-in" ? "Sign in" : "Create account"}
           </button>

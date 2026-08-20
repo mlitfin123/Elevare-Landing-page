@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { AuthNavigationLink } from "@/components/AuthNavigationLink";
+import { siteConfig } from "@/lib/site";
 
 export function Footer() {
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
         <div className="footer-brand">
-          <div className="footer-copy">&copy; {new Date().getFullYear()} ElevareFit. All rights reserved.</div>
-          <div className="footer-meta">Elevare Fit LLC</div>
+          <div className="footer-copy">&copy; {new Date().getFullYear()} Elevare Fit LLC. All rights reserved.</div>
           <div className="footer-meta">Elevare for iOS &amp; Android - Coming Soon</div>
         </div>
 
@@ -20,9 +20,9 @@ export function Footer() {
           <Link href="/blog/">Blog</Link>
           <Link href="/professionals/">Find Support</Link>
           <AuthNavigationLink />
-          <Link href="/privacy-policy.html">Privacy Policy</Link>
-          <Link href="/terms-of-service.html">Terms of Service</Link>
-          <a href="mailto:mlitfin@elevarefit.org">Contact</a>
+          <Link href="/privacy-policy/">Privacy Policy</Link>
+          <Link href="/terms-of-service/">Terms of Service</Link>
+          <a href={`mailto:${siteConfig.contacts.support}`}>Contact</a>
         </nav>
       </div>
     </footer>

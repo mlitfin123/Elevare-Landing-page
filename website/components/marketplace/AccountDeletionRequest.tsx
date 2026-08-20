@@ -54,26 +54,9 @@ export function AccountDeletionRequest() {
     setIsSubmitting(true);
     setFeedback(null);
 
-    const accountName = [appUser.first_name, appUser.last_name].filter(Boolean).join(" ") || appUser.email || "Elevare user";
-
     try {
-      const { error } = await supabase.from("reports").insert({
-        reporter_id: appUser.id,
-        reporter_user_id: appUser.id,
-        reported_id: appUser.id,
-        reported_user_id: appUser.id,
-        reason: "Account deletion request",
-        details: details.trim() || null,
-        report_type: "account_deletion",
-        subject: "Account deletion request",
-        description: details.trim() || "User requested permanent deletion of their Elevare account.",
-        reported_user_name: accountName,
-        complaint_category: "Account deletion",
-        context: {
-          source: "website_account_dashboard",
-          auth_user_id: user.id,
-          requested_email: user.email ?? appUser.email,
-        },
+      const { error } = await supabase.rpc("submit_account_deletion_request", {
+        request_details: details.trim() || null,
       });
 
       if (error) {

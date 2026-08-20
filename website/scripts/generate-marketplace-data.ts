@@ -87,7 +87,6 @@ type MarketplaceLocationJson = {
 
 type MarketplacePublicTrainerRow = {
   trainer_profile_id: string;
-  user_id: string;
   public_slug: string;
   display_name: string;
   professional_title: string | null;
@@ -258,6 +257,10 @@ function dedupeProfessionalCategories(categories: ProfessionalCategoryRecord[]) 
 }
 
 function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRecord): ProfessionalProfileRecord {
+  const { userId: _legacyUserId, ...publicProfessional } = professional as ProfessionalProfileRecord & {
+    userId?: string;
+  };
+  void _legacyUserId;
   const impliedServiceModes = new Set<string>();
   const impliedSpecialties = new Set<string>();
   const normalizedCategories = dedupeProfessionalCategories(
@@ -286,7 +289,7 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
   );
 
   return {
-    ...professional,
+    ...publicProfessional,
     isPublic:
       professional.isPublic
       ?? (professional.approvalStatus === "approved" && professional.isActive),
@@ -530,7 +533,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       "sort_order.asc,label.asc",
     ),
     fetchAllPages<MarketplacePublicTrainerRow>(
-      "marketplace_public_trainer_profiles_v1",
+      "marketplace_public_trainer_profiles_v2",
       "*",
       {},
       "updated_at.desc,display_name.asc",
@@ -670,7 +673,6 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
 
     return {
       id: row.trainer_profile_id,
-      userId: row.user_id,
       displayName: row.display_name,
       profileSlug: row.public_slug,
       profilePhotoUrl: normalizeText(row.profile_photo_url),

@@ -1,4 +1,6 @@
-import type { NutritionVariant } from "@/lib/nutrition-data";
+import type { NutritionProduct, NutritionVariant } from "@/lib/nutrition-data";
+
+export const MIN_INDEXABLE_NUTRITION_VARIANT_ITEMS = 8;
 
 export const restaurantNutritionViews = [
   "high-protein",
@@ -70,6 +72,14 @@ export function isRestaurantNutritionView(value: string): value is RestaurantNut
 
 export function isFastFoodNutritionView(value: string): value is FastFoodNutritionView {
   return fastFoodNutritionViews.includes(value as FastFoodNutritionView);
+}
+
+export function isNutritionVariantIndexable(items: NutritionProduct[]) {
+  const distinctItems = new Set(
+    items.map((item) => `${item.restaurantName.trim().toLowerCase()}::${item.productName.trim().toLowerCase()}`),
+  );
+
+  return distinctItems.size >= MIN_INDEXABLE_NUTRITION_VARIANT_ITEMS;
 }
 
 export function getRestaurantVariantCopy(

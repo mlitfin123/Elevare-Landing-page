@@ -197,7 +197,7 @@ function MarketplaceDirectoryState({
   heroEyebrow = "Elevare marketplace",
   heroTitle = "Find the right support for your goals.",
   heroDescription =
-    "Discover reviewed trainers, coaches, nutrition professionals, and wellness specialists based on your goals, location, and preferences.",
+    "Discover trainers, coaches, nutrition professionals, and wellness specialists based on your goals, location, and preferences.",
   showCategoryCards = true,
   showHeroActions = true,
   showSecondaryExplanation = true,
@@ -318,14 +318,14 @@ function MarketplaceDirectoryState({
         : "No exact matches yet"
       : currentCategory?.label ?? "Explore Elevare";
   const resultsDescription = !shouldShowResults
-    ? "Use the filters above to browse reviewed professionals by category, location, specialty, service mode, or keyword."
+    ? "Use the filters above to browse published professional profiles by category, location, specialty, service mode, or keyword."
     : hasMeaningfulSearch
       ? exactResults.length > 0
-        ? "These reviewed profiles match your current search filters."
+        ? "These published profiles match your current search filters."
         : "We couldn't find someone matching every filter, so here are some other options."
       : currentCategory
-        ? "Reviewed profiles in this category appear here by default so you can start comparing fit right away."
-        : "Search the marketplace to view reviewed professionals.";
+        ? "Published profiles in this category appear here by default so you can start comparing fit right away."
+        : "Search the marketplace to view professional profiles.";
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -553,8 +553,11 @@ function MarketplaceDirectoryState({
             </details>
 
             <div className="marketplace-trust-line">
-              <strong>Profiles are reviewed before appearing on Elevare.</strong>
-              <span>Browse by category, location, and service mode to narrow the right fit.</span>
+              <strong>Profiles are reviewed for marketplace eligibility before publication.</strong>
+              <span>
+                Professionals are independent providers, not employees or agents of Elevare Fit LLC. Review is not
+                an endorsement or verification of every claim; credentials are verified only when specifically marked.
+              </span>
             </div>
 
             <div className="marketplace-search-footer">
@@ -632,7 +635,7 @@ function MarketplaceDirectoryState({
 
         {!shouldShowResults ? (
           <article className="callout marketplace-empty-callout">
-            <span className="meta-pill">Browse reviewed professionals</span>
+            <span className="meta-pill">Browse professional profiles</span>
             <h2>Start by refining your search.</h2>
             <p>
               Matching profiles will appear here once you choose a category, location, specialty, service mode, or keyword.
@@ -649,7 +652,7 @@ function MarketplaceDirectoryState({
               <span>
                 {remainingExactResults > 0
                   ? "These are the first profiles from your current search. View more to see the rest."
-                  : "Only reviewed, active, public profiles appear in marketplace search."}
+                  : "Only marketplace-eligible, active, public profiles appear in marketplace search."}
               </span>
             </div>
 
@@ -686,7 +689,7 @@ function MarketplaceDirectoryState({
               <p>
                 {hasMeaningfulSearch
                   ? "We couldn't find someone matching every filter, so here are some other options."
-                  : "There are not any reviewed profiles visible in this view yet, so the best next step is to widen the search or tell us what you need."}
+                  : "There are not any published profiles visible in this view yet, so the best next step is to widen the search or tell us what you need."}
               </p>
             </article>
 

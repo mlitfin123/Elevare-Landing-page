@@ -1,20 +1,18 @@
 "use client";
 
+import { hasAnalyticsConsent } from "@/lib/analytics-consent";
+
 export type AnalyticsEventParams = Record<string, string | number | boolean | undefined>;
 
 declare global {
   interface Window {
     dataLayer: unknown[];
-    gtag?: (
-      command: "event" | "config" | "js",
-      target: string | Date,
-      params?: AnalyticsEventParams,
-    ) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
 export function trackEvent(eventName: string, params: AnalyticsEventParams = {}) {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") {
+  if (typeof window === "undefined" || typeof window.gtag !== "function" || !hasAnalyticsConsent()) {
     return;
   }
 
@@ -22,7 +20,7 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
 }
 
 export function trackPageView(pagePath: string, measurementId: string) {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") {
+  if (typeof window === "undefined" || typeof window.gtag !== "function" || !hasAnalyticsConsent()) {
     return;
   }
 

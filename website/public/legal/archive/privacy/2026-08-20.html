@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elevare | Privacy Policy</title>
+  <meta
+    name="description"
+    content="Read the Elevare privacy policy."
+  >
+  <link rel="canonical" href="https://www.elevarefit.org/privacy-policy/">
+  <meta property="og:title" content="Elevare | Privacy Policy">
+  <meta property="og:description" content="Read the Elevare privacy policy.">
+  <meta property="og:url" content="https://www.elevarefit.org/privacy-policy/">
+  <meta property="og:type" content="website">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07070f;
+      --surface: #0f0f1a;
+      --surface-strong: #161624;
+      --border: #1e1e30;
+      --border-strong: #2a2a3e;
+      --text: #e8e8f4;
+      --muted: #8d90ab;
+      --muted-strong: #5a5a7a;
+      --brand: #4f99a8;
+      --brand-bright: #74c8d6;
+      --brand-line: rgba(116, 200, 214, 0.26);
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --max-width: 980px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(79, 153, 168, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 10%, rgba(116, 200, 214, 0.12), transparent 24%),
+        linear-gradient(180deg, #090914 0%, #07070f 32%, #06060d 100%);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 120px 120px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 90%);
+      opacity: 0.4;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 16px 0;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(7, 7, 15, 0.9), rgba(7, 7, 15, 0.56));
+      border-bottom: 1px solid rgba(42, 42, 62, 0.48);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 14px 24px rgba(79, 153, 168, 0.16));
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-word {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--muted-strong);
+      padding-left: 0.32em;
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .header-links a {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .header-links a:hover {
+      color: var(--text);
+      border-color: rgba(116, 200, 214, 0.18);
+      background: rgba(22, 22, 36, 0.82);
+    }
+
+    .page-shell {
+      padding: 56px 0 28px;
+    }
+
+    .hero-card,
+    .policy-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(22, 22, 36, 0.94), rgba(12, 12, 24, 0.96));
+      border: 1px solid rgba(42, 42, 62, 0.92);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 38px;
+      margin-bottom: 24px;
+    }
+
+    .hero-card::after,
+    .policy-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(140deg, rgba(116, 200, 214, 0.1), transparent 42%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--brand-bright);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--brand-line);
+    }
+
+    h1 {
+      font-size: clamp(38px, 7vw, 64px);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+      margin-bottom: 18px;
+    }
+
+    .intro {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .meta {
+      margin-top: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .policy-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .policy-card {
+      padding: 28px;
+    }
+
+    .policy-card h2 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .policy-card p + p,
+    .policy-card ul,
+    .policy-card ol {
+      margin-top: 12px;
+    }
+
+    .policy-card ul,
+    .policy-card ol {
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .policy-card li + li {
+      margin-top: 8px;
+    }
+
+    .policy-card p {
+      color: var(--muted);
+    }
+
+    .subhead {
+      color: var(--text);
+      font-weight: 600;
+      margin-top: 14px;
+    }
+
+    .site-footer {
+      padding: 0 0 28px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding-top: 22px;
+      border-top: 1px solid rgba(42, 42, 62, 0.86);
+    }
+
+    .footer-copy {
+      color: var(--muted-strong);
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 720px) {
+      .hero-card,
+      .policy-card {
+        padding: 24px;
+      }
+
+      .header-inner,
+      .footer-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-lockup" href="/" aria-label="Elevare home">
+        <img class="brand-mark" src="/logo_transparent.png" alt="Elevare logo">
+        <div class="brand-copy">
+          <span class="brand-word">Elevare</span>
+          <span class="brand-sub">Elevare Fit LLC</span>
+        </div>
+      </a>
+      <nav class="header-links" aria-label="Legal navigation">
+          <a href="/">Back to home</a>
+        <a href="/terms-of-service/">Terms of Service</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      <section class="hero-card">
+        <div class="eyebrow">Legal</div>
+        <h1>Privacy Policy</h1>
+        <p class="intro">
+          This Privacy Policy describes how Elevare Fit LLC collects, uses, discloses, and safeguards
+          information when you use our mobile applications, websites, and related services.
+        </p>
+        <div class="meta">Last updated August 20, 2026</div>
+      </section>
+
+      <div class="policy-grid">
+        <section class="policy-card">
+          <h2>Company</h2>
+          <p>Elevare Fit LLC ("Elevare," "we," "us," "our").</p>
+        </section>
+
+        <section class="policy-card">
+          <h2>Introduction</h2>
+          <p>
+            This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use
+            our mobile applications, websites, and related services (collectively, the "Services").
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>1. Scope</h2>
+          <p>
+            This Policy applies to the public ElevareFit website, the Elevare professional marketplace, Logbook,
+            StageLab, and related support and communication features. Marketplace users include clients and
+            independent health, fitness, coaching, nutrition, and wellness service providers ("Professionals").
+            Product features and the information they use differ, as described below. By using the Services, you
+            acknowledge the practices described in this Policy.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>2. Information We Collect</h2>
+          <p class="subhead">A. Website, Waitlist, and Support Information</p>
+          <ul>
+            <li>Name, email address, city, role or audience selection, and other information submitted through a waitlist, contact, or support form</li>
+            <li>Communications, support requests, feedback, and information you choose to include in those messages</li>
+          </ul>
+          <p class="subhead">B. Account and Marketplace Information</p>
+          <ul>
+            <li>Account data: name, email, phone number where provided, account identifiers, account role, and authentication information handled by our authentication provider</li>
+            <li>Client preferences: first name, city, region, country, goals, categories of interest, preferred service mode, travel radius, start timing, experience and budget preferences, and free-text context you choose to provide</li>
+            <li>Professional data: name, title, photo, biography, categories, specialties, services, experience, availability, pricing, location, languages, and website or social links</li>
+            <li>Credential data: license or certification names and optional numbers, issuing organizations, issue and expiration dates, country or jurisdiction, supporting documents or references, and verification results</li>
+            <li>Marketplace activity: saved profiles, searches, consultation requests, inquiry status, reviews, reports, and other interactions with marketplace features</li>
+            <li>Marketplace safety data: profile reports, complaints, professional-visible review feedback, and internal moderation or investigation records</li>
+          </ul>
+          <p class="subhead">C. Logbook and StageLab Information</p>
+          <ul>
+            <li>Logbook data: body weight, workouts, exercises, sets, repetitions, nutrition, calories, macros, activity, goals, notes, and progress information you choose to record</li>
+            <li>StageLab data: body weight, progress photos, check-ins, macros, cardio, training, recovery, notes, competition details, prep timelines, coach-athlete relationships, and related progress information</li>
+            <li>Photos and other content uploaded or saved to use visual comparison, historical review, or other product features</li>
+          </ul>
+          <p class="subhead">D. Transaction &amp; Payment Data</p>
+          <ul>
+            <li>Purchase, subscription, booking, or session information where a Service offers those features</li>
+            <li>Payment tokens, subscription status, receipts, and transaction metadata handled by third-party payment or app-store providers</li>
+            <li>Elevare does not receive or store full payment card numbers submitted directly to a third-party payment processor</li>
+          </ul>
+          <p class="subhead">E. Device, Usage, and Analytics Data</p>
+          <ul>
+            <li>IP address, browser or device information, operating system, page and app usage events, referral information, analytics identifiers, and crash or diagnostic logs where supported by the Services</li>
+            <li>Cookies or browser storage used for authentication sessions, preferences, security, and website analytics</li>
+          </ul>
+          <p class="subhead">F. Location Data (Optional)</p>
+          <ul>
+            <li>Location details you provide for marketplace discovery and approximate or precise device location if you separately enable a feature that uses it</li>
+          </ul>
+          <p>
+            The marketplace preference system is designed for discovery, not clinical records. Do not include
+            medical records, diagnoses, medications, treatment history, payment card details, or other highly
+            sensitive information in free-text marketplace fields or consultation requests.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>3. How We Use Information</h2>
+          <ul>
+            <li>Operate and provide the Services</li>
+            <li>Operate accounts, publish approved professional profiles, and support marketplace discovery, search, and matching</li>
+            <li>Save profiles and send consultation requests to the independent Professionals selected by clients</li>
+            <li>Provide fitness tracking, progress review, competition-prep, coach workflow, and product-support features</li>
+            <li>Process subscriptions, payments, credits, refunds, and fraud prevention where those features are available</li>
+            <li>Facilitate communications and notifications</li>
+            <li>Personalize content and recommendations</li>
+            <li>Review professional profiles, identity signals, credentials, marketplace eligibility, and reported concerns</li>
+            <li>Confirm information with issuing organizations, licensing authorities, verification providers, or other appropriate sources where permitted</li>
+            <li>Measure website and product usage, diagnose technical problems, and improve the Services</li>
+            <li>Maintain safety, enforce policies, and resolve disputes</li>
+            <li>Comply with legal obligations</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>4. AI-Assisted Processing</h2>
+          <p>
+            StageLab may use automated systems and third-party AI service providers to process check-ins, photos,
+            progress trends, prep information, and related inputs in order to generate visual comparisons,
+            summaries, estimates, forecasts, or recommendations. AI-assisted outputs may be incomplete or
+            inaccurate, are informational rather than medical advice, and do not guarantee stage readiness,
+            competition placement, body-fat accuracy, or health outcomes.
+          </p>
+          <p>
+            Information sent for AI-assisted processing may be processed by the applicable service provider to
+            support the relevant product feature and is subject to that provider's terms and privacy practices.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>5. Legal Bases (if applicable)</h2>
+          <p>Where required (e.g., certain jurisdictions), we rely on:</p>
+          <ul>
+            <li>Contract performance</li>
+            <li>Legitimate interests (service improvement, safety)</li>
+            <li>Consent (e.g., location, marketing)</li>
+            <li>Legal compliance</li>
+          </ul>
+        </section>
+
+        <section class="policy-card">
+          <h2>6. How We Share Information</h2>
+          <p>We may share information with:</p>
+          <ul>
+            <li>Service Providers: Supabase for marketplace authentication, database, storage, and related backend functions; Google Analytics for website analytics; Resend for waitlist and email delivery; and other providers supporting hosting, diagnostics, support, or product operations</li>
+            <li>Payment and Distribution Providers: Apple, Google, and payment processors such as Stripe where app-store, subscription, or payment features are available</li>
+            <li>AI Service Providers: information needed to provide an AI-assisted StageLab or related product feature</li>
+            <li>Verification Providers and Authorities: information reasonably necessary to review identity, credentials, licensing, fraud, safety, or legal compliance</li>
+            <li>Other Users and the Public: information you designate for a public professional profile; consultation requests and messages are shared with the independent Professional you choose to contact; limited booking or communication information may be shared as needed to enable services</li>
+            <li>Legal/Regulatory: when required by law or to protect rights/safety</li>
+            <li>Business Transfers: in connection with mergers, financing, or sale</li>
+          </ul>
+          <p>We do not sell personal data.</p>
+          <p>
+            Supporting credential documents, private identity information, internal review notes, and report details
+            are not included in public marketplace profiles. Public profiles may display public-safe credential
+            details and an explicit credential review status without displaying the underlying review material.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>7. Data Retention</h2>
+          <p>
+            We retain data as long as necessary for service delivery, legal compliance, fraud prevention,
+            credential and marketplace-integrity review, safety investigations, and dispute resolution. We may retain
+            records of profile approvals, rejections, suspensions, reports, transactions, or complaints after account
+            closure where reasonably necessary for these purposes. Retention periods may vary by data type.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>8. Security</h2>
+          <p>
+            We use administrative, technical, and organizational safeguards designed to protect information.
+            No system, transmission method, or storage environment is completely secure, and we cannot guarantee
+            absolute security.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>9. Your Rights</h2>
+          <p>
+            Depending on your location, you may request access, correction, deletion, portability, or
+            restriction of processing.
+          </p>
+          <p>Contact: <a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
+        </section>
+
+        <section class="policy-card">
+          <h2>10. International Transfers</h2>
+          <p>
+            Elevare is based in the United States. Data may be processed in the United States and in other
+            jurisdictions where our service providers operate. Contact us if you have a question about how your
+            information is processed.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>11. Children</h2>
+          <p>
+            The Services are not intended for individuals under 18. We do not knowingly collect data from minors.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>12. Third-Party Services and Independent Professionals</h2>
+          <p>
+            Professionals are independent businesses and may maintain their own records or privacy practices. Elevare
+            does not control how a Professional handles information you provide directly outside the Services. Review
+            the Professional's privacy practices before sharing sensitive health or personal information. We are not
+            responsible for third-party privacy practices.
+          </p>
+        </section>
+
+          <section class="policy-card">
+            <h2>13. Analytics and Communication Choices</h2>
+            <p>
+              Google Analytics may use cookies or similar identifiers to measure website usage only after you choose
+              to accept analytics through the website's Privacy choices. You may decline analytics or change that
+              choice later without disabling essential session, security, or account storage. Waitlist messages include an unsubscribe option, and a waitlist signup
+              is used for the Elevare updates described at the point of collection rather than silently enrolling you
+              in unrelated lists.
+            </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>14. Changes</h2>
+          <p>
+            We may update this Policy. We will post the revised Policy with an updated date and provide additional
+            notice or request consent where appropriate or required.
+          </p>
+        </section>
+
+        <section class="policy-card">
+          <h2>15. Contact</h2>
+          <p>Elevare Fit LLC</p>
+          <p><a href="mailto:mlitfin@elevarefit.org">mlitfin@elevarefit.org</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">&copy; <span id="year"></span> Elevare Fit LLC. All rights reserved.</div>
+      <div class="footer-links">
+          <a href="/">Home</a>
+        <a href="/terms-of-service/">Terms of Service</a>
+        <a href="mailto:mlitfin@elevarefit.org">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

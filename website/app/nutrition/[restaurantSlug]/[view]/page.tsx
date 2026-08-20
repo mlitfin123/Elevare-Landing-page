@@ -16,6 +16,7 @@ import {
 import {
   getRestaurantVariantCopy,
   getRestaurantViewLinks,
+  isNutritionVariantIndexable,
   isRestaurantNutritionView,
   nutritionToolLinks,
   restaurantNutritionViews,
@@ -74,11 +75,18 @@ export async function generateMetadata({ params }: RestaurantNutritionVariantPag
   }
 
   const pageCopy = getRestaurantVariantCopy(restaurantData.summary.name, restaurantData.summary.slug, view);
+  const variantItems = filterAndSortNutritionItems({
+    items: restaurantData.items,
+    variant: pageCopy.variant,
+    filters: emptyFilters,
+    sort: nutritionVariantConfig[pageCopy.variant].defaultSort,
+  });
 
   return buildMetadata({
     title: pageCopy.title,
     description: pageCopy.description,
     pathname: pageCopy.pathname,
+    robots: isNutritionVariantIndexable(variantItems) ? undefined : { index: false, follow: true },
   });
 }
 

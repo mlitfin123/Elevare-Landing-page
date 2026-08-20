@@ -237,8 +237,7 @@ export function WaitlistForm() {
             <span className="success-tag">Waitlist</span>
             <h3>Confirmed</h3>
             <p>
-              You&apos;re on the list. We will reach out as early access opens up. Keep an eye on your inbox
-              for marketplace updates.
+              You&apos;re subscribed. Keep an eye on your inbox for Elevare marketplace and mobile-app updates.
             </p>
             <button type="button" className="btn btn-secondary" onClick={resetForm}>
               Use a different email
@@ -250,7 +249,7 @@ export function WaitlistForm() {
       <div className="micro-trust">
         <div className="micro-item">
           <strong>Early access</strong>
-          <span>Stay in the loop as the marketplace gets closer to launch.</span>
+          <span>Stay in the loop as Elevare expands across the web and mobile.</span>
         </div>
         <div className="micro-item">
           <strong>Member and coach updates</strong>

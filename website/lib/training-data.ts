@@ -59,11 +59,17 @@ export type WorkoutTemplateExerciseRecord = {
   createdAt: string | null;
 };
 
+export type WorkoutRedirectRecord = {
+  sourceSlug: string;
+  destinationSlug: string;
+};
+
 export type TrainingDataSnapshot = {
   generatedAt: string | null;
   exercises: ExerciseRecord[];
   workoutTemplates: WorkoutTemplateRecord[];
   workoutTemplateExercises: WorkoutTemplateExerciseRecord[];
+  workoutRedirects?: WorkoutRedirectRecord[];
 };
 
 export type ExerciseCategoryInfo = {
@@ -239,6 +245,7 @@ const CANONICAL_MUSCLE_GROUP_ALIASES = new Map<string, string>([
 ]);
 
 const DUPLICATE_EXERCISE_SLUG_SUFFIX_PATTERN = /-[0-9a-f]{8}$/i;
+const DUPLICATE_WORKOUT_SLUG_SUFFIX_PATTERN = /-[0-9a-f]{8}$/i;
 
 export function titleCase(value: string) {
   return value
@@ -557,6 +564,179 @@ export function deduplicateExercises(exercises: ExerciseRecord[]) {
   }
 
   return orderedKeys.map((key) => bestByCanonicalIdentity.get(key)!);
+}
+
+function normalizeWorkoutValue(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeWorkoutValues(values: string[]) {
+  return [...new Set(values.map(normalizeWorkoutValue).filter(Boolean))].sort().join("|");
+}
+
+export function getCanonicalWorkoutSlug(workout: Pick<WorkoutTemplateRecord, "slug">) {
+  return workout.slug.trim().toLowerCase().replace(/-+/g, "-").replace(DUPLICATE_WORKOUT_SLUG_SUFFIX_PATTERN, "");
+}
+
+function getWorkoutExerciseStructureSignature(
+  workoutTemplateId: string,
+  workoutTemplateExercises: WorkoutTemplateExerciseRecord[],
+) {
+  return workoutTemplateExercises
+    .filter((entry) => entry.workoutTemplateId === workoutTemplateId)
+    .map((entry) =>
+      [
+        normalizeWorkoutValue(entry.dayLabel),
+        normalizeWorkoutValue(entry.section),
+        String(entry.sortOrder),
+        normalizeWorkoutValue(entry.exerciseName),
+        normalizeWorkoutValue(entry.sets),
+        normalizeWorkoutValue(entry.reps),
+        entry.restSeconds == null ? "" : String(entry.restSeconds),
+        normalizeWorkoutValue(entry.notes),
+      ].join("~"),
+    )
+    .sort()
+    .join("||");
+}
+
+export function getWorkoutCanonicalIdentityKey(
+  workout: WorkoutTemplateRecord,
+  workoutTemplateExercises: WorkoutTemplateExerciseRecord[],
+) {
+  return [
+    getCanonicalWorkoutSlug(workout),
+    normalizeWorkoutValue(workout.name),
+    normalizeWorkoutValue(workout.goal),
+    normalizeWorkoutValue(workout.difficulty),
+    workout.estimatedDurationMinutes == null ? "" : String(workout.estimatedDurationMinutes),
+    normalizeWorkoutValues(workout.equipment),
+    normalizeWorkoutValue(workout.experienceLevel),
+    workout.trainingDaysPerWeek == null ? "" : String(workout.trainingDaysPerWeek),
+    normalizeWorkoutValues(workout.targetMuscleGroups),
+    getWorkoutExerciseStructureSignature(workout.id, workoutTemplateExercises),
+  ].join("::");
+}
+
+function getWorkoutContentCompletenessScore(workout: WorkoutTemplateRecord) {
+  return [
+    workout.overview,
+    workout.whoItIsFor,
+    workout.warmupGuidance,
+    workout.progressionGuidance,
+    workout.seoTitle,
+    workout.seoDescription,
+  ].filter((value) => normalizeWorkoutValue(value).length > 0).length;
+}
+
+function compareWorkoutRecordPreference(left: WorkoutTemplateRecord, right: WorkoutTemplateRecord) {
+  const leftIsClean = left.slug === getCanonicalWorkoutSlug(left);
+  const rightIsClean = right.slug === getCanonicalWorkoutSlug(right);
+
+  if (leftIsClean !== rightIsClean) {
+    return leftIsClean ? 1 : -1;
+  }
+
+  const completenessDifference = getWorkoutContentCompletenessScore(left) - getWorkoutContentCompletenessScore(right);
+
+  if (completenessDifference !== 0) {
+    return completenessDifference;
+  }
+
+  const createdAtDifference = parseIsoTimestamp(right.createdAt) - parseIsoTimestamp(left.createdAt);
+
+  if (createdAtDifference !== 0) {
+    return createdAtDifference;
+  }
+
+  return right.id.localeCompare(left.id);
+}
+
+function getWorkoutTemplateExerciseIdentity(entry: WorkoutTemplateExerciseRecord) {
+  return [
+    entry.workoutTemplateId,
+    normalizeWorkoutValue(entry.dayLabel),
+    normalizeWorkoutValue(entry.section),
+    String(entry.sortOrder),
+    normalizeWorkoutValue(entry.exerciseName),
+    normalizeWorkoutValue(entry.sets),
+    normalizeWorkoutValue(entry.reps),
+    entry.restSeconds == null ? "" : String(entry.restSeconds),
+    normalizeWorkoutValue(entry.notes),
+  ].join("::");
+}
+
+export function deduplicateWorkoutTemplates(
+  workoutTemplates: WorkoutTemplateRecord[],
+  workoutTemplateExercises: WorkoutTemplateExerciseRecord[],
+) {
+  const groups = new Map<string, WorkoutTemplateRecord[]>();
+
+  for (const workout of workoutTemplates) {
+    const identity = getWorkoutCanonicalIdentityKey(workout, workoutTemplateExercises);
+    groups.set(identity, [...(groups.get(identity) ?? []), workout]);
+  }
+
+  const canonicalTemplates: WorkoutTemplateRecord[] = [];
+  const canonicalIdByTemplateId = new Map<string, string>();
+  const redirects: WorkoutRedirectRecord[] = [];
+
+  for (const workouts of groups.values()) {
+    const canonical = [...workouts].sort((left, right) => compareWorkoutRecordPreference(right, left))[0]!;
+    canonicalTemplates.push(canonical);
+
+    for (const workout of workouts) {
+      canonicalIdByTemplateId.set(workout.id, canonical.id);
+
+      if (workout.slug !== canonical.slug) {
+        redirects.push({ sourceSlug: workout.slug, destinationSlug: canonical.slug });
+      }
+    }
+  }
+
+  const canonicalExerciseRows = new Map<string, WorkoutTemplateExerciseRecord>();
+
+  for (const entry of workoutTemplateExercises) {
+    const canonicalTemplateId = canonicalIdByTemplateId.get(entry.workoutTemplateId);
+
+    if (!canonicalTemplateId) {
+      continue;
+    }
+
+    const remappedEntry = {
+      ...entry,
+      workoutTemplateId: canonicalTemplateId,
+    };
+    const identity = getWorkoutTemplateExerciseIdentity(remappedEntry);
+
+    if (!canonicalExerciseRows.has(identity)) {
+      canonicalExerciseRows.set(identity, remappedEntry);
+    }
+  }
+
+  return {
+    workoutTemplates: canonicalTemplates.sort((left, right) => left.name.localeCompare(right.name)),
+    workoutTemplateExercises: [...canonicalExerciseRows.values()].sort(
+      (left, right) =>
+        left.workoutTemplateId.localeCompare(right.workoutTemplateId)
+        || left.sortOrder - right.sortOrder
+        || left.exerciseName.localeCompare(right.exerciseName),
+    ),
+    workoutRedirects: redirects.sort((left, right) => left.sourceSlug.localeCompare(right.sourceSlug)),
+  };
+}
+
+export function canonicalizeTrainingSnapshot(snapshot: TrainingDataSnapshot): TrainingDataSnapshot {
+  const workoutData = deduplicateWorkoutTemplates(
+    snapshot.workoutTemplates ?? [],
+    snapshot.workoutTemplateExercises ?? [],
+  );
+
+  return {
+    generatedAt: snapshot.generatedAt ?? null,
+    exercises: deduplicateExercises(snapshot.exercises ?? []),
+    ...workoutData,
+  };
 }
 
 function sharesExerciseFamily(left: ExerciseRecord, right: ExerciseRecord) {
@@ -1102,4 +1282,5 @@ export const EMPTY_TRAINING_SNAPSHOT: TrainingDataSnapshot = {
   exercises: [],
   workoutTemplates: [],
   workoutTemplateExercises: [],
+  workoutRedirects: [],
 };

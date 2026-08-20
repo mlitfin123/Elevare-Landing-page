@@ -46,6 +46,10 @@ import {
   SERVICE_MODE_OPTIONS,
 } from "@/lib/professional-profile";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import {
+  hasCompatibleVerifiedCredential,
+  REGULATED_TITLE_REVIEW_MESSAGE,
+} from "@/lib/regulated-professional-titles";
 
 type CredentialDraft = {
   id: string;
@@ -838,6 +842,17 @@ export function ProfessionalProfileEditor() {
       return;
     }
 
+    if (
+      nextStatus === "pending_review"
+      && !hasCompatibleVerifiedCredential(form.professionalTitle, credentials)
+    ) {
+      setFieldErrors({ professionalTitle: REGULATED_TITLE_REVIEW_MESSAGE });
+      setExpandedSections((current) => ({ ...current, about: true, credentials: true }));
+      setFeedback(REGULATED_TITLE_REVIEW_MESSAGE);
+      setFeedbackType("error");
+      return;
+    }
+
     const errors = validateForm(nextStatus === "pending_review");
     if (Object.keys(errors).length > 0) {
       showValidationErrors(errors);
@@ -849,10 +864,14 @@ export function ProfessionalProfileEditor() {
     setIsSaving(true);
     setFeedback(null);
     setFieldErrors({});
+    let uploadedPhoto: UploadedProfilePhoto | null = null;
+    let previousPhotoStoragePath: string | null = null;
     try {
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
       if (!appUser) throw new Error("We could not find your marketplace account.");
+      previousPhotoStoragePath = appUser.profile_photo_storage_path;
       const photoUpload = await uploadProfilePhoto();
+      uploadedPhoto = photoUpload;
       const profilePhotoUrl = photoUpload?.publicUrl ?? (removeCurrentPhoto ? null : form.profilePhotoUrl || null);
       const profilePhotoStoragePath = photoUpload?.storagePath ?? (removeCurrentPhoto ? null : appUser.profile_photo_storage_path);
 
@@ -1047,6 +1066,18 @@ export function ProfessionalProfileEditor() {
       setFeedbackType("success");
       trackEvent(nextStatus === "pending_review" ? "professional_profile_submitted" : "professional_profile_draft_saved", { profile_slug: savedSlug });
       if (!publicProfileId) trackEvent("professional_profile_created", { profile_slug: savedSlug });
+
+      if (
+        previousPhotoStoragePath
+        && previousPhotoStoragePath.startsWith(`${user.id}/`)
+        && previousPhotoStoragePath !== uploadedPhoto?.storagePath
+        && (uploadedPhoto || removeCurrentPhoto)
+      ) {
+        const cleanupResult = await supabase.storage.from("profile-photos").remove([previousPhotoStoragePath]);
+        if (cleanupResult.error) {
+          console.warn("The profile was saved, but the replaced photo could not be removed.");
+        }
+      }
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "We could not save your profile.");
       setFeedbackType("error");
@@ -1241,7 +1272,7 @@ export function ProfessionalProfileEditor() {
         <div className="profile-completeness"><div className="profile-completeness-head"><strong>Profile {completeness.percent}% complete</strong><span>{completeness.missing.length === 0 ? "Ready to submit" : `${completeness.missing.length} item${completeness.missing.length === 1 ? "" : "s"} left`}</span></div><div className="profile-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completeness.percent}><span style={{ width: `${completeness.percent}%` }} /></div>{completeness.missing.length > 0 ? <div className="profile-completeness-actions"><span className="field-help">Complete these profile basics:</span>{completeness.items.filter((item) => !item.complete).map((item) => <button key={item.id} type="button" className="profile-completeness-item" onClick={() => focusCompletenessItem(item.section, item.id)}>{item.label}<span aria-hidden="true">→</span></button>)}</div> : <p className="field-help">Your profile has the information needed for review. Optional sections can still help clients understand your work.</p>}</div>
         <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{isPreviewing ? "Hide profile preview" : "Preview public profile"}</button>
         {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">Private preview</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt="Private profile preview" /> : <div className="profile-photo-placeholder">Photo preview</div>}<div><h3>{form.displayName || "Your name"}</h3><p className="professional-title-copy">{form.professionalTitle || "Your professional title"}</p><p>{form.bio || "Your bio will appear here."}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{specialty}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || "Service details"}</p></div>)}</div> : null}</div> : null}
-        <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{PROFESSIONAL_ATTESTATION_TEXT} I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the <Link href="/terms-of-service.html">Terms of Service</Link> and acknowledge the <Link href="/privacy-policy.html">Privacy Policy</Link>.</span></label><FieldError name="terms" errors={fieldErrors} />
+        <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{PROFESSIONAL_ATTESTATION_TEXT} I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the <Link href="/terms-of-service/">Terms of Service</Link> and acknowledge the <Link href="/privacy-policy/">Privacy Policy</Link>.</span></label><FieldError name="terms" errors={fieldErrors} />
         <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{isSaving ? "Saving..." : "Save draft"}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review"}</button></div>{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{feedback}</div> : null}</div>
       </article>
     </section>

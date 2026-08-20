@@ -34,6 +34,60 @@ export type BlogPost = BlogFrontmatter & {
 
 export type BlogPostSummary = BlogFrontmatter;
 
+export type BlogCategorySeo = {
+  title: string;
+  description: string;
+  heading: string;
+  introduction: string;
+};
+
+export const MIN_INDEXABLE_BLOG_CATEGORY_POSTS = 2;
+
+const BLOG_CATEGORY_SEO: Record<BlogCategory, BlogCategorySeo> = {
+  tracking: {
+    title: "Fitness Tracking Guides",
+    description: "Practical fitness tracking guides for monitoring calories, workouts, bodyweight, and progress without making the process unnecessarily complicated.",
+    heading: "Fitness tracking guides",
+    introduction: "Learn how to use simple, consistent tracking to understand your habits, measure progress, and make better training and nutrition decisions.",
+  },
+  nutrition: {
+    title: "Nutrition and Weight Loss Guides",
+    description: "Straightforward nutrition guides about calories, protein, weight loss, food choices, and building habits that support your fitness goals.",
+    heading: "Nutrition and weight loss guides",
+    introduction: "Explore practical explanations of calories, protein, food tracking, and the habits that make nutrition plans easier to follow over time.",
+  },
+  training: {
+    title: "Strength and Workout Guides",
+    description: "Training guides about workout structure, strength progression, exercise selection, and building a routine you can follow consistently.",
+    heading: "Strength and workout guides",
+    introduction: "Build a clearer training approach with practical guidance on workout structure, progression, and consistent exercise tracking.",
+  },
+  prep: {
+    title: "Bodybuilding Contest Prep Guides",
+    description: "Bodybuilding contest prep guides about conditioning, muscle retention, tracking progress, and making controlled adjustments throughout a prep.",
+    heading: "Bodybuilding contest prep guides",
+    introduction: "Read practical contest-prep guidance focused on preserving muscle, tracking meaningful trends, and making deliberate adjustments instead of reacting to one metric.",
+  },
+  "prep-files": {
+    title: "Prep Files: Bodybuilding Contest Prep Journal",
+    description: "Follow a documented bodybuilding contest prep through weekly check-ins, progress photos, plan adjustments, setbacks, and lessons from the process.",
+    heading: "Prep Files",
+    introduction: "Follow the full contest-prep timeline through weekly data, progress photos, StageLab recommendations, plan adjustments, and honest reflections from each phase.",
+  },
+  coaching: {
+    title: "Fitness Coaching Guides",
+    description: "Guidance for choosing, working with, and getting more value from fitness and performance coaching relationships.",
+    heading: "Fitness coaching guides",
+    introduction: "Learn what to look for in a coaching relationship and how clear expectations, communication, and progress tracking support better decisions.",
+  },
+  "product-updates": {
+    title: "ElevareFit Product Updates",
+    description: "Product news and feature updates from Logbook, StageLab, Elevare, and the wider ElevareFit fitness ecosystem.",
+    heading: "Product updates",
+    introduction: "See what is changing across the ElevareFit ecosystem, including improvements to Logbook, StageLab, Elevare, and the site's free resources.",
+  },
+};
+
 const contentDirectory = path.join(process.cwd(), "content", "blog");
 const publicDirectory = path.join(process.cwd(), "public");
 
@@ -160,6 +214,34 @@ export function getBlogFeaturedImagePath(slug: string) {
 
 export function getPostsByCategory(category: BlogCategory): BlogPostSummary[] {
   return getAllPosts().filter((post) => post.category === category);
+}
+
+export function getBlogCategorySeo(category: BlogCategory) {
+  return BLOG_CATEGORY_SEO[category];
+}
+
+export function isBlogCategoryIndexable(category: BlogCategory) {
+  return getPostsByCategory(category).length >= MIN_INDEXABLE_BLOG_CATEGORY_POSTS;
+}
+
+export function getAdjacentPosts(post: BlogPostSummary) {
+  const chronological = [...getPostsByCategory(post.category)].reverse();
+  const index = chronological.findIndex((candidate) => candidate.slug === post.slug);
+
+  return {
+    previous: index > 0 ? chronological[index - 1] : null,
+    next: index >= 0 && index < chronological.length - 1 ? chronological[index + 1] : null,
+    related: chronological
+      .filter((candidate) => candidate.slug !== post.slug)
+      .sort((left, right) => {
+        const postTime = parseBlogDate(post.date).getTime();
+        const leftDistance = Math.abs(parseBlogDate(left.date).getTime() - postTime);
+        const rightDistance = Math.abs(parseBlogDate(right.date).getTime() - postTime);
+
+        return leftDistance - rightDistance;
+      })
+      .slice(0, 3),
+  };
 }
 
 export function getAllCategories(): BlogCategory[] {

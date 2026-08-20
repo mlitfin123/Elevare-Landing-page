@@ -4,7 +4,6 @@ import { type FormEvent, useState } from "react";
 import { usePathname } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
-import { getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ProfessionalProfileRecord } from "@/lib/marketplace-types";
 
@@ -59,12 +58,6 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
       return;
     }
 
-    if (user.id === professional.userId) {
-      setFeedback("You cannot report your own profile.");
-      setFeedbackType("error");
-      return;
-    }
-
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
@@ -77,30 +70,11 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
     setFeedback(null);
 
     try {
-      const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
-
-      if (!appUser) {
-        throw new Error("We couldn't find your marketplace user record yet.");
-      }
-
-      const { error } = await supabase.from("reports").insert({
-        reporter_id: appUser.id,
-        reporter_user_id: appUser.id,
-        reported_id: professional.userId,
-        reported_user_id: professional.userId,
-        reason,
-        details: details.trim() || null,
-        report_type: "professional_profile",
-        subject: professional.displayName,
-        description: details.trim() || reason,
-        reported_user_name: professional.displayName,
-        complaint_category: reason,
-        context: {
-          source: "website_marketplace",
-          pathname,
-          professional_profile_id: professional.id,
-          professional_slug: professional.profileSlug,
-        },
+      const { error } = await supabase.rpc("submit_professional_profile_report", {
+        target_profile_id: professional.id,
+        report_reason: reason,
+        report_details: details.trim() || null,
+        source_path: pathname,
       });
 
       if (error) {
@@ -152,6 +126,10 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
                 placeholder="Share the specific issue you want the review team to check."
               />
             </label>
+            <div className="form-note field-full">
+              Include only information relevant to the report. Do not submit medical records, passwords, payment
+              card details, or other highly sensitive information.
+            </div>
           </div>
 
           <div className="form-actions">

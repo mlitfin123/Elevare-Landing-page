@@ -1,14 +1,26 @@
-# Pre‑Launch Page — Mailchimp
+# ElevareFit website
 
-1) **index_mailchimp.html** — wired for Mailchimp embedded signups  
-   - Replace placeholders in the form `action` URL with your values:
-     - `<YOUR_DC>` = your Mailchimp data center (e.g. `us5`)
-     - `<YOUR_U>` = `u` parameter from your Mailchimp embed link
-     - `<YOUR_LIST_ID>` = `id` parameter from your Mailchimp embed link
-   - Fields map to common merge tags:
-     - `EMAIL`, `FNAME`, `CITY`, `SPECIALTY` (trainer), `GOAL` (client), `ROLE`, `TAGS`
-   - Set your **thank‑you redirect** inside **Mailchimp form settings** for the audience. Point it to `thank-you.html` on your domain.
+The active production website is the Next.js static-export project in `website/`. Vercel is the authoritative host for `www.elevarefit.org`; `.github/workflows/deploy.yml` validates builds and does not publish GitHub Pages.
 
-3) **thank-you.html** — confirmation page shown after successful signup.
+## Local validation
 
-4) **styles.css** — shared styling for both versions.
+Run these commands from `website/`:
+
+```powershell
+npm install
+npm run typecheck
+npm test
+npm run lint
+npm run build
+npm run seo:audit
+```
+
+## Legal versions
+
+See `docs/legal-versioning.md`. Do not edit generated legal archives or clean-route files directly.
+
+## Supabase migrations
+
+Marketplace migrations require explicit target verification. See `docs/deployment-and-migration-safety.md`. Never apply them to a linked project until the verification script confirms the intended Elevare marketplace project.
+
+The legacy root static site is retained under `legacy-static/` for reference and is not production content.

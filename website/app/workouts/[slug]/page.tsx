@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { TrainingDisclaimer } from "@/components/ContentDisclaimer";
 import { StructuredData } from "@/components/StructuredData";
 import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { ExerciseCard } from "@/components/training/ExerciseCard";
@@ -188,6 +189,10 @@ async function WorkoutGoalPage({ slug }: { slug: string }) {
         toolSlugs={getWorkoutGoalRelatedToolSlugs(goal.slug)}
         sourcePage={`workout_goal_${goal.slug}_related_tools`}
       />
+
+      <section className="section">
+        <TrainingDisclaimer />
+      </section>
 
       <TrainingLogbookCta
         title="Track this workout goal for free in Logbook."
@@ -511,6 +516,10 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="section">
+        <TrainingDisclaimer />
       </section>
 
       <TrainingLogbookCta

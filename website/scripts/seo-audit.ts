@@ -16,7 +16,7 @@ import {
 } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
-  deduplicateExercises,
+  canonicalizeTrainingSnapshot,
   EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
   getExerciseSubstitutionCompatibilityScore,
@@ -24,20 +24,14 @@ import {
   getNormalizedExerciseMovementPattern,
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
+  getWorkoutCanonicalIdentityKey,
   matchesPrimaryMuscleCategory,
   normalizeExerciseName,
   normalizeMuscleGroup,
   type ExerciseRecord,
-  type WorkoutTemplateExerciseRecord,
-  type WorkoutTemplateRecord,
+  type TrainingDataSnapshot,
 } from "../lib/training-data.ts";
 import { getExerciseContentScore } from "../lib/training-seo.ts";
-
-type TrainingSnapshot = {
-  exercises: ExerciseRecord[];
-  workoutTemplates: WorkoutTemplateRecord[];
-  workoutTemplateExercises: WorkoutTemplateExerciseRecord[];
-};
 
 const projectRoot = process.cwd();
 const outDir = path.join(projectRoot, "out");
@@ -114,6 +108,10 @@ function extractRobots(html: string) {
   return html.match(/<meta\s+name="robots"\s+content="([^"]*)"/i)?.[1]?.trim().toLowerCase() ?? "";
 }
 
+function countPrimaryHeadings(html: string) {
+  return [...html.matchAll(/<h1\b/gi)].length;
+}
+
 function extractInternalLinks(html: string) {
   return [...html.matchAll(/<a[^>]+href="([^"]+)"/gi)]
     .map((match) => match[1] ?? "")
@@ -178,17 +176,40 @@ function findExerciseByName(exercises: ExerciseRecord[], exerciseName: string) {
   return exercises.find((exercise) => exercise.name === exerciseName) ?? null;
 }
 
+function findLegacyLegalLinks() {
+  const activeDirectories = ["app", "components", "content/blog", "lib"];
+  const legacyPattern = /(?:^|["'(=])\/?(?:privacy-policy|terms-of-service)\.html(?:["')?#]|$)/gim;
+  const matches: string[] = [];
+
+  for (const directory of activeDirectories) {
+    const directoryPath = path.join(projectRoot, directory);
+
+    for (const filePath of walkSourceFiles(directoryPath)) {
+      const source = fs.readFileSync(filePath, "utf8");
+
+      if (legacyPattern.test(source)) {
+        matches.push(path.relative(projectRoot, filePath));
+      }
+
+      legacyPattern.lastIndex = 0;
+    }
+  }
+
+  return matches;
+}
+
 function main() {
   if (!fs.existsSync(outDir)) {
     throw new Error("Static export output is missing. Run `npm run build` before running the SEO audit.");
   }
 
-  const trainingSnapshot = readJsonFile<TrainingSnapshot>(trainingDataPath, {
+  const trainingSnapshot = canonicalizeTrainingSnapshot(readJsonFile<TrainingDataSnapshot>(trainingDataPath, {
+    generatedAt: null,
     exercises: [],
     workoutTemplates: [],
     workoutTemplateExercises: [],
-  });
-  trainingSnapshot.exercises = deduplicateExercises(trainingSnapshot.exercises);
+    workoutRedirects: [],
+  }));
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
   const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
     generatedAt: null,
@@ -211,6 +232,22 @@ function main() {
   });
 
   const canonicalPageUrls = [...new Set(childSitemapUrls)];
+  const duplicateSitemapEntries = slugDuplicates(childSitemapUrls).map(
+    ([url, count]) => `${url} appears ${count} times`,
+  );
+  const hashedWorkoutUrlsInSitemap = canonicalPageUrls.filter((url) =>
+    /\/workouts\/[a-z0-9-]+-[a-f0-9]{8}\/?$/i.test(new URL(url).pathname),
+  );
+  const vercelConfig = readJsonFile<{ redirects?: Array<{ source: string; destination: string }> }>(
+    path.join(projectRoot, "vercel.json"),
+    { redirects: [] },
+  );
+  const redirectSources = new Set(
+    (vercelConfig.redirects ?? []).map((redirect) => normalizeSitePath(redirect.source)),
+  );
+  const redirectUrlsInSitemap = canonicalPageUrls.filter((url) =>
+    redirectSources.has(toSitePathFromUrl(url)),
+  );
   const totalHtmlFiles = walkHtmlFiles(outDir).length;
 
   const non200Urls = canonicalPageUrls.filter((url) => !fileExistsForUrl(url));
@@ -218,6 +255,7 @@ function main() {
   const missingMetaTitle: string[] = [];
   const missingMetaDescription: string[] = [];
   const unexpectedNoindex: string[] = [];
+  const multipleH1Pages: string[] = [];
   const linkGraph = new Map<string, string[]>();
   const pageTitles: Array<{ url: string; value: string }> = [];
   const pageDescriptions: Array<{ url: string; value: string }> = [];
@@ -254,6 +292,12 @@ function main() {
       unexpectedNoindex.push(url);
     }
 
+    const h1Count = countPrimaryHeadings(html);
+
+    if (h1Count !== 1) {
+      multipleH1Pages.push(`${url} has ${h1Count} H1 elements`);
+    }
+
     linkGraph.set(sitePath, extractInternalLinks(html));
   }
 
@@ -276,6 +320,12 @@ function main() {
   const duplicateExerciseNames = slugDuplicates(trainingSnapshot.exercises.map((exercise) => normalizeExerciseName(exercise.name))).map(
     ([name, count]) => `exercise name "${name}" appears ${count} times after snapshot normalization`,
   );
+  const duplicateWorkoutCanonicalIdentities = slugDuplicates(
+    trainingSnapshot.workoutTemplates.map((workout) =>
+      getWorkoutCanonicalIdentityKey(workout, trainingSnapshot.workoutTemplateExercises),
+    ),
+  ).map(([, count]) => `canonical workout identity appears ${count} times`);
+  const legacyLegalLinks = findLegacyLegalLinks();
 
   const shortExerciseContent = trainingSnapshot.exercises
     .filter((exercise) => getExerciseContentScore(exercise) < 10)
@@ -593,6 +643,11 @@ function main() {
   console.log(`Eligible public marketplace profiles: ${publicMarketplaceProfessionals.length}`);
 
   printSection("Duplicate slugs", duplicateSlugs);
+  printSection("Duplicate workout canonical identities", duplicateWorkoutCanonicalIdentities);
+  printSection("Duplicate sitemap entries", duplicateSitemapEntries);
+  printSection("Hashed workout URLs in sitemap", hashedWorkoutUrlsInSitemap);
+  printSection("Known redirect URLs in sitemap", redirectUrlsInSitemap);
+  printSection("Legacy legal links in active source", legacyLegalLinks);
   printSection("Duplicate exercise names", duplicateExerciseNames.slice(0, 50));
   printSection("Duplicate meta titles", duplicateMetaTitles.slice(0, 25));
   printSection("Duplicate meta descriptions", duplicateMetaDescriptions.slice(0, 25));
@@ -600,6 +655,7 @@ function main() {
   printSection("Missing meta title", missingMetaTitle.slice(0, 25));
   printSection("Missing meta description", missingMetaDescription.slice(0, 25));
   printSection("Unexpected noindex pages", unexpectedNoindex.slice(0, 25));
+  printSection("Pages without exactly one H1", multipleH1Pages.slice(0, 50));
   printSection("Exercise pages with very short content", shortExerciseContent.slice(0, 50));
   printSection("Bench press classification issues", benchPressClassificationIssues.slice(0, 50));
   printSection("Category mismatches", categoryMismatches.slice(0, 50));
@@ -617,6 +673,23 @@ function main() {
   printSection("Marketplace directory rendering issues", marketplaceDirectoryRenderingIssues);
   printSection("Marketplace category rendering issues", marketplaceCategoryRenderingIssues);
   printSection("Marketplace profile rendering issues", marketplaceProfileRenderingIssues);
+
+  const criticalIssueCount = [
+    non200Urls,
+    missingCanonical,
+    missingMetaTitle,
+    missingMetaDescription,
+    duplicateWorkoutCanonicalIdentities,
+    duplicateSitemapEntries,
+    hashedWorkoutUrlsInSitemap,
+    redirectUrlsInSitemap,
+    legacyLegalLinks,
+    multipleH1Pages,
+  ].reduce((total, issues) => total + issues.length, 0);
+
+  if (criticalIssueCount > 0) {
+    process.exitCode = 1;
+  }
 }
 
 function walkHtmlFiles(directory: string): string[] {
@@ -632,6 +705,30 @@ function walkHtmlFiles(directory: string): string[] {
     }
 
     if (entry.isFile() && fullPath.endsWith(".html")) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+function walkSourceFiles(directory: string): string[] {
+  if (!fs.existsSync(directory)) {
+    return [];
+  }
+
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...walkSourceFiles(fullPath));
+      continue;
+    }
+
+    if (entry.isFile() && /\.(?:ts|tsx|js|jsx|md|mdx|html)$/.test(entry.name)) {
       files.push(fullPath);
     }
   }

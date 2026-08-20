@@ -33,7 +33,6 @@ function createProfessional(
 ): ProfessionalProfileRecord {
   return {
     id: "professional-1",
-    userId: "user-1",
     displayName: "Alex Morgan",
     profileSlug: "alex-morgan",
     profilePhotoUrl: null,

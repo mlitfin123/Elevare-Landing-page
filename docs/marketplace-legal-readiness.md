@@ -32,7 +32,7 @@ Professional profile submission uses `submit_current_trainer_profile_for_review_
 - Credential country and jurisdiction are supported without changing credential verification status.
 - Supporting document and reference URLs are removed from the anonymous public-profile view.
 - Raw credential rows are restricted to the owning Professional; other users receive only public-safe credential details through the approved-profile view.
-- No dedicated credential-document Storage bucket or upload flow was found in this website. The current field accepts an external URL. The form now tells Professionals to use a private, access-controlled link for review.
+- The legal/security migration creates a private `credential-documents` Storage bucket with owner-scoped access policies for a future first-party upload flow. The current website field still accepts an external review URL and tells Professionals to use a private, access-controlled link. Neither document nor reference URLs are included in public marketplace data.
 - Profile photos intentionally use the public `profile-photos` bucket because approved marketplace profile photos are public content.
 
 ### Legal acceptance history
@@ -58,7 +58,7 @@ The request does not immediately delete Auth or relational records. When an Auth
 The repository confirms these services or integration categories:
 
 - Supabase for marketplace authentication, database, and profile-photo storage.
-- GitHub Actions and GitHub Pages for static website build and hosting.
+- Vercel for the production website, with GitHub Actions used for validation and a Vercel deploy hook used for scheduled static-data refreshes.
 - Google Analytics for website analytics.
 - Resend through a Supabase Edge Function for waitlist email/contact handling.
 - Stripe references and payment records exist elsewhere in Elevare Services, but the current website marketplace consultation flow does not perform checkout.
@@ -82,6 +82,8 @@ Do not add country-specific representatives, tax systems, credential-equivalency
 ## Legal Copy Review Needed
 
 Counsel should review the existing provisions governing arbitration, governing law, liability limitations, waivers, indemnification, assumption of risk, retention, legal bases, privacy rights, cookie/analytics consent, and international transfer language. Counsel should also confirm whether current booking/payment language is appropriate across the combined Elevare mobile and website Services while marketplace website checkout remains unavailable.
+
+The active Terms retain the existing concise arbitration language. A materially expanded local arbitration draft remains internal and is marked `REQUIRES LEGAL REVIEW BEFORE DEPLOYMENT`; it was not promoted to the active Terms.
 
 Operational review is also needed for credential-link handling, deletion completion, retention decisions, processor agreements, and whether analytics consent behavior should change if Elevare intentionally targets additional jurisdictions.
 

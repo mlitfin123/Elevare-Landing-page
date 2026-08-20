@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 import {
-  deduplicateExercises,
+  canonicalizeTrainingSnapshot,
   EMPTY_TRAINING_SNAPSHOT,
   type ExerciseRecord,
   type TrainingDataSnapshot,
@@ -18,13 +18,7 @@ function readTrainingDataFile(): TrainingDataSnapshot {
   }
 
   const parsed = JSON.parse(fs.readFileSync(generatedDataPath, "utf8")) as TrainingDataSnapshot;
-
-  return {
-    generatedAt: parsed.generatedAt ?? null,
-    exercises: deduplicateExercises(parsed.exercises ?? []),
-    workoutTemplates: parsed.workoutTemplates ?? [],
-    workoutTemplateExercises: parsed.workoutTemplateExercises ?? [],
-  };
+  return canonicalizeTrainingSnapshot(parsed);
 }
 
 export const getTrainingSnapshot = cache(async () => {

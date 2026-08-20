@@ -1,4 +1,5 @@
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
+import { TrainingDisclaimer } from "@/components/ContentDisclaimer";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { WorkoutRecommendationTool } from "@/components/tools/WorkoutRecommendationTool";
@@ -282,6 +283,10 @@ export default async function WorkoutGeneratorPage() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="section">
+        <TrainingDisclaimer />
       </section>
 
       <section className="section">

@@ -233,6 +233,10 @@ export function MarketplaceDemandForm({
                 rows={4}
               />
             </label>
+            <div className="form-note field-full">
+              Share only what is needed for this search. Do not include medical records, account passwords, payment
+              card details, or other highly sensitive information.
+            </div>
           </div>
 
           <div className="form-actions">

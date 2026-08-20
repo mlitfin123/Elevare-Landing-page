@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  deduplicateWorkoutTemplates,
   deduplicateExercises,
   getExerciseSubstitutions,
   getExercisesByCategorySlug,
@@ -541,6 +542,50 @@ test("getRelatedWorkoutTemplatesForExercise prioritizes templates containing the
   const related = getRelatedWorkoutTemplatesForExercise(exercises[0]!, workoutTemplates, templateExercises, 2);
 
   assert.equal(related[0]?.slug, "upper-workout");
+});
+
+test("deduplicateWorkoutTemplates retains clean slugs and remaps duplicate exercise rows", () => {
+  const cleanWorkout = {
+    ...workoutTemplates[0]!,
+    id: "workout-clean",
+    name: "Beginner Dumbbell Workout",
+    slug: "beginner-dumbbell-workout",
+    equipment: ["dumbbell"],
+    createdAt: "2026-06-01T00:00:00.000Z",
+  };
+  const duplicateWorkout = {
+    ...cleanWorkout,
+    id: "workout-duplicate",
+    slug: "beginner-dumbbell-workout-68727f10",
+    createdAt: "2026-07-01T00:00:00.000Z",
+  };
+  const sharedExercise = {
+    ...templateExercises[0]!,
+    id: "row-clean",
+    workoutTemplateId: cleanWorkout.id,
+    exerciseId: "ex-3",
+    exerciseName: "Dumbbell Bench Press",
+  };
+  const duplicateExercise = {
+    ...sharedExercise,
+    id: "row-duplicate",
+    workoutTemplateId: duplicateWorkout.id,
+  };
+
+  const result = deduplicateWorkoutTemplates(
+    [duplicateWorkout, cleanWorkout],
+    [duplicateExercise, sharedExercise],
+  );
+
+  assert.deepEqual(result.workoutTemplates.map((workout) => workout.slug), ["beginner-dumbbell-workout"]);
+  assert.deepEqual(result.workoutRedirects, [
+    {
+      sourceSlug: "beginner-dumbbell-workout-68727f10",
+      destinationSlug: "beginner-dumbbell-workout",
+    },
+  ]);
+  assert.equal(result.workoutTemplateExercises.length, 1);
+  assert.equal(result.workoutTemplateExercises[0]?.workoutTemplateId, cleanWorkout.id);
 });
 
 test("getExerciseSubstitutions rejects curls and triceps isolation for bench-pattern substitutions", () => {

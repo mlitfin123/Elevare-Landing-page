@@ -840,7 +840,7 @@ export function buildProfessionalFallbackGroups({
   addGroup(
     "online",
     "Available Online",
-    "These reviewed profiles can work with you online, so location becomes less restrictive.",
+    "These published profiles can work with you online, so location becomes less restrictive.",
     sortProfessionals(
       professionals.filter((professional) =>
         professionalMatchesCategory(professional, categorySlug)
@@ -974,7 +974,7 @@ export function buildCategoryIntro(category: ProfessionalCategoryRecord) {
   const specialtyExamples = taxonomy?.specialties.slice(0, 4).join(", ");
   const categoryDescription = category.shortDescription ?? category.headline;
 
-  return `${categoryDescription} Browse reviewed profiles on Elevare and compare specialties, service modes, location coverage, and pricing context before reaching out.${
+  return `${categoryDescription} Browse published profiles on Elevare and compare specialties, service modes, location coverage, and pricing context before reaching out.${
     specialtyExamples ? ` Common focus areas include ${specialtyExamples}.` : ""
   }`;
 }

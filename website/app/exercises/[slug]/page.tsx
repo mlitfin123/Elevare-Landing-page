@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { TrainingDisclaimer } from "@/components/ContentDisclaimer";
 import { StructuredData } from "@/components/StructuredData";
 import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { ExerciseCard } from "@/components/training/ExerciseCard";
@@ -9,9 +10,12 @@ import { TrackedLink } from "@/components/TrackedLink";
 import { buildMetadata, absoluteUrl } from "@/lib/site";
 import { getAllExercises, getAllWorkoutTemplateExercises, getAllWorkoutTemplates, getExerciseBySlug } from "@/lib/training";
 import {
+  buildExerciseMetadataTitle,
   getCategoryRelatedToolSlugs,
   getExerciseCategoryContent,
   getExerciseCategoryFeaturedExercises,
+  getExerciseCategoryMetaDescription,
+  getExerciseIndexPriority,
   getExerciseRelatedToolSlugs,
 } from "@/lib/training-seo";
 import {
@@ -79,11 +83,9 @@ export async function generateMetadata({ params }: ExercisePageProps) {
       });
     }
 
-    const categoryContent = getExerciseCategoryContent(category);
-
     return buildMetadata({
       title: category.title,
-      description: categoryContent.introParagraphs[0] ?? category.description,
+      description: getExerciseCategoryMetaDescription(category),
       pathname: `/exercises/${slug}`,
     });
   }
@@ -99,9 +101,12 @@ export async function generateMetadata({ params }: ExercisePageProps) {
   }
 
   return buildMetadata({
-    title: exercise.seoTitle ?? exercise.name,
+    title: buildExerciseMetadataTitle(exercise),
     description: exercise.seoDescription ?? buildExerciseSummary(exercise),
     pathname: `/exercises/${exercise.slug}`,
+    robots: getExerciseIndexPriority(exercise) === "low_priority"
+      ? { index: false, follow: true }
+      : undefined,
   });
 }
 
@@ -332,6 +337,10 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
         toolSlugs={getCategoryRelatedToolSlugs(category)}
         sourcePage={`exercise_category_${category.slug}_related_tools`}
       />
+
+      <section className="section">
+        <TrainingDisclaimer />
+      </section>
 
       <TrainingLogbookCta
         title="Track this exercise category for free in Logbook."
@@ -613,6 +622,10 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="section">
+        <TrainingDisclaimer />
       </section>
 
       <TrainingLogbookCta
