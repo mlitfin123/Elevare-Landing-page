@@ -27,6 +27,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "@vercel/analytics": "^2.0.1",
     "gray-matter": "^4.0.3",
     "next": "^16.2.4",
     "next-mdx-remote": "^6.0.0",

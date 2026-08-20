@@ -16,7 +16,9 @@ type LegalDocumentRecord = {
 };
 
 function hashContent(content: Buffer) {
-  return createHash("sha256").update(content).digest("hex");
+  // Git may check text files out with CRLF on Windows and LF in Linux builds.
+  const normalizedContent = content.toString("utf8").replace(/\r\n?/g, "\n");
+  return createHash("sha256").update(normalizedContent, "utf8").digest("hex");
 }
 
 async function buildRecord(document: (typeof LEGAL_DOCUMENTS)[keyof typeof LEGAL_DOCUMENTS]) {
