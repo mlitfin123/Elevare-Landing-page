@@ -1,0 +1,19 @@
+name: Refresh Vercel website data
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Vercel production build
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            "$VERCEL_DEPLOY_HOOK_URL"
