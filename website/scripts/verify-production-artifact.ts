@@ -7,16 +7,24 @@ import {
   type LegacyRedirect,
 } from "../lib/legacy-routes.ts";
 import { getLegacyToolPath, tools } from "../lib/tools.ts";
+import { LEGACY_SITE_ORIGINS, siteConfig } from "../lib/site.ts";
 
 const projectRoot = process.cwd();
 const outDirectory = path.join(projectRoot, "out");
 const redirectArtifactPath = path.join(projectRoot, "config", "redirects.json");
 const vercelConfigPath = path.join(projectRoot, "vercel.json");
+const nextConfigPath = path.join(projectRoot, "next.config.ts");
 
 type VercelConfig = {
   bulkRedirectsPath?: string;
   trailingSlash?: boolean;
   outputDirectory?: string;
+  redirects?: Array<{
+    source: string;
+    destination: string;
+    permanent?: boolean;
+    has?: Array<{ type: string; key?: string; value?: string }>;
+  }>;
   headers?: Array<{
     source: string;
     has?: Array<{ type: string; key: string }>;
@@ -43,7 +51,7 @@ function outputPagePath(pathname: string) {
 
 function normalizeHref(href: string) {
   try {
-    const pathname = new URL(href, "https://www.elevarefit.org").pathname;
+    const pathname = new URL(href, siteConfig.url).pathname;
     return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   } catch {
     return href;
@@ -166,9 +174,34 @@ if (vercelConfig.bulkRedirectsPath !== "config/redirects.json") {
   throw new Error("vercel.json does not reference the generated redirect artifact.");
 }
 
-if (vercelConfig.trailingSlash !== true || vercelConfig.outputDirectory !== "out") {
-  throw new Error("vercel.json must deploy out/ with the canonical trailing-slash policy.");
+if (vercelConfig.trailingSlash !== true) {
+  throw new Error("vercel.json must preserve the canonical trailing-slash policy.");
 }
+
+if (vercelConfig.outputDirectory !== undefined) {
+  throw new Error("vercel.json must not override Vercel's Next.js framework output directory.");
+}
+
+const nextConfigSource = fs.readFileSync(nextConfigPath, "utf8");
+
+if (!/output:\s*["']export["']/.test(nextConfigSource)) {
+  throw new Error("next.config.ts must retain output: export so Next.js generates the static out/ artifact.");
+}
+
+const requiredRedirectHosts = ["elevarefit.com", "www.elevarefit.org", "elevarefit.org"];
+const domainRedirectIssues = requiredRedirectHosts.flatMap((host) => {
+  const redirect = (vercelConfig.redirects ?? []).find((entry) =>
+    entry.source === "/:path*"
+    && entry.has?.some((condition) => condition.type === "host" && condition.value === host),
+  );
+
+  if (!redirect) return [`Missing host redirect for ${host}`];
+  if (redirect.destination !== `${siteConfig.url}/:path*`) return [`${host} does not redirect path-for-path to the canonical host`];
+  if (redirect.permanent !== true) return [`${host} redirect is not permanent`];
+  return [];
+});
+
+failIfIssues("Domain redirect validation failed", domainRedirectIssues);
 
 const protectedFilterKeys = new Set(
   (vercelConfig.headers ?? []).flatMap((entry) =>
@@ -228,6 +261,47 @@ for (const fileName of ["front.webp", "side.webp", "back.webp"]) {
 
 failIfIssues("Prep image artifact validation failed", prepImageIssues);
 
+const legacyWebsiteUrlPattern = /https:\/\/(?:www\.)?elevarefit\.org\b/i;
+const activeDomainIssues: string[] = [];
+
+for (const htmlPath of walkFiles(outDirectory, ".html")) {
+  const page = path.relative(outDirectory, htmlPath).replaceAll("\\", "/");
+  if (page.startsWith("legal/archive/")) continue;
+
+  const html = fs.readFileSync(htmlPath, "utf8");
+  const canonical = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/i)?.[1];
+  const openGraphUrl = html.match(/<meta\s+property=["']og:url["']\s+content=["']([^"']+)["']/i)?.[1];
+
+  if (canonical && new URL(canonical).origin !== siteConfig.url) {
+    activeDomainIssues.push(`${page} has a non-canonical-domain canonical: ${canonical}`);
+  }
+  if (openGraphUrl && new URL(openGraphUrl).origin !== siteConfig.url) {
+    activeDomainIssues.push(`${page} has a non-canonical-domain Open Graph URL: ${openGraphUrl}`);
+  }
+  if (legacyWebsiteUrlPattern.test(html)) {
+    activeDomainIssues.push(`${page} contains an active legacy-domain website URL`);
+  }
+}
+
+const sitemapIndexXml = fs.readFileSync(path.join(outDirectory, "sitemap.xml"), "utf8");
+if (legacyWebsiteUrlPattern.test(`${sitemapIndexXml}\n${sitemapXml}`)) {
+  activeDomainIssues.push("Generated sitemap output contains a legacy-domain URL");
+}
+if (![...sitemapIndexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].every((match) => match[1]?.startsWith(`${siteConfig.url}/`))) {
+  activeDomainIssues.push("Sitemap index contains a URL outside the canonical origin");
+}
+
+const robotsTxt = fs.readFileSync(path.join(outDirectory, "robots.txt"), "utf8");
+if (!robotsTxt.includes(`Sitemap: ${siteConfig.url}/sitemap.xml`) || legacyWebsiteUrlPattern.test(robotsTxt)) {
+  activeDomainIssues.push("robots.txt does not advertise only the canonical .com sitemap");
+}
+
+failIfIssues("Canonical domain artifact validation failed", activeDomainIssues);
+
+if (!LEGACY_SITE_ORIGINS.every((origin) => origin.endsWith("elevarefit.org"))) {
+  throw new Error("Legacy origin allowlist must remain limited to the historical website domain.");
+}
+
 const sitemapUrlCount = [...sitemapXml.matchAll(/<url>/g)].length;
 const htmlCount = walkFiles(outDirectory, ".html").length;
 
@@ -239,3 +313,4 @@ console.log(`Retired workout internal links: 0`);
 console.log(`Legacy tool internal links: 0`);
 console.log(`Permanent legacy redirects: ${actualRedirects.length}`);
 console.log(`Filtered marketplace header rules: ${protectedFilterKeys.size}`);
+console.log(`Permanent domain redirects: ${requiredRedirectHosts.length}`);

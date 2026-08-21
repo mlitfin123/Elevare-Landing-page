@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { LEGAL_DOCUMENTS } from "../lib/legal.ts";
-import { archiveFileToProductionRoute } from "../lib/legal-routes.ts";
+import { archiveFileToProductionRoute, renderActiveLegalHtml } from "../lib/legal-routes.ts";
 
 const projectRoot = process.cwd();
 const isInitialize = process.argv.includes("--initialize");
@@ -33,6 +33,10 @@ async function buildRecord(document: (typeof LEGAL_DOCUMENTS)[keyof typeof LEGAL
     "index.html",
   );
   const sourceContent = await fs.readFile(sourcePath);
+  const activeContent = Buffer.from(
+    renderActiveLegalHtml(sourceContent.toString("utf8"), document.activePath),
+    "utf8",
+  );
 
   if (isInitialize) {
     await fs.mkdir(path.dirname(archiveFilePath), { recursive: true });
@@ -47,7 +51,7 @@ async function buildRecord(document: (typeof LEGAL_DOCUMENTS)[keyof typeof LEGAL
     }
 
     await fs.mkdir(path.dirname(activeRouteFilePath), { recursive: true });
-    await fs.writeFile(activeRouteFilePath, sourceContent);
+    await fs.writeFile(activeRouteFilePath, activeContent);
   }
 
   const archivedContent = await fs.readFile(archiveFilePath);
@@ -56,7 +60,7 @@ async function buildRecord(document: (typeof LEGAL_DOCUMENTS)[keyof typeof LEGAL
   }
 
   const activeRouteContent = await fs.readFile(activeRouteFilePath);
-  if (!activeRouteContent.equals(sourceContent)) {
+  if (!activeRouteContent.equals(activeContent)) {
     throw new Error(`Generated clean route for ${document.key} is stale. Run npm run legal:archive.`);
   }
 

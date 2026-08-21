@@ -6,11 +6,12 @@ import {
   archiveFileToProductionRoute,
   publicHtmlFileToProductionRoute,
 } from "../lib/legal-routes.ts";
+import { LEGACY_SITE_ORIGINS, siteConfig } from "../lib/site.ts";
 
 const projectRoot = process.cwd();
 const publicRoot = path.join(projectRoot, "public");
 const outputRoot = path.join(projectRoot, "out");
-const siteOrigin = "https://www.elevarefit.org";
+const recognizedSiteOrigins = new Set([siteConfig.url, ...LEGACY_SITE_ORIGINS]);
 const verifyOutput = process.argv.includes("--output");
 
 type ArchiveRecord = {
@@ -38,7 +39,7 @@ function internalPathFromHref(href: string) {
   if (/^(?:mailto:|tel:|#)/i.test(href)) return null;
   if (/^https?:\/\//i.test(href)) {
     const url = new URL(href);
-    return url.origin === siteOrigin ? url.pathname : null;
+    return recognizedSiteOrigins.has(url.origin) ? url.pathname : null;
   }
   return href.startsWith("/") ? href.split(/[?#]/, 1)[0] : null;
 }

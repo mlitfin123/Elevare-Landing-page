@@ -2,7 +2,9 @@
 
 ## Production website
 
-Vercel is the authoritative production host for `www.elevarefit.org`. A push to the connected GitHub repository triggers the normal Vercel deployment. The scheduled `vercel-refresh.yml` workflow invokes the Vercel deployment hook so static marketplace and nutrition data can refresh.
+Vercel is the authoritative production host for `www.elevarefit.com`. The `.org` hostnames remain attached to the same project only as permanent redirects. A push to the connected GitHub repository triggers the normal Vercel deployment. The scheduled `vercel-refresh.yml` workflow invokes the Vercel deployment hook so static marketplace and nutrition data can refresh.
+
+Follow `docs/domain-migration-checklist.md` for the cutover order. Do not deploy the `.com` canonical configuration until the `.com` domains are attached, DNS and TLS are valid, and Supabase Auth accepts the new origin.
 
 The GitHub workflow in `.github/workflows/deploy.yml` validates the website only. It must not publish the production domain through GitHub Pages.
 

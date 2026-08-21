@@ -10,6 +10,8 @@ Version identifiers, effective dates, active paths, immutable archive files, and
 4. Create a new forward-only Supabase migration for the new legal-version metadata. Never rewrite an already-recorded historical seed migration.
 5. Commit the source, archive, manifest, and new migration together.
 
-The generator normalizes line endings before hashing so Windows and Linux builds produce the same SHA-256 value. It refuses to overwrite an archive under an existing version. Normal builds run both `legal:verify` and `legal:routes`; they fail if an active document changes without a version bump, if a manifest hash differs, or if a source file and clean production route no longer align.
+The generator normalizes line endings before hashing so Windows and Linux builds produce the same SHA-256 value. It refuses to overwrite an archive under an existing version. Normal builds run both `legal:verify` and `legal:routes`; they fail if an active document changes without a version bump, if a manifest hash differs, or if a source file and clean production route no longer aligns with the expected delivery artifact.
+
+Current-route canonical and Open Graph URLs are delivery metadata. The generator overlays the centralized current site origin onto the clean public route without altering the archived source bytes or acceptance version. This permits a website-domain migration while preserving immutable historical legal evidence. Any change to substantive legal language, displayed effective dates, or acceptance terms still requires a new legal version and archive.
 
 Archived documents are evidence records. They are not active navigation destinations and must not be deleted or rewritten.

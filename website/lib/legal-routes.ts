@@ -1,3 +1,5 @@
+import { absoluteUrl } from "./site.ts";
+
 export type StaticLegalRoute = {
   label: string;
   sourceFile: string;
@@ -5,14 +7,12 @@ export type StaticLegalRoute = {
   canonical: string;
 };
 
-const SITE_URL = "https://www.elevarefit.org";
-
 function legalRoute(label: string, sourceFile: string, route: string): StaticLegalRoute {
   return {
     label,
     sourceFile,
     route,
-    canonical: `${SITE_URL}${route}`,
+    canonical: absoluteUrl(route),
   };
 }
 
@@ -36,6 +36,20 @@ export const ACTIVE_LEGAL_ROUTES = [
   ...Object.values(OVERARCHING_LEGAL_ROUTES),
   ...Object.values(STAGELAB_LEGAL_ROUTES),
 ] as const;
+
+export function renderActiveLegalHtml(html: string, route: string) {
+  const canonical = absoluteUrl(route);
+
+  return html
+    .replace(
+      /(<link\s+rel=["']canonical["']\s+href=["'])[^"']+(["'])/i,
+      `$1${canonical}$2`,
+    )
+    .replace(
+      /(<meta\s+property=["']og:url["']\s+content=["'])[^"']+(["'])/i,
+      `$1${canonical}$2`,
+    );
+}
 
 export function publicHtmlFileToProductionRoute(sourceFile: string) {
   const normalized = sourceFile.replace(/\\/g, "/").replace(/^\/+/, "");

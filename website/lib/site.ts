@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 
+export const PRIMARY_SITE_ORIGIN = "https://www.elevarefit.com";
+export const LEGACY_SITE_ORIGINS = [
+  "https://www.elevarefit.org",
+  "https://elevarefit.org",
+] as const;
+
 export const siteConfig = {
   name: "ElevareFit",
   title: "ElevareFit",
   description:
     "Discover trainers, coaches, nutrition professionals, wellness specialists, free fitness tools, and tracking apps on ElevareFit.",
-  url: "https://www.elevarefit.org",
+  url: PRIMARY_SITE_ORIGIN,
   waitlist: {
     endpoint: "https://yozfzsudbcqjttepjnyg.supabase.co/functions/v1/resend-waitlist",
   },

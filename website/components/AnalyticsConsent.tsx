@@ -44,6 +44,7 @@ function clearAnalyticsCookies() {
     const name = cookie.split("=")[0]?.trim();
     if (!name || !(name === "_ga" || name === "_gid" || name.startsWith("_ga_"))) return;
     document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+    document.cookie = `${name}=; Max-Age=0; path=/; domain=.elevarefit.com; SameSite=Lax`;
     document.cookie = `${name}=; Max-Age=0; path=/; domain=.elevarefit.org; SameSite=Lax`;
   });
 }

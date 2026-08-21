@@ -3,9 +3,28 @@
   "framework": "nextjs",
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
-  "outputDirectory": "out",
   "trailingSlash": true,
   "bulkRedirectsPath": "config/redirects.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "elevarefit.com" }],
+      "destination": "https://www.elevarefit.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.elevarefit.org" }],
+      "destination": "https://www.elevarefit.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "elevarefit.org" }],
+      "destination": "https://www.elevarefit.com/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/professionals/:path*",

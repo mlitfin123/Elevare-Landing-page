@@ -4,6 +4,8 @@ const RESEND_API_BASE = "https://api.resend.com";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const allowedOrigins = new Set([
+  "https://www.elevarefit.com",
+  "https://elevarefit.com",
   "https://www.elevarefit.org",
   "https://elevarefit.org",
   "http://localhost:3000",

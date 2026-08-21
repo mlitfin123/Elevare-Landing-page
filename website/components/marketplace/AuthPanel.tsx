@@ -4,6 +4,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
+import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
@@ -80,6 +81,7 @@ export function AuthPanel() {
         email: email.trim(),
         password,
         options: {
+          emailRedirectTo: absoluteUrl("/account/"),
           data: {
             legal_acceptance: true,
             legal_acceptance_source: "website_signup",
