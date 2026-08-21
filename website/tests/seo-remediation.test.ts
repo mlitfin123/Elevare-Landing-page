@@ -102,7 +102,7 @@ test("filtered marketplace URLs receive an immediate noindex response header", (
   );
 });
 
-test("Vercel deploys the website static export with one authoritative routing config", () => {
+test("Vercel deploys the Next.js application with one authoritative routing config", () => {
   const config = readVercelConfig();
   const nextConfig = fs.readFileSync(path.join(projectRoot, "next.config.ts"), "utf8");
   const embeddedLegacyRedirects = config.redirects.filter((redirect) => !redirect.has?.length);
@@ -112,7 +112,7 @@ test("Vercel deploys the website static export with one authoritative routing co
   assert.ok(config.redirects.length + config.headers.length < 2048);
   assert.equal(config.trailingSlash, true);
   assert.equal(config.outputDirectory, undefined);
-  assert.match(nextConfig, /output:\s*["']export["']/);
+  assert.doesNotMatch(nextConfig, /output:\s*["']export["']/);
   assert.equal(fs.existsSync(path.join(projectRoot, "app", "tools", "page.tsx")), false);
   assert.equal(fs.existsSync(path.join(projectRoot, "app", "tools", "[slug]", "page.tsx")), false);
   assert.equal(fs.existsSync(path.join(projectRoot, "app", "tools", "workout-generator", "page.tsx")), true);

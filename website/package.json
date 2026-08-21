@@ -12,7 +12,7 @@
     "check:static": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types ./tests/*.test.ts",
+    "test": "node --conditions=react-server --test --experimental-strip-types ./tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "seo:audit": "node --experimental-strip-types ./scripts/seo-audit.ts",
     "seo:artifact": "node --experimental-strip-types ./scripts/verify-production-artifact.ts",
@@ -33,12 +33,17 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "@vercel/analytics": "^2.0.1",
     "gray-matter": "^4.0.3",
-    "next": "^16.2.4",
+    "next": "^16.3.1",
     "next-mdx-remote": "^6.0.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.3",
+    "stripe": "^22.5.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

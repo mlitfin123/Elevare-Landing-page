@@ -82,6 +82,14 @@ export default function StageLabPage() {
             <ProductCtaButtons product="StageLab" context="stagelab_hero" />
             <TrackedLink
               className="button button-secondary"
+              href="/stagelab/quick-analysis/"
+              eventName="cta_click"
+              eventParams={{ cta_name: "Try Quick Analysis for $0.99", cta_context: "stagelab_hero", product: "StageLab Quick Analysis" }}
+            >
+              Try Quick Analysis for $0.99
+            </TrackedLink>
+            <TrackedLink
+              className="hero-text-link"
               href="/blog/category/prep-files"
               eventName="cta_click"
               eventParams={{ cta_name: "Read prep files", cta_context: "stagelab_hero", product: "StageLab" }}

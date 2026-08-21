@@ -59,6 +59,7 @@ const staticSiteRoutes = [
   "/apps",
   "/logbook",
   "/stagelab",
+  "/stagelab/quick-analysis",
   "/elevare",
   "/privacy-policy/",
   "/terms-of-service/",

@@ -113,11 +113,11 @@ test("legal documents identify current versions and avoid unsupported compliance
   const terms = readFileSync(`${projectRoot}content/legal/terms-of-service.html`, "utf8");
   const privacy = readFileSync(`${projectRoot}content/legal/privacy-policy.html`, "utf8");
 
-  assert.match(terms, /Last updated August 20, 2026/);
+  assert.match(terms, /Last updated August 21, 2026/);
   assert.match(terms, /Elevare is operated by Elevare Fit LLC/i);
   assert.match(terms, /Disputes resolved via binding arbitration \(except where prohibited\)/i);
   assert.doesNotMatch(terms, /class action or class arbitration/i);
-  assert.match(privacy, /Last updated August 20, 2026/);
+  assert.match(privacy, /Last updated August 21, 2026/);
   assert.match(privacy, /Supabase for marketplace authentication/i);
   assert.match(privacy, /Google Analytics/i);
   assert.match(privacy, /Resend for waitlist/i);
@@ -178,17 +178,18 @@ test("public marketplace output excludes auth identifiers and reporting resolves
   assert.match(migration, /submit_professional_profile_report/);
 });
 
-test("analytics is opt-in and remains unloaded after a decline", () => {
+test("Google Analytics remains opt-in while Vercel provides cookie-free aggregate measurement", () => {
   const consent = readFileSync(`${projectRoot}components/AnalyticsConsent.tsx`, "utf8");
   const layout = readFileSync(`${projectRoot}app/layout.tsx`, "utf8");
   const packageJson = readFileSync(`${projectRoot}package.json`, "utf8");
 
   assert.match(consent, /analytics_storage: "denied"/);
   assert.match(consent, /nextChoice === "accepted"/);
-  assert.match(consent, /Decline analytics/);
+  assert.match(consent, /Decline Google Analytics/);
   assert.match(consent, /clearAnalyticsCookies\(\)/);
   assert.doesNotMatch(layout, /googletagmanager\.com\/gtag\/js/);
-  assert.doesNotMatch(`${layout}\n${packageJson}`, /@vercel\/analytics|<Analytics(?:\s|\/|>)/);
+  assert.match(`${layout}\n${packageJson}`, /@vercel\/analytics/);
+  assert.match(layout, /<Analytics \/>/);
   assert.match(layout, /<AnalyticsConsent measurementId=\{googleAnalyticsId\}/);
 });
 

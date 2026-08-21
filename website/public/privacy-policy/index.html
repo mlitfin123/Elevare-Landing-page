@@ -338,7 +338,7 @@
           This Privacy Policy describes how Elevare Fit LLC collects, uses, discloses, and safeguards
           information when you use our mobile applications, websites, and related services.
         </p>
-        <div class="meta">Last updated August 20, 2026</div>
+        <div class="meta">Last updated August 21, 2026</div>
       </section>
 
       <div class="policy-grid">
@@ -359,7 +359,7 @@
           <h2>1. Scope</h2>
           <p>
             This Policy applies to the public ElevareFit website, the Elevare professional marketplace, Logbook,
-            StageLab, and related support and communication features. Marketplace users include clients and
+            StageLab, StageLab Quick Analysis, and related support and communication features. Marketplace users include clients and
             independent health, fitness, coaching, nutrition, and wellness service providers ("Professionals").
             Product features and the information they use differ, as described below. By using the Services, you
             acknowledge the practices described in this Policy.
@@ -394,12 +394,20 @@
             <li>Payment tokens, subscription status, receipts, and transaction metadata handled by third-party payment or app-store providers</li>
             <li>Elevare does not receive or store full payment card numbers submitted directly to a third-party payment processor</li>
           </ul>
-          <p class="subhead">E. Device, Usage, and Analytics Data</p>
+          <p class="subhead">E. StageLab Quick Analysis Information</p>
+          <ul>
+            <li>Selected analysis mode, competition or comparison division, competition status, weeks out where provided, and optional short context submitted for a one-time analysis</li>
+            <li>Three to five current physique photos submitted after checkout and transmitted to a third-party AI service provider for transient processing</li>
+            <li>Structured analysis results, payment and entitlement status, retry status, model and request identifiers, and limited operational usage information</li>
+            <li>ElevareFit does not retain submitted Quick Analysis photos after processing and does not place them in its database, cloud storage, application filesystem, analytics, or result record</li>
+          </ul>
+          <p class="subhead">F. Device, Usage, and Analytics Data</p>
           <ul>
             <li>IP address, browser or device information, operating system, page and app usage events, referral information, analytics identifiers, and crash or diagnostic logs where supported by the Services</li>
             <li>Cookies or browser storage used for authentication sessions, preferences, security, and website analytics</li>
+            <li>Vercel Web Analytics provides anonymized, cookie-free aggregate traffic measurement, including page views, referrers, general location, device type, browser, and operating system information</li>
           </ul>
-          <p class="subhead">F. Location Data (Optional)</p>
+          <p class="subhead">G. Location Data (Optional)</p>
           <ul>
             <li>Location details you provide for marketplace discovery and approximate or precise device location if you separately enable a feature that uses it</li>
           </ul>
@@ -441,6 +449,12 @@
             Information sent for AI-assisted processing may be processed by the applicable service provider to
             support the relevant product feature and is subject to that provider's terms and privacy practices.
           </p>
+          <p>
+            For StageLab Quick Analysis, submitted photos and the minimum context needed for the requested visual
+            snapshot are transmitted to the AI service provider. ElevareFit processes those photos transiently and
+            does not retain them after the analysis request succeeds or fails. The validated text and numeric result
+            may be retained briefly so the customer can retrieve it.
+          </p>
         </section>
 
         <section class="policy-card">
@@ -458,8 +472,8 @@
           <h2>6. How We Share Information</h2>
           <p>We may share information with:</p>
           <ul>
-            <li>Service Providers: Supabase for marketplace authentication, database, storage, and related backend functions; Google Analytics for website analytics; Resend for waitlist and email delivery; and other providers supporting hosting, diagnostics, support, or product operations</li>
-            <li>Payment and Distribution Providers: Apple, Google, and payment processors such as Stripe where app-store, subscription, or payment features are available</li>
+            <li>Service Providers: Supabase for marketplace authentication, database, storage, and related backend functions; Vercel for hosting and anonymized, cookie-free aggregate web analytics; Google Analytics for consented website analytics; Resend for waitlist and email delivery; and other providers supporting diagnostics, support, or product operations</li>
+            <li>Payment and Distribution Providers: Apple, Google, and Stripe where app-store, subscription, or payment features are available; Stripe processes the StageLab Quick Analysis checkout and related payment information</li>
             <li>AI Service Providers: information needed to provide an AI-assisted StageLab or related product feature</li>
             <li>Verification Providers and Authorities: information reasonably necessary to review identity, credentials, licensing, fraud, safety, or legal compliance</li>
             <li>Other Users and the Public: information you designate for a public professional profile; consultation requests and messages are shared with the independent Professional you choose to contact; limited booking or communication information may be shared as needed to enable services</li>
@@ -481,6 +495,12 @@
             credential and marketplace-integrity review, safety investigations, and dispute resolution. We may retain
             records of profile approvals, rejections, suspensions, reports, transactions, or complaints after account
             closure where reasonably necessary for these purposes. Retention periods may vary by data type.
+          </p>
+          <p>
+            StageLab Quick Analysis results are available for retrieval for up to 72 hours. ElevareFit does not
+            retain the submitted Quick Analysis photos after processing. Payment, entitlement, fraud-prevention,
+            support, and other operational records may be retained as reasonably necessary for accounting, legal,
+            security, dispute-resolution, and service-delivery purposes.
           </p>
         </section>
 
@@ -531,9 +551,9 @@
           <section class="policy-card">
             <h2>13. Analytics and Communication Choices</h2>
             <p>
-              Google Analytics may use cookies or similar identifiers to measure website usage only after you choose
-              to accept analytics through the website's Privacy choices. You may decline analytics or change that
-              choice later without disabling essential session, security, or account storage. Waitlist messages include an unsubscribe option, and a waitlist signup
+              Vercel Web Analytics provides anonymized, aggregate traffic measurement without using cookies and does not identify visitors across different days or websites. Google Analytics may use cookies or similar identifiers to provide additional website usage insights only after you choose
+              to accept Google Analytics through the website's Privacy choices. You may decline Google Analytics or change that
+              choice later without disabling essential session, security, account storage, or aggregate traffic measurement. Waitlist messages include an unsubscribe option, and a waitlist signup
               is used for the Elevare updates described at the point of collection rather than silently enrolling you
               in unrelated lists.
             </p>

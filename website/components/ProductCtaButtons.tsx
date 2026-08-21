@@ -1,12 +1,15 @@
 import { TrackedLink } from "@/components/TrackedLink";
+import type { AnalyticsEventParams } from "@/lib/analytics";
 import { productConfig, type ProductName } from "@/lib/site";
 
 type ProductCtaButtonsProps = {
   product: ProductName;
   context: string;
+  eventName?: string;
+  eventParams?: AnalyticsEventParams;
 };
 
-export function ProductCtaButtons({ product, context }: ProductCtaButtonsProps) {
+export function ProductCtaButtons({ product, context, eventName = "cta_click", eventParams }: ProductCtaButtonsProps) {
   const config = productConfig[product];
   const storeLinks = config.storeLinks;
 
@@ -18,12 +21,13 @@ export function ProductCtaButtons({ product, context }: ProductCtaButtonsProps) 
             key={storeLink.href}
             className="button button-store"
             href={storeLink.href}
-            eventName="cta_click"
+            eventName={eventName}
             eventParams={{
               cta_name: storeLink.label,
               cta_context: context,
               product: config.title,
               store: storeLink.store,
+              ...eventParams,
             }}
           >
             {storeLink.label}
@@ -37,11 +41,12 @@ export function ProductCtaButtons({ product, context }: ProductCtaButtonsProps) 
     <TrackedLink
       className="button button-primary"
       href={config.ctaHref}
-      eventName="cta_click"
+      eventName={eventName}
       eventParams={{
         cta_name: config.ctaLabel,
         cta_context: context,
         product: config.title,
+        ...eventParams,
       }}
     >
       {config.ctaLabel}

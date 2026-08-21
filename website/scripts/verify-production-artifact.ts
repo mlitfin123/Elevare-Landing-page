@@ -10,7 +10,8 @@ import { getLegacyToolPath, tools } from "../lib/tools.ts";
 import { LEGACY_SITE_ORIGINS, siteConfig } from "../lib/site.ts";
 
 const projectRoot = process.cwd();
-const outDirectory = path.join(projectRoot, "out");
+const appOutputDirectory = path.join(projectRoot, ".next", "server", "app");
+const publicDirectory = path.join(projectRoot, "public");
 const redirectArtifactPath = path.join(projectRoot, "config", "redirects.json");
 const vercelConfigPath = path.join(projectRoot, "vercel.json");
 const nextConfigPath = path.join(projectRoot, "next.config.ts");
@@ -46,7 +47,7 @@ function walkFiles(directory: string, extension?: string): string[] {
 
 function outputPagePath(pathname: string) {
   const cleanPath = pathname.replace(/^\/+|\/+$/g, "");
-  return cleanPath ? path.join(outDirectory, cleanPath, "index.html") : path.join(outDirectory, "index.html");
+  return cleanPath ? path.join(appOutputDirectory, `${cleanPath}.html`) : path.join(appOutputDirectory, "index.html");
 }
 
 function normalizeHref(href: string) {
@@ -69,8 +70,8 @@ function failIfIssues(label: string, issues: string[]) {
   throw new Error(`${label}:\n${issues.map((issue) => `- ${issue}`).join("\n")}`);
 }
 
-if (!fs.existsSync(outDirectory)) {
-  throw new Error("Static export output is missing. Run `npm run build` first.");
+if (!fs.existsSync(appOutputDirectory)) {
+  throw new Error("Next.js server output is missing. Run `npm run build` first.");
 }
 
 const expectedRedirects = buildLegacyRedirects();
@@ -96,7 +97,7 @@ for (const redirect of expectedRedirects) {
 failIfIssues("Redirect validation failed", redirectIssues);
 
 const retiredWorkoutPageIssues: string[] = [];
-const sitemapXml = walkFiles(path.join(outDirectory, "sitemaps"), ".xml")
+const sitemapXml = walkFiles(path.join(publicDirectory, "sitemaps"), ".xml")
   .map((filePath) => fs.readFileSync(filePath, "utf8"))
   .join("\n");
 
@@ -118,7 +119,7 @@ failIfIssues("Retired workout artifact validation failed", retiredWorkoutPageIss
 
 const legacyToolPageIssues: string[] = [];
 
-if (fs.existsSync(path.join(outDirectory, "tools", "index.html"))) {
+if (fs.existsSync(outputPagePath("/tools"))) {
   legacyToolPageIssues.push("/tools/ was exported as a static page");
 }
 
@@ -148,9 +149,9 @@ legacyToolPaths.add("/tools");
 const retiredInternalLinks: string[] = [];
 const legacyToolInternalLinks: string[] = [];
 
-for (const htmlPath of walkFiles(outDirectory, ".html")) {
+for (const htmlPath of walkFiles(appOutputDirectory, ".html")) {
   const html = fs.readFileSync(htmlPath, "utf8");
-  const page = path.relative(outDirectory, htmlPath).replaceAll("\\", "/");
+  const page = path.relative(appOutputDirectory, htmlPath).replaceAll("\\", "/");
 
   for (const href of extractInternalHrefs(html)) {
     const normalizedHref = normalizeHref(href);
@@ -198,8 +199,8 @@ if (vercelConfig.outputDirectory !== undefined) {
 
 const nextConfigSource = fs.readFileSync(nextConfigPath, "utf8");
 
-if (!/output:\s*["']export["']/.test(nextConfigSource)) {
-  throw new Error("next.config.ts must retain output: export so Next.js generates the static out/ artifact.");
+if (/output:\s*["']export["']/.test(nextConfigSource)) {
+  throw new Error("next.config.ts cannot use output: export because secure Quick Analysis API routes require the Next.js server runtime.");
 }
 
 const requiredRedirectHosts = ["elevarefit.com", "www.elevarefit.org", "elevarefit.org"];
@@ -245,7 +246,7 @@ if (unconditionalMarketplaceNoindex) {
 }
 
 const latestPrepDirectory = path.join(
-  outDirectory,
+  publicDirectory,
   "blog-posts",
   "mens-physique-classic-physique-prep-7-weeks-out",
 );
@@ -278,8 +279,8 @@ failIfIssues("Prep image artifact validation failed", prepImageIssues);
 const legacyWebsiteUrlPattern = /https:\/\/(?:www\.)?elevarefit\.org\b/i;
 const activeDomainIssues: string[] = [];
 
-for (const htmlPath of walkFiles(outDirectory, ".html")) {
-  const page = path.relative(outDirectory, htmlPath).replaceAll("\\", "/");
+for (const htmlPath of walkFiles(appOutputDirectory, ".html")) {
+  const page = path.relative(appOutputDirectory, htmlPath).replaceAll("\\", "/");
   if (page.startsWith("legal/archive/")) continue;
 
   const html = fs.readFileSync(htmlPath, "utf8");
@@ -297,7 +298,7 @@ for (const htmlPath of walkFiles(outDirectory, ".html")) {
   }
 }
 
-const sitemapIndexXml = fs.readFileSync(path.join(outDirectory, "sitemap.xml"), "utf8");
+const sitemapIndexXml = fs.readFileSync(path.join(publicDirectory, "sitemap.xml"), "utf8");
 if (legacyWebsiteUrlPattern.test(`${sitemapIndexXml}\n${sitemapXml}`)) {
   activeDomainIssues.push("Generated sitemap output contains a legacy-domain URL");
 }
@@ -305,7 +306,7 @@ if (![...sitemapIndexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].every((match) => matc
   activeDomainIssues.push("Sitemap index contains a URL outside the canonical origin");
 }
 
-const robotsTxt = fs.readFileSync(path.join(outDirectory, "robots.txt"), "utf8");
+const robotsTxt = fs.readFileSync(path.join(appOutputDirectory, "robots.txt.body"), "utf8");
 if (!robotsTxt.includes(`Sitemap: ${siteConfig.url}/sitemap.xml`) || legacyWebsiteUrlPattern.test(robotsTxt)) {
   activeDomainIssues.push("robots.txt does not advertise only the canonical .com sitemap");
 }
@@ -317,10 +318,10 @@ if (!LEGACY_SITE_ORIGINS.every((origin) => origin.endsWith("elevarefit.org"))) {
 }
 
 const sitemapUrlCount = [...sitemapXml.matchAll(/<url>/g)].length;
-const htmlCount = walkFiles(outDirectory, ".html").length;
+const htmlCount = walkFiles(appOutputDirectory, ".html").length;
 
 console.log("Production artifact validation passed.");
-console.log(`Exported static HTML files: ${htmlCount}`);
+console.log(`Prerendered static HTML files: ${htmlCount}`);
 console.log(`Sitemap URLs: ${sitemapUrlCount}`);
 console.log(`Retired workout pages: 0`);
 console.log(`Retired workout internal links: 0`);

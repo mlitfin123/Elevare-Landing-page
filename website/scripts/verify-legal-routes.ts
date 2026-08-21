@@ -10,7 +10,7 @@ import { LEGACY_SITE_ORIGINS, siteConfig } from "../lib/site.ts";
 
 const projectRoot = process.cwd();
 const publicRoot = path.join(projectRoot, "public");
-const outputRoot = path.join(projectRoot, "out");
+const outputRoot = path.join(projectRoot, ".next", "server", "app");
 const recognizedSiteOrigins = new Set([siteConfig.url, ...LEGACY_SITE_ORIGINS]);
 const verifyOutput = process.argv.includes("--output");
 
@@ -63,13 +63,15 @@ async function productionRouteExists(route: string) {
   const cleanPath = decodeURIComponent(route).replace(/^\/+|\/+$/g, "");
   if (!cleanPath) return false;
   if (/\.[a-z0-9]+$/i.test(cleanPath)) {
-    return pathExists(path.join(verifyOutput ? outputRoot : publicRoot, cleanPath));
+    return pathExists(path.join(publicRoot, cleanPath));
   }
 
   const candidates = verifyOutput
     ? [
       path.join(outputRoot, cleanPath, "index.html"),
       path.join(outputRoot, `${cleanPath}.html`),
+      path.join(publicRoot, cleanPath, "index.html"),
+      path.join(publicRoot, `${cleanPath}.html`),
     ]
     : [
       path.join(publicRoot, cleanPath, "index.html"),
@@ -150,8 +152,8 @@ async function verifyArchives() {
         throw new Error(`${record.documentKey} ${record.version} archive Open Graph URL does not resolve.`);
       }
     }
-    if (verifyOutput && !(await pathExists(path.join(outputRoot, record.archiveFilePath.replace(/^\//, ""))))) {
-      throw new Error(`${record.documentKey} ${record.version} archive file is missing from the static output.`);
+    if (verifyOutput && !(await pathExists(path.join(publicRoot, record.archiveFilePath.replace(/^\//, ""))))) {
+      throw new Error(`${record.documentKey} ${record.version} archive file is missing from public assets.`);
     }
   }
   return manifest.documents.length;

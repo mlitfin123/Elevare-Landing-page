@@ -749,7 +749,30 @@
       "permanent": true
     }
   ],
+  "crons": [
+    {
+      "path": "/api/quick-analysis/cleanup/",
+      "schedule": "17 4 * * *"
+    }
+  ],
   "headers": [
+    {
+      "source": "/stagelab/quick-analysis/result/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
+        }
+      ]
+    },
     {
       "source": "/professionals/:path*",
       "has": [

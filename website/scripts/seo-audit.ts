@@ -40,11 +40,9 @@ import {
 import { getExerciseContentScore } from "../lib/training-seo.ts";
 
 const projectRoot = process.cwd();
-const outDir = path.join(projectRoot, "out");
+const outDir = path.join(projectRoot, ".next", "server", "app");
 const publicDir = path.join(projectRoot, "public");
-const sitemapIndexPath = fs.existsSync(path.join(outDir, "sitemap.xml"))
-  ? path.join(outDir, "sitemap.xml")
-  : path.join(publicDir, "sitemap.xml");
+const sitemapIndexPath = path.join(publicDir, "sitemap.xml");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
 const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
@@ -73,23 +71,30 @@ function toOutputFile(sitePath: string) {
     return path.join(outDir, "index.html");
   }
 
-  if (sanitized.endsWith(".xml")) {
-    return path.join(outDir, sanitized);
+  if (sanitized.endsWith(".xml") || sanitized.endsWith(".txt")) {
+    return path.join(publicDir, sanitized);
   }
 
   if (sanitized.endsWith(".html")) {
-    return path.join(outDir, sanitized);
+    return path.join(publicDir, sanitized);
   }
 
-  return path.join(outDir, sanitized, "index.html");
+  return path.join(outDir, `${sanitized.replace(/\/$/, "")}.html`);
+}
+
+function publicRouteFile(sitePath: string) {
+  const sanitized = sitePath.replace(/^\/+|\/+$/g, "");
+  return path.join(publicDir, sanitized, "index.html");
 }
 
 function fileExistsForUrl(url: string) {
-  return fs.existsSync(toOutputFile(toSitePathFromUrl(url)));
+  const sitePath = toSitePathFromUrl(url);
+  return fs.existsSync(toOutputFile(sitePath)) || fs.existsSync(publicRouteFile(sitePath));
 }
 
 function readHtmlForUrl(url: string) {
-  const outputFile = toOutputFile(toSitePathFromUrl(url));
+  const sitePath = toSitePathFromUrl(url);
+  const outputFile = fs.existsSync(toOutputFile(sitePath)) ? toOutputFile(sitePath) : publicRouteFile(sitePath);
 
   if (!fs.existsSync(outputFile)) {
     return null;

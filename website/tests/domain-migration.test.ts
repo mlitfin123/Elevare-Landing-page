@@ -59,7 +59,7 @@ test("Vercel permanently redirects every alternate host path to the canonical ho
   ]);
 });
 
-test("current legal routes use .com delivery metadata without rewriting archived source", () => {
+test("current legal routes use .com delivery metadata without rewriting archived versions", () => {
   for (const route of ACTIVE_LEGAL_ROUTES) {
     const activeHtml = fs.readFileSync(path.join(projectRoot, "public", route.sourceFile), "utf8");
     assert.match(activeHtml, new RegExp(route.canonical.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -68,7 +68,9 @@ test("current legal routes use .com delivery metadata without rewriting archived
 
   const source = fs.readFileSync(path.join(projectRoot, "content", "legal", "terms-of-service.html"), "utf8");
   const rendered = renderActiveLegalHtml(source, "/terms-of-service/");
-  assert.match(source, /https:\/\/www\.elevarefit\.org\/terms-of-service\//);
+  const archived = fs.readFileSync(path.join(projectRoot, "public", "legal", "archive", "terms", "2026-08-20.html"), "utf8");
+  assert.match(source, /https:\/\/www\.elevarefit\.com\/terms-of-service\//);
+  assert.match(archived, /https:\/\/www\.elevarefit\.org\/terms-of-service\//);
   assert.match(rendered, /https:\/\/www\.elevarefit\.com\/terms-of-service\//);
   assert.doesNotMatch(rendered, /https:\/\/www\.elevarefit\.org\/terms-of-service\//);
 });

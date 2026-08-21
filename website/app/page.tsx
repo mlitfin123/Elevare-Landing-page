@@ -369,6 +369,18 @@ export default async function HomePage() {
               <ProductCtaButtons product="StageLab" context="home_stagelab" />
               <TrackedLink
                 className="button button-secondary"
+                href="/stagelab/quick-analysis/"
+                eventName="cta_click"
+                eventParams={{
+                  cta_name: "Try Quick Analysis for $0.99",
+                  cta_context: "home_stagelab",
+                  product: "StageLab Quick Analysis",
+                }}
+              >
+                Try Quick Analysis for $0.99
+              </TrackedLink>
+              <TrackedLink
+                className="hero-text-link"
                 href="/stagelab"
                 eventName="cta_click"
                 eventParams={{

@@ -91,15 +91,15 @@ export function AnalyticsConsent({ measurementId }: AnalyticsConsentProps) {
       {isChoosing ? (
         <aside className="analytics-consent" aria-label="Analytics privacy choices" aria-live="polite">
           <div>
-            <strong>Analytics privacy</strong>
+            <strong>Optional Google Analytics</strong>
             <p>
-              Essential site features always work. With your permission, analytics helps us understand how the site is used. Read our{" "}
+              ElevareFit uses anonymous, cookie-free traffic measurement. With your permission, Google Analytics provides additional usage insights. Read our{" "}
               <Link href="/privacy-policy/">Privacy Policy</Link>.
             </p>
           </div>
           <div className="analytics-consent-actions">
-            <button type="button" className="button button-primary" onClick={() => saveChoice("accepted")}>Accept analytics</button>
-            <button type="button" className="button button-secondary" onClick={() => saveChoice("declined")}>Decline analytics</button>
+            <button type="button" className="button button-primary" onClick={() => saveChoice("accepted")}>Accept Google Analytics</button>
+            <button type="button" className="button button-secondary" onClick={() => saveChoice("declined")}>Decline Google Analytics</button>
           </div>
         </aside>
       ) : (
