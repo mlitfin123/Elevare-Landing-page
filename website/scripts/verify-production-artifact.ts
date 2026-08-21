@@ -170,8 +170,22 @@ failIfIssues("Generated HTML contains legacy tool links", legacyToolInternalLink
 
 const vercelConfig = JSON.parse(fs.readFileSync(vercelConfigPath, "utf8")) as VercelConfig;
 
-if (vercelConfig.bulkRedirectsPath !== "config/redirects.json") {
-  throw new Error("vercel.json does not reference the generated redirect artifact.");
+if (vercelConfig.bulkRedirectsPath !== undefined) {
+  throw new Error("vercel.json must not use the paid bulk redirects feature.");
+}
+
+const embeddedLegacyRedirects = (vercelConfig.redirects ?? [])
+  .filter((redirect) => !redirect.has?.length)
+  .map(({ source, destination, permanent }) => ({ source, destination, permanent }));
+
+if (JSON.stringify(embeddedLegacyRedirects) !== expectedRedirectJson) {
+  throw new Error("vercel.json does not contain the complete generated legacy redirect set.");
+}
+
+const vercelRouteCount = (vercelConfig.redirects?.length ?? 0) + (vercelConfig.headers?.length ?? 0);
+
+if (vercelRouteCount > 2048) {
+  throw new Error(`Vercel routing configuration exceeds the Hobby-plan limit: ${vercelRouteCount}/2048.`);
 }
 
 if (vercelConfig.trailingSlash !== true) {

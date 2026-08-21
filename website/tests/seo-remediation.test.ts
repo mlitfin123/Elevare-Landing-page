@@ -9,9 +9,15 @@ const projectRoot = process.cwd();
 
 function readVercelConfig() {
   return JSON.parse(fs.readFileSync(path.join(projectRoot, "vercel.json"), "utf8")) as {
-    bulkRedirectsPath: string;
+    bulkRedirectsPath?: string;
     outputDirectory?: string;
     trailingSlash: boolean;
+    redirects: Array<{
+      source: string;
+      destination: string;
+      permanent?: boolean;
+      has?: Array<{ type: string; key?: string; value?: string }>;
+    }>;
     headers: Array<{ source: string; has?: Array<{ type: string; key: string }> }>;
   };
 }
@@ -99,8 +105,11 @@ test("filtered marketplace URLs receive an immediate noindex response header", (
 test("Vercel deploys the website static export with one authoritative routing config", () => {
   const config = readVercelConfig();
   const nextConfig = fs.readFileSync(path.join(projectRoot, "next.config.ts"), "utf8");
+  const embeddedLegacyRedirects = config.redirects.filter((redirect) => !redirect.has?.length);
 
-  assert.equal(config.bulkRedirectsPath, "config/redirects.json");
+  assert.equal(config.bulkRedirectsPath, undefined);
+  assert.deepEqual(embeddedLegacyRedirects, readRedirectArtifact());
+  assert.ok(config.redirects.length + config.headers.length < 2048);
   assert.equal(config.trailingSlash, true);
   assert.equal(config.outputDirectory, undefined);
   assert.match(nextConfig, /output:\s*["']export["']/);
