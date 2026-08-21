@@ -49,6 +49,24 @@ const SLOT_CONTENT: Record<QuickAnalysisPhotoView, { label: string; help: string
   },
 };
 
+const PHOTO_VIEW_GUIDES = [
+  {
+    label: "Front",
+    src: "/images/quick-analysis/front-guide.webp",
+    alt: "Front physique photo positioning example",
+  },
+  {
+    label: "Side",
+    src: "/images/quick-analysis/side-guide.webp",
+    alt: "Side physique photo positioning example",
+  },
+  {
+    label: "Back",
+    src: "/images/quick-analysis/back-guide.webp",
+    alt: "Back physique photo positioning example",
+  },
+] as const;
+
 function PhotoSlot({
   view,
   photo,
@@ -147,8 +165,18 @@ export function QuickAnalysisPhotoUploader({
         <div>
           <span className="stat-label" id="quick-analysis-photo-guide-title">For the best read</span>
           <div className="quick-analysis-view-guide" aria-label="Submit front, side, and back views">
-            {(["Front", "Side", "Back"] as const).map((label) => (
-              <span key={label}><i aria-hidden="true" />{label}</span>
+            {PHOTO_VIEW_GUIDES.map((guide) => (
+              <span key={guide.label}>
+                <Image
+                  className="quick-analysis-view-guide-image"
+                  src={guide.src}
+                  alt={guide.alt}
+                  width={600}
+                  height={400}
+                  sizes="(max-width: 640px) 30vw, 180px"
+                />
+                {guide.label}
+              </span>
             ))}
           </div>
         </div>
