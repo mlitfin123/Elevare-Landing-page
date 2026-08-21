@@ -7,9 +7,16 @@ type ProductCtaButtonsProps = {
   context: string;
   eventName?: string;
   eventParams?: AnalyticsEventParams;
+  storeEventNames?: Partial<Record<"ios" | "android", string>>;
 };
 
-export function ProductCtaButtons({ product, context, eventName = "cta_click", eventParams }: ProductCtaButtonsProps) {
+export function ProductCtaButtons({
+  product,
+  context,
+  eventName = "cta_click",
+  eventParams,
+  storeEventNames,
+}: ProductCtaButtonsProps) {
   const config = productConfig[product];
   const storeLinks = config.storeLinks;
 
@@ -21,7 +28,7 @@ export function ProductCtaButtons({ product, context, eventName = "cta_click", e
             key={storeLink.href}
             className="button button-store"
             href={storeLink.href}
-            eventName={eventName}
+            eventName={storeEventNames?.[storeLink.store] ?? eventName}
             eventParams={{
               cta_name: storeLink.label,
               cta_context: context,

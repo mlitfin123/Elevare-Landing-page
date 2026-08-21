@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { normalizeQuickAnalysisImages } from "@/lib/quick-analysis-images";
+import { normalizeQuickAnalysisImages, parseQuickAnalysisPhotoFormData } from "@/lib/quick-analysis-images";
 import { requestQuickAnalysisFromOpenAI, QuickAnalysisProviderError } from "@/lib/quick-analysis-openai";
 import {
   claimQuickAnalysisAttempt,
@@ -10,6 +10,7 @@ import {
   type QuickAnalysisRow,
 } from "@/lib/quick-analysis-repository";
 import { parseQuickAnalysisContext } from "@/lib/quick-analysis-schema";
+import { QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS } from "@/lib/quick-analysis";
 import {
   QuickAnalysisServerError,
   assertQuickAnalysisSameOrigin,
@@ -55,8 +56,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const files = form.getAll("photos").filter((value): value is File => value instanceof File);
-    upload = await normalizeQuickAnalysisImages(files);
+    const photoInputs = parseQuickAnalysisPhotoFormData(form);
+    upload = await normalizeQuickAnalysisImages(photoInputs);
     claimedRow = await claimQuickAnalysisAttempt(supabase, token);
     const context = parseQuickAnalysisContext({
       analysisMode: claimedRow.analysis_mode ?? "competition_prep",
@@ -68,6 +69,15 @@ export async function POST(request: Request) {
       aiConsentConfirmed: true,
     });
     const providerResult = await requestQuickAnalysisFromOpenAI({ context, images: upload.images });
+    if (
+      providerResult.result.photo_coverage === "limited" &&
+      QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS.every((view) => providerResult.result.missing_or_limited_views.includes(view))
+    ) {
+      throw new QuickAnalysisProviderError(
+        "PHOTO_SET_UNUSABLE",
+        "We couldn't clearly assess the required front, side, and back views. Please replace those photos and try again. Your payment is still valid.",
+      );
+    }
     await completeQuickAnalysis(supabase, claimedRow, {
       result: providerResult.result,
       model: providerResult.model,
@@ -79,6 +89,7 @@ export async function POST(request: Request) {
     console.info("Quick Analysis completed", {
       analysisId: claimedRow.id,
       photoCount: upload.images.length,
+      views: upload.images.map((image) => image.view),
       formats: upload.images.map((image) => image.sourceFormat),
       dimensions: upload.images.map((image) => `${image.width}x${image.height}`),
       model: providerResult.model,
@@ -112,9 +123,12 @@ export async function POST(request: Request) {
         durationMs: Date.now() - startedAt,
       });
       if (error instanceof QuickAnalysisProviderError) {
+        const message = error.code === "PHOTO_SET_UNUSABLE"
+          ? error.message
+          : "We couldn't complete your analysis. Your payment is still valid. Please re-upload your photos and try again. You will not be charged again.";
         return NextResponse.json(
           {
-            error: "We couldn't complete your analysis. Your payment is still valid. Please re-upload your photos and try again. You will not be charged again.",
+            error: message,
             code: error.code,
           },
           { status: 502, headers: { "Cache-Control": "no-store" } },

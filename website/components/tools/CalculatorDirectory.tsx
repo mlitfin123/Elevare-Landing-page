@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { QuickAnalysisCTA } from "@/components/quick-analysis/QuickAnalysisCTA";
 import { TrackedLink } from "@/components/TrackedLink";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -137,6 +138,17 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
                 </article>
               ))}
             </div>
+
+            {group.slug === "bodybuilding-contest-prep" ? (
+              <QuickAnalysisCTA
+                source="calculators-hub"
+                heading="Calculators use your numbers. StageLab looks at your physique."
+                description="Upload 3-5 current photos for a one-time visual assessment of conditioning, muscularity, symmetry, and presentation."
+                buttonText="Analyze My Physique"
+                variant="compact"
+                headingLevel={3}
+              />
+            ) : null}
           </section>
         );
       })}

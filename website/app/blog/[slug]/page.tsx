@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import remarkGfm from "remark-gfm";
 import { ArticleLayout } from "@/components/ArticleLayout";
 import { ProductCTA } from "@/components/ProductCTA";
+import { QuickAnalysisCTA } from "@/components/quick-analysis/QuickAnalysisCTA";
 import { MarketplaceSupportCta } from "@/components/marketplace/MarketplaceSupportCta";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
@@ -144,6 +145,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           }}
         />
       </ArticleLayout>
+
+      {post.category === "prep-files" ? (
+        <QuickAnalysisCTA
+          source="prep-files"
+          heading="Where does your physique stand?"
+          description="Get a one-time StageLab analysis of visible conditioning, muscularity, symmetry, presentation, and stage-readiness context from 3-5 current photos."
+          buttonText="Get My Analysis"
+          headingLevel={2}
+          className="quick-analysis-article-cta"
+        />
+      ) : post.category === "prep" ? (
+        <QuickAnalysisCTA
+          source="prep-blog"
+          heading="Add a visual physique checkpoint."
+          description="StageLab Quick Analysis provides a one-time visual assessment of current conditioning, muscularity, symmetry, and presentation from 3-5 photos."
+          buttonText="Get My Analysis"
+          headingLevel={2}
+          className="quick-analysis-article-cta"
+        />
+      ) : null}
 
       {prepNavigation ? (
         <section className="section" aria-labelledby="prep-files-navigation">

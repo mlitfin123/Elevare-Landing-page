@@ -3,6 +3,8 @@ import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { Callout } from "@/components/Callout";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
+import { QUICK_ANALYSIS_PRICE_DISPLAY } from "@/lib/quick-analysis";
+import { getQuickAnalysisEntryHref } from "@/lib/quick-analysis-attribution";
 import { absoluteUrl, buildMetadata, productConfig } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -82,11 +84,11 @@ export default function StageLabPage() {
             <ProductCtaButtons product="StageLab" context="stagelab_hero" />
             <TrackedLink
               className="button button-secondary"
-              href="/stagelab/quick-analysis/"
+              href={getQuickAnalysisEntryHref("stagelab")}
               eventName="cta_click"
-              eventParams={{ cta_name: "Try Quick Analysis for $0.99", cta_context: "stagelab_hero", product: "StageLab Quick Analysis" }}
+              eventParams={{ cta_name: `Try Quick Analysis for ${QUICK_ANALYSIS_PRICE_DISPLAY}`, cta_context: "stagelab_hero", product: "StageLab Quick Analysis", source: "stagelab" }}
             >
-              Try Quick Analysis for $0.99
+              Try Quick Analysis — {QUICK_ANALYSIS_PRICE_DISPLAY} one time
             </TrackedLink>
             <TrackedLink
               className="hero-text-link"

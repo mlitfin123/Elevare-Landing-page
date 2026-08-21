@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
+import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import { parseQuickAnalysisContext } from "@/lib/quick-analysis-schema";
 import {
   attachCheckoutSession,
@@ -30,7 +31,13 @@ export async function POST(request: Request) {
     assertQuickAnalysisSameOrigin(request);
     const supabase = getQuickAnalysisSupabase();
     await enforceQuickAnalysisRateLimit(request, "checkout", supabase);
-    const context = parseQuickAnalysisContext(await request.json());
+    const payload = await request.json();
+    const context = parseQuickAnalysisContext(payload);
+    const source = normalizeQuickAnalysisSource(
+      typeof payload === "object" && payload !== null && "source" in payload
+        ? payload.source
+        : undefined,
+    );
     const stripe = getQuickAnalysisStripe();
     const priceId = await verifyConfiguredQuickAnalysisPrice(stripe);
     const checkoutNonce = generateQuickAnalysisToken();
@@ -44,12 +51,13 @@ export async function POST(request: Request) {
     });
 
     const origin = getQuickAnalysisReturnOrigin(request);
+    const sourceSuffix = source ? `&source=${encodeURIComponent(source)}` : "";
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/stagelab/quick-analysis/?cancelled=1`,
+        success_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}${sourceSuffix}`,
+        cancel_url: `${origin}/stagelab/quick-analysis/?cancelled=1${sourceSuffix}`,
         metadata: {
           product: "stagelab_quick_analysis",
           quick_analysis_id: analysisId,

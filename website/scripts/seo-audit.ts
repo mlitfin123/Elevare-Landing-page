@@ -127,7 +127,7 @@ function extractInternalLinks(html: string) {
   return [...html.matchAll(/<a[^>]+href="([^"]+)"/gi)]
     .map((match) => match[1] ?? "")
     .filter((href) => href.startsWith("/") && !href.startsWith("//"))
-    .map((href) => normalizeSitePath(href));
+    .map((href) => normalizeSitePath(href.split(/[?#]/, 1)[0] || "/"));
 }
 
 function slugDuplicates(values: string[]) {

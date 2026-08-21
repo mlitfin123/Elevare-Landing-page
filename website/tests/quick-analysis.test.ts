@@ -7,17 +7,29 @@ import {
   QUICK_ANALYSIS_MAX_IMAGE_DIMENSION,
   QUICK_ANALYSIS_MAX_PHOTOS,
   QUICK_ANALYSIS_MIN_PHOTOS,
+  QUICK_ANALYSIS_PHOTO_VIEWS,
   calculateStageReadinessScore,
+  getStageConditionDistance,
+  getStageReadinessCategory,
+  validateQuickAnalysisPhotoViews,
   type QuickAnalysisContext,
+  type QuickAnalysisPhotoView,
   type QuickAnalysisResult,
 } from "../lib/quick-analysis.ts";
-import { normalizeQuickAnalysisImages } from "../lib/quick-analysis-images.ts";
+import {
+  normalizeQuickAnalysisImages,
+  parseQuickAnalysisPhotoFormData,
+} from "../lib/quick-analysis-images.ts";
 import {
   QUICK_ANALYSIS_SYSTEM_PROMPT,
   QuickAnalysisProviderError,
   requestQuickAnalysisFromOpenAI,
 } from "../lib/quick-analysis-openai.ts";
-import { parseQuickAnalysisContext, parseQuickAnalysisResult } from "../lib/quick-analysis-schema.ts";
+import {
+  getQuickAnalysisConsistencyIssues,
+  parseQuickAnalysisContext,
+  parseQuickAnalysisResult,
+} from "../lib/quick-analysis-schema.ts";
 import { deriveQuickAnalysisToken, hashQuickAnalysisToken } from "../lib/quick-analysis-server.ts";
 import {
   validatePaidQuickAnalysisSession,
@@ -36,6 +48,8 @@ const context: QuickAnalysisContext = {
 };
 const result: QuickAnalysisResult = {
   analysis_mode: "competition_prep",
+  photo_coverage: "sufficient",
+  missing_or_limited_views: [],
   stage_readiness_score: null,
   stage_readiness_category: null,
   stage_condition_distance: null,
@@ -93,6 +107,26 @@ const physiqueResult: QuickAnalysisResult = {
   summary: "Visible muscularity and balance are present, while conditioning remains softer than typical stage presentation.",
 };
 
+function physiqueResultForScores(scores: {
+  conditioning: number;
+  muscularity: number;
+  symmetry: number;
+  presentation: number;
+}, overrides: Partial<QuickAnalysisResult> = {}): QuickAnalysisResult {
+  const stageReadinessScore = calculateStageReadinessScore(scores);
+  return {
+    ...physiqueResult,
+    conditioning_score: scores.conditioning,
+    muscularity_score: scores.muscularity,
+    symmetry_score: scores.symmetry,
+    presentation_score: scores.presentation,
+    stage_readiness_score: stageReadinessScore,
+    stage_readiness_category: getStageReadinessCategory(stageReadinessScore),
+    stage_condition_distance: getStageConditionDistance(scores.conditioning),
+    ...overrides,
+  };
+}
+
 function openAIResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -101,13 +135,29 @@ function openAIResponse(payload: unknown, status = 200) {
 }
 
 function normalizedImages(count: number) {
-  return Array.from({ length: count }, () => ({
+  return Array.from({ length: count }, (_, index) => ({
+    view: QUICK_ANALYSIS_PHOTO_VIEWS[index]!,
     bytes: Buffer.from([1, 2, 3, 4]),
     mimeType: "image/jpeg" as const,
     width: 800,
     height: 1200,
     sourceFormat: "jpeg",
   }));
+}
+
+function labeledPhotoInputs(files: File[]) {
+  return files.map((file, index) => ({
+    view: QUICK_ANALYSIS_PHOTO_VIEWS[index]!,
+    file,
+  }));
+}
+
+function quickAnalysisPhotoForm(views: QuickAnalysisPhotoView[]) {
+  const form = new FormData();
+  for (const view of views) {
+    form.append(`photo_${view}`, new File([Uint8Array.from([1])], `${view}.jpg`, { type: "image/jpeg" }));
+  }
+  return form;
 }
 
 test("Stripe accepts only the configured paid one-time $0.99 product", async () => {
@@ -175,8 +225,9 @@ test("server normalization accepts 3-5 photos, strips metadata, resizes, and cle
   const files = Array.from({ length: QUICK_ANALYSIS_MIN_PHOTOS }, (_, index) =>
     new File([Uint8Array.from(source)], `source-${index}.jpg`, { type: "image/jpeg" }),
   );
-  const upload = await normalizeQuickAnalysisImages(files);
+  const upload = await normalizeQuickAnalysisImages(labeledPhotoInputs(files));
   assert.equal(upload.images.length, 3);
+  assert.deepEqual(upload.images.map((image) => image.view), ["front", "side", "back"]);
   const retainedReferences = upload.images.map((image) => image.bytes);
   for (const image of upload.images) {
     assert.ok(Math.max(image.width, image.height) <= QUICK_ANALYSIS_MAX_IMAGE_DIMENSION);
@@ -190,17 +241,46 @@ test("server normalization accepts 3-5 photos, strips metadata, resizes, and cle
   assert.ok(retainedReferences.every((buffer) => buffer.every((byte) => byte === 0)));
 
   await assert.rejects(
-    normalizeQuickAnalysisImages(Array.from({ length: QUICK_ANALYSIS_MAX_PHOTOS + 1 }, (_, index) =>
-      new File([Uint8Array.from(source)], `source-${index}.jpg`, { type: "image/jpeg" }),
-    )),
-    /Choose 3-5/,
+    normalizeQuickAnalysisImages(Array.from({ length: QUICK_ANALYSIS_MAX_PHOTOS + 1 }, (_, index) => ({
+      view: (QUICK_ANALYSIS_PHOTO_VIEWS[index] ?? "front") as QuickAnalysisPhotoView,
+      file: new File([Uint8Array.from(source)], `source-${index}.jpg`, { type: "image/jpeg" }),
+    }))),
+    /front, side, and back/i,
   );
   await assert.rejects(
-    normalizeQuickAnalysisImages(Array.from({ length: QUICK_ANALYSIS_MIN_PHOTOS }, (_, index) =>
+    normalizeQuickAnalysisImages(labeledPhotoInputs(Array.from({ length: QUICK_ANALYSIS_MIN_PHOTOS }, (_, index) =>
       new File([Uint8Array.from([1, 2, 3, 4])], `invalid-${index}.jpg`, { type: "image/jpeg" }),
-    )),
-    /could not be prepared/,
+    ))),
+    /front photo/i,
   );
+  await assert.rejects(
+    normalizeQuickAnalysisImages([
+      { view: "front", file: files[0]! },
+      { view: "side", file: new File([Uint8Array.from([1, 2, 3, 4])], "invalid-side.jpg", { type: "image/jpeg" }) },
+      { view: "back", file: files[2]! },
+    ]),
+    /side photo/i,
+  );
+});
+
+test("required photo views are enforced by shared and server-side validation", () => {
+  for (const missing of ["front", "side", "back"] as const) {
+    const views = (["front", "side", "back"] as QuickAnalysisPhotoView[]).filter((view) => view !== missing);
+    assert.equal(validateQuickAnalysisPhotoViews(views).valid, false);
+    assert.throws(() => parseQuickAnalysisPhotoFormData(quickAnalysisPhotoForm(views)), new RegExp(missing, "i"));
+  }
+
+  const required = ["front", "side", "back"] as QuickAnalysisPhotoView[];
+  const allFive = [...QUICK_ANALYSIS_PHOTO_VIEWS];
+  assert.equal(validateQuickAnalysisPhotoViews(required).valid, true);
+  assert.deepEqual(parseQuickAnalysisPhotoFormData(quickAnalysisPhotoForm(required)).map((input) => input.view), required);
+  assert.equal(validateQuickAnalysisPhotoViews(allFive).valid, true);
+  assert.deepEqual(parseQuickAnalysisPhotoFormData(quickAnalysisPhotoForm(allFive)).map((input) => input.view), allFive);
+
+  const tooMany = quickAnalysisPhotoForm(allFive);
+  tooMany.append("photo_front", new File([Uint8Array.from([1])], "extra.jpg", { type: "image/jpeg" }));
+  assert.equal(validateQuickAnalysisPhotoViews([...allFive, "front"]).valid, false);
+  assert.throws(() => parseQuickAnalysisPhotoFormData(tooMany), /no more than 5/i);
 });
 
 test("OpenAI request sends only current context and 3-5 images and validates structured output", async () => {
@@ -217,18 +297,48 @@ test("OpenAI request sends only current context and 3-5 images and validates str
       },
     });
     assert.deepEqual(response.result, result);
-    const parsedBody = JSON.parse(requestBody) as { input: Array<{ content: Array<{ type: string }> }> };
+    const parsedBody = JSON.parse(requestBody) as { input: Array<{ content: Array<{ type: string; text?: string }> }> };
     assert.equal(parsedBody.input[1]?.content.filter((item) => item.type === "input_image").length, count);
+    const photoLabels = parsedBody.input[1]?.content
+      .filter((item) => item.type === "input_text" && item.text?.startsWith("Photo "))
+      .map((item) => item.text);
+    assert.deepEqual(photoLabels, ["Photo 1: Front", "Photo 2: Side", "Photo 3: Back", "Photo 4: Additional View 1", "Photo 5: Additional View 2"].slice(0, count));
     assert.doesNotMatch(requestBody, /stripe|card|google analytics/i);
   }
   assert.match(QUICK_ANALYSIS_SYSTEM_PROMPT, /Analyze only the current photos/i);
   assert.match(QUICK_ANALYSIS_SYSTEM_PROMPT, /Never claim that the athlete has improved/i);
+  assert.match(QUICK_ANALYSIS_SYSTEM_PROMPT, /lower confidence as appropriate/i);
+  assert.match(QUICK_ANALYSIS_SYSTEM_PROMPT, /do not fabricate observations/i);
 });
 
 test("Competition Prep keeps its existing timeline context and does not require Stage Readiness scores", () => {
   assert.deepEqual(parseQuickAnalysisContext(context), context);
   assert.deepEqual(parseQuickAnalysisResult(result, "competition_prep"), result);
   assert.equal(result.stage_readiness_score, null);
+  assert.throws(() => parseQuickAnalysisContext({ ...context, ageConfirmed: false }));
+  assert.throws(() => parseQuickAnalysisContext({ ...context, aiConsentConfirmed: false }));
+
+  const legacyResult = { ...result } as Record<string, unknown>;
+  delete legacyResult.photo_coverage;
+  delete legacyResult.missing_or_limited_views;
+  const parsedLegacyResult = parseQuickAnalysisResult(legacyResult, "competition_prep");
+  assert.equal(parsedLegacyResult.photo_coverage, "sufficient");
+  assert.deepEqual(parsedLegacyResult.missing_or_limited_views, []);
+});
+
+test("limited photo coverage lowers confidence and prevents unsupported observations", () => {
+  const limited = parseQuickAnalysisResult({
+    ...result,
+    photo_coverage: "limited",
+    missing_or_limited_views: ["back"],
+    confidence: "moderate",
+    limitations: ["The back view is obstructed, so back detail and symmetry cannot be assessed confidently."],
+  }, "competition_prep");
+  assert.equal(limited.photo_coverage, "limited");
+  assert.deepEqual(limited.missing_or_limited_views, ["back"]);
+  assert.throws(() => parseQuickAnalysisResult({ ...limited, confidence: "high" }, "competition_prep"), /cannot produce high confidence/i);
+  assert.throws(() => parseQuickAnalysisResult({ ...limited, missing_or_limited_views: [] }, "competition_prep"), /identify the affected view/i);
+  assert.throws(() => parseQuickAnalysisResult({ ...result, missing_or_limited_views: ["back"] }, "competition_prep"), /cannot be sufficient/i);
 });
 
 test("Physique Check requires no weeks-out input and returns deterministic Stage Readiness", async () => {
@@ -255,6 +365,77 @@ test("Physique Check requires no weeks-out input and returns deterministic Stage
   assert.match(userPrompt, /"analysis_mode":"physique_check"/);
   assert.match(userPrompt, /Do not estimate weeks out/i);
   assert.match(userPrompt, /conditioning 40%, muscularity 25%, symmetry 20%, and presentation 15%/i);
+  assert.match(userPrompt, /conditioning also limits the highest possible readiness band/i);
+  assert.match(userPrompt, /stage_condition_distance from conditioning_score/i);
+});
+
+test("Stage Readiness stays mathematically transparent while conditioning prevents optimistic labels", () => {
+  const suppliedCase = physiqueResultForScores(
+    { conditioning: 38, muscularity: 61, symmetry: 59, presentation: 42 },
+    {
+      estimated_body_fat_min: 20,
+      estimated_body_fat_max: 24,
+      summary: "The current snapshot shows visible muscularity, but conditioning is not aligned with typical stage presentation.",
+    },
+  );
+  assert.equal(suppliedCase.stage_readiness_score, 49);
+  assert.equal(suppliedCase.stage_readiness_category, "Developing");
+  assert.equal(suppliedCase.stage_condition_distance, "significant");
+  assert.deepEqual(getQuickAnalysisConsistencyIssues(suppliedCase), []);
+
+  const cases = {
+    muscularButSoft: physiqueResultForScores({ conditioning: 25, muscularity: 95, symmetry: 90, presentation: 75 }),
+    conditionedButUndersized: physiqueResultForScores({ conditioning: 92, muscularity: 30, symmetry: 45, presentation: 50 }),
+    strongPhysiqueCasualPhotos: physiqueResultForScores({ conditioning: 85, muscularity: 85, symmetry: 85, presentation: 25 }),
+    strongAcrossDimensions: physiqueResultForScores({ conditioning: 92, muscularity: 90, symmetry: 88, presentation: 90 }),
+    weakAcrossDimensions: physiqueResultForScores({ conditioning: 25, muscularity: 30, symmetry: 35, presentation: 30 }),
+  };
+
+  assert.equal(cases.muscularButSoft.stage_readiness_score, 59);
+  assert.equal(cases.muscularButSoft.stage_readiness_category, "Developing");
+  assert.equal(cases.muscularButSoft.stage_condition_distance, "significant");
+  assert.ok((cases.conditionedButUndersized.stage_readiness_score ?? 100) <= 74);
+  assert.equal(cases.conditionedButUndersized.stage_condition_distance, "very_close");
+  assert.notEqual(cases.strongPhysiqueCasualPhotos.stage_readiness_category, "Very close visually");
+  assert.equal(cases.strongAcrossDimensions.stage_readiness_category, "Very close visually");
+  assert.equal(cases.weakAcrossDimensions.stage_readiness_category, "Far from stage condition");
+});
+
+test("Physique Check normalizes model-derived fields locally and rejects contradictory prose", async () => {
+  const inconsistentDerivedFields = {
+    ...physiqueResult,
+    conditioning_score: 38,
+    muscularity_score: 61,
+    symmetry_score: 59,
+    presentation_score: 42,
+    stage_readiness_score: 90,
+    stage_readiness_category: "Very close visually",
+    stage_condition_distance: "very_close",
+    summary: "Visible muscularity is present, while conditioning is not aligned with typical stage presentation.",
+  };
+  const normalized = parseQuickAnalysisResult(inconsistentDerivedFields, "physique_check");
+  assert.equal(normalized.stage_readiness_score, 49);
+  assert.equal(normalized.stage_readiness_category, "Developing");
+  assert.equal(normalized.stage_condition_distance, "significant");
+
+  let calls = 0;
+  const response = await requestQuickAnalysisFromOpenAI({
+    context: physiqueContext,
+    images: normalizedImages(3),
+    apiKey: "test-key",
+    model: "test-multimodal-model",
+    fetchImpl: async () => {
+      calls += 1;
+      return openAIResponse({ output_text: JSON.stringify(inconsistentDerivedFields) });
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(response.result.stage_condition_distance, "significant");
+
+  assert.throws(
+    () => parseQuickAnalysisResult({ ...normalized, summary: "This physique is stage-ready." }, "physique_check"),
+    /cannot be described as stage-ready/i,
+  );
 });
 
 test("Physique Check schema rejects unsupported timelines, official scores, outcome guarantees, and historical claims", () => {
@@ -268,7 +449,10 @@ test("Physique Check schema rejects unsupported timelines, official scores, outc
   for (const summary of prohibited) {
     assert.throws(() => parseQuickAnalysisResult({ ...physiqueResult, summary }, "physique_check"));
   }
-  assert.throws(() => parseQuickAnalysisResult({ ...physiqueResult, stage_readiness_score: 80 }, "physique_check"), /40\/25\/20\/15 weighting/);
+  assert.equal(
+    parseQuickAnalysisResult({ ...physiqueResult, stage_readiness_score: 80 }, "physique_check").stage_readiness_score,
+    physiqueResult.stage_readiness_score,
+  );
   assert.throws(() => parseQuickAnalysisResult({ ...physiqueResult, analysis_mode: "competition_prep" }, "physique_check"));
 });
 
@@ -328,11 +512,15 @@ test("Quick Analysis persistence contains no photo fields, buckets, files, or im
 
   const repository = fs.readFileSync(path.join(projectRoot, "lib", "quick-analysis-repository.ts"), "utf8");
   const analyzeRoute = fs.readFileSync(path.join(projectRoot, "app", "api", "quick-analysis", "analyze", "route.ts"), "utf8");
+  const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
   const checkoutRoute = fs.readFileSync(path.join(projectRoot, "app", "api", "quick-analysis", "checkout", "route.ts"), "utf8");
   const returnRoute = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "quick-analysis", "return", "route.ts"), "utf8");
   assert.doesNotMatch(repository, /image_url|base64|photo_path|photo_hash|thumbnail/i);
   assert.doesNotMatch(analyzeRoute, /console\.(?:log|info|warn|error)\([^)]*(?:bytes|base64|image_url)/i);
+  assert.match(analyzeRoute, /parseQuickAnalysisPhotoFormData\(form\)[\s\S]*normalizeQuickAnalysisImages\(photoInputs\)[\s\S]*claimQuickAnalysisAttempt/);
+  assert.match(analyzeRoute, /Your payment is still valid|will not be charged again/i);
   assert.match(analyzeRoute, /finally\s*{[\s\S]*upload\?\.clear\(\)/);
+  assert.doesNotMatch(resultExperience, /form\.set\([^\n]*(?:previewUrl|base64|data:image)/i);
   assert.doesNotMatch(fs.readFileSync(path.join(projectRoot, "lib", "quick-analysis-images.ts"), "utf8"), /writeFile|mkdtemp|tmpdir|createWriteStream/);
   assert.match(migration, /stripe_checkout_session_id text unique/);
   assert.match(migration, /stripe_payment_intent_id text unique/);
@@ -344,15 +532,77 @@ test("Quick Analysis persistence contains no photo fields, buckets, files, or im
 
 test("the public landing is indexed while the result is noindex and excluded from sitemaps", () => {
   const landingPage = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "quick-analysis", "page.tsx"), "utf8");
+  const returnLink = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisReturnLink.tsx"), "utf8");
   const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
   const resultPage = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "quick-analysis", "result", "page.tsx"), "utf8");
   const sitemapGenerator = fs.readFileSync(path.join(projectRoot, "scripts", "generate-sitemaps.ts"), "utf8");
   assert.match(landingPage, /available for 72 hours on the same browser and device used for checkout/);
+  assert.match(landingPage, /QuickAnalysisReturnLink/);
+  assert.match(returnLink, /\/api\/quick-analysis\/status\//);
+  assert.match(returnLink, /View my recent analysis/);
+  assert.match(returnLink, /Continue my analysis/);
+  assert.match(returnLink, /Check analysis status/);
+  assert.match(returnLink, /\/stagelab\/quick-analysis\/result\//);
+  assert.match(returnLink, /quick_analysis_return_clicked/);
+  assert.doesNotMatch(returnLink, /stage_readiness|body_fat|photo|optional_context/);
   assert.match(resultExperience, /Use this same browser and device/);
   assert.match(resultPage, /index:\s*false/);
   assert.match(resultPage, /follow:\s*false/);
   assert.match(sitemapGenerator, /"\/stagelab\/quick-analysis"/);
   assert.doesNotMatch(sitemapGenerator, /"\/stagelab\/quick-analysis\/result"/);
+});
+
+test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-friction checkout", () => {
+  const landingPage = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "quick-analysis", "page.tsx"), "utf8");
+  const checkout = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCheckout.tsx"), "utf8");
+  const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
+  const styles = fs.readFileSync(path.join(projectRoot, "app", "globals.css"), "utf8");
+  const productionPriceSources = [
+    landingPage,
+    checkout,
+    resultExperience,
+    fs.readFileSync(path.join(projectRoot, "app", "page.tsx"), "utf8"),
+    fs.readFileSync(path.join(projectRoot, "app", "stagelab", "page.tsx"), "utf8"),
+  ].join("\n");
+
+  assert.match(landingPage, /See how your physique measures up\./);
+  assert.match(landingPage, /QUICK_ANALYSIS_PRICE_DISPLAY/);
+  assert.match(landingPage, /No subscription/);
+  assert.match(landingPage, /No account required/);
+  assert.match(landingPage, /Photos never stored by ElevareFit/);
+  assert.match(landingPage, /<details className="quick-analysis-faq panel"/);
+  assert.match(landingPage, /<summary>{faq\.question}<\/summary>/);
+  assert.doesNotMatch(landingPage, /tool-faq-grid/);
+
+  const orderedFaqs = [
+    "What does StageLab Quick Analysis assess?",
+    "Are my photos or analysis details saved?",
+    "What photos work best?",
+    "Do I need a StageLab account?",
+    "How do I reopen my result without an account?",
+    "What does the Stage Readiness score mean?",
+    "Is this medical or official judging advice?",
+  ];
+  orderedFaqs.forEach((question, index) => {
+    assert.ok(landingPage.indexOf(question) >= 0);
+    if (index > 0) assert.ok(landingPage.indexOf(orderedFaqs[index - 1]!) < landingPage.indexOf(question));
+  });
+
+  assert.match(checkout, /Get My Quick Analysis — \$\{formatQuickAnalysisPrice\(\)}/);
+  assert.match(checkout, /Review the highlighted fields below/);
+  assert.match(checkout, /Choose Competition Prep or Physique Check/);
+  assert.match(checkout, /Select a division or comparison standard/);
+  assert.match(checkout, /Confirm that you are at least 18 years old/);
+  assert.match(checkout, /Confirm AI processing before continuing/);
+  assert.match(checkout, /useState\(false\)/);
+  assert.match(checkout, /Privacy Policy/);
+  assert.match(checkout, /Terms of Service/);
+  assert.match(checkout, /window\.location\.assign\(payload\.checkoutUrl\)/);
+  assert.match(resultExperience, /Upload your check-in/);
+  assert.match(resultExperience, /Upload your physique photos/);
+  assert.match(styles, /\.quick-analysis-faq summary:focus-visible/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.quick-analysis-faq summary/);
+  assert.doesNotMatch(productionPriceSources, /\$0\.99|value:\s*0\.99/);
 });
 
 test("both modes share the same $0.99 entitlement and the UI branches without storing sensitive analytics", () => {
@@ -364,7 +614,41 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.match(checkout, /analysisMode === "physique_check" \? "assessing"/);
   assert.match(checkoutRoute, /line_items: \[\{ price: priceId, quantity: 1 \}\]/);
   assert.match(checkoutRoute, /analysis_mode: context\.analysisMode/);
-  assert.match(report, /Stage Readiness reflects how closely the visible physique aligns/);
+  const ctaTracker = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCtaViewTracker.tsx"), "utf8");
+  const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
+  const photoUploader = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisPhotoUploader.tsx"), "utf8");
+  const styles = fs.readFileSync(path.join(projectRoot, "app", "globals.css"), "utf8");
+  assert.match(report, /Stage Readiness is a composite visual profile/);
+  assert.match(report, /Presentation in submitted photos/);
+  assert.match(report, /What still separates you from stage condition/i);
+  assert.match(report, /Judge&apos;s Perspective/);
+  assert.match(report, /What can affect this read/);
+  assert.match(report, /aria-label={`\$\{score\} out of 100`}/);
   assert.match(report, /Download|StageLab/);
+  assert.match(report, /quick_analysis_stagelab_ios_clicked/);
+  assert.match(report, /quick_analysis_stagelab_android_clicked/);
+  assert.match(ctaTracker, /quick_analysis_stagelab_cta_viewed/);
+  assert.match(ctaTracker, /analysis_mode: mode/);
+  assert.doesNotMatch(ctaTracker, /stage_readiness|body_fat|photo|context/);
+  assert.match(resultExperience, /quick_analysis_completed/);
+  assert.match(resultExperience, /quick_analysis_photo_set_started/);
+  assert.match(resultExperience, /quick_analysis_photo_set_completed/);
+  assert.doesNotMatch(resultExperience, /quick_analysis_completed[^\n]*(?:stage_readiness|body_fat|photo|optional_context)/);
+  assert.match(photoUploader, /Competition Prep:/);
+  assert.match(photoUploader, /Use your normal check-in or division poses when possible/);
+  assert.match(photoUploader, /No posing experience needed/);
+  assert.match(photoUploader, /Full physique visible/);
+  assert.match(photoUploader, /aria-required={content\.required}/);
+  assert.match(photoUploader, /aria-describedby=/);
+  assert.match(photoUploader, /type="button"/);
+  assert.match(photoUploader, /alt={`\$\{content\.label\} photo preview`}/);
+  assert.match(photoUploader, /previewUrl/);
+  assert.match(resultExperience, /URL\.createObjectURL/);
+  assert.match(resultExperience, /URL\.revokeObjectURL/);
+  assert.doesNotMatch(resultExperience.match(/catch \(analysisError\)[\s\S]*?finally/)?.[0] ?? "", /resetPhotos\(\)/);
+  assert.doesNotMatch(photoUploader, /trackEvent|filename|file\.name/);
+  assert.match(fs.readFileSync(path.join(projectRoot, "lib", "quick-analysis-client-images.ts"), "utf8"), /imageOrientation: "from-image"/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.quick-analysis-report-grid[\s\S]*grid-template-columns: 1fr/);
+  assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.quick-analysis-photo-slots[\s\S]*grid-template-columns: 1fr/);
   assert.doesNotMatch(checkout, /stage_readiness_score|body_fat|optional_context/);
 });

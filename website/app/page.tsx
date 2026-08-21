@@ -5,6 +5,8 @@ import { TrackedLink } from "@/components/TrackedLink";
 import { getAllPosts } from "@/lib/blog";
 import { getMarketplaceCategories, getMarketplaceProfessionals } from "@/lib/marketplace";
 import { countEligibleMarketplaceProfiles, findTopCategories, formatMarketplaceSocialProofCount } from "@/lib/marketplace-helpers";
+import { QUICK_ANALYSIS_PRICE_DISPLAY } from "@/lib/quick-analysis";
+import { getQuickAnalysisEntryHref } from "@/lib/quick-analysis-attribution";
 import { buildMetadata } from "@/lib/site";
 
 export const metadata = buildMetadata({
@@ -369,15 +371,16 @@ export default async function HomePage() {
               <ProductCtaButtons product="StageLab" context="home_stagelab" />
               <TrackedLink
                 className="button button-secondary"
-                href="/stagelab/quick-analysis/"
+                href={getQuickAnalysisEntryHref("homepage")}
                 eventName="cta_click"
                 eventParams={{
-                  cta_name: "Try Quick Analysis for $0.99",
+                  cta_name: `Try Quick Analysis for ${QUICK_ANALYSIS_PRICE_DISPLAY}`,
                   cta_context: "home_stagelab",
                   product: "StageLab Quick Analysis",
+                  source: "homepage",
                 }}
               >
-                Try Quick Analysis for $0.99
+                Try Quick Analysis — {QUICK_ANALYSIS_PRICE_DISPLAY} one time
               </TrackedLink>
               <TrackedLink
                 className="hero-text-link"

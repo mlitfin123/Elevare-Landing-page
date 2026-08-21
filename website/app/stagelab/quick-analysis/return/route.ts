@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { QUICK_ANALYSIS_RESULT_HOURS } from "@/lib/quick-analysis";
+import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import { issueQuickAnalysisAccessToken } from "@/lib/quick-analysis-repository";
 import {
   QUICK_ANALYSIS_ACCESS_COOKIE,
@@ -15,12 +16,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const source = normalizeQuickAnalysisSource(requestUrl.searchParams.get("source"));
+  const sourceSuffix = source ? `&source=${encodeURIComponent(source)}` : "";
+
   try {
     const supabase = getQuickAnalysisSupabase();
     await enforceQuickAnalysisRateLimit(request, "session", supabase);
-    const checkoutSessionId = new URL(request.url).searchParams.get("session_id");
+    const checkoutSessionId = requestUrl.searchParams.get("session_id");
     if (!checkoutSessionId) {
-      return NextResponse.redirect(absoluteUrl("/stagelab/quick-analysis/?payment=invalid"), 303);
+      return NextResponse.redirect(absoluteUrl(`/stagelab/quick-analysis/?payment=invalid${sourceSuffix}`), 303);
     }
 
     const row = await fulfillVerifiedQuickAnalysisSession(checkoutSessionId);
@@ -29,7 +34,10 @@ export async function GET(request: Request) {
       row,
       getQuickAnalysisCheckoutNonce(request),
     );
-    const response = NextResponse.redirect(absoluteUrl("/stagelab/quick-analysis/result/?purchase=confirmed"), 303);
+    const response = NextResponse.redirect(
+      absoluteUrl(`/stagelab/quick-analysis/result/?purchase=confirmed${sourceSuffix}`),
+      303,
+    );
     response.cookies.set({
       name: QUICK_ANALYSIS_ACCESS_COOKIE,
       value: token,
@@ -46,7 +54,7 @@ export async function GET(request: Request) {
     const response = quickAnalysisErrorResponse(error);
     const code = await response.json().then((body) => body.code as string).catch(() => "payment_error");
     return NextResponse.redirect(
-      absoluteUrl(`/stagelab/quick-analysis/?payment=${encodeURIComponent(code.toLowerCase())}`),
+      absoluteUrl(`/stagelab/quick-analysis/?payment=${encodeURIComponent(code.toLowerCase())}${sourceSuffix}`),
       303,
     );
   }

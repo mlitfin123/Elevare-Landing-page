@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { QuickAnalysisCTA } from "@/components/quick-analysis/QuickAnalysisCTA";
 import {
   BmiCalculator,
   BmrCalculator,
@@ -711,6 +712,14 @@ function BodyFatCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
             <ResultMetric label="Estimated body fat" value={`${result.percentage}%`} />
             <ResultMetric label="Category" value={result.category} />
           </ResultGrid>
+          <QuickAnalysisCTA
+            source="body-fat-calculator"
+            heading="Want a visual estimate too?"
+            description="This calculator uses your measurements. StageLab can also assess 3-5 current photos for visible conditioning, muscularity, symmetry, presentation, and a conservative visual body-fat range."
+            buttonText="Get a Quick Analysis"
+            variant="compact"
+            headingLevel={4}
+          />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -914,6 +923,14 @@ function BodyFatCaliperCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
             ) : null}
           </ResultGrid>
           <p>{result.protocolLabel}</p>
+          <QuickAnalysisCTA
+            source="body-fat-caliper-calculator"
+            heading="Compare the measurement with a visual read."
+            description="Your caliper result is formula-based. StageLab can separately assess 3-5 current photos for visible conditioning and a conservative visual body-fat range."
+            buttonText="Get a Quick Analysis"
+            variant="compact"
+            headingLevel={4}
+          />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -1129,6 +1146,14 @@ function ContestPrepCountdownCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
             <ResultMetric label="Weeks out" value={`${result.weeksOut}`} />
             <ResultMetric label="Current phase" value={result.phase} />
           </ResultGrid>
+          <QuickAnalysisCTA
+            source="contest-prep-countdown"
+            heading="How does your current physique compare with stage condition?"
+            description="Get a one-time StageLab visual assessment from 3-5 current photos. It adds physique context without changing your free countdown result."
+            buttonText="Analyze My Physique"
+            variant="compact"
+            headingLevel={4}
+          />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -1209,6 +1234,14 @@ function CompetitionTimelineGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
               </div>
             ))}
           </div>
+          <QuickAnalysisCTA
+            source="competition-timeline"
+            heading="Add a visual checkpoint."
+            description="Your timeline maps the dates. StageLab Quick Analysis gives you a one-time visual read of where your physique currently stands without claiming an exact prep timeline."
+            buttonText="Get My Quick Analysis"
+            variant="compact"
+            headingLevel={4}
+          />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -1272,6 +1305,14 @@ function ShowDayChecklistGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
               </div>
             ))}
           </div>
+          <QuickAnalysisCTA
+            source="show-day-checklist"
+            heading="Add a current physique checkpoint."
+            description="Alongside your show-day planning, get a one-time StageLab visual assessment of conditioning, muscularity, symmetry, and presentation from 3-5 current photos."
+            buttonText="Analyze My Physique"
+            variant="compact"
+            headingLevel={4}
+          />
         </ResultCard>
       ) : null}
     </ToolFormCard>

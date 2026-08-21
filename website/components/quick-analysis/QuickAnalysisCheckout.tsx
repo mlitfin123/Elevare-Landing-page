@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { trackEvent } from "@/lib/analytics";
+import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import {
   QUICK_ANALYSIS_DIVISIONS,
   QUICK_ANALYSIS_MAX_CONTEXT_LENGTH,
+  QUICK_ANALYSIS_PRICE_VALUE,
   formatQuickAnalysisPrice,
   type QuickAnalysisCompetitionStatus,
   type QuickAnalysisDivision,
@@ -14,9 +16,12 @@ import {
 } from "@/lib/quick-analysis";
 
 type CheckoutResponse = { checkoutUrl?: string; error?: string };
+type CheckoutField = "analysisMode" | "division" | "weeksOut" | "ageConfirmed" | "aiConsentConfirmed";
+type CheckoutFieldErrors = Partial<Record<CheckoutField, string>>;
 
 export function QuickAnalysisCheckout() {
   const searchParams = useSearchParams();
+  const source = normalizeQuickAnalysisSource(searchParams.get("source"));
   const [analysisMode, setAnalysisMode] = useState<QuickAnalysisMode | "">("");
   const [division, setDivision] = useState<QuickAnalysisDivision | "">("");
   const [competitionStatus, setCompetitionStatus] = useState<QuickAnalysisCompetitionStatus>("preparing");
@@ -26,31 +31,40 @@ export function QuickAnalysisCheckout() {
   const [aiConsentConfirmed, setAiConsentConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
 
   useEffect(() => {
-    trackEvent("quick_analysis_view", { product: "StageLab Quick Analysis" });
-  }, []);
+    trackEvent("quick_analysis_view", { product: "StageLab Quick Analysis", source });
+  }, [source]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    if (!analysisMode || !division || !ageConfirmed || !aiConsentConfirmed) {
-      setError("Choose what you want to assess, select a division, and confirm both required acknowledgments.");
-      return;
-    }
-
     const parsedWeeks = analysisMode === "competition_prep" && competitionStatus === "preparing" ? Number(weeksOut) : null;
+    const nextFieldErrors: CheckoutFieldErrors = {};
+    if (!analysisMode) nextFieldErrors.analysisMode = "Choose Competition Prep or Physique Check.";
+    if (!division) nextFieldErrors.division = "Select a division or comparison standard.";
     if (analysisMode === "competition_prep" && competitionStatus === "preparing" && (!Number.isInteger(parsedWeeks) || parsedWeeks! < 0 || parsedWeeks! > 60)) {
-      setError("Enter a whole number from 0 to 60 for weeks out.");
+      nextFieldErrors.weeksOut = "Enter a whole number from 0 to 60.";
+    }
+    if (!ageConfirmed) nextFieldErrors.ageConfirmed = "Confirm that you are at least 18 years old.";
+    if (!aiConsentConfirmed) nextFieldErrors.aiConsentConfirmed = "Confirm AI processing before continuing.";
+    setFieldErrors(nextFieldErrors);
+
+    const firstInvalidField = Object.keys(nextFieldErrors)[0] as CheckoutField | undefined;
+    if (firstInvalidField) {
+      setError("Review the highlighted fields below.");
+      window.requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-quick-analysis-field="${firstInvalidField}"] input, [data-quick-analysis-field="${firstInvalidField}"] select`)?.focus());
       return;
     }
 
     setSubmitting(true);
     trackEvent("quick_analysis_checkout_started", {
       product: "StageLab Quick Analysis",
-      value: 0.99,
+      value: QUICK_ANALYSIS_PRICE_VALUE,
       currency: "USD",
       analysis_mode: analysisMode,
+      source,
     });
 
     try {
@@ -65,6 +79,7 @@ export function QuickAnalysisCheckout() {
           optionalContext: optionalContext.trim() || null,
           ageConfirmed,
           aiConsentConfirmed,
+          source,
         }),
       });
       const payload = (await response.json()) as CheckoutResponse;
@@ -99,7 +114,7 @@ export function QuickAnalysisCheckout() {
 
       {paymentNotice ? <p className="form-feedback is-error" role="status">{paymentNotice}</p> : null}
 
-      <fieldset className="quick-analysis-mode-selector">
+      <fieldset className="quick-analysis-mode-selector" data-quick-analysis-field="analysisMode" aria-describedby={fieldErrors.analysisMode ? "quick-analysis-mode-error" : undefined}>
         <legend className="field-label">What do you want to assess?</legend>
         <div className="quick-analysis-mode-grid">
           <label className={`quick-analysis-mode-card${analysisMode === "competition_prep" ? " is-selected" : ""}`}>
@@ -108,7 +123,7 @@ export function QuickAnalysisCheckout() {
               name="analysisMode"
               value="competition_prep"
               checked={analysisMode === "competition_prep"}
-              onChange={() => { setAnalysisMode("competition_prep"); setCompetitionStatus("preparing"); }}
+              onChange={() => { setAnalysisMode("competition_prep"); setCompetitionStatus("preparing"); setFieldErrors((current) => ({ ...current, analysisMode: undefined })); }}
               required
             />
             <span><strong>Competition Prep</strong><small>I&apos;m preparing for a bodybuilding or physique competition.</small></span>
@@ -119,21 +134,23 @@ export function QuickAnalysisCheckout() {
               name="analysisMode"
               value="physique_check"
               checked={analysisMode === "physique_check"}
-              onChange={() => { setAnalysisMode("physique_check"); setCompetitionStatus("assessing"); }}
+              onChange={() => { setAnalysisMode("physique_check"); setCompetitionStatus("assessing"); setFieldErrors((current) => ({ ...current, analysisMode: undefined })); }}
               required
             />
             <span><strong>Physique Check</strong><small>I&apos;m not currently competing. I want to compare my physique with competition-level conditioning.</small></span>
           </label>
         </div>
+        {fieldErrors.analysisMode ? <p className="field-error" id="quick-analysis-mode-error">{fieldErrors.analysisMode}</p> : null}
       </fieldset>
 
       <div className="field-grid">
-        <label className="field">
+        <label className="field" data-quick-analysis-field="division">
           <span className="field-label">{analysisMode === "physique_check" ? "Comparison standard" : analysisMode === "competition_prep" ? "Competition division" : "Division or comparison standard"}</span>
-          <select value={division} onChange={(event) => setDivision(event.target.value as QuickAnalysisDivision | "")} required>
+          <select value={division} onChange={(event) => { setDivision(event.target.value as QuickAnalysisDivision | ""); setFieldErrors((current) => ({ ...current, division: undefined })); }} aria-invalid={Boolean(fieldErrors.division)} aria-describedby={fieldErrors.division ? "quick-analysis-division-error" : undefined} required>
             <option value="">Select a division</option>
             {QUICK_ANALYSIS_DIVISIONS.map((option) => <option value={option} key={option}>{option}</option>)}
           </select>
+          {fieldErrors.division ? <span className="field-error" id="quick-analysis-division-error">{fieldErrors.division}</span> : null}
         </label>
 
         {analysisMode === "competition_prep" ? (
@@ -150,9 +167,10 @@ export function QuickAnalysisCheckout() {
         ) : null}
 
         {analysisMode === "competition_prep" && competitionStatus === "preparing" ? (
-          <label className="field">
+          <label className="field" data-quick-analysis-field="weeksOut">
             <span className="field-label">Weeks out</span>
-            <input type="number" min="0" max="60" step="1" inputMode="numeric" value={weeksOut} onChange={(event) => setWeeksOut(event.target.value)} required />
+            <input type="number" min="0" max="60" step="1" inputMode="numeric" value={weeksOut} onChange={(event) => { setWeeksOut(event.target.value); setFieldErrors((current) => ({ ...current, weeksOut: undefined })); }} aria-invalid={Boolean(fieldErrors.weeksOut)} aria-describedby={fieldErrors.weeksOut ? "quick-analysis-weeks-error" : undefined} required />
+            {fieldErrors.weeksOut ? <span className="field-error" id="quick-analysis-weeks-error">{fieldErrors.weeksOut}</span> : null}
           </label>
         ) : null}
 
@@ -169,24 +187,26 @@ export function QuickAnalysisCheckout() {
       </div>
 
       <div className="quick-analysis-consents">
-        <label className="quick-analysis-check">
-          <input type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} />
+        <label className="quick-analysis-check" data-quick-analysis-field="ageConfirmed">
+          <input type="checkbox" checked={ageConfirmed} onChange={(event) => { setAgeConfirmed(event.target.checked); setFieldErrors((current) => ({ ...current, ageConfirmed: undefined })); }} aria-invalid={Boolean(fieldErrors.ageConfirmed)} aria-describedby={fieldErrors.ageConfirmed ? "quick-analysis-age-error" : undefined} />
           <span>I confirm that I am at least 18 years old.</span>
         </label>
-        <label className="quick-analysis-check">
-          <input type="checkbox" checked={aiConsentConfirmed} onChange={(event) => setAiConsentConfirmed(event.target.checked)} />
+        {fieldErrors.ageConfirmed ? <p className="field-error" id="quick-analysis-age-error">{fieldErrors.ageConfirmed}</p> : null}
+        <label className="quick-analysis-check" data-quick-analysis-field="aiConsentConfirmed">
+          <input type="checkbox" checked={aiConsentConfirmed} onChange={(event) => { setAiConsentConfirmed(event.target.checked); setFieldErrors((current) => ({ ...current, aiConsentConfirmed: undefined })); }} aria-invalid={Boolean(fieldErrors.aiConsentConfirmed)} aria-describedby={fieldErrors.aiConsentConfirmed ? "quick-analysis-ai-error" : undefined} />
           <span>
             I understand that my photos and optional context will be used only to generate this one-time analysis. ElevareFit never stores the photos; they are discarded after AI processing. My optional context and structured report are removed after 72 hours. See the <Link href="/privacy-policy/">Privacy Policy</Link>.
           </span>
         </label>
+        {fieldErrors.aiConsentConfirmed ? <p className="field-error" id="quick-analysis-ai-error">{fieldErrors.aiConsentConfirmed}</p> : null}
       </div>
 
       <div className="form-actions">
         <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting}>
-          {submitting ? "Opening secure checkout..." : `Get my analysis for ${formatQuickAnalysisPrice()}`}
+          {submitting ? "Opening secure checkout..." : `Get My Quick Analysis — ${formatQuickAnalysisPrice()}`}
         </button>
         <p className="fine-print">
-          Your photos are not saved. They are used only to generate this analysis and discarded after processing. No subscription, automatic renewal, StageLab app credit, or mobile entitlement. By continuing, you agree to the <Link href="/terms-of-service/">Terms of Service</Link>.
+          No subscription, automatic renewal, StageLab app credit, or mobile entitlement. By continuing, you agree to the <Link href="/terms-of-service/">Terms of Service</Link>.
         </p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>

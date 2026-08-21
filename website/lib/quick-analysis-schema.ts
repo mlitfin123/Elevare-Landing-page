@@ -17,6 +17,83 @@ const persistedOutputText = z.string().trim().min(1).refine(
 const conciseText = persistedOutputText.max(2_000);
 const conciseList = z.array(persistedOutputText.max(320)).max(10);
 
+function joinAssessmentText(value: QuickAnalysisResult) {
+  return [
+    value.prep_status,
+    value.conditioning_assessment,
+    ...value.visible_conditioning_markers,
+    value.muscularity_assessment,
+    value.symmetry_assessment,
+    value.presentation_assessment,
+    ...value.visible_strengths,
+    ...value.areas_to_improve,
+    value.judges_perspective,
+    value.summary,
+    value.explanation,
+  ].join(" ");
+}
+
+export function getQuickAnalysisConsistencyIssues(value: QuickAnalysisResult) {
+  if (
+    value.analysis_mode !== "physique_check" ||
+    value.stage_readiness_score == null ||
+    value.conditioning_score == null
+  ) {
+    return [];
+  }
+
+  const text = joinAssessmentText(value);
+  const issues: string[] = [];
+  const nearReadyClaim = /\b(?:stage-ready|contest-ready|ready to step onstage|very close (?:visually )?to (?:typical )?stage condition)\b/i;
+  const strongConditioningClaim = /\b(?:fully conditioned|contest-level conditioning|stage-level conditioning (?:is|appears) (?:already )?(?:evident|present))\b/i;
+  const farFromStageClaim = /\b(?:far from stage condition|not remotely close to stage condition|substantially softer than typical stage presentation)\b/i;
+
+  if (value.conditioning_score <= 39 && (nearReadyClaim.test(text) || strongConditioningClaim.test(text))) {
+    issues.push("Low conditioning cannot be described as stage-ready or contest-level conditioning.");
+  }
+  if (value.stage_readiness_score <= 59 && nearReadyClaim.test(text)) {
+    issues.push("A developing Stage Readiness result cannot be described as stage-ready or very close.");
+  }
+  if (value.conditioning_score >= 80 && farFromStageClaim.test(text)) {
+    issues.push("High visible conditioning cannot be described as far from stage condition without qualification.");
+  }
+
+  return issues;
+}
+
+function normalizePhysiqueCheckDerivedFields(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (record.analysis_mode !== "physique_check") return value;
+
+  const conditioning = record.conditioning_score;
+  const muscularity = record.muscularity_score;
+  const symmetry = record.symmetry_score;
+  const presentation = record.presentation_score;
+  if (
+    typeof conditioning !== "number" ||
+    typeof muscularity !== "number" ||
+    typeof symmetry !== "number" ||
+    typeof presentation !== "number"
+  ) {
+    return value;
+  }
+
+  const stageReadinessScore = calculateStageReadinessScore({
+    conditioning,
+    muscularity,
+    symmetry,
+    presentation,
+  });
+
+  return {
+    ...record,
+    stage_readiness_score: stageReadinessScore,
+    stage_readiness_category: getStageReadinessCategory(stageReadinessScore),
+    stage_condition_distance: getStageConditionDistance(conditioning),
+  };
+}
+
 export const quickAnalysisContextSchema = z
   .object({
     division: z.enum(QUICK_ANALYSIS_DIVISIONS),
@@ -65,6 +142,14 @@ export const quickAnalysisContextSchema = z
 export const quickAnalysisResultSchema = z
   .object({
     analysis_mode: z.enum(["competition_prep", "physique_check"]),
+    photo_coverage: z.enum(["sufficient", "limited"]).default("sufficient"),
+    missing_or_limited_views: z.array(z.enum([
+      "front",
+      "side",
+      "back",
+      "additional_1",
+      "additional_2",
+    ])).max(5).default([]),
     stage_readiness_score: z.number().int().min(0).max(100).nullable(),
     stage_readiness_category: z.enum([
       "Far from stage condition",
@@ -98,6 +183,28 @@ export const quickAnalysisResultSchema = z
   })
   .strict()
   .superRefine((value, context) => {
+    if (value.photo_coverage === "sufficient" && value.missing_or_limited_views.length > 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["photo_coverage"],
+        message: "Photo coverage cannot be sufficient when a submitted view is limited.",
+      });
+    }
+    if (value.photo_coverage === "limited" && value.missing_or_limited_views.length === 0) {
+      context.addIssue({
+        code: "custom",
+        path: ["missing_or_limited_views"],
+        message: "Limited photo coverage must identify the affected view.",
+      });
+    }
+    if (value.photo_coverage === "limited" && value.confidence === "high") {
+      context.addIssue({
+        code: "custom",
+        path: ["confidence"],
+        message: "Limited photo coverage cannot produce high confidence.",
+      });
+    }
+
     if (value.estimated_body_fat_min >= value.estimated_body_fat_max) {
       context.addIssue({
         code: "custom",
@@ -152,7 +259,7 @@ export const quickAnalysisResultSchema = z
       context.addIssue({
         code: "custom",
         path: ["stage_readiness_score"],
-        message: "Stage Readiness must use the documented 40/25/20/15 weighting.",
+        message: "Stage Readiness must use the documented weighting and conditioning safeguard.",
       });
     }
     if (value.stage_readiness_category !== getStageReadinessCategory(expectedScore)) {
@@ -162,11 +269,11 @@ export const quickAnalysisResultSchema = z
         message: "Stage Readiness category does not match the weighted score.",
       });
     }
-    if (value.stage_condition_distance !== getStageConditionDistance(expectedScore)) {
+    if (value.stage_condition_distance !== getStageConditionDistance(value.conditioning_score!)) {
       context.addIssue({
         code: "custom",
         path: ["stage_condition_distance"],
-        message: "Stage-condition distance does not match the weighted score.",
+        message: "Stage-condition distance does not match the visible conditioning score.",
       });
     }
 
@@ -202,6 +309,11 @@ export const quickAnalysisResultSchema = z
         message: "Physique Check cannot include timelines, guaranteed outcomes, official scores, or historical change claims.",
       });
     }
+
+    const consistencyIssues = getQuickAnalysisConsistencyIssues(value);
+    for (const message of consistencyIssues) {
+      context.addIssue({ code: "custom", path: ["summary"], message });
+    }
   });
 
 export function parseQuickAnalysisContext(value: unknown): QuickAnalysisContext {
@@ -209,7 +321,7 @@ export function parseQuickAnalysisContext(value: unknown): QuickAnalysisContext 
 }
 
 export function parseQuickAnalysisResult(value: unknown, expectedMode?: QuickAnalysisMode): QuickAnalysisResult {
-  const parsed = quickAnalysisResultSchema.parse(value);
+  const parsed = quickAnalysisResultSchema.parse(normalizePhysiqueCheckDerivedFields(value));
   if (expectedMode && parsed.analysis_mode !== expectedMode) {
     throw new Error("The analysis mode does not match the request.");
   }
@@ -221,6 +333,8 @@ export const QUICK_ANALYSIS_JSON_SCHEMA = {
   additionalProperties: false,
   required: [
     "analysis_mode",
+    "photo_coverage",
+    "missing_or_limited_views",
     "stage_readiness_score",
     "stage_readiness_category",
     "stage_condition_distance",
@@ -248,6 +362,12 @@ export const QUICK_ANALYSIS_JSON_SCHEMA = {
   ],
   properties: {
     analysis_mode: { type: "string", enum: ["competition_prep", "physique_check"] },
+    photo_coverage: { type: "string", enum: ["sufficient", "limited"] },
+    missing_or_limited_views: {
+      type: "array",
+      maxItems: 5,
+      items: { type: "string", enum: ["front", "side", "back", "additional_1", "additional_2"] },
+    },
     stage_readiness_score: { type: ["integer", "null"], minimum: 0, maximum: 100 },
     stage_readiness_category: {
       type: ["string", "null"],

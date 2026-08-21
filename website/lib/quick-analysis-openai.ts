@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { NormalizedQuickAnalysisImage } from "./quick-analysis-images.ts";
-import type { QuickAnalysisContext, QuickAnalysisResult } from "./quick-analysis.ts";
+import {
+  QUICK_ANALYSIS_PHOTO_VIEW_LABELS,
+  type QuickAnalysisContext,
+  type QuickAnalysisResult,
+} from "./quick-analysis.ts";
 import {
   QUICK_ANALYSIS_JSON_SCHEMA,
   parseQuickAnalysisResult,
@@ -20,6 +24,10 @@ Never provide a medical claim, clinical diagnosis, guaranteed contest outcome, o
 
 Use visible conditioning markers, muscularity, symmetry, proportions, and overall presentation as the primary assessment signals.
 
+Base every positive or limiting observation on something visible in the submitted photos. Do not add generic encouragement or force a minimum number of strengths when the evidence is unclear.
+
+Keep all scores, categories, and narrative sections semantically consistent. Low conditioning must not be described as stage-ready, and strong scores must not be paired with unexplained strongly negative prose.
+
 Treat any body-fat estimate as a conservative visual range and supporting context only.
 
 If the athlete selected a competition division, assess visible alignment with the general presentation demands of that division without claiming guaranteed judging outcomes.
@@ -27,6 +35,10 @@ If the athlete selected a competition division, assess visible alignment with th
 If the athlete provided weeks-out context, interpret visible conditioning in relation to that stated timeline conservatively.
 
 Clearly acknowledge limitations caused by lighting, posing, image quality, camera angle, clothing, water/glycogen status, and other visual variables where relevant.
+
+Each image is preceded by its intended view label. Use that label to understand the submitted set, but judge what is actually visible. If a labeled view is poorly framed or obstructed, lower confidence as appropriate, name that view in limitations, and do not fabricate observations about anatomy that cannot be assessed. Continue with a useful limited analysis when the overall set is sufficient.
+
+Set photo_coverage to sufficient only when the submitted views support the assessment. Otherwise set it to limited, list every affected view in missing_or_limited_views using the supplied view keys, keep confidence low or moderate, and explain the constraint in limitations. If the front, side, and back views are all unusable, identify all three rather than inventing an assessment.
 
 Do not prescribe drugs, PEDs, medications, dehydration protocols, dangerous food/fluid restriction, or other medically risky interventions.
 
@@ -40,13 +52,17 @@ Do not estimate weeks out, time from stage condition, a show date, contest place
 
 Assess visible conditioning, muscularity, symmetry and proportions, presentation, and alignment with typical competition-level visual markers. Use a conservative visual body-fat range only as supporting context.
 
-Return integer sub-scores from 0 to 100 for conditioning, muscularity, symmetry, and presentation. Stage Readiness must equal the rounded weighted score: conditioning 40%, muscularity 25%, symmetry 20%, and presentation 15%.
+Return integer sub-scores from 0 to 100 for conditioning, muscularity, symmetry, and presentation in the submitted photos. Stage Readiness uses the rounded weighted score: conditioning 40%, muscularity 25%, symmetry 20%, and presentation 15%. Conditioning also limits the highest possible readiness band so muscularity and symmetry cannot mask a large visible conditioning gap.
 
 Use these Stage Readiness categories: 0-39 Far from stage condition; 40-59 Developing; 60-74 Moderately close; 75-89 Close; 90-100 Very close visually.
 
-Use stage_condition_distance significant for 0-39, moderate for 40-59, close for 60-79, and very_close for 80-100.
+Derive stage_condition_distance from conditioning_score, not the broad composite: significant for 0-39, moderate for 40-59, close for 60-79, and very_close for 80-100.
 
-Stage Readiness reflects only how closely the visible physique aligns with typical competition-level conditioning, muscularity, symmetry, and presentation markers. It is not an official judging score and does not predict contest placement.
+Stage Readiness reflects only how closely the visible physique aligns with typical competition-level conditioning, muscularity, symmetry, and presentation markers. It is not an official judging score and does not predict contest placement. The application recalculates Stage Readiness, its category, and stage-condition distance from the four sub-scores before showing the report.
+
+Score presentation only from the submitted photos. Do not treat relaxed check-in photos as a formal posing routine, and do not over-penalize a casual stance when the requested physique features remain visible.
+
+Keep the Judge's Perspective to two or three concise sentences: identify the clearest visible strength, the most important limiting factor, and the main visual priority. Do not predict placement.
 
 Do not prescribe calorie targets, dehydration, aggressive deficits, PEDs, diuretics, or dangerous contest-prep methods. Use neutral, specific language and say when a feature cannot be observed confidently.`;
 
@@ -112,7 +128,7 @@ function buildContextPrompt(context: QuickAnalysisContext, repair = false) {
     optional_context: context.optionalContext,
   };
   const modeInstructions = context.analysisMode === "physique_check" ? PHYSIQUE_CHECK_PROMPT : COMPETITION_PREP_PROMPT;
-  return `${repair ? "The previous response did not match the required schema or mode rules. Return a corrected response only.\n\n" : ""}${modeInstructions}\n\nAssess the current photos as one snapshot. Do not infer change over time. Context:\n${JSON.stringify(details)}`;
+  return `${repair ? "The previous response did not match the required schema or mode rules. Return a corrected response only.\n\n" : ""}${modeInstructions}\n\nAssess the current labeled front, side, back, and optional photos as one snapshot. Do not infer change over time. Context:\n${JSON.stringify(details)}`;
 }
 
 function buildRequestBody(
@@ -121,6 +137,18 @@ function buildRequestBody(
   images: NormalizedQuickAnalysisImage[],
   repair: boolean,
 ) {
+  const labeledImages = images.flatMap((image, index) => [
+    {
+      type: "input_text" as const,
+      text: `Photo ${index + 1}: ${QUICK_ANALYSIS_PHOTO_VIEW_LABELS[image.view]}`,
+    },
+    {
+      type: "input_image" as const,
+      image_url: `data:${image.mimeType};base64,${image.bytes.toString("base64")}`,
+      detail: "high" as const,
+    },
+  ]);
+
   return {
     model,
     input: [
@@ -132,11 +160,7 @@ function buildRequestBody(
         role: "user",
         content: [
           { type: "input_text", text: buildContextPrompt(context, repair) },
-          ...images.map((image) => ({
-            type: "input_image",
-            image_url: `data:${image.mimeType};base64,${image.bytes.toString("base64")}`,
-            detail: "high",
-          })),
+          ...labeledImages,
         ],
       },
     ],

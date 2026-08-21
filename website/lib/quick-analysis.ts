@@ -1,5 +1,7 @@
 export const QUICK_ANALYSIS_PRODUCT_NAME = "StageLab Quick Analysis";
 export const QUICK_ANALYSIS_PRICE_CENTS = 99;
+export const QUICK_ANALYSIS_PRICE_VALUE = QUICK_ANALYSIS_PRICE_CENTS / 100;
+export const QUICK_ANALYSIS_PRICE_DISPLAY = `$${QUICK_ANALYSIS_PRICE_VALUE.toFixed(2)}`;
 export const QUICK_ANALYSIS_CURRENCY = "usd";
 export const QUICK_ANALYSIS_RESULT_HOURS = 72;
 export const QUICK_ANALYSIS_MAX_RETRIES = 3;
@@ -9,6 +11,49 @@ export const QUICK_ANALYSIS_MAX_CONTEXT_LENGTH = 400;
 export const QUICK_ANALYSIS_MAX_IMAGE_BYTES = 1_500_000;
 export const QUICK_ANALYSIS_MAX_TOTAL_BYTES = 4_000_000;
 export const QUICK_ANALYSIS_MAX_IMAGE_DIMENSION = 1_600;
+
+export const QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS = ["front", "side", "back"] as const;
+export const QUICK_ANALYSIS_OPTIONAL_PHOTO_VIEWS = ["additional_1", "additional_2"] as const;
+export const QUICK_ANALYSIS_PHOTO_VIEWS = [
+  ...QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS,
+  ...QUICK_ANALYSIS_OPTIONAL_PHOTO_VIEWS,
+] as const;
+
+export type QuickAnalysisPhotoView = (typeof QUICK_ANALYSIS_PHOTO_VIEWS)[number];
+
+export const QUICK_ANALYSIS_PHOTO_VIEW_LABELS: Record<QuickAnalysisPhotoView, string> = {
+  front: "Front",
+  side: "Side",
+  back: "Back",
+  additional_1: "Additional View 1",
+  additional_2: "Additional View 2",
+};
+
+export function getMissingQuickAnalysisPhotoViews(views: readonly QuickAnalysisPhotoView[]) {
+  const selected = new Set(views);
+  return QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS.filter((view) => !selected.has(view));
+}
+
+export function validateQuickAnalysisPhotoViews(views: readonly string[]) {
+  const recognized = views.filter((view): view is QuickAnalysisPhotoView =>
+    QUICK_ANALYSIS_PHOTO_VIEWS.includes(view as QuickAnalysisPhotoView),
+  );
+  const duplicates = recognized.filter((view, index) => recognized.indexOf(view) !== index);
+  const missing = getMissingQuickAnalysisPhotoViews(recognized);
+
+  return {
+    valid:
+      views.length >= QUICK_ANALYSIS_MIN_PHOTOS &&
+      views.length <= QUICK_ANALYSIS_MAX_PHOTOS &&
+      recognized.length === views.length &&
+      duplicates.length === 0 &&
+      missing.length === 0,
+    missing,
+    duplicates: [...new Set(duplicates)],
+    hasUnknownView: recognized.length !== views.length,
+    exceedsMaximum: views.length > QUICK_ANALYSIS_MAX_PHOTOS,
+  };
+}
 
 export const QUICK_ANALYSIS_DIVISIONS = [
   "Bodybuilding",
@@ -53,6 +98,8 @@ export type QuickAnalysisContext = {
 
 export type QuickAnalysisResult = {
   analysis_mode?: QuickAnalysisMode;
+  photo_coverage: "sufficient" | "limited";
+  missing_or_limited_views: QuickAnalysisPhotoView[];
   stage_readiness_score: number | null;
   stage_readiness_category: QuickAnalysisStageReadinessCategory | null;
   stage_condition_distance: QuickAnalysisStageConditionDistance | null;
@@ -97,18 +144,29 @@ export const QUICK_ANALYSIS_STAGE_READINESS_WEIGHTS = {
   presentation: 0.15,
 } as const;
 
+export function getStageReadinessConditioningCeiling(conditioningScore: number) {
+  if (conditioningScore <= 39) return 59;
+  if (conditioningScore <= 59) return 74;
+  if (conditioningScore <= 74) return 89;
+  return 100;
+}
+
 export function calculateStageReadinessScore(scores: {
   conditioning: number;
   muscularity: number;
   symmetry: number;
   presentation: number;
 }) {
-  return Math.round(
+  const weightedScore = Math.round(
     scores.conditioning * QUICK_ANALYSIS_STAGE_READINESS_WEIGHTS.conditioning +
       scores.muscularity * QUICK_ANALYSIS_STAGE_READINESS_WEIGHTS.muscularity +
       scores.symmetry * QUICK_ANALYSIS_STAGE_READINESS_WEIGHTS.symmetry +
       scores.presentation * QUICK_ANALYSIS_STAGE_READINESS_WEIGHTS.presentation,
   );
+
+  // Conditioning is not the whole physique, but a low conditioning score must
+  // not be masked by strong muscularity or symmetry in a stage-readiness label.
+  return Math.min(weightedScore, getStageReadinessConditioningCeiling(scores.conditioning));
 }
 
 export function getStageReadinessCategory(score: number): QuickAnalysisStageReadinessCategory {
@@ -119,13 +177,13 @@ export function getStageReadinessCategory(score: number): QuickAnalysisStageRead
   return "Very close visually";
 }
 
-export function getStageConditionDistance(score: number): QuickAnalysisStageConditionDistance {
-  if (score <= 39) return "significant";
-  if (score <= 59) return "moderate";
-  if (score <= 79) return "close";
+export function getStageConditionDistance(conditioningScore: number): QuickAnalysisStageConditionDistance {
+  if (conditioningScore <= 39) return "significant";
+  if (conditioningScore <= 59) return "moderate";
+  if (conditioningScore <= 79) return "close";
   return "very_close";
 }
 
 export function formatQuickAnalysisPrice() {
-  return `$${(QUICK_ANALYSIS_PRICE_CENTS / 100).toFixed(2)}`;
+  return QUICK_ANALYSIS_PRICE_DISPLAY;
 }

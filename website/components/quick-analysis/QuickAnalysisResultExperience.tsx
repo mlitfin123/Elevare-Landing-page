@@ -2,13 +2,22 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  QuickAnalysisPhotoUploader,
+  type QuickAnalysisSelectedPhoto,
+} from "@/components/quick-analysis/QuickAnalysisPhotoUploader";
 import { QuickAnalysisReport } from "@/components/quick-analysis/QuickAnalysisReport";
 import { trackEvent } from "@/lib/analytics";
+import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import { prepareQuickAnalysisPhotos } from "@/lib/quick-analysis-client-images";
 import {
   QUICK_ANALYSIS_MAX_PHOTOS,
   QUICK_ANALYSIS_MIN_PHOTOS,
+  QUICK_ANALYSIS_PHOTO_VIEWS,
+  QUICK_ANALYSIS_PRICE_VALUE,
+  getMissingQuickAnalysisPhotoViews,
+  type QuickAnalysisPhotoView,
   type QuickAnalysisPublicState,
 } from "@/lib/quick-analysis";
 
@@ -16,9 +25,13 @@ type StatusPayload = { state?: QuickAnalysisPublicState; error?: string };
 
 export function QuickAnalysisResultExperience() {
   const searchParams = useSearchParams();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const attributionSource = useRef(normalizeQuickAnalysisSource(searchParams.get("source")));
+  const previewUrls = useRef(new Map<QuickAnalysisPhotoView, string>());
+  const photoSetStarted = useRef(false);
+  const photoSetCompleted = useRef(false);
   const [state, setState] = useState<QuickAnalysisPublicState | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<QuickAnalysisPhotoView, QuickAnalysisSelectedPhoto>>>({});
+  const [photoErrors, setPhotoErrors] = useState<Partial<Record<QuickAnalysisPhotoView, string>>>({});
   const [aiConsent, setAiConsent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processingStage, setProcessingStage] = useState<string | null>(null);
@@ -42,6 +55,31 @@ export function QuickAnalysisResultExperience() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => () => {
+    for (const previewUrl of previewUrls.current.values()) URL.revokeObjectURL(previewUrl);
+    previewUrls.current.clear();
+  }, []);
+
+  useEffect(() => {
+    const views = QUICK_ANALYSIS_PHOTO_VIEWS.filter((view) => Boolean(selectedPhotos[view]));
+    const analysisMode = state?.analysisMode ?? "competition_prep";
+    if (views.length > 0 && !photoSetStarted.current) {
+      photoSetStarted.current = true;
+      trackEvent("quick_analysis_photo_set_started", {
+        analysis_mode: analysisMode,
+        source: attributionSource.current,
+      });
+    }
+    if (getMissingQuickAnalysisPhotoViews(views).length === 0 && !photoSetCompleted.current) {
+      photoSetCompleted.current = true;
+      trackEvent("quick_analysis_photo_set_completed", {
+        photo_count: views.length,
+        analysis_mode: analysisMode,
+        source: attributionSource.current,
+      });
+    }
+  }, [selectedPhotos, state?.analysisMode]);
+
   useEffect(() => {
     if (state?.analysisStatus !== "processing") return;
     const interval = window.setInterval(async () => {
@@ -62,30 +100,57 @@ export function QuickAnalysisResultExperience() {
     if (sessionStorage.getItem(key)) return;
     trackEvent("quick_analysis_purchase", {
       product: "StageLab Quick Analysis",
-      value: 0.99,
+      value: QUICK_ANALYSIS_PRICE_VALUE,
       currency: "USD",
       analysis_mode: state.analysisMode,
+      source: attributionSource.current,
     });
     sessionStorage.setItem(key, "true");
     window.history.replaceState({}, "", "/stagelab/quick-analysis/result/");
   }, [searchParams, state]);
 
   function resetPhotos() {
-    setSelectedFiles([]);
+    for (const previewUrl of previewUrls.current.values()) URL.revokeObjectURL(previewUrl);
+    previewUrls.current.clear();
+    setSelectedPhotos({});
+    setPhotoErrors({});
     setAiConsent(false);
-    if (inputRef.current) inputRef.current.value = "";
   }
 
-  function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+  function handlePhotoChange(view: QuickAnalysisPhotoView, file: File | null) {
     setError(null);
-    setSelectedFiles(Array.from(event.target.files ?? []));
+    setPhotoErrors((current) => ({ ...current, [view]: undefined }));
+    const previousUrl = previewUrls.current.get(view);
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+
+    if (!file) {
+      previewUrls.current.delete(view);
+      setSelectedPhotos((current) => {
+        const next = { ...current };
+        delete next[view];
+        return next;
+      });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    previewUrls.current.set(view, previewUrl);
+    setSelectedPhotos((current) => ({ ...current, [view]: { file, previewUrl } }));
   }
 
   async function handleAnalyze(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     const analysisMode = state?.analysisMode ?? "competition_prep";
-    if (selectedFiles.length < QUICK_ANALYSIS_MIN_PHOTOS || selectedFiles.length > QUICK_ANALYSIS_MAX_PHOTOS) {
+    const selectedViews = QUICK_ANALYSIS_PHOTO_VIEWS.filter((view) => Boolean(selectedPhotos[view]));
+    const missingViews = getMissingQuickAnalysisPhotoViews(selectedViews);
+    if (missingViews.length > 0) {
+      setPhotoErrors(Object.fromEntries(missingViews.map((view) => [view, `${view[0]?.toUpperCase()}${view.slice(1)} photo is required.`])));
+      setError("Add a front, side, and back photo before starting your analysis.");
+      document.getElementById(`quick-analysis-photo-${missingViews[0]}`)?.focus();
+      return;
+    }
+    if (selectedViews.length < QUICK_ANALYSIS_MIN_PHOTOS || selectedViews.length > QUICK_ANALYSIS_MAX_PHOTOS) {
       setError(`Choose ${QUICK_ANALYSIS_MIN_PHOTOS}-${QUICK_ANALYSIS_MAX_PHOTOS} photos.`);
       return;
     }
@@ -94,24 +159,34 @@ export function QuickAnalysisResultExperience() {
       return;
     }
 
-    trackEvent("quick_analysis_upload_started", { photo_count: selectedFiles.length, analysis_mode: analysisMode });
+    trackEvent("quick_analysis_upload_started", {
+      photo_count: selectedViews.length,
+      analysis_mode: analysisMode,
+      source: attributionSource.current,
+    });
     try {
       setProcessingStage("Preparing photos");
-      const prepared = await prepareQuickAnalysisPhotos(selectedFiles);
+      const prepared = await prepareQuickAnalysisPhotos(selectedViews.map((view) => ({
+        view,
+        file: selectedPhotos[view]!.file,
+      })));
       const form = new FormData();
       form.set("aiConsent", "true");
-      prepared.forEach((file) => form.append("photos", file));
+      prepared.forEach(({ view, file }) => form.set(`photo_${view}`, file));
       setProcessingStage("Analyzing your check-in...");
       const response = await fetch("/api/quick-analysis/analyze/", { method: "POST", body: form });
       const payload = (await response.json()) as StatusPayload;
       if (!response.ok || !payload.state) throw new Error(payload.error || "The analysis could not be completed.");
       setProcessingStage("Building your report");
       setState(payload.state);
-      trackEvent("quick_analysis_completed", { product: "StageLab Quick Analysis", analysis_mode: analysisMode });
+      trackEvent("quick_analysis_completed", {
+        product: "StageLab Quick Analysis",
+        analysis_mode: analysisMode,
+        source: attributionSource.current,
+      });
       resetPhotos();
     } catch (analysisError) {
       setError(analysisError instanceof Error ? analysisError.message : "The analysis could not be completed.");
-      resetPhotos();
     } finally {
       setProcessingStage(null);
     }
@@ -140,9 +215,11 @@ export function QuickAnalysisResultExperience() {
   return (
     <div className="quick-analysis-upload-layout">
       <section className="quick-analysis-upload-copy">
-        <div className="eyebrow">Payment confirmed</div>
-        <h1>Upload your current physique photos.</h1>
-        <p>Choose 3-5 clear current photos. Front, side, and back views in consistent lighting provide the most useful snapshot.</p>
+        <div className="eyebrow">Payment confirmed - StageLab Quick Analysis</div>
+        <h1>{state.analysisMode === "competition_prep" ? "Upload your check-in" : "Upload your physique photos"}</h1>
+        <p>{state.analysisMode === "competition_prep"
+          ? "For the most useful analysis, upload a clear front, side, and back view from the same session."
+          : "Upload a clear front, side, and back view. Natural photos are enough for a useful physique assessment."}</p>
         <div className="quick-analysis-privacy-note">
           <strong>Your photos are used only for this analysis.</strong>
           <span>They are prepared in your browser, sent securely to the AI service for transient processing, and discarded after the request completes. ElevareFit never stores them or creates a photo history.</span>
@@ -153,19 +230,14 @@ export function QuickAnalysisResultExperience() {
         </div>
       </section>
 
-      <form className="quick-analysis-upload-card panel" onSubmit={handleAnalyze}>
-        <label className="quick-analysis-file-picker">
-          <span className="stat-label">Current photos</span>
-          <strong>{selectedFiles.length ? `${selectedFiles.length} photos selected` : "Choose 3-5 photos"}</strong>
-          <small>JPEG, PNG, or WebP. Front, side, and back views recommended.</small>
-          <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFiles} disabled={Boolean(processingStage)} />
-        </label>
-
-        {selectedFiles.length ? (
-          <div className="quick-analysis-file-summary" aria-live="polite">
-            {selectedFiles.map((file, index) => <span key={`${file.name}-${file.lastModified}-${index}`}>Photo {index + 1} - {(file.size / 1_000_000).toFixed(1)} MB</span>)}
-          </div>
-        ) : null}
+      <form className="quick-analysis-upload-card panel" onSubmit={handleAnalyze} noValidate>
+        <QuickAnalysisPhotoUploader
+          mode={state.analysisMode}
+          photos={selectedPhotos}
+          errors={photoErrors}
+          disabled={Boolean(processingStage)}
+          onPhotoChange={handlePhotoChange}
+        />
 
         <label className="quick-analysis-check">
           <input type="checkbox" checked={aiConsent} onChange={(event) => setAiConsent(event.target.checked)} disabled={Boolean(processingStage)} />
