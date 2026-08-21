@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
-import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
+import { separateQuickAnalysisAttribution } from "@/lib/quick-analysis-attribution";
 import { parseQuickAnalysisContext } from "@/lib/quick-analysis-schema";
 import {
   attachCheckoutSession,
@@ -32,12 +32,8 @@ export async function POST(request: Request) {
     const supabase = getQuickAnalysisSupabase();
     await enforceQuickAnalysisRateLimit(request, "checkout", supabase);
     const payload = await request.json();
-    const context = parseQuickAnalysisContext(payload);
-    const source = normalizeQuickAnalysisSource(
-      typeof payload === "object" && payload !== null && "source" in payload
-        ? payload.source
-        : undefined,
-    );
+    const { contextPayload, source } = separateQuickAnalysisAttribution(payload);
+    const context = parseQuickAnalysisContext(contextPayload);
     const stripe = getQuickAnalysisStripe();
     const priceId = await verifyConfiguredQuickAnalysisPrice(stripe);
     const checkoutNonce = generateQuickAnalysisToken();

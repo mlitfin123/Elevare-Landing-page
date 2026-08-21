@@ -21,6 +21,18 @@ export function normalizeQuickAnalysisSource(value: unknown): QuickAnalysisSourc
     : undefined;
 }
 
+export function separateQuickAnalysisAttribution(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return { contextPayload: payload, source: undefined };
+  }
+
+  const { source: sourceValue, ...contextPayload } = payload as Record<string, unknown>;
+  return {
+    contextPayload,
+    source: normalizeQuickAnalysisSource(sourceValue),
+  };
+}
+
 export function getQuickAnalysisEntryHref(source: QuickAnalysisSource) {
   return `/stagelab/quick-analysis/?source=${encodeURIComponent(source)}`;
 }

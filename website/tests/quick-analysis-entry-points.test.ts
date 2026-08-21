@@ -6,6 +6,7 @@ import {
   getQuickAnalysisEntryHref,
   normalizeQuickAnalysisSource,
   QUICK_ANALYSIS_SOURCES,
+  separateQuickAnalysisAttribution,
 } from "../lib/quick-analysis-attribution.ts";
 
 const projectRoot = process.cwd();
@@ -18,6 +19,35 @@ test("Quick Analysis source attribution accepts only documented non-sensitive id
   assert.equal(normalizeQuickAnalysisSource("body-fat-calculator&result=12"), undefined);
   assert.ok(QUICK_ANALYSIS_SOURCES.includes("homepage"));
   assert.ok(QUICK_ANALYSIS_SOURCES.includes("stagelab"));
+});
+
+test("checkout attribution is removed before strict analysis-context validation", () => {
+  const payload = {
+    analysisMode: "physique_check",
+    division: "Men's Physique",
+    competitionStatus: "assessing",
+    weeksOut: null,
+    optionalContext: null,
+    ageConfirmed: true,
+    aiConsentConfirmed: true,
+    source: "homepage",
+  };
+
+  const separated = separateQuickAnalysisAttribution(payload);
+  assert.equal(separated.source, "homepage");
+  assert.deepEqual(separated.contextPayload, {
+    analysisMode: "physique_check",
+    division: "Men's Physique",
+    competitionStatus: "assessing",
+    weeksOut: null,
+    optionalContext: null,
+    ageConfirmed: true,
+    aiConsentConfirmed: true,
+  });
+
+  const unsupported = separateQuickAnalysisAttribution({ ...payload, source: "private-photo-data" });
+  assert.equal(unsupported.source, undefined);
+  assert.deepEqual(unsupported.contextPayload, separated.contextPayload);
 });
 
 test("the reusable CTA is contextual, consent-aware, accessible, and centrally priced", () => {
@@ -88,7 +118,7 @@ test("source attribution reaches the existing funnel without entering analysis d
 
   assert.match(checkout, /quick_analysis_view[\s\S]*source/);
   assert.match(checkout, /quick_analysis_checkout_started[\s\S]*source/);
-  assert.match(checkoutRoute, /normalizeQuickAnalysisSource/);
+  assert.match(checkoutRoute, /separateQuickAnalysisAttribution/);
   assert.match(checkoutRoute, /success_url:[^\n]*sourceSuffix/);
   assert.match(returnRoute, /purchase=confirmed\$\{sourceSuffix\}/);
   assert.match(resultExperience, /quick_analysis_purchase[\s\S]*source: attributionSource\.current/);
