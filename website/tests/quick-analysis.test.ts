@@ -613,6 +613,7 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.match(checkout, /analysisMode === "competition_prep" && competitionStatus === "preparing"/);
   assert.match(checkout, /analysisMode === "physique_check" \? "assessing"/);
   assert.match(checkoutRoute, /line_items: \[\{ price: priceId, quantity: 1 \}\]/);
+  assert.match(checkoutRoute, /payment_method_types: \["card"\]/);
   assert.match(checkoutRoute, /analysis_mode: context\.analysisMode/);
   const ctaTracker = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCtaViewTracker.tsx"), "utf8");
   const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
