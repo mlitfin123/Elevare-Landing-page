@@ -3870,6 +3870,22 @@ select {
   text-align: center;
 }
 
+.quick-analysis-result-cta {
+  display: block;
+}
+
+.quick-analysis-result-cta-copy {
+  max-width: 760px;
+}
+
+.quick-analysis-result-cta .product-store-buttons {
+  margin-top: 20px;
+}
+
+.quick-analysis-result-cta .proof-action {
+  margin-top: 16px;
+}
+
 .quick-analysis-judge-panel {
   border-color: rgba(116, 200, 214, 0.28);
   background:

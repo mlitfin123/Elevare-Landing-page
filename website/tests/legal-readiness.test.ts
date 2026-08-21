@@ -77,6 +77,22 @@ test("active application links never reference legacy html legal URLs", () => {
   assert.equal(LEGAL_DOCUMENTS.privacy.activePath, "/privacy-policy/");
 });
 
+test("static legal documents use browser navigation instead of App Router prefetch", () => {
+  const files = [
+    "components/Footer.tsx",
+    "components/AnalyticsConsent.tsx",
+    "components/marketplace/AuthPanel.tsx",
+    "components/marketplace/ProfessionalProfileEditor.tsx",
+    "components/quick-analysis/QuickAnalysisCheckout.tsx",
+    "components/quick-analysis/QuickAnalysisResultExperience.tsx",
+  ];
+  const activeCode = files.map((file) => readFileSync(`${projectRoot}${file}`, "utf8")).join("\n");
+
+  assert.doesNotMatch(activeCode, /<Link[^>]+href="\/(?:privacy-policy|terms-of-service)\//);
+  assert.match(activeCode, /<a href="\/privacy-policy\/">/);
+  assert.match(activeCode, /<a href="\/terms-of-service\/">/);
+});
+
 test("current legal versions and professional attestation are recorded through the protected migration", () => {
   const migration = readFileSync(
     `${repositoryRoot}supabase/migrations/20260820120000_legal_versions_and_professional_attestation.sql`,

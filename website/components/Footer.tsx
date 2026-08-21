@@ -20,8 +20,8 @@ export function Footer() {
           <Link href="/blog/">Blog</Link>
           <Link href="/professionals/">Find Support</Link>
           <AuthNavigationLink />
-          <Link href="/privacy-policy/">Privacy Policy</Link>
-          <Link href="/terms-of-service/">Terms of Service</Link>
+          <a href="/privacy-policy/">Privacy Policy</a>
+          <a href="/terms-of-service/">Terms of Service</a>
           <a href={`mailto:${siteConfig.contacts.support}`}>Contact</a>
         </nav>
       </div>

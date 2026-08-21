@@ -2,7 +2,6 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
@@ -188,8 +187,8 @@ export function AuthPanel() {
                   onChange={(event) => setHasAcceptedLegalTerms(event.target.checked)}
                 />
                 <span>
-                  I agree to the <Link href="/terms-of-service/">Terms of Service</Link> and acknowledge the{" "}
-                  <Link href="/privacy-policy/">Privacy Policy</Link>.
+                  I agree to the <a href="/terms-of-service/">Terms of Service</a> and acknowledge the{" "}
+                  <a href="/privacy-policy/">Privacy Policy</a>.
                 </span>
               </label>
               <label className="checkbox-row professional-attestation field-full">

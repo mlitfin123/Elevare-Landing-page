@@ -241,7 +241,7 @@ export function QuickAnalysisResultExperience() {
 
         <label className="quick-analysis-check">
           <input type="checkbox" checked={aiConsent} onChange={(event) => setAiConsent(event.target.checked)} disabled={Boolean(processingStage)} />
-          <span>I understand that these photos will be used only for this one-time analysis, sent to an AI service for processing, and never stored by ElevareFit. They are discarded after processing. See the <Link href="/privacy-policy/">Privacy Policy</Link>.</span>
+          <span>I understand that these photos will be used only for this one-time analysis, sent to an AI service for processing, and never stored by ElevareFit. They are discarded after processing. See the <a href="/privacy-policy/">Privacy Policy</a>.</span>
         </label>
 
         <button className="button button-primary" type="submit" disabled={Boolean(processingStage)}>

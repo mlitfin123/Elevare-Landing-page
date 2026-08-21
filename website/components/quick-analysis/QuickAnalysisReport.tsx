@@ -23,12 +23,22 @@ function ResultLimitations({ result, mode }: { result: QuickAnalysisResult; mode
 function StageLabResultCta({ mode }: { mode: QuickAnalysisMode }) {
   const isPhysiqueCheck = mode === "physique_check";
   return (
-    <section className="section final-card panel">
+    <section className="section final-card panel quick-analysis-result-cta">
       <QuickAnalysisCtaViewTracker mode={mode} />
-      <div>
+      <div className="quick-analysis-result-cta-copy">
         <div className="eyebrow">{isPhysiqueCheck ? "Curious what happens if you track it over time?" : "Want to track this week to week?"}</div>
         <h2>{isPhysiqueCheck ? "Follow your physique in StageLab." : "Continue the process in StageLab."}</h2>
         <p>{isPhysiqueCheck ? "StageLab lets physique athletes and competitors track check-ins, conditioning, and prep trends week to week." : "StageLab adds ongoing check-ins, saved history, trends, and structured prep tracking for athletes and coaches."}</p>
+        <ProductCtaButtons
+          product="StageLab"
+          context={isPhysiqueCheck ? "quick_analysis_physique_check_result" : "quick_analysis_competition_prep_result"}
+          eventName="quick_analysis_stagelab_clicked"
+          eventParams={{ analysis_mode: mode }}
+          storeEventNames={{
+            ios: "quick_analysis_stagelab_ios_clicked",
+            android: "quick_analysis_stagelab_android_clicked",
+          }}
+        />
         <TrackedLink
           className="proof-action"
           href="/stagelab/"
@@ -38,16 +48,6 @@ function StageLabResultCta({ mode }: { mode: QuickAnalysisMode }) {
           Learn more about StageLab
         </TrackedLink>
       </div>
-      <ProductCtaButtons
-        product="StageLab"
-        context={isPhysiqueCheck ? "quick_analysis_physique_check_result" : "quick_analysis_competition_prep_result"}
-        eventName="quick_analysis_stagelab_clicked"
-        eventParams={{ analysis_mode: mode }}
-        storeEventNames={{
-          ios: "quick_analysis_stagelab_ios_clicked",
-          android: "quick_analysis_stagelab_android_clicked",
-        }}
-      />
     </section>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { trackEvent } from "@/lib/analytics";
@@ -195,7 +194,7 @@ export function QuickAnalysisCheckout() {
         <label className="quick-analysis-check" data-quick-analysis-field="aiConsentConfirmed">
           <input type="checkbox" checked={aiConsentConfirmed} onChange={(event) => { setAiConsentConfirmed(event.target.checked); setFieldErrors((current) => ({ ...current, aiConsentConfirmed: undefined })); }} aria-invalid={Boolean(fieldErrors.aiConsentConfirmed)} aria-describedby={fieldErrors.aiConsentConfirmed ? "quick-analysis-ai-error" : undefined} />
           <span>
-            I understand that my photos and optional context will be used only to generate this one-time analysis. ElevareFit never stores the photos; they are discarded after AI processing. My optional context and structured report are removed after 72 hours. See the <Link href="/privacy-policy/">Privacy Policy</Link>.
+            I understand that my photos and optional context will be used only to generate this one-time analysis. ElevareFit never stores the photos; they are discarded after AI processing. My optional context and structured report are removed after 72 hours. See the <a href="/privacy-policy/">Privacy Policy</a>.
           </span>
         </label>
         {fieldErrors.aiConsentConfirmed ? <p className="field-error" id="quick-analysis-ai-error">{fieldErrors.aiConsentConfirmed}</p> : null}
@@ -206,7 +205,7 @@ export function QuickAnalysisCheckout() {
           {submitting ? "Opening secure checkout..." : `Get My Quick Analysis — ${formatQuickAnalysisPrice()}`}
         </button>
         <p className="fine-print">
-          No subscription, automatic renewal, StageLab app credit, or mobile entitlement. By continuing, you agree to the <Link href="/terms-of-service/">Terms of Service</Link>.
+          No subscription, automatic renewal, StageLab app credit, or mobile entitlement. By continuing, you agree to the <a href="/terms-of-service/">Terms of Service</a>.
         </p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>

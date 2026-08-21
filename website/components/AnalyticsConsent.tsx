@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ANALYTICS_CONSENT_STORAGE_KEY, type AnalyticsConsentChoice } from "@/lib/analytics-consent";
@@ -94,7 +93,7 @@ export function AnalyticsConsent({ measurementId }: AnalyticsConsentProps) {
             <strong>Optional Google Analytics</strong>
             <p>
               ElevareFit uses anonymous, cookie-free traffic measurement. With your permission, Google Analytics provides additional usage insights. Read our{" "}
-              <Link href="/privacy-policy/">Privacy Policy</Link>.
+              <a href="/privacy-policy/">Privacy Policy</a>.
             </p>
           </div>
           <div className="analytics-consent-actions">

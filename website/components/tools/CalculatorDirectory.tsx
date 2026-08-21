@@ -118,6 +118,17 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
               <p className="section-copy">{group.description}</p>
             </div>
 
+            {group.slug === "bodybuilding-contest-prep" ? (
+              <QuickAnalysisCTA
+                source="calculators-hub"
+                heading="Calculators use your numbers. StageLab looks at your physique."
+                description="Upload 3-5 current photos for a one-time visual assessment of conditioning, muscularity, symmetry, and presentation."
+                buttonText="Analyze My Physique"
+                variant="compact"
+                headingLevel={3}
+              />
+            ) : null}
+
             <div className="tool-index-grid">
               {groupTools.map((tool) => (
                 <article key={tool.slug} className="panel tool-index-card">
@@ -138,17 +149,6 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
                 </article>
               ))}
             </div>
-
-            {group.slug === "bodybuilding-contest-prep" ? (
-              <QuickAnalysisCTA
-                source="calculators-hub"
-                heading="Calculators use your numbers. StageLab looks at your physique."
-                description="Upload 3-5 current photos for a one-time visual assessment of conditioning, muscularity, symmetry, and presentation."
-                buttonText="Analyze My Physique"
-                variant="compact"
-                headingLevel={3}
-              />
-            ) : null}
           </section>
         );
       })}
