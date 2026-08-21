@@ -243,6 +243,17 @@ select {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.28);
 }
 
+.product-store-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.product-store-buttons .button-store {
+  width: 220px;
+}
+
 .btn-secondary,
 .button-secondary {
   color: var(--text);
@@ -3262,6 +3273,14 @@ select {
   .btn,
   .button,
   .button-link {
+    width: 100%;
+  }
+
+  .product-store-buttons {
+    width: 100%;
+  }
+
+  .product-store-buttons .button-store {
     width: 100%;
   }
 

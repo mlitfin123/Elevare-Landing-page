@@ -15,7 +15,7 @@ export const metadata = buildMetadata({
 const faqs = [
   {
     question: "Who is StageLab built for?",
-    answer: "StageLab is built for physique athletes preparing for competition and coaches who want a more structured way to review athlete check-ins and prep trends.",
+    answer: "StageLab is for physique athletes preparing for competition and coaches who review athlete check-ins, prep plans, and progress trends.",
   },
   {
     question: "Does StageLab replace a contest prep coach?",
@@ -75,8 +75,8 @@ export default function StageLabPage() {
           <div className="eyebrow">StageLab competition prep</div>
           <h1>Bodybuilding contest prep, organized around the full picture.</h1>
           <p>
-            StageLab brings check-ins, physique photos, nutrition targets, cardio, recovery, and prep trends into
-            one structured workflow for physique athletes and their coaches.
+            Record weekly check-ins, physique photos, nutrition targets, cardio, recovery, and prep-plan changes.
+            Athletes and coaches can review those inputs together throughout contest prep.
           </p>
           <div className="button-row">
             <ProductCtaButtons product="StageLab" context="stagelab_hero" />
@@ -121,7 +121,7 @@ export default function StageLabPage() {
           <article className="panel">
             <span className="stat-label">Availability</span>
             <h3>Live on iOS and Android</h3>
-            <p>Download StageLab from the App Store or Google Play and start building a more complete prep record.</p>
+            <p>Download StageLab from the App Store or Google Play and start logging the active prep plan.</p>
           </article>
         </div>
       </section>
@@ -132,15 +132,15 @@ export default function StageLabPage() {
             <div className="eyebrow">Built for bodybuilding contest prep</div>
             <h2>Prep decisions need more than a single weigh-in.</h2>
             <p>
-              Bodyweight matters, but it does not explain everything happening during a prep. StageLab is designed
-              to help you review the trend alongside calories, macros, cardio, steps, training, recovery, and visual
-              changes. That makes it easier to understand why a plan is being held or adjusted without reducing the
-              entire week to one number.
+              StageLab places bodyweight next to calories, macros, cardio, steps, training, recovery, and visual
+              changes. Each weekly review shows why the active plan was held or adjusted instead of relying on one
+              weigh-in.
             </p>
             <p>
-              The workflow supports physique-focused preparation, including Men&apos;s Physique and Classic Physique,
-              while keeping the underlying review useful for bodybuilding competitors who need consistent weekly
-              records. It is not a judging service and does not guarantee conditioning or placement.
+              The workflow supports physique-focused preparation across men&apos;s and women&apos;s divisions, including
+              Men&apos;s Bodybuilding, Men&apos;s Physique, Classic Physique, Bikini, Wellness, Figure, Fitness, Women&apos;s
+              Physique, and Women&apos;s Bodybuilding. The underlying review remains useful for competitors who need
+              consistent weekly records. It is not a judging service and does not guarantee conditioning or placement.
             </p>
           </article>
           <article className="panel">
@@ -174,7 +174,7 @@ export default function StageLabPage() {
       <section className="section">
         <div className="section-heading">
           <div>
-            <div className="eyebrow">Track your prep in one place</div>
+            <div className="eyebrow">Contest-prep inputs</div>
             <h2>Keep the inputs behind each decision visible.</h2>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function StageLabPage() {
       </section>
 
       <section className="section final-card panel">
-        <div><div className="eyebrow">Start your prep record</div><h2>Bring the plan, check-in, and trend into one workflow.</h2></div>
+        <div><div className="eyebrow">Start your prep record</div><h2>Keep the active plan and weekly check-ins together.</h2></div>
         <ProductCtaButtons product="StageLab" context="stagelab_final" />
       </section>
     </div>

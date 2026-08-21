@@ -66,7 +66,7 @@ const BLOG_CATEGORY_SEO: Record<BlogCategory, BlogCategorySeo> = {
     title: "Bodybuilding Contest Prep Guides",
     description: "Bodybuilding contest prep guides about conditioning, muscle retention, tracking progress, and making controlled adjustments throughout a prep.",
     heading: "Bodybuilding contest prep guides",
-    introduction: "Read practical contest-prep guidance focused on preserving muscle, tracking meaningful trends, and making deliberate adjustments instead of reacting to one metric.",
+    introduction: "Read contest-prep articles about conditioning, muscle retention, progress tracking, and weekly plan changes.",
   },
   "prep-files": {
     title: "Prep Files: Bodybuilding Contest Prep Journal",

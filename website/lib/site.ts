@@ -50,10 +50,10 @@ export const productConfig: Record<
     slug: "logbook",
     title: "Logbook",
     description:
-      "A focused fitness tracker that makes workouts easier to record, review, and repeat with consistency.",
+      "A fitness tracker for recording workouts, food, macros, bodyweight, and progress.",
     status: "Live on iOS and Android",
     idealUser:
-      "Lifters, athletes, and everyday users who want better visibility into their training.",
+      "Lifters, athletes, and everyday users who want one daily training and nutrition log.",
     ctaLabel: "Download on the App Store",
     ctaHref: "https://apps.apple.com/us/app/logbook-fitness-tracker/id6762474210",
     storeLinks: [
@@ -73,10 +73,10 @@ export const productConfig: Record<
     slug: "stagelab",
     title: "StageLab",
     description:
-      "A competition prep app built for more deliberate structure, cleaner feedback loops, and better planning.",
+      "A competition prep app for check-ins, progress photos, prep timelines, and weekly plan recommendations.",
     status: "Live on iOS and Android",
     idealUser:
-      "Coaches and competitors who think in systems, prep phases, and performance structure.",
+      "Physique athletes and coaches managing bodybuilding contest prep.",
     ctaLabel: "Download on the App Store",
     ctaHref: "https://apps.apple.com/app/stagelab-competition-prep/id6764351799",
     storeLinks: [
@@ -96,10 +96,10 @@ export const productConfig: Record<
     slug: "elevare",
     title: "Elevare",
     description:
-      "A marketplace built to help people find the right health, fitness, or wellness support and help good-fit profiles get discovered more clearly.",
+      "A marketplace for comparing professionals by specialty, location, service mode, pricing, and credentials.",
     status: "Web live - iOS & Android coming soon",
     idealUser:
-      "People looking for support and coaches, trainers, and wellness providers who want a clearer discovery path.",
+      "People looking for support and professionals who want to publish their services.",
     ctaLabel: "Find your match",
     ctaHref: "/professionals",
   },

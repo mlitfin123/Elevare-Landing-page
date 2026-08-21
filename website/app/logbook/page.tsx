@@ -15,7 +15,7 @@ export const metadata = buildMetadata({
 const faqs = [
   {
     question: "What can I track in Logbook?",
-    answer: "Logbook supports workout logging, exercise history, nutrition and macro tracking, bodyweight, and progress review in one fitness-tracking workflow.",
+    answer: "Logbook records workouts, exercise history, food, macros, bodyweight, and progress in the same app.",
   },
   {
     question: "Is Logbook free to use?",
@@ -77,8 +77,8 @@ export default function LogbookPage() {
           <div className="eyebrow">Logbook fitness tracker</div>
           <h1>Track workouts, nutrition, and progress without the clutter.</h1>
           <p>
-            Logbook gives you one focused place to record training, food, macros, bodyweight, and the progress
-            behind your goals. It is built to make consistency easier, not turn tracking into another job.
+            Record training, food, macros, bodyweight, and progress in a daily log. Use the history to compare
+            sessions, nutrition targets, and bodyweight changes over time.
           </p>
           <div className="button-row">
             <ProductCtaButtons product="Logbook" context="logbook_hero" />
@@ -120,17 +120,14 @@ export default function LogbookPage() {
         <div className="trust-list">
           <article className="panel">
             <div className="eyebrow">A simple fitness tracker</div>
-            <h2>Your log should make the next decision easier.</h2>
+            <h2>Use your history before changing the plan.</h2>
             <p>
-              Training and nutrition are difficult to evaluate when the details only live in memory. Logbook helps
-              turn daily effort into a record you can review. Instead of guessing whether a lift improved, whether
-              protein was consistent, or whether bodyweight is truly trending, you can look at the data you entered
-              and make the next decision from a clearer baseline.
+              Training and nutrition are difficult to evaluate from memory. Logbook stores exercises, sets, reps,
+              food, macros, and bodyweight so you can compare current results with previous days and sessions.
             </p>
             <p>
-              The goal is not perfect tracking. It is a repeatable system that is simple enough to use on ordinary
-              days. A useful log makes patterns easier to notice without demanding a complicated spreadsheet or a
-              different app for every part of your routine.
+              The record does not need to be perfect to be useful. Consistent entries show where workouts
+              progressed, where nutrition missed target, and how bodyweight changed.
             </p>
           </article>
           <article className="panel">
@@ -162,7 +159,7 @@ export default function LogbookPage() {
       </section>
 
       <section className="section">
-        <div className="section-heading"><div><div className="eyebrow">What you can track</div><h2>One record for the work you are already doing.</h2></div></div>
+        <div className="section-heading"><div><div className="eyebrow">What you can track</div><h2>Record the work you are already doing.</h2></div></div>
         <div className="grid-3">
           <article className="panel"><h3>Workouts and exercises</h3><p>Keep your training sessions organized and review previous performance before you repeat a movement.</p></article>
           <article className="panel"><h3>Food, calories, and macros</h3><p>Build awareness around your intake without assuming that healthy food, one meal, or one estimate tells the full story.</p></article>
@@ -179,7 +176,7 @@ export default function LogbookPage() {
         </div>
       </section>
 
-      <Callout title="Built for different fitness goals">
+      <Callout title="Useful across different fitness goals">
         <p>
           Logbook can support people focused on general fitness, strength, physique improvement, bodyweight change,
           or simply building a more consistent routine. It records the plan and results you enter; it does not make
@@ -199,7 +196,7 @@ export default function LogbookPage() {
       </section>
 
       <section className="section final-card panel">
-        <div><div className="eyebrow">Start tracking</div><h2>Build a fitness record you can actually use.</h2></div>
+        <div><div className="eyebrow">Start tracking</div><h2>Start a training and nutrition record.</h2></div>
         <ProductCtaButtons product="Logbook" context="logbook_final" />
       </section>
     </div>

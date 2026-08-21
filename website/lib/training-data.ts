@@ -1,3 +1,5 @@
+import { RETIRED_WORKOUT_REDIRECTS } from "./legacy-routes.ts";
+
 export type ExerciseRecord = {
   id: string;
   name: string;
@@ -262,6 +264,31 @@ export function formatEquipmentLabel(value: string) {
   if (value === "foam-roll") return "Foam roller";
   if (value === "medicine-ball") return "Medicine ball";
   return titleCase(value);
+}
+
+function formatReadableList(values: string[]) {
+  if (values.length === 0) return "";
+  if (values.length === 1) return values[0]!;
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
+}
+
+const equipmentUsageLabels: Record<string, string> = {
+  barbell: "a barbell",
+  bodyweight: "body weight",
+  cable: "a cable station",
+  dumbbell: "dumbbells",
+  "ez-bar": "an EZ bar",
+  kettlebell: "a kettlebell",
+  machine: "a resistance machine",
+};
+
+export function formatEquipmentUsage(equipment: string[]) {
+  const labels = equipment
+    .map((item) => equipmentUsageLabels[item])
+    .filter((item): item is string => Boolean(item));
+
+  return formatReadableList(labels);
 }
 
 export function formatDifficultyLabel(value: string | null) {
@@ -726,16 +753,110 @@ export function deduplicateWorkoutTemplates(
   };
 }
 
+function applyKnownWorkoutAliases(
+  workoutTemplates: WorkoutTemplateRecord[],
+  workoutTemplateExercises: WorkoutTemplateExerciseRecord[],
+) {
+  const templateBySlug = new Map(workoutTemplates.map((template) => [template.slug, template]));
+  const canonicalIdByRetiredId = new Map<string, string>();
+  const retiredTemplateIds = new Set<string>();
+  const redirects: WorkoutRedirectRecord[] = [];
+
+  for (const redirect of RETIRED_WORKOUT_REDIRECTS) {
+    const retired = templateBySlug.get(redirect.sourceSlug);
+    const canonical = templateBySlug.get(redirect.destinationSlug);
+
+    if (!retired) {
+      continue;
+    }
+
+    if (!canonical) {
+      throw new Error(
+        `Retired workout ${redirect.sourceSlug} is present without its canonical destination ${redirect.destinationSlug}.`,
+      );
+    }
+
+    canonicalIdByRetiredId.set(retired.id, canonical.id);
+    retiredTemplateIds.add(retired.id);
+    redirects.push({ sourceSlug: redirect.sourceSlug, destinationSlug: redirect.destinationSlug });
+  }
+
+  const remappedRows = new Map<string, WorkoutTemplateExerciseRecord>();
+
+  for (const entry of workoutTemplateExercises) {
+    const remappedEntry = canonicalIdByRetiredId.has(entry.workoutTemplateId)
+      ? { ...entry, workoutTemplateId: canonicalIdByRetiredId.get(entry.workoutTemplateId)! }
+      : entry;
+    const identity = getWorkoutTemplateExerciseIdentity(remappedEntry);
+
+    if (!remappedRows.has(identity)) {
+      remappedRows.set(identity, remappedEntry);
+    }
+  }
+
+  return {
+    workoutTemplates: workoutTemplates.filter((template) => !retiredTemplateIds.has(template.id)),
+    workoutTemplateExercises: [...remappedRows.values()],
+    redirects,
+  };
+}
+
+function assertCanonicalWorkoutExport(
+  workoutTemplates: WorkoutTemplateRecord[],
+  workoutTemplateExercises: WorkoutTemplateExerciseRecord[],
+) {
+  const retiredSlugs = new Set(RETIRED_WORKOUT_REDIRECTS.map((redirect) => redirect.sourceSlug));
+  const remainingRetired = workoutTemplates.filter((template) => retiredSlugs.has(template.slug));
+
+  if (remainingRetired.length > 0) {
+    throw new Error(
+      `Retired workout routes remain after canonicalization: ${remainingRetired.map((template) => template.slug).join(", ")}`,
+    );
+  }
+
+  const identities = new Set<string>();
+
+  for (const template of workoutTemplates) {
+    const identity = getWorkoutCanonicalIdentityKey(template, workoutTemplateExercises);
+
+    if (identities.has(identity)) {
+      throw new Error(`Duplicate canonical workout identity remains after canonicalization: ${template.slug}`);
+    }
+
+    identities.add(identity);
+  }
+}
+
 export function canonicalizeTrainingSnapshot(snapshot: TrainingDataSnapshot): TrainingDataSnapshot {
-  const workoutData = deduplicateWorkoutTemplates(
+  const knownAliasData = applyKnownWorkoutAliases(
     snapshot.workoutTemplates ?? [],
     snapshot.workoutTemplateExercises ?? [],
   );
+  const workoutData = deduplicateWorkoutTemplates(
+    knownAliasData.workoutTemplates,
+    knownAliasData.workoutTemplateExercises,
+  );
+  const canonicalWorkoutSlugs = new Set(workoutData.workoutTemplates.map((template) => template.slug));
+  const redirectsBySource = new Map<string, WorkoutRedirectRecord>();
+
+  for (const redirect of [
+    ...RETIRED_WORKOUT_REDIRECTS.filter((entry) => canonicalWorkoutSlugs.has(entry.destinationSlug)),
+    ...knownAliasData.redirects,
+    ...(workoutData.workoutRedirects ?? []),
+  ]) {
+    redirectsBySource.set(redirect.sourceSlug, redirect);
+  }
+
+  assertCanonicalWorkoutExport(workoutData.workoutTemplates, workoutData.workoutTemplateExercises);
 
   return {
     generatedAt: snapshot.generatedAt ?? null,
     exercises: deduplicateExercises(snapshot.exercises ?? []),
-    ...workoutData,
+    workoutTemplates: workoutData.workoutTemplates,
+    workoutTemplateExercises: workoutData.workoutTemplateExercises,
+    workoutRedirects: [...redirectsBySource.values()].sort((left, right) =>
+      left.sourceSlug.localeCompare(right.sourceSlug),
+    ),
   };
 }
 
@@ -1145,7 +1266,7 @@ export function getRelatedWorkoutTemplatesForExercise(
       .map((entry) => entry.workoutTemplateId),
   );
 
-  return templates
+  const ranked = templates
     .map((template) => {
       let score = 0;
 
@@ -1155,8 +1276,18 @@ export function getRelatedWorkoutTemplatesForExercise(
 
       return { template, score };
     })
-    .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score || left.template.name.localeCompare(right.template.name))
+    .filter((entry) => entry.score >= 3)
+    .sort((left, right) => right.score - left.score || left.template.name.localeCompare(right.template.name));
+
+  const seenCanonicalSlugs = new Set<string>();
+
+  return ranked
+    .filter(({ template }) => {
+      const canonicalSlug = getCanonicalWorkoutSlug(template);
+      if (seenCanonicalSlugs.has(canonicalSlug)) return false;
+      seenCanonicalSlugs.add(canonicalSlug);
+      return true;
+    })
     .slice(0, limit)
     .map((entry) => entry.template);
 }
@@ -1166,8 +1297,13 @@ export function getRelatedWorkoutTemplates(
   templates: WorkoutTemplateRecord[],
   limit = 4,
 ) {
-  return templates
-    .filter((candidate) => candidate.slug !== template.slug)
+  const canonicalTemplateSlug = getCanonicalWorkoutSlug(template);
+  const ranked = templates
+    .filter(
+      (candidate) =>
+        candidate.id !== template.id
+        && getCanonicalWorkoutSlug(candidate) !== canonicalTemplateSlug,
+    )
     .map((candidate) => {
       let score = 0;
       if (candidate.goal === template.goal) score += 3;
@@ -1177,8 +1313,18 @@ export function getRelatedWorkoutTemplates(
 
       return { candidate, score };
     })
-    .filter((entry) => entry.score > 0)
-    .sort((left, right) => right.score - left.score || left.candidate.name.localeCompare(right.candidate.name))
+    .filter((entry) => entry.score >= 3)
+    .sort((left, right) => right.score - left.score || left.candidate.name.localeCompare(right.candidate.name));
+
+  const seenCanonicalSlugs = new Set<string>();
+
+  return ranked
+    .filter(({ candidate }) => {
+      const canonicalSlug = getCanonicalWorkoutSlug(candidate);
+      if (seenCanonicalSlugs.has(canonicalSlug)) return false;
+      seenCanonicalSlugs.add(canonicalSlug);
+      return true;
+    })
     .slice(0, limit)
     .map((entry) => entry.candidate);
 }
@@ -1207,48 +1353,110 @@ export function getRelatedExercisesForWorkout(
 }
 
 export function buildExerciseSummary(exercise: ExerciseRecord) {
-  const difficulty = formatDifficultyLabel(exercise.difficulty);
-  const type = formatExerciseTypeLabel(exercise.exerciseType).toLowerCase();
-  const muscle = formatMuscleLabel(exercise.primaryMuscleGroup).toLowerCase();
+  const muscleUsageLabels: Record<string, string> = {
+    arms: "arm",
+    back: "back",
+    chest: "chest",
+    core: "core",
+    glutes: "glute",
+    legs: "leg",
+    shoulders: "shoulder",
+  };
+  const muscle = muscleUsageLabels[exercise.primaryMuscleGroup ?? ""] ?? "full-body";
+  const difficulty = exercise.difficulty === "beginner"
+    ? "beginner-friendly"
+    : exercise.difficulty
+      ? `${formatDifficultyLabel(exercise.difficulty).toLowerCase()}-level`
+      : "";
+  const descriptor = [difficulty, muscle].filter(Boolean).join(" ");
+  const article = /^[aeiou]/i.test(descriptor) ? "an" : "a";
+  const equipment = formatEquipmentUsage(exercise.equipment);
+  const equipmentPhrase = equipment
+    ? exercise.equipment.includes("bodyweight")
+      ? ` using ${equipment}`
+      : ` performed with ${equipment}`
+    : "";
+  const firstSentence = `${exercise.name} is ${article} ${descriptor} exercise${equipmentPhrase}.`;
 
-  if (exercise.equipment.length === 0) {
-    return `${exercise.name} is a ${difficulty.toLowerCase()} ${type} that mainly trains your ${muscle}.`;
+  if (exercise.secondaryMuscleGroups.length === 0) {
+    return firstSentence;
   }
 
-  const primaryEquipment = formatEquipmentLabel(exercise.equipment[0]!).toLowerCase();
-  return `${exercise.name} is a ${difficulty.toLowerCase()} ${type} that mainly trains your ${muscle} using ${primaryEquipment}.`;
+  const secondaryMuscles = formatReadableList(
+    exercise.secondaryMuscleGroups.map((group) => formatMuscleLabel(group).toLowerCase()),
+  );
+
+  return `${firstSentence} It also involves the ${secondaryMuscles}.`;
 }
 
 export function buildWorkoutSummary(template: WorkoutTemplateRecord) {
-  const difficulty = formatDifficultyLabel(template.difficulty).toLowerCase();
+  const difficulty = template.difficulty
+    ? formatDifficultyLabel(template.difficulty).toLowerCase()
+    : "";
   const goal = formatGoalLabel(template.goal).toLowerCase();
-  const duration =
-    template.estimatedDurationMinutes != null
-      ? `in about ${template.estimatedDurationMinutes} minutes`
-      : "in a manageable session";
+  const schedule = template.trainingDaysPerWeek != null
+    ? `${template.trainingDaysPerWeek}-day`
+    : "";
+  const descriptor = [schedule, difficulty].filter(Boolean).join(" ");
+  const article = /^[aeiou]/i.test(descriptor || "workout") ? "an" : "a";
+  const descriptorPhrase = descriptor ? `${descriptor} ` : "";
+  const duration = template.estimatedDurationMinutes != null
+    ? ` Sessions take about ${template.estimatedDurationMinutes} minutes.`
+    : "";
+  const equipment = formatEquipmentUsage(template.equipment);
+  const equipmentSentence = equipment ? ` The main equipment is ${equipment}.` : "";
 
-  return `${template.name} is a ${difficulty} workout template built for ${goal} ${duration}.`;
+  return `${template.name} is ${article} ${descriptorPhrase}workout for ${goal}.${duration}${equipmentSentence}`;
+}
+
+const genericExerciseBenefitPatterns = [
+  /^Builds strength and control through the .+ region\.$/,
+  /^Trains multiple joints at once, which can make your sessions more efficient\.$/,
+  /^Makes it easier to focus on one area when you want extra practice or volume\.$/,
+  /^Gives you a repeatable way to track progress inside Logbook over time\.$/,
+];
+
+const genericExerciseMistakePatterns = [
+  /^Using more weight or speed than you can control cleanly\.$/,
+  /^Changing your body position between reps instead of keeping the movement repeatable\.$/,
+  /^Cutting the range of motion short and rushing through the reps\.$/,
+  /^Skipping the setup and losing tension before the first rep starts\.$/,
+  /^Letting momentum do the work instead of controlling the full rep\.$/,
+];
+
+function removeGeneratedExerciseFiller(values: string[], patterns: RegExp[]) {
+  return values.filter((value) => !patterns.some((pattern) => pattern.test(value.trim())));
+}
+
+export function getExerciseSpecificBenefits(exercise: ExerciseRecord) {
+  return removeGeneratedExerciseFiller(exercise.benefits, genericExerciseBenefitPatterns);
+}
+
+export function getExerciseSpecificMistakes(exercise: ExerciseRecord) {
+  return removeGeneratedExerciseFiller(exercise.commonMistakes, genericExerciseMistakePatterns);
 }
 
 export function buildExerciseFaqs(exercise: ExerciseRecord): ExerciseFaq[] {
+  const equipment = formatEquipmentUsage(exercise.equipment);
+
   return [
     {
       question: `What muscles does ${exercise.name} work?`,
-      answer: `${exercise.name} mainly works the ${formatMuscleLabel(exercise.primaryMuscleGroup).toLowerCase()}. It can also involve ${exercise.secondaryMuscleGroups.length > 0 ? exercise.secondaryMuscleGroups.map((group) => formatMuscleLabel(group).toLowerCase()).join(", ") : "supporting muscles around the same region"} depending on your setup and range of motion.`,
+      answer: exercise.secondaryMuscleGroups.length > 0
+        ? `${exercise.name} primarily trains the ${formatMuscleLabel(exercise.primaryMuscleGroup).toLowerCase()} and also involves the ${formatReadableList(exercise.secondaryMuscleGroups.map((group) => formatMuscleLabel(group).toLowerCase()))}.`
+        : `${exercise.name} primarily trains the ${formatMuscleLabel(exercise.primaryMuscleGroup).toLowerCase()}.`,
     },
     {
       question: `Is ${exercise.name} beginner-friendly?`,
-      answer: `${exercise.difficulty === "beginner" ? "Yes. This exercise is listed as beginner-friendly, which usually means the setup and learning curve are more manageable." : `It is listed as ${formatDifficultyLabel(exercise.difficulty).toLowerCase()}, so newer lifters may want to start lighter or use a simpler variation first.`}`,
+      answer: exercise.difficulty === "beginner"
+        ? "Yes. It is listed as beginner-friendly."
+        : `It is listed as ${formatDifficultyLabel(exercise.difficulty).toLowerCase()}.`,
     },
     {
       question: `What equipment do I need for ${exercise.name}?`,
-      answer: exercise.equipment.length > 0
-        ? `You will usually need ${exercise.equipment.map(formatEquipmentLabel).join(", ")} for this variation.`
-        : "This variation does not require much dedicated equipment beyond a safe setup.",
-    },
-    {
-      question: `How should I progress ${exercise.name}?`,
-      answer: "Start by making the reps smoother and more repeatable. Once the whole set looks controlled, add a small amount of load or one extra rep at a time.",
+      answer: equipment
+        ? `This variation uses ${equipment}.`
+        : "The exercise record does not list dedicated equipment for this variation.",
     },
   ];
 }

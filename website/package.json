@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Next.js content hub for ElevareFit tools, apps, workouts, exercises, and nutrition resources.",
   "scripts": {
-    "prebuild": "npm run legal:verify && node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/canonicalize-training-data.ts && node --experimental-strip-types ./scripts/generate-marketplace-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
+    "prebuild": "npm run routes:verify && npm run legal:verify && npm run legal:routes && node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/canonicalize-training-data.ts && node --experimental-strip-types ./scripts/generate-marketplace-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
+    "postbuild": "npm run legal:routes -- --output && npm run content:audit && npm run seo:artifact",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
@@ -14,9 +15,14 @@
     "test": "node --test --experimental-strip-types ./tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "seo:audit": "node --experimental-strip-types ./scripts/seo-audit.ts",
+    "seo:artifact": "node --experimental-strip-types ./scripts/verify-production-artifact.ts",
+    "content:audit": "node --experimental-strip-types ./scripts/content-quality-audit.ts",
+    "routes:generate": "node --experimental-strip-types ./scripts/generate-vercel-routing.ts",
+    "routes:verify": "node --experimental-strip-types ./scripts/generate-vercel-routing.ts --check",
     "images:optimize": "node ./scripts/optimize-seo-images.mjs",
     "legal:archive": "node --experimental-strip-types ./scripts/generate-legal-archive.ts --initialize",
-    "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts"
+    "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts",
+    "legal:routes": "node --experimental-strip-types ./scripts/verify-legal-routes.ts"
   },
   "keywords": [
     "nextjs",
@@ -27,7 +33,6 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
-    "@vercel/analytics": "^2.0.1",
     "gray-matter": "^4.0.3",
     "next": "^16.2.4",
     "next-mdx-remote": "^6.0.0",

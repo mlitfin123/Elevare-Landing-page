@@ -1,0 +1,204 @@
+{
+  "generatedAt": "2026-08-21T01:13:49.028Z",
+  "thresholdPolicy": "Exact nontrivial sentences appearing on at least 10% of pages in the same content type.",
+  "classifications": {
+    "exercises": {
+      "pageCount": 320,
+      "threshold": 32,
+      "repeated": []
+    },
+    "workouts": {
+      "pageCount": 30,
+      "threshold": 3,
+      "repeated": [
+        {
+          "text": "How do I progress this workout over time?",
+          "count": 30,
+          "percentage": 100,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "The cleanest swaps are exercises that train the same main muscle group with similar equipment and a similar movement pattern.",
+          "count": 30,
+          "percentage": 100,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "This template is structured around about 3 training days per week.",
+          "count": 13,
+          "percentage": 43.3,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "This template is structured around about 4 training days per week.",
+          "count": 8,
+          "percentage": 26.7,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "This template is structured around about 5 training days per week.",
+          "count": 8,
+          "percentage": 26.7,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        }
+      ]
+    },
+    "calculators": {
+      "pageCount": 40,
+      "threshold": 4,
+      "repeated": []
+    },
+    "nutrition": {
+      "pageCount": 98,
+      "threshold": 10,
+      "repeated": [
+        {
+          "text": "Public items currently available in this restaurant nutrition guide.",
+          "count": 98,
+          "percentage": 100,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "Sort by the macro view that best matches your goal.",
+          "count": 98,
+          "percentage": 100,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        },
+        {
+          "text": "Use category filters to narrow the menu down faster.",
+          "count": 98,
+          "percentage": 100,
+          "classification": "USEFUL_SHARED_EXPLANATION"
+        }
+      ]
+    }
+  },
+  "suppressedExerciseSourceFiller": [
+    {
+      "text": "Changing your body position between reps instead of keeping the movement repeatable.",
+      "count": 320,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Gives you a repeatable way to track progress inside Logbook over time.",
+      "count": 320,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Using more weight or speed than you can control cleanly.",
+      "count": 320,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Trains multiple joints at once, which can make your sessions more efficient.",
+      "count": 210,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Cutting the range of motion short and rushing through the reps.",
+      "count": 205,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Makes it easier to focus on one area when you want extra practice or volume.",
+      "count": 110,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the legs region.",
+      "count": 101,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the shoulders region.",
+      "count": 62,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Skipping the setup and losing tension before the first rep starts.",
+      "count": 60,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the arms region.",
+      "count": 59,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Letting momentum do the work instead of controlling the full rep.",
+      "count": 55,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the back region.",
+      "count": 42,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the chest region.",
+      "count": 38,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the core region.",
+      "count": 15,
+      "classification": "GENERIC_FILLER"
+    },
+    {
+      "text": "Builds strength and control through the glutes region.",
+      "count": 3,
+      "classification": "GENERIC_FILLER"
+    }
+  ],
+  "representativeExerciseOutput": [
+    {
+      "label": "Dumbbell Bench Press",
+      "matchedSlug": "dumbbell-bench-press",
+      "summary": "Dumbbell Bench Press is a beginner-friendly chest exercise performed with dumbbells. It also involves the shoulders and arms.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Romanian Deadlift",
+      "matchedSlug": "romanian-deadlift",
+      "summary": "Romanian Deadlift is an intermediate-level leg exercise performed with a barbell. It also involves the glutes and back.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Lat Pulldown",
+      "matchedSlug": "wide-grip-lat-pulldown",
+      "summary": "Wide-Grip Lat Pulldown is a beginner-friendly back exercise performed with a cable station. It also involves the arms and shoulders.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Lateral Raise",
+      "matchedSlug": "side-lateral-raise",
+      "summary": "Side Lateral Raise is a beginner-friendly shoulder exercise performed with dumbbells. It also involves the arms and back.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Barbell Squat",
+      "matchedSlug": "barbell-squat",
+      "summary": "Barbell Squat is a beginner-friendly leg exercise performed with a barbell. It also involves the glutes and back.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Cable Curl",
+      "matchedSlug": "dumbbell-bicep-curl",
+      "summary": "Dumbbell Bicep Curl is a beginner-friendly arm exercise performed with dumbbells.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    },
+    {
+      "label": "Plank",
+      "matchedSlug": "plank",
+      "summary": "Plank is a beginner-friendly core exercise using body weight.",
+      "retainedBenefitCount": 0,
+      "retainedMistakeCount": 0
+    }
+  ]
+}

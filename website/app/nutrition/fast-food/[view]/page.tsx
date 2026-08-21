@@ -114,7 +114,7 @@ export default async function FastFoodNutritionVariantPage({
           <article className="proof-card">
             <span className="proof-label">Compare</span>
             <div className="proof-value">Calories and macros</div>
-            <p className="proof-copy">Search, filter, and sort across multiple restaurants in one place.</p>
+            <p className="proof-copy">Search and sort menu items across the listed restaurants.</p>
           </article>
         </div>
       </section>

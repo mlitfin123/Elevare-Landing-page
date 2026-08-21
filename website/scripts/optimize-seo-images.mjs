@@ -22,6 +22,9 @@ const assets = [
   { source: "blog-posts/mens-physique-classic-physique-prep-15-weeks-out/side.png", destination: "blog-posts/mens-physique-classic-physique-prep-15-weeks-out/side.webp", width: 520, quality: 82 },
   { source: "blog-posts/mens-physique-classic-physique-prep-15-weeks-out/back.png", destination: "blog-posts/mens-physique-classic-physique-prep-15-weeks-out/back.webp", width: 520, quality: 82 },
   { source: "blog-posts/mens-physique-classic-physique-prep-14-weeks-out/back.png", destination: "blog-posts/mens-physique-classic-physique-prep-14-weeks-out/back.webp", width: 520, quality: 82 },
+  { source: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/front.png", destination: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/front.webp", width: 520, quality: 88 },
+  { source: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/side.png", destination: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/side.webp", width: 520, quality: 88 },
+  { source: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/back.png", destination: "blog-posts/mens-physique-classic-physique-prep-7-weeks-out/back.webp", width: 520, quality: 88 },
 ];
 
 async function exists(filePath) {

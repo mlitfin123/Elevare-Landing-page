@@ -14,6 +14,12 @@ import {
   getRegulatedTitleRule,
   hasCompatibleVerifiedCredential,
 } from "../lib/regulated-professional-titles.ts";
+import {
+  ACTIVE_LEGAL_ROUTES,
+  archiveFileToProductionRoute,
+  publicHtmlFileToProductionRoute,
+  STAGELAB_LEGAL_ROUTES,
+} from "../lib/legal-routes.ts";
 
 const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -175,12 +181,56 @@ test("public marketplace output excludes auth identifiers and reporting resolves
 test("analytics is opt-in and remains unloaded after a decline", () => {
   const consent = readFileSync(`${projectRoot}components/AnalyticsConsent.tsx`, "utf8");
   const layout = readFileSync(`${projectRoot}app/layout.tsx`, "utf8");
+  const packageJson = readFileSync(`${projectRoot}package.json`, "utf8");
 
   assert.match(consent, /analytics_storage: "denied"/);
   assert.match(consent, /nextChoice === "accepted"/);
   assert.match(consent, /Decline analytics/);
   assert.match(consent, /clearAnalyticsCookies\(\)/);
   assert.doesNotMatch(layout, /googletagmanager\.com\/gtag\/js/);
+  assert.doesNotMatch(`${layout}\n${packageJson}`, /@vercel\/analytics|<Analytics(?:\s|\/|>)/);
+  assert.match(layout, /<AnalyticsConsent measurementId=\{googleAnalyticsId\}/);
+});
+
+test("legal source files map to clean production routes and StageLab links never use html filenames", () => {
+  assert.equal(ACTIVE_LEGAL_ROUTES.length, 10);
+  for (const route of ACTIVE_LEGAL_ROUTES) {
+    assert.equal(publicHtmlFileToProductionRoute(route.sourceFile), route.route);
+    const html = readFileSync(`${projectRoot}public/${route.sourceFile}`, "utf8");
+    assert.match(html, new RegExp(`rel=["']canonical["'][^>]+${route.canonical.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+    assert.doesNotMatch(html, /href=["'][^"']+\.html(?:[?#]|["'])/i);
+  }
+
+  assert.equal(STAGELAB_LEGAL_ROUTES.terms.route, "/stagelab-terms-of-service/");
+  assert.equal(STAGELAB_LEGAL_ROUTES.privacy.route, "/stagelab-privacy-policy/");
+});
+
+test("legal archive manifest separates immutable files from clean production routes", () => {
+  const manifest = JSON.parse(readFileSync(`${projectRoot}public/legal/legal-document-versions.json`, "utf8")) as {
+    documents: Array<{ archiveFilePath: string; archivePath: string; sha256: string }>;
+  };
+  assert.equal(manifest.documents.length, 2);
+  for (const record of manifest.documents) {
+    assert.match(record.archiveFilePath, /\.html$/);
+    assert.doesNotMatch(record.archivePath, /\.html$/);
+    assert.equal(archiveFileToProductionRoute(record.archiveFilePath), record.archivePath);
+    assert.match(record.sha256, /^[a-f0-9]{64}$/);
+  }
+});
+
+test("archive route migration accepts both known hashes without rewriting legal content", () => {
+  const migration = readFileSync(
+    `${repositoryRoot}supabase/migrations/20260820213000_normalize_legal_archive_routes.sql`,
+    "utf8",
+  );
+
+  assert.match(migration, /3fb0e59316aac7a28f74cbf2ab574dec570d83e51ea0f08b6a56159134ee5308/);
+  assert.match(migration, /b63f3e8cc96b162dc444f2a1db8a5e5f15e827ce996ef3e999919bda23ca74c4/);
+  assert.match(migration, /ccd40ed1462393629ace1ff25ed02218c61c55f5dc678c1553bc26263193c2e9/);
+  assert.match(migration, /3dfcc050a2ed40ab49bf0d635eba80a5d54ec9a8848dff76ddff633ff925fc96/);
+  assert.doesNotMatch(migration, /set\s+content_sha256/i);
+  assert.match(migration, /set archive_path = '\/legal\/archive\/terms\/2026-08-20\/'/);
+  assert.match(migration, /set archive_path = '\/legal\/archive\/privacy\/2026-08-20\/'/);
 });
 
 test("StageLab legal documents consistently name Elevare Fit LLC as operator", () => {
@@ -221,6 +271,28 @@ test("legal history is append-only to marketplace users and public credentials e
   assert.doesNotMatch(publicView, /supporting_reference_url/);
   assert.doesNotMatch(publicView, /credential_number/);
   assert.match(migration, /certifications_restrict_raw_select_to_owner/);
+});
+
+test("new credential evidence uses private owner-scoped uploads without changing verification state", () => {
+  const editor = readFileSync(`${projectRoot}components/marketplace/ProfessionalProfileEditor.tsx`, "utf8");
+  const migration = readFileSync(
+    `${repositoryRoot}supabase/migrations/20260820210000_legal_security_entity_separation.sql`,
+    "utf8",
+  );
+  const credentialSave = editor.split("const activeCredentials =")[1]?.split("if (nextStatus === \"pending_review\")")[0] ?? "";
+  const publicView = migration.split("create or replace view public.marketplace_public_trainer_profiles_v2 as")[1]
+    ?.split("revoke select")[0] ?? "";
+
+  assert.match(editor, /CREDENTIAL_DOCUMENT_BUCKET = "credential-documents"/);
+  assert.match(editor, /application\/pdf,image\/jpeg,image\/png,image\/webp/);
+  assert.match(editor, /CREDENTIAL_DOCUMENT_MAX_BYTES = 8 \* 1024 \* 1024/);
+  assert.match(editor, /createSignedUrl\(documentReference, 300\)/);
+  assert.match(editor, /`\$\{user\.id\}\/\$\{credential\.id\}\/\$\{crypto\.randomUUID\(\)\}/);
+  assert.doesNotMatch(editor, />Supporting document URL</);
+  assert.doesNotMatch(credentialSave, /verification_status\s*:/);
+  assert.doesNotMatch(publicView, /document_url|supporting_reference_url/);
+  assert.match(migration, /credential_documents_insert_own/);
+  assert.match(migration, /bucket_id = 'credential-documents'[\s\S]*auth\.uid\(\)::text/);
 });
 
 test("consultation form states that a request is not a booking or contract", () => {

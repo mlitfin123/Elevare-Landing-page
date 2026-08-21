@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canonicalizeTrainingSnapshot,
   deduplicateWorkoutTemplates,
   deduplicateExercises,
   getExerciseSubstitutions,
@@ -586,6 +587,37 @@ test("deduplicateWorkoutTemplates retains clean slugs and remaps duplicate exerc
   ]);
   assert.equal(result.workoutTemplateExercises.length, 1);
   assert.equal(result.workoutTemplateExercises[0]?.workoutTemplateId, cleanWorkout.id);
+});
+
+test("canonicalizeTrainingSnapshot removes audited aliases even when live records differ", () => {
+  const cleanWorkout = {
+    ...workoutTemplates[0]!,
+    id: "workout-clean-audited",
+    name: "Beginner Dumbbell Workout",
+    slug: "beginner-dumbbell-workout",
+    equipment: ["dumbbell"],
+  };
+  const retiredWorkout = {
+    ...cleanWorkout,
+    id: "workout-retired-audited",
+    slug: "beginner-dumbbell-workout-68727f10",
+    overview: "A stale production description that prevents exact identity matching.",
+  };
+  const snapshot = canonicalizeTrainingSnapshot({
+    generatedAt: null,
+    exercises,
+    workoutTemplates: [retiredWorkout, cleanWorkout],
+    workoutTemplateExercises: [
+      { ...templateExercises[0]!, id: "retired-row", workoutTemplateId: retiredWorkout.id },
+    ],
+  });
+
+  assert.deepEqual(snapshot.workoutTemplates.map((workout) => workout.slug), ["beginner-dumbbell-workout"]);
+  assert.equal(snapshot.workoutTemplateExercises[0]?.workoutTemplateId, cleanWorkout.id);
+  assert.equal(
+    snapshot.workoutRedirects?.some((redirect) => redirect.sourceSlug === retiredWorkout.slug),
+    true,
+  );
 });
 
 test("getExerciseSubstitutions rejects curls and triceps isolation for bench-pattern substitutions", () => {

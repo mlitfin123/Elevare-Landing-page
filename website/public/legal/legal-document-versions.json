@@ -5,14 +5,16 @@
       "documentKey": "terms_of_service",
       "version": "2026-08-20",
       "effectiveDate": "2026-08-20",
-      "archivePath": "/legal/archive/terms/2026-08-20.html",
+      "archiveFilePath": "/legal/archive/terms/2026-08-20.html",
+      "archivePath": "/legal/archive/terms/2026-08-20/",
       "sha256": "b63f3e8cc96b162dc444f2a1db8a5e5f15e827ce996ef3e999919bda23ca74c4"
     },
     {
       "documentKey": "privacy_policy",
       "version": "2026-08-20",
       "effectiveDate": "2026-08-20",
-      "archivePath": "/legal/archive/privacy/2026-08-20.html",
+      "archiveFilePath": "/legal/archive/privacy/2026-08-20.html",
+      "archivePath": "/legal/archive/privacy/2026-08-20/",
       "sha256": "3dfcc050a2ed40ab49bf0d635eba80a5d54ec9a8848dff76ddff633ff925fc96"
     }
   ]

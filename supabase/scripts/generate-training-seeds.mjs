@@ -177,59 +177,19 @@ function inferMovementPattern(exercise) {
 }
 
 function inferBenefits(exercise, primaryMuscleGroup) {
-  const benefits = [`Builds strength and control through the ${primaryMuscleGroup} region.`];
-
-  if (exercise.mechanic === "compound") {
-    benefits.push("Trains multiple joints at once, which can make your sessions more efficient.");
-  } else {
-    benefits.push("Makes it easier to focus on one area when you want extra practice or volume.");
-  }
-
-  if (normalizeCategory(exercise.category) === "stretching") {
-    benefits.push("Can improve mobility and help you move more comfortably through the target range.");
-  } else if (normalizeCategory(exercise.category) === "cardio") {
-    benefits.push("Adds conditioning work that can support general fitness and work capacity.");
-  } else {
-    benefits.push("Gives you a repeatable way to track progress inside Logbook over time.");
-  }
-
-  return benefits;
+  void exercise;
+  void primaryMuscleGroup;
+  return [];
 }
 
 function inferBenefitsFromRecord(record) {
-  const benefits = [`Builds strength and control through the ${record.primaryMuscleGroup} region.`];
-
-  if (record.isCompound) {
-    benefits.push("Trains multiple joints at once, which can make your sessions more efficient.");
-  } else {
-    benefits.push("Makes it easier to focus on one area when you want extra practice or volume.");
-  }
-
-  if (record.exerciseType === "stretching") {
-    benefits.push("Can improve mobility and help you move more comfortably through the target range.");
-  } else if (record.exerciseType === "cardio") {
-    benefits.push("Adds conditioning work that can support general fitness and work capacity.");
-  } else {
-    benefits.push("Gives you a repeatable way to track progress inside Logbook over time.");
-  }
-
-  return benefits;
+  void record;
+  return [];
 }
 
 function inferCommonMistakes(exercise) {
-  const mistakes = ["Using more weight or speed than you can control cleanly."];
-  const movementPattern = inferMovementPattern(exercise);
-
-  if (movementPattern === "squat" || movementPattern === "hinge") {
-    mistakes.push("Skipping the setup and losing tension before the first rep starts.");
-  } else if (movementPattern === "press" || movementPattern === "pull") {
-    mistakes.push("Letting momentum do the work instead of controlling the full rep.");
-  } else {
-    mistakes.push("Cutting the range of motion short and rushing through the reps.");
-  }
-
-  mistakes.push("Changing your body position between reps instead of keeping the movement repeatable.");
-  return mistakes;
+  void exercise;
+  return [];
 }
 
 function buildExerciseRecord(exercise) {

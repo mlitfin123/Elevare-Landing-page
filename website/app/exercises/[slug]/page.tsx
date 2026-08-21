@@ -27,6 +27,8 @@ import {
   formatMovementPatternLabel,
   formatMuscleLabel,
   getExerciseCategoryInfo,
+  getExerciseSpecificBenefits,
+  getExerciseSpecificMistakes,
   getExerciseSubstitutions,
   getSupportingExercisesByCategorySlug,
   getExerciseVariations,
@@ -364,6 +366,8 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
   }
 
   const faqs = buildExerciseFaqs(exercise);
+  const benefits = getExerciseSpecificBenefits(exercise);
+  const commonMistakes = getExerciseSpecificMistakes(exercise);
   const relatedExercises = getRelatedExercises(exercise, exercises, 4);
   const variations = getExerciseVariations(exercise, exercises, 3);
   const alternatives = getExerciseSubstitutions(exercise, exercises, 3);
@@ -371,7 +375,7 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
     exercise,
     workoutTemplates,
     workoutTemplateExercises,
-    4,
+    3,
   );
 
   const structuredData = buildExerciseStructuredData(slug, exercise.name, faqs);
@@ -383,24 +387,24 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
       <section className="hero">
         <div className="eyebrow">Exercise guide</div>
         <h1>{exercise.name}</h1>
-        <p className="page-intro">{exercise.seoDescription ?? buildExerciseSummary(exercise)}</p>
+        <p className="page-intro">{buildExerciseSummary(exercise)}</p>
         <div className="hero-proof">
           <article className="proof-card">
             <span className="proof-label">Primary muscle</span>
             <div className="proof-value">{formatMuscleLabel(exercise.primaryMuscleGroup)}</div>
-            <p className="proof-copy">The main area this variation is designed to train.</p>
+            <p className="proof-copy">The main muscle group listed for this exercise.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Equipment</span>
             <div className="proof-value">
               {exercise.equipment.length > 0 ? exercise.equipment.map(formatEquipmentLabel).join(", ") : "Minimal"}
             </div>
-            <p className="proof-copy">Use this to decide whether the movement fits your current setup.</p>
+            <p className="proof-copy">The equipment listed for this variation.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Difficulty</span>
             <div className="proof-value">{formatDifficultyLabel(exercise.difficulty)}</div>
-            <p className="proof-copy">A quick checkpoint for how simple or technical the movement usually feels.</p>
+            <p className="proof-copy">The recorded setup and movement complexity.</p>
           </article>
         </div>
       </section>
@@ -411,11 +415,9 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
             <span className="stat-label">Muscles worked</span>
             <h3>{formatMuscleLabel(exercise.primaryMuscleGroup)}</h3>
             <p>
-              Secondary support can come from{" "}
               {exercise.secondaryMuscleGroups.length > 0
-                ? exercise.secondaryMuscleGroups.map((group) => formatMuscleLabel(group)).join(", ")
-                : "other nearby stabilizers depending on how you perform the movement"}
-              .
+                ? `${exercise.name} also involves ${exercise.secondaryMuscleGroups.map((group) => formatMuscleLabel(group).toLowerCase()).join(", ")}.`
+                : "No secondary muscle group is listed for this variation."}
             </p>
           </article>
           <article className="panel">
@@ -423,89 +425,69 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
             <h3>{formatExerciseTypeLabel(exercise.exerciseType)}</h3>
             <p>
               Movement pattern: {formatMovementPatternLabel(exercise.movementPattern).toLowerCase()}.{" "}
-              {exercise.isCompound ? "This is a compound exercise." : "This is more of an isolation-focused exercise."}
+              {exercise.isCompound ? "This is a compound exercise." : "This is an isolation exercise."}
             </p>
           </article>
           <article className="panel">
-            <span className="stat-label">Best for</span>
-            <h3>Learning and repeating well</h3>
+            <span className="stat-label">Training level</span>
+            <h3>{formatDifficultyLabel(exercise.difficulty)}</h3>
             <p>
-              Use this page to understand the setup first, then track the movement consistently in Logbook once
-              it fits your program.
+              This level reflects the setup and movement complexity recorded for this exercise.
             </p>
           </article>
         </div>
       </section>
 
-      <section className="section">
-        <article className="panel tool-copy-card">
-          <div className="section-head">
-            <div className="eyebrow">Instructions</div>
-            <h2 className="section-title">How to do {exercise.name}</h2>
-            <p className="section-copy">
-              Keep the setup simple, use a controlled pace, and repeat the same movement pattern each rep.
-            </p>
-          </div>
+      {exercise.instructions.length > 0 ? (
+        <section className="section">
+          <article className="panel tool-copy-card">
+            <div className="section-head">
+              <div className="eyebrow">Instructions</div>
+              <h2 className="section-title">How to do {exercise.name}</h2>
+            </div>
 
-          {exercise.instructions.length > 0 ? (
             <ol className="article-body">
               {exercise.instructions.map((instruction) => (
                 <li key={instruction}>{instruction}</li>
               ))}
             </ol>
-          ) : (
-            <p>
-              This exercise page is live, but the step-by-step instruction set is still being expanded inside the
-              public training library. Use the related exercises and workout templates below while the guide is
-              being enriched.
-            </p>
-          )}
-        </article>
-      </section>
+          </article>
+        </section>
+      ) : null}
 
-      <section className="section">
-        <div className="tool-faq-grid">
-          <article className="panel tool-faq-card">
-            <h3>Benefits</h3>
-            {exercise.benefits.length > 0 ? (
-              <ul className="training-list">
-                {exercise.benefits.map((benefit) => (
-                  <li key={benefit}>{benefit}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>
-                The public training library is still adding more exercise-specific coaching notes here. In the
-                meantime, use the movement pattern, muscles worked, and related links on this page to decide
-                whether the exercise fits your plan.
-              </p>
-            )}
-          </article>
-          <article className="panel tool-faq-card">
-            <h3>Common mistakes</h3>
-            {exercise.commonMistakes.length > 0 ? (
-              <ul className="training-list">
-                {exercise.commonMistakes.map((mistake) => (
-                  <li key={mistake}>{mistake}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>
-                Exercise-specific mistake notes are still being expanded for this page. If you use the movement,
-                keep the setup repeatable and compare it to related exercises if something feels awkward or hard
-                to standardize.
-              </p>
-            )}
-          </article>
-        </div>
-      </section>
+      {(benefits.length > 0 || commonMistakes.length > 0) ? (
+        <section className="section">
+          <div className="tool-faq-grid">
+            {benefits.length > 0 ? (
+              <article className="panel tool-faq-card">
+                <h3>Benefits</h3>
+                <ul className="training-list">
+                  {benefits.map((benefit) => (
+                    <li key={benefit}>{benefit}</li>
+                  ))}
+                </ul>
+              </article>
+            ) : null}
+            {commonMistakes.length > 0 ? (
+              <article className="panel tool-faq-card">
+                <h3>Common mistakes</h3>
+                <ul className="training-list">
+                  {commonMistakes.map((mistake) => (
+                    <li key={mistake}>{mistake}</li>
+                  ))}
+                </ul>
+              </article>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {(variations.length > 0 || alternatives.length > 0) ? (
         <section className="section">
           <div className="tool-faq-grid">
-            <article className="panel tool-faq-card">
-              <h3>Variations</h3>
-              {variations.length > 0 ? (
+            {variations.length > 0 ? (
+              <article className="panel tool-faq-card">
+                <h3>Variations</h3>
                 <div className="training-link-list">
                   {variations.map((variation) => (
                     <TrackedLink
@@ -522,13 +504,11 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
                     </TrackedLink>
                   ))}
                 </div>
-              ) : (
-                <p>More variations will appear here as the public library expands.</p>
-              )}
-            </article>
-            <article className="panel tool-faq-card">
-              <h3>Alternatives</h3>
-              {alternatives.length > 0 ? (
+              </article>
+            ) : null}
+            {alternatives.length > 0 ? (
+              <article className="panel tool-faq-card">
+                <h3>Alternatives</h3>
                 <div className="training-link-list">
                   {alternatives.map((alternative) => (
                     <TrackedLink
@@ -545,10 +525,8 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
                     </TrackedLink>
                   ))}
                 </div>
-              ) : (
-                <p>More equipment-based alternatives will appear here as the library expands.</p>
-              )}
-            </article>
+              </article>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -609,9 +587,6 @@ async function ExerciseDetailPage({ slug }: { slug: string }) {
         <div className="section-head">
           <div className="eyebrow">FAQ</div>
           <h2 className="section-title">Common questions about {exercise.name}.</h2>
-          <p className="section-copy">
-            Use these answers as a practical starting point, then adjust based on your setup, comfort, and goals.
-          </p>
         </div>
 
         <div className="tool-faq-grid">

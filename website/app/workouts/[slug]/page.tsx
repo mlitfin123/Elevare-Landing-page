@@ -253,7 +253,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
   const joinedExercises = joinTemplateExercises(workoutTemplateExercises, exercises, workoutTemplate.id);
   const dayGroups = groupWorkoutExercisesByDay(joinedExercises);
   const faqs = buildWorkoutFaqs(workoutTemplate);
-  const relatedWorkouts = getRelatedWorkoutTemplates(workoutTemplate, workoutTemplates, 4);
+  const relatedWorkouts = getRelatedWorkoutTemplates(workoutTemplate, workoutTemplates, 3);
   const relatedExercises = getRelatedExercisesForWorkout(
     workoutTemplate,
     exercises,
@@ -274,12 +274,12 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
           <article className="proof-card">
             <span className="proof-label">Goal</span>
             <div className="proof-value">{formatGoalLabel(workoutTemplate.goal)}</div>
-            <p className="proof-copy">The main training outcome this template is built around.</p>
+            <p className="proof-copy">The primary goal recorded for this template.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Difficulty</span>
             <div className="proof-value">{formatDifficultyLabel(workoutTemplate.difficulty)}</div>
-            <p className="proof-copy">A quick way to gauge how simple or advanced the structure feels.</p>
+            <p className="proof-copy">The intended experience level and programming complexity.</p>
           </article>
           <article className="proof-card">
             <span className="proof-label">Duration</span>
@@ -288,7 +288,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
                 ? `${workoutTemplate.estimatedDurationMinutes} min`
                 : "Flexible"}
             </div>
-            <p className="proof-copy">Use this to match the template to your actual weekly schedule.</p>
+            <p className="proof-copy">The estimated length of each training session.</p>
           </article>
         </div>
       </section>
@@ -300,7 +300,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
             <h3>{workoutTemplate.experienceLevel ? formatDifficultyLabel(workoutTemplate.experienceLevel) : "General users"}</h3>
             <p>
               {workoutTemplate.whoItIsFor ??
-                "This template works best for people who want a clearer plan without writing every session from scratch."}
+                `People looking for a ${formatGoalLabel(workoutTemplate.goal).toLowerCase()} workout at a ${formatDifficultyLabel(workoutTemplate.difficulty).toLowerCase()} level.`}
             </p>
           </article>
           <article className="panel">
@@ -310,7 +310,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
                 ? workoutTemplate.equipment.map(formatEquipmentLabel).join(", ")
                 : "Minimal setup"}
             </h3>
-            <p>These are the main tools you will usually need to run the workout as written.</p>
+            <p>The main equipment required to run the workout as written.</p>
           </article>
           <article className="panel">
             <span className="stat-label">Training days</span>
@@ -319,7 +319,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
                 ? `${workoutTemplate.trainingDaysPerWeek} day${workoutTemplate.trainingDaysPerWeek === 1 ? "" : "s"} / week`
                 : "Flexible"}
             </h3>
-            <p>Use this to decide whether the template fits the time you can realistically train each week.</p>
+            <p>The number of weekly sessions in the template.</p>
           </article>
         </div>
       </section>
@@ -392,7 +392,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
                           <td>{entry.sets ?? "As written"}</td>
                           <td>{entry.reps ?? "As written"}</td>
                           <td>{formatRestText(entry.restSeconds)}</td>
-                          <td>{entry.notes ?? "Focus on clean, repeatable reps."}</td>
+                          <td>{entry.notes ?? "Follow the listed set, rep, and rest targets."}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -440,7 +440,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
                       ))}
                     </div>
                   ) : (
-                    <p>Use a similar movement pattern and equipment setup if you need to make a change.</p>
+                    <p>No close substitution is listed for this exercise.</p>
                   )}
                 </article>
               );
@@ -472,7 +472,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
         <section className="section">
           <div className="section-head">
             <div className="eyebrow">Related workouts</div>
-            <h2 className="section-title">More templates built for a similar goal.</h2>
+            <h2 className="section-title">More templates for a similar goal.</h2>
             <p className="section-copy">
               Compare these if you want a different split, a different equipment setup, or another template in the
               same general direction.
@@ -493,7 +493,7 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
 
       <RelatedTrainingTools
         title="Related calculators for this workout."
-        description="Use these tools when you want to turn the workout into a clearer calorie target, protein target, strength checkpoint, or training-volume plan."
+        description="Calculate calorie and protein targets, estimated strength, or total training volume."
         toolSlugs={getWorkoutRelatedToolSlugs(workoutTemplate)}
         sourcePage={`workout_detail_${workoutTemplate.slug}_related_tools`}
       />
@@ -502,10 +502,6 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
         <div className="section-head">
           <div className="eyebrow">FAQ</div>
           <h2 className="section-title">Common questions about {workoutTemplate.name}.</h2>
-          <p className="section-copy">
-            Use these quick answers as a starting point, then compare the plan to your real schedule, equipment,
-            and recovery.
-          </p>
         </div>
 
         <div className="tool-faq-grid">

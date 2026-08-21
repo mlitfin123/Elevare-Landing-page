@@ -118,7 +118,7 @@ export function getRestaurantVariantCopy(
     case "low-carb":
       return {
         title: `Low Carb ${restaurantName} Options`,
-        description: `Compare lower carb ${restaurantName} menu items and review calories, protein, fat, serving size, and carb counts in one place.`,
+        description: `Compare lower carb ${restaurantName} menu items by calories, protein, fat, serving size, and total carbohydrates.`,
         headline: `Low carb ${restaurantName} options.`,
         intro: `Use this page to sort ${restaurantName} items by carbs and find lower carb options while still keeping protein, calories, and fat in view.`,
         pathname: `/nutrition/${restaurantSlug}/low-carb`,

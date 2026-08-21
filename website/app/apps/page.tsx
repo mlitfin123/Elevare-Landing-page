@@ -13,17 +13,17 @@ const productCards = [
   {
     key: "Logbook" as const,
     description:
-      "A focused fitness tracking app built to make workouts easier to record, review, and repeat with consistency.",
+      "Record workouts, food, macros, bodyweight, and progress in a daily fitness log.",
   },
   {
     key: "StageLab" as const,
     description:
-      "A competition prep app for structuring performance phases, tightening feedback loops, and organizing prep work with more discipline.",
+      "Track contest-prep timelines, weekly check-ins, progress photos, and plan recommendations.",
   },
   {
     key: "Elevare" as const,
     description:
-      "A marketplace built to help people find the right support and help pros get discovered more clearly.",
+      "Compare fitness and wellness professionals by specialty, location, service mode, pricing, and credentials.",
   },
 ];
 
@@ -34,8 +34,8 @@ export default function AppsPage() {
         <div className="eyebrow">Apps</div>
         <h1>Apps built for tracking, prep, and coaching support.</h1>
         <p>
-          Explore the ElevareFit app lineup across day-to-day tracking, competition prep, and the marketplace
-          layer for finding the right support.
+          Use Logbook for daily tracking, StageLab for physique competition prep, and Elevare to find professional
+          support.
         </p>
         <div className="button-row">
           <TrackedLink
@@ -66,10 +66,9 @@ export default function AppsPage() {
       <section className="section">
         <div className="section-head">
           <div className="eyebrow">Directory</div>
-          <h2>Three products, clearly positioned.</h2>
+          <h2>Choose the product that fits what you need.</h2>
           <p>
-            Each product solves a different part of the same performance problem set, and the whole system is
-            meant to feel connected instead of scattered.
+            Each product covers a specific part of training, contest prep, or professional support.
           </p>
         </div>
 

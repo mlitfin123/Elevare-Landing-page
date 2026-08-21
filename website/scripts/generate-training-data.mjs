@@ -869,6 +869,10 @@ async function main() {
     ?? normalizeTrainingSnapshot(emptySnapshot);
 
   if (!serviceRoleKey) {
+    if (process.env.VERCEL === "1") {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for the Vercel production training-data build.");
+    }
+
     await writeSnapshot(bestFallbackSnapshot);
     console.log(
       `Skipped training data refresh because SUPABASE_SERVICE_ROLE_KEY is not set. Using ${
@@ -889,6 +893,13 @@ async function main() {
       `Generated training data for ${snapshot.exercises.length} exercises and ${snapshot.workoutTemplates.length} workout templates.`,
     );
   } catch (error) {
+    if (process.env.VERCEL === "1" || process.env.CI === "true") {
+      throw new Error(
+        "Training data refresh failed in a production/CI build; refusing to export stale fallback data.",
+        { cause: error },
+      );
+    }
+
     await writeSnapshot(bestFallbackSnapshot);
     console.warn(
       `Fell back to ${

@@ -12,7 +12,7 @@ export function ProductCtaButtons({ product, context }: ProductCtaButtonsProps) 
 
   if (storeLinks?.length) {
     return (
-      <>
+      <div className="product-store-buttons">
         {storeLinks.map((storeLink) => (
           <TrackedLink
             key={storeLink.href}
@@ -29,7 +29,7 @@ export function ProductCtaButtons({ product, context }: ProductCtaButtonsProps) 
             {storeLink.label}
           </TrackedLink>
         ))}
-      </>
+      </div>
     );
   }
 

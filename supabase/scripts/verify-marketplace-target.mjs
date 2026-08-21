@@ -1,12 +1,30 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const supabaseRoot = path.resolve(process.cwd(), process.cwd().endsWith("website") ? "../supabase" : "supabase");
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const supabaseRoot = path.resolve(scriptDirectory, "..");
 const linkedProjectPath = path.join(supabaseRoot, ".temp", "project-ref");
-const expectedProjectRef = process.env.ELEVARE_MARKETPLACE_PROJECT_REF?.trim();
+const expectedProjectPath = path.join(supabaseRoot, "marketplace-project.json");
+
+if (!fs.existsSync(expectedProjectPath)) {
+  console.error("The committed marketplace target configuration is missing. Migration aborted.");
+  process.exit(1);
+}
+
+const expectedProject = JSON.parse(fs.readFileSync(expectedProjectPath, "utf8"));
+const expectedProjectRef = typeof expectedProject.projectRef === "string"
+  ? expectedProject.projectRef.trim()
+  : "";
+const environmentProjectRef = process.env.ELEVARE_MARKETPLACE_PROJECT_REF?.trim();
 
 if (!expectedProjectRef) {
-  console.error("ELEVARE_MARKETPLACE_PROJECT_REF is required. No migration command was run.");
+  console.error("The committed marketplace project reference is empty. Migration aborted.");
+  process.exit(1);
+}
+
+if (environmentProjectRef && environmentProjectRef !== expectedProjectRef) {
+  console.error("ELEVARE_MARKETPLACE_PROJECT_REF does not match the committed marketplace target. Migration aborted.");
   process.exit(1);
 }
 
@@ -21,4 +39,4 @@ if (linkedProjectRef !== expectedProjectRef) {
   process.exit(1);
 }
 
-console.log("Verified the linked Elevare marketplace Supabase project.");
+console.log(`Verified the linked ${expectedProject.projectName ?? "Elevare marketplace"} Supabase project.`);

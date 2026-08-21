@@ -37,7 +37,7 @@ export default async function HomePage() {
         <div className="hero-actions">
           <TrackedLink
             className="btn btn-primary"
-            href="/tools"
+            href="/calculators"
             eventName="cta_click"
             eventParams={{
               cta_name: "Explore free tools",
@@ -75,7 +75,7 @@ export default async function HomePage() {
         <div className="hero-proof hero-overview-grid" aria-label="Platform highlights">
           <TrackedLink
             className="proof-card proof-card-link"
-            href="/tools"
+            href="/calculators"
             eventName="overview_click"
             eventParams={{
               overview_name: "Free Tools",
@@ -114,7 +114,7 @@ export default async function HomePage() {
           >
             <span className="proof-label">StageLab</span>
             <div className="proof-value">Prep support for physique goals</div>
-            <p className="proof-copy">See the prep app built for structure, check-ins, and competition-focused planning.</p>
+            <p className="proof-copy">Review competition timelines, weekly check-ins, progress photos, and plan recommendations.</p>
             <span className="proof-action">View StageLab</span>
           </TrackedLink>
         </div>
@@ -131,7 +131,7 @@ export default async function HomePage() {
         <div className="next-step-grid">
           <TrackedLink
             className="panel next-step-card"
-            href="/tools"
+            href="/calculators"
             eventName="next_step_click"
             eventParams={{
               next_step: "free_fitness_tools",
@@ -170,7 +170,7 @@ export default async function HomePage() {
           >
             <span className="stat-label">StageLab</span>
             <h3>I am preparing for a physique competition</h3>
-            <p>Go to the prep-focused app for timelines, check-ins, and more deliberate weekly decisions.</p>
+            <p>Use StageLab for show timelines, weekly check-ins, progress photos, and prep recommendations.</p>
             <span className="proof-action">See StageLab</span>
           </TrackedLink>
           <TrackedLink
@@ -259,7 +259,7 @@ export default async function HomePage() {
           <article className="panel">
             <span className="stat-label">Restaurant nutrition</span>
             <h3>Find options when you are not cooking at home.</h3>
-            <p>Search restaurant nutrition pages to compare calories, protein, and smarter meal choices faster.</p>
+            <p>Search restaurant menus and compare calories, protein, carbohydrates, fat, and serving sizes.</p>
             <div className="button-row">
               <TrackedLink
                 className="button button-secondary"
@@ -280,19 +280,18 @@ export default async function HomePage() {
       <section className="section" id="logbook">
         <div className="section-head">
           <div className="eyebrow">Logbook</div>
-          <h2 className="section-title">Track nutrition, workouts, body weight, and progress in one place.</h2>
+          <h2 className="section-title">Log workouts, food, body weight, and progress.</h2>
           <p className="section-copy">
-            Logbook is the daily-use app for people who want the basics in one place without turning tracking
-            into another job.
+            Logbook records daily training, food, macros, body weight, and progress without unnecessary setup.
           </p>
         </div>
 
         <div className="trust-layout">
           <article className="trust-feature">
-            <h3>Built for the day-to-day side of consistency.</h3>
+            <h3>Keep a daily record you can review.</h3>
             <p>
-              Log workouts, nutrition, body weight, and progress in one clean system so the week is easier to
-              review and repeat.
+              Record workouts, meals, macros, body weight, and progress. Review the same history before your next
+              session or nutrition adjustment.
             </p>
             <div className="button-row">
               <ProductCtaButtons product="Logbook" context="home_logbook" />
@@ -334,16 +333,16 @@ export default async function HomePage() {
               </div>
               <div className="product-caption">
                 <strong>Live on iOS and Android</strong>
-                <span>Use Logbook when you want one daily system for food, training, and progress review.</span>
+                <span>Record food, training, and bodyweight, then review the history from the same app.</span>
               </div>
             </TrackedLink>
             <article className="trust-point">
-              <strong>Track the basics once</strong>
-              <p>Keep training, nutrition, body weight, and progress in one place instead of scattered apps.</p>
+              <strong>Record each day</strong>
+              <p>Log exercises, sets, reps, food, macros, and body weight while the details are current.</p>
             </article>
             <article className="trust-point">
-              <strong>Review clearer trends</strong>
-              <p>See what is actually happening week to week so decisions come from patterns instead of guesswork.</p>
+              <strong>Compare progress over time</strong>
+              <p>Review training performance, nutrition, and bodyweight history before changing your targets.</p>
             </article>
           </div>
         </div>
@@ -354,17 +353,17 @@ export default async function HomePage() {
           <div className="eyebrow">StageLab</div>
           <h2 className="section-title">Prep tools for physique-focused athletes and coaches.</h2>
           <p className="section-copy">
-            StageLab is the more focused option for competitors and coaches who need prep timelines, check-ins,
-            and cleaner weekly decisions.
+            StageLab gives competitors and coaches a place to review prep timelines, weekly check-ins, photos,
+            plan execution, recovery, and recommendations.
           </p>
         </div>
 
         <div className="trust-layout">
           <article className="trust-feature">
-            <h3>When prep gets more demanding, the feedback loop matters more.</h3>
+            <h3>Review the full week before changing the plan.</h3>
             <p>
-              Use StageLab for prep timelines, check-ins, and review workflows that help make adjustments feel
-              more deliberate.
+              Upload check-in photos, record prep data, compare changes over time, and see whether StageLab
+              recommends holding or adjusting the active plan.
             </p>
             <div className="button-row">
               <ProductCtaButtons product="StageLab" context="home_stagelab" />
@@ -405,16 +404,16 @@ export default async function HomePage() {
               </div>
               <div className="product-caption">
                 <strong>Live on iOS and Android</strong>
-                <span>Use StageLab when prep timing, review quality, and adjustment structure matter more.</span>
+                <span>See the active plan, recommendation, confidence, and reasons for each weekly check-in.</span>
               </div>
             </TrackedLink>
             <article className="trust-point">
               <strong>Review weekly check-ins</strong>
-              <p>Keep your photos, timelines, and week-to-week decisions inside a more prep-focused workflow.</p>
+              <p>Compare progress photos with bodyweight, nutrition, cardio, training, and recovery data.</p>
             </article>
             <article className="trust-point">
               <strong>Plan around the timeline</strong>
-              <p>Use a structure that fits bodybuilding and physique prep once the margin for noise gets smaller.</p>
+              <p>Keep the division, show date, weeks out, and current prep plan visible during each review.</p>
             </article>
           </div>
         </div>
@@ -425,8 +424,8 @@ export default async function HomePage() {
           <div className="eyebrow">Elevare marketplace</div>
           <h2 className="section-title">Find support or join as a pro.</h2>
           <p className="section-copy">
-            Elevare is the marketplace layer for browsing published profiles, saving good-fit options, and sending
-            consultation requests without turning discovery into guesswork.
+            Compare published professional profiles, save options, and send consultation requests. Professionals
+            can create a profile and submit it for review.
           </p>
         </div>
 
@@ -439,13 +438,13 @@ export default async function HomePage() {
             <div className="hero-proof marketplace-grid" aria-label="Who Elevare is for">
               <article className="proof-card">
                 <span className="proof-label">Clients</span>
-                <div className="proof-value">Browse by fit, not just hype</div>
-                <p className="proof-copy">Compare category, service mode, specialties, location, and pricing context before reaching out.</p>
+                <div className="proof-value">Compare professionals</div>
+                <p className="proof-copy">Review specialty, location, service mode, pricing, credentials, and professional category.</p>
               </article>
               <article className="proof-card">
                 <span className="proof-label">For pros</span>
-                <div className="proof-value">Create a clearer public profile</div>
-                <p className="proof-copy">Build a listing that shows categories, specialties, credentials, and flexible services in one place.</p>
+                <div className="proof-value">Publish the details clients need</div>
+                <p className="proof-copy">List categories, specialties, credentials, service modes, location, and price details.</p>
               </article>
             </div>
             <div className="hero-actions">

@@ -16,6 +16,12 @@ import {
 } from "../lib/nutrition-data.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
 import {
+  MARKETPLACE_FILTER_QUERY_KEYS,
+  RETIRED_WORKOUT_REDIRECTS,
+  type LegacyRedirect,
+} from "../lib/legacy-routes.ts";
+import { getLegacyToolPath, tools } from "../lib/tools.ts";
+import {
   canonicalizeTrainingSnapshot,
   EXERCISE_EQUIPMENT_CATEGORIES,
   EXERCISE_MUSCLE_CATEGORIES,
@@ -238,17 +244,61 @@ function main() {
   const hashedWorkoutUrlsInSitemap = canonicalPageUrls.filter((url) =>
     /\/workouts\/[a-z0-9-]+-[a-f0-9]{8}\/?$/i.test(new URL(url).pathname),
   );
-  const vercelConfig = readJsonFile<{ redirects?: Array<{ source: string; destination: string }> }>(
-    path.join(projectRoot, "vercel.json"),
-    { redirects: [] },
+  const vercelConfig = readJsonFile<{
+    bulkRedirectsPath?: string;
+    headers?: Array<{
+      source: string;
+      has?: Array<{ type: string; key: string }>;
+      headers?: Array<{ key: string; value: string }>;
+    }>;
+  }>(path.join(projectRoot, "vercel.json"), {});
+  const configuredRedirects = readJsonFile<LegacyRedirect[]>(
+    path.join(projectRoot, vercelConfig.bulkRedirectsPath ?? "config/redirects.json"),
+    [],
   );
   const redirectSources = new Set(
-    (vercelConfig.redirects ?? []).map((redirect) => normalizeSitePath(redirect.source)),
+    configuredRedirects.map((redirect) => normalizeSitePath(redirect.source)),
   );
   const redirectUrlsInSitemap = canonicalPageUrls.filter((url) =>
     redirectSources.has(toSitePathFromUrl(url)),
   );
   const totalHtmlFiles = walkHtmlFiles(outDir).length;
+  const allHtmlFiles = walkHtmlFiles(outDir);
+  const retiredWorkoutPaths = new Set(
+    RETIRED_WORKOUT_REDIRECTS.map((redirect) => normalizeSitePath(`/workouts/${redirect.sourceSlug}`)),
+  );
+  const legacyToolPaths = new Set(tools.map((tool) => normalizeSitePath(getLegacyToolPath(tool.slug))));
+  legacyToolPaths.add(normalizeSitePath("/tools"));
+  const retiredWorkoutStaticPages = RETIRED_WORKOUT_REDIRECTS
+    .filter((redirect) => fs.existsSync(toOutputFile(normalizeSitePath(`/workouts/${redirect.sourceSlug}`))))
+    .map((redirect) => redirect.sourceSlug);
+  const legacyToolStaticPages = [
+    "/tools",
+    ...tools.map((tool) => getLegacyToolPath(tool.slug)),
+  ]
+    .filter((sitePath) => fs.existsSync(toOutputFile(normalizeSitePath(sitePath))));
+  const retiredWorkoutInternalLinks: string[] = [];
+  const legacyToolInternalLinks: string[] = [];
+
+  for (const htmlPath of allHtmlFiles) {
+    const html = fs.readFileSync(htmlPath, "utf8");
+    const sourcePage = path.relative(outDir, htmlPath).replaceAll("\\", "/");
+
+    for (const href of extractInternalLinks(html)) {
+      if (retiredWorkoutPaths.has(href)) retiredWorkoutInternalLinks.push(`${sourcePage} -> ${href}`);
+      if (legacyToolPaths.has(href)) legacyToolInternalLinks.push(`${sourcePage} -> ${href}`);
+    }
+  }
+  const configuredFilterHeaders = new Set(
+    (vercelConfig.headers ?? []).flatMap((entry) =>
+      entry.has?.filter((condition) => condition.type === "query").flatMap((condition) => {
+        const robotsHeader = entry.headers?.find((header) => header.key.toLowerCase() === "x-robots-tag");
+        return robotsHeader?.value.toLowerCase() === "noindex, follow" ? [condition.key] : [];
+      }) ?? [],
+    ),
+  );
+  const missingMarketplaceFilterHeaders = MARKETPLACE_FILTER_QUERY_KEYS
+    .filter((key) => !configuredFilterHeaders.has(key));
 
   const non200Urls = canonicalPageUrls.filter((url) => !fileExistsForUrl(url));
   const missingCanonical: string[] = [];
@@ -647,6 +697,11 @@ function main() {
   printSection("Duplicate sitemap entries", duplicateSitemapEntries);
   printSection("Hashed workout URLs in sitemap", hashedWorkoutUrlsInSitemap);
   printSection("Known redirect URLs in sitemap", redirectUrlsInSitemap);
+  printSection("Retired workout static pages", retiredWorkoutStaticPages);
+  printSection("Retired workout internal links", retiredWorkoutInternalLinks.slice(0, 50));
+  printSection("Legacy tool static pages", legacyToolStaticPages);
+  printSection("Legacy tool internal links", legacyToolInternalLinks.slice(0, 50));
+  printSection("Missing filtered marketplace header rules", missingMarketplaceFilterHeaders);
   printSection("Legacy legal links in active source", legacyLegalLinks);
   printSection("Duplicate exercise names", duplicateExerciseNames.slice(0, 50));
   printSection("Duplicate meta titles", duplicateMetaTitles.slice(0, 25));
@@ -683,6 +738,11 @@ function main() {
     duplicateSitemapEntries,
     hashedWorkoutUrlsInSitemap,
     redirectUrlsInSitemap,
+    retiredWorkoutStaticPages,
+    retiredWorkoutInternalLinks,
+    legacyToolStaticPages,
+    legacyToolInternalLinks,
+    missingMarketplaceFilterHeaders,
     legacyLegalLinks,
     multipleH1Pages,
   ].reduce((total, issues) => total + issues.length, 0);

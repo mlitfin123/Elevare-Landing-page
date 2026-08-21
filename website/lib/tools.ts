@@ -54,6 +54,15 @@ type CopySeed = {
   questionLead?: string;
 };
 
+function capitalizeSentence(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function asSentence(value: string) {
+  const capitalized = capitalizeSentence(value.trim());
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
+}
+
 function buildCopy(seed: CopySeed): ToolDefinition {
   const topic = seed.questionLead ?? seed.title.toLowerCase();
 
@@ -66,30 +75,26 @@ function buildCopy(seed: CopySeed): ToolDefinition {
     relatedSlugs: seed.relatedSlugs,
     explanationHeading: `How to use the ${seed.title.toLowerCase()}`,
     explanation: [
-      `${seed.title} is built to help you ${seed.whyItMatters}. It works best for ${seed.bestFor}. Instead of guessing, you can use the result as a cleaner starting point and then adjust based on what happens in real life over the next few days or weeks.`,
-      `To use this calculator well, ${seed.howToUse}. Once you have the ${seed.resultName}, compare it to your current routine, training demands, and recovery. The best number on paper is still the number you can follow consistently enough to learn from.`,
-      `${seed.accuracyNote}. That does not make the tool useless. It just means the output should guide your next decision instead of replacing judgment. ${seed.whatToDoNext}`,
+      `${seed.title} is intended for ${seed.bestFor}. Use it to ${seed.whyItMatters}.`,
+      `${asSentence(seed.howToUse)} The calculator returns a ${seed.resultName}.`,
+      `${asSentence(seed.accuracyNote)} ${seed.whatToDoNext}`,
     ],
     faqs: [
       {
         question: `What does the ${topic} tell me?`,
-        answer: `It gives you a practical estimate that can help you make a better starting decision. You can use it to reduce guessing, then refine the plan after you track your response over time.`,
+        answer: `${asSentence(seed.howToUse)} The result is a ${seed.resultName}.`,
       },
       {
         question: `How accurate is the ${topic}?`,
-        answer: `${seed.accuracyNote} The result is most useful when you treat it as an estimate, track the outcome, and adjust based on real-world feedback.`,
+        answer: asSentence(seed.accuracyNote),
       },
       {
         question: `What should I do after I get my result?`,
-        answer: `${seed.whatToDoNext} When progress is not matching the estimate, make one small adjustment at a time so you can see what actually changed.`,
+        answer: seed.whatToDoNext,
       },
       {
         question: `Who is this calculator best for?`,
-        answer: `This calculator is best for ${seed.bestFor}. It is written for regular users first, but it can still be useful for athletes who want a simple starting point before getting more detailed.`,
-      },
-      {
-        question: `When should I recalculate?`,
-        answer: `Recalculate when one of the main inputs changes in a meaningful way, like bodyweight, training volume, pace, calories, or your goal. You can also rerun it when your progress stalls and you want a fresh checkpoint.`,
+        answer: `This calculator is intended for ${seed.bestFor}.`,
       },
     ],
   };

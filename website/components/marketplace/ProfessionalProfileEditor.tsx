@@ -66,6 +66,11 @@ type CredentialDraft = {
   jurisdiction: string;
 };
 
+type CredentialUploadFeedback = {
+  kind: "info" | "success" | "error";
+  message: string;
+};
+
 type ServiceDraft = {
   id: string;
   name: string;
@@ -213,6 +218,14 @@ type UploadedProfilePhoto = { publicUrl: string; storagePath: string };
 type FieldErrors = Record<string, string>;
 
 const MARKETPLACE_COUNTRY_OPTIONS = getCountryOptions();
+const CREDENTIAL_DOCUMENT_BUCKET = "credential-documents";
+const CREDENTIAL_DOCUMENT_MAX_BYTES = 8 * 1024 * 1024;
+const CREDENTIAL_DOCUMENT_EXTENSIONS: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 const initialFormState: ProfessionalFormState = {
   displayName: "",
@@ -297,6 +310,16 @@ function getJsonString(record: Record<string, unknown> | null, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function isPrivateCredentialPath(value: string, ownerId?: string) {
+  const normalized = value.trim();
+  if (!normalized || /^https?:\/\//i.test(normalized) || normalized.includes("..")) return false;
+  return ownerId ? normalized.startsWith(`${ownerId}/`) : normalized.split("/").length >= 3;
+}
+
+function isLegacyCredentialUrl(value: string) {
+  return /^https?:\/\//i.test(value.trim());
+}
+
 function FieldError({ name, errors }: { name: string; errors: FieldErrors }) {
   return errors[name] ? <span className="field-error" role="alert">{errors[name]}</span> : null;
 }
@@ -353,6 +376,7 @@ function ProfessionalSectionHeader({
 export function ProfessionalProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const credentialInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [form, setForm] = useState<ProfessionalFormState>(initialFormState);
   const [credentials, setCredentials] = useState<CredentialDraft[]>([createEmptyCredentialDraft()]);
   const [services, setServices] = useState<ServiceDraft[]>([createEmptyServiceDraft()]);
@@ -377,6 +401,8 @@ export function ProfessionalProfileEditor() {
   const [editingCredentialId, setEditingCredentialId] = useState<string | null>(null);
   const [additionalCategoryDraft, setAdditionalCategoryDraft] = useState("");
   const [languageDraft, setLanguageDraft] = useState("");
+  const [selectedCredentialFiles, setSelectedCredentialFiles] = useState<Record<string, File>>({});
+  const [credentialUploadFeedback, setCredentialUploadFeedback] = useState<Record<string, CredentialUploadFeedback>>({});
 
   const selectedCategoryStableIds = useMemo(
     () => buildDistinctValues([form.primaryCategoryStableId, ...form.additionalCategoryStableIds]),
@@ -739,6 +765,79 @@ export function ProfessionalProfileEditor() {
     setFieldErrors((current) => ({ ...current, photo: "" }));
   }
 
+  function chooseCredentialDocument(credentialId: string, file: File | null) {
+    if (!file) return;
+    if (!CREDENTIAL_DOCUMENT_EXTENSIONS[file.type]) {
+      setCredentialUploadFeedback((current) => ({
+        ...current,
+        [credentialId]: { kind: "error", message: "Choose a PDF, JPG, PNG, or WebP file." },
+      }));
+      return;
+    }
+    if (file.size > CREDENTIAL_DOCUMENT_MAX_BYTES) {
+      setCredentialUploadFeedback((current) => ({
+        ...current,
+        [credentialId]: { kind: "error", message: "Choose a file smaller than 8 MB." },
+      }));
+      return;
+    }
+    setSelectedCredentialFiles((current) => ({ ...current, [credentialId]: file }));
+    setCredentialUploadFeedback((current) => ({
+      ...current,
+      [credentialId]: { kind: "info", message: `${file.name} is ready for private upload when you save.` },
+    }));
+  }
+
+  async function uploadCredentialDocument(credential: CredentialDraft, file: File) {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) throw new Error("Sign in again before uploading credential evidence.");
+    const extension = CREDENTIAL_DOCUMENT_EXTENSIONS[file.type];
+    if (!extension || file.size > CREDENTIAL_DOCUMENT_MAX_BYTES) {
+      throw new Error("Credential evidence must be a PDF, JPG, PNG, or WebP file smaller than 8 MB.");
+    }
+
+    const storagePath = `${user.id}/${credential.id}/${crypto.randomUUID()}.${extension}`;
+    setCredentialUploadFeedback((current) => ({
+      ...current,
+      [credential.id]: { kind: "info", message: "Uploading supporting document privately..." },
+    }));
+    const uploadResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).upload(storagePath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false,
+    });
+    if (uploadResult.error) throw uploadResult.error;
+    return storagePath;
+  }
+
+  async function viewCredentialDocument(credential: CredentialDraft) {
+    const documentReference = credential.supportingDocumentUrl.trim();
+    if (!user || !isPrivateCredentialPath(documentReference, user.id)) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    setCredentialUploadFeedback((current) => ({
+      ...current,
+      [credential.id]: { kind: "info", message: "Creating a temporary private link..." },
+    }));
+    const signedUrlResult = await supabase.storage
+      .from(CREDENTIAL_DOCUMENT_BUCKET)
+      .createSignedUrl(documentReference, 300);
+    if (signedUrlResult.error) {
+      setCredentialUploadFeedback((current) => ({
+        ...current,
+        [credential.id]: { kind: "error", message: "The private document could not be opened. Try again." },
+      }));
+      return;
+    }
+
+    setCredentialUploadFeedback((current) => ({
+      ...current,
+      [credential.id]: { kind: "success", message: "Temporary access expires in 5 minutes." },
+    }));
+    window.open(signedUrlResult.data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   function validateForm(isSubmission: boolean) {
     const errors: FieldErrors = {};
     const activeServices = services.filter((service) => service.isActive && service.name.trim());
@@ -747,6 +846,9 @@ export function ProfessionalProfileEditor() {
       ["youtube", form.youtubeUrl], ["linkedin", form.linkedinUrl],
     ];
     urlFields.forEach(([key, value]) => { if (!isValidOptionalUrl(value)) errors[key] = "Enter a complete http:// or https:// URL."; });
+    if (credentials.some((credential) => !isValidOptionalUrl(credential.supportingReferenceUrl))) {
+      errors.credentials = "Enter a complete http:// or https:// credential reference URL.";
+    }
 
     if (form.yearsExperience && (!Number.isFinite(Number(form.yearsExperience)) || Number(form.yearsExperience) < 0)) {
       errors.yearsExperience = "Enter a valid number of years.";
@@ -809,6 +911,7 @@ export function ProfessionalProfileEditor() {
       tiktok: "links",
       youtube: "links",
       linkedin: "links",
+      credentials: "credentials",
     };
     const targetSection = sectionByField[firstKey];
     if (targetSection) setExpandedSections((current) => ({ ...current, [targetSection]: true }));
@@ -866,6 +969,8 @@ export function ProfessionalProfileEditor() {
     setFieldErrors({});
     let uploadedPhoto: UploadedProfilePhoto | null = null;
     let previousPhotoStoragePath: string | null = null;
+    const newlyUploadedCredentialPaths: string[] = [];
+    let credentialRecordsSaved = false;
     try {
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
       if (!appUser) throw new Error("We could not find your marketplace account.");
@@ -1004,32 +1109,85 @@ export function ProfessionalProfileEditor() {
       if (deactivateServicesResult.error) throw deactivateServicesResult.error;
 
       const activeCredentials = credentials.filter((credential) => credential.organizationName.trim() && credential.credentialName.trim());
+      const savedCredentialDocumentPaths = new Map<string, string>();
+      const replacedCredentialDocumentPaths: string[] = [];
       if (activeCredentials.length > 0) {
-        const credentialResult = await supabase.from("certifications").upsert(activeCredentials.map((credential) => ({
-          id: credential.id,
-          trainer_profile_id: profileId,
-          cert_name: credential.credentialName.trim(),
-          issuing_body: credential.organizationName.trim(),
-          cert_org: credential.organizationName.trim(),
-          credential_type: credential.credentialType.trim() || null,
-          credential_number: credential.credentialNumber.trim() || null,
-          cert_id: credential.credentialNumber.trim() || null,
-          issue_date: credential.issueDate || null,
-          expiration_date: credential.expirationDate || null,
-          expiry_date: credential.expirationDate || null,
-          document_url: credential.supportingDocumentUrl.trim() || null,
-          supporting_reference_url: credential.supportingReferenceUrl.trim() || null,
-          credential_country_code: normalizeCountryCode(credential.countryCode, countryCode),
-          credential_jurisdiction: credential.jurisdiction.trim() || null,
-          is_active: true,
-        })), { onConflict: "id" });
+        const credentialRows = [];
+        for (const credential of activeCredentials) {
+          let documentReference = credential.supportingDocumentUrl.trim();
+          const selectedFile = selectedCredentialFiles[credential.id];
+          if (selectedFile) {
+            try {
+              const uploadedPath = await uploadCredentialDocument(credential, selectedFile);
+              newlyUploadedCredentialPaths.push(uploadedPath);
+              savedCredentialDocumentPaths.set(credential.id, uploadedPath);
+              if (isPrivateCredentialPath(documentReference, user.id) && documentReference !== uploadedPath) {
+                replacedCredentialDocumentPaths.push(documentReference);
+              }
+              documentReference = uploadedPath;
+            } catch (error) {
+              setCredentialUploadFeedback((current) => ({
+                ...current,
+                [credential.id]: {
+                  kind: "error",
+                  message: error instanceof Error ? error.message : "The private document upload failed.",
+                },
+              }));
+              throw error;
+            }
+          }
+
+          credentialRows.push({
+            id: credential.id,
+            trainer_profile_id: profileId,
+            cert_name: credential.credentialName.trim(),
+            issuing_body: credential.organizationName.trim(),
+            cert_org: credential.organizationName.trim(),
+            credential_type: credential.credentialType.trim() || null,
+            credential_number: credential.credentialNumber.trim() || null,
+            cert_id: credential.credentialNumber.trim() || null,
+            issue_date: credential.issueDate || null,
+            expiration_date: credential.expirationDate || null,
+            expiry_date: credential.expirationDate || null,
+            document_url: documentReference || null,
+            supporting_reference_url: credential.supportingReferenceUrl.trim() || null,
+            credential_country_code: normalizeCountryCode(credential.countryCode, countryCode),
+            credential_jurisdiction: credential.jurisdiction.trim() || null,
+            is_active: true,
+          });
+        }
+
+        const credentialResult = await supabase.from("certifications").upsert(credentialRows, { onConflict: "id" });
         if (credentialResult.error) throw credentialResult.error;
+        credentialRecordsSaved = true;
+        if (savedCredentialDocumentPaths.size > 0) {
+          setCredentials((current) => current.map((credential) => {
+            const uploadedPath = savedCredentialDocumentPaths.get(credential.id);
+            return uploadedPath ? { ...credential, supportingDocumentUrl: uploadedPath } : credential;
+          }));
+          setSelectedCredentialFiles((current) => {
+            const next = { ...current };
+            savedCredentialDocumentPaths.forEach((_, credentialId) => { delete next[credentialId]; });
+            return next;
+          });
+          setCredentialUploadFeedback((current) => {
+            const next = { ...current };
+            savedCredentialDocumentPaths.forEach((_, credentialId) => {
+              next[credentialId] = { kind: "success", message: "Supporting document stored privately." };
+            });
+            return next;
+          });
+        }
       }
       const activeCredentialIds = activeCredentials.map((credential) => credential.id);
       let deactivateCredentials = supabase.from("certifications").update({ is_active: false }).eq("trainer_profile_id", profileId);
       if (activeCredentialIds.length > 0) deactivateCredentials = deactivateCredentials.not("id", "in", `(${activeCredentialIds.join(",")})`);
       const deactivateCredentialsResult = await deactivateCredentials;
       if (deactivateCredentialsResult.error) throw deactivateCredentialsResult.error;
+      if (replacedCredentialDocumentPaths.length > 0) {
+        const cleanupResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).remove(replacedCredentialDocumentPaths);
+        if (cleanupResult.error) console.warn("The credential was saved, but its replaced private file could not be removed.");
+      }
 
       if (nextStatus === "pending_review") {
         const submissionResult = await supabase.rpc("submit_current_trainer_profile_for_review_attested", {
@@ -1079,6 +1237,10 @@ export function ProfessionalProfileEditor() {
         }
       }
     } catch (error) {
+      if (!credentialRecordsSaved && newlyUploadedCredentialPaths.length > 0) {
+        const cleanupResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).remove(newlyUploadedCredentialPaths);
+        if (cleanupResult.error) console.warn("An incomplete credential upload could not be cleaned up.");
+      }
       setFeedback(error instanceof Error ? error.message : "We could not save your profile.");
       setFeedbackType("error");
     } finally {
@@ -1217,7 +1379,7 @@ export function ProfessionalProfileEditor() {
         </div> : null}
       </article>
 
-      <article className="panel profile-form-section" aria-labelledby="credentials-heading">
+      <article id="profile-field-credentials" className="panel profile-form-section" aria-labelledby="credentials-heading">
         <ProfessionalSectionHeader
           id="credentials-heading"
           eyebrow="Credentials"
@@ -1233,6 +1395,10 @@ export function ProfessionalProfileEditor() {
           <div className="editor-stack">{credentials.map((credential, index) => {
             const isEditing = editingCredentialId === credential.id || !credential.credentialName.trim() || !credential.organizationName.trim();
             const verificationLabel = formatCredentialVerificationStatus(credential.verificationStatus, credential.expirationDate);
+            const documentReference = credential.supportingDocumentUrl.trim();
+            const hasPrivateDocument = Boolean(user && isPrivateCredentialPath(documentReference, user.id));
+            const hasLegacyDocument = isLegacyCredentialUrl(documentReference);
+            const uploadFeedback = credentialUploadFeedback[credential.id];
             return isEditing ? <div key={credential.id} className="nested-editor-card">
               <div className="nested-editor-head"><strong>{credential.credentialName.trim() || `Credential ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setCredentials((current) => current.filter((entry) => entry.id !== credential.id)); setEditingCredentialId(null); }}>Remove</button></div>
               <div className="tool-form-grid marketplace-editor-grid">
@@ -1244,11 +1410,35 @@ export function ProfessionalProfileEditor() {
                 <label className="field"><span className="field-label">Credential jurisdiction <span className="field-optional">Optional</span></span><input value={credential.jurisdiction} onChange={(event) => updateCredential(credential.id, { jurisdiction: event.target.value })} placeholder="Florida, Ontario, England..." /></label>
                 <label className="field"><span className="field-label">Issue date</span><input type="date" value={credential.issueDate} onChange={(event) => updateCredential(credential.id, { issueDate: event.target.value })} /></label>
                 <label className="field"><span className="field-label">Expiration date</span><input type="date" value={credential.expirationDate} onChange={(event) => updateCredential(credential.id, { expirationDate: event.target.value })} /></label>
-                <label className="field field-full"><span className="field-label">Supporting document URL</span><input type="url" value={credential.supportingDocumentUrl} onChange={(event) => updateCredential(credential.id, { supportingDocumentUrl: event.target.value })} placeholder="Optional private, access-controlled link for review" /><span className="field-help">This link is review material and is not shown on your public profile. Use a private link unless you intend anyone with the URL to access the file.</span></label>
-                <label className="field field-full"><span className="field-label">Supporting reference URL</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder="Optional public verification link" /></label>
+                <div className="field field-full">
+                  <span className="field-label">Supporting document <span className="field-optional">Optional</span></span>
+                  <input
+                    ref={(element) => { credentialInputRefs.current[credential.id] = element; }}
+                    className="sr-only"
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    onChange={(event) => chooseCredentialDocument(credential.id, event.target.files?.[0] ?? null)}
+                  />
+                  <div className="button-row">
+                    <button type="button" className="button button-secondary" onClick={() => credentialInputRefs.current[credential.id]?.click()}>
+                      {hasPrivateDocument || hasLegacyDocument ? "Replace document" : "Select document"}
+                    </button>
+                    {hasPrivateDocument ? <button type="button" className="hero-text-link" onClick={() => void viewCredentialDocument(credential)}>View private document</button> : null}
+                    {selectedCredentialFiles[credential.id] ? <button type="button" className="hero-text-link" onClick={() => {
+                      setSelectedCredentialFiles((current) => { const next = { ...current }; delete next[credential.id]; return next; });
+                      setCredentialUploadFeedback((current) => { const next = { ...current }; delete next[credential.id]; return next; });
+                      if (credentialInputRefs.current[credential.id]) credentialInputRefs.current[credential.id]!.value = "";
+                    }}>Clear selection</button> : null}
+                  </div>
+                  {hasPrivateDocument ? <span className="field-help">A private document is on file. Temporary owner access expires after 5 minutes.</span> : null}
+                  {hasLegacyDocument ? <span className="field-help">An existing external evidence link is retained for review. Replacing it stores the new file in Elevare&apos;s private credential bucket.</span> : null}
+                  {!hasPrivateDocument && !hasLegacyDocument ? <span className="field-help">PDF, JPG, PNG, or WebP up to 8 MB. The file is private and is uploaded when you save your profile.</span> : null}
+                  {uploadFeedback ? <span className={uploadFeedback.kind === "error" ? "field-error" : "field-help"} role={uploadFeedback.kind === "error" ? "alert" : "status"}>{uploadFeedback.message}</span> : null}
+                </div>
+                <label className="field field-full"><span className="field-label">Supporting reference URL</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder="Optional public verification link" /><span className="field-help">This may help reviewers confirm the credential, but it does not make the credential verified.</span><FieldError name="credentials" errors={fieldErrors} /></label>
               </div>
               <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!credential.credentialName.trim() || !credential.organizationName.trim()} onClick={() => setEditingCredentialId(null)}>Done</button></div>
-            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${verificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode)}{credential.expirationDate ? ` · Expires ${credential.expirationDate}` : ""}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>Edit</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>Remove</button></div></div>;
+            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${verificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode)}{credential.expirationDate ? ` · Expires ${credential.expirationDate}` : ""}{hasPrivateDocument ? " · Private evidence on file" : hasLegacyDocument ? " · External evidence retained" : ""}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>Edit</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>Remove</button></div></div>;
           })}<button type="button" className="button button-secondary" onClick={addCredential}>+ Add credential</button></div>
         </div> : null}
       </article>
