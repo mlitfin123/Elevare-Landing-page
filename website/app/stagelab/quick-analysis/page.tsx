@@ -62,7 +62,7 @@ export default function QuickAnalysisPage() {
       <section className="section quick-analysis-intro-grid">
         <article className="panel"><span className="stat-label">Preparing for a show?</span><h2>Competition Prep</h2><p>See how your visible conditioning and physique align with your selected division and current prep timeline.</p></article>
         <article className="panel"><span className="stat-label">Just curious?</span><h2>Physique Check</h2><p>See how close your current physique looks to competition-level conditioning without needing a show date.</p></article>
-        <article className="panel"><span className="stat-label">Secure checkout</span><h2>Pay once through Stripe.</h2><p>The {QUICK_ANALYSIS_PRICE_DISPLAY} USD payment is non-recurring and covers one successfully completed website analysis.</p></article>
+        <article className="panel"><span className="stat-label">Secure checkout</span><h2>Pay once through Stripe.</h2><p>The {QUICK_ANALYSIS_PRICE_DISPLAY} payment is non-recurring and covers one successfully completed website analysis.</p></article>
       </section>
 
       <section className="section quick-analysis-checkout-layout" id="start-analysis">
