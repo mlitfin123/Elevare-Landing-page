@@ -3264,6 +3264,7 @@ select {
 
 .quick-analysis-price {
   display: grid;
+  flex: 0 0 auto;
   min-width: 104px;
   padding: 14px;
   border: 1px solid rgba(116, 200, 214, 0.22);
@@ -3275,6 +3276,7 @@ select {
 .quick-analysis-price strong {
   font-size: 25px;
   letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .quick-analysis-price span {
