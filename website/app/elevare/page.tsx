@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { TrackedLink } from "@/components/TrackedLink";
 import { getMarketplaceCategories } from "@/lib/marketplace";
 import { buildMetadata } from "@/lib/site";
@@ -14,38 +15,54 @@ export default async function ElevarePage() {
 
   return (
     <div className="container">
-      <section className="hero">
-        <div className="eyebrow">Elevare</div>
-        <h1>Find the right support for your goals.</h1>
-        <p>
-          Elevare is the marketplace layer inside ElevareFit for browsing published profiles, saving the people
-          you want to compare, and sending lightweight consultation requests when the fit looks right.
-        </p>
-        <div className="button-row">
-          <TrackedLink
-            className="button button-primary"
-            href="/professionals/"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Find your match",
-              cta_context: "elevare_hero",
-              product: "Elevare",
-            }}
-          >
-            Find your match
-          </TrackedLink>
-          <TrackedLink
-            className="button button-secondary"
-            href="/account/professional-profile/"
-            eventName="cta_click"
-            eventParams={{
-              cta_name: "Join as a Pro",
-              cta_context: "elevare_hero",
-              product: "Elevare",
-            }}
-          >
-            Join as a Pro
-          </TrackedLink>
+      <section className="hero product-hero">
+        <div className="product-hero-copy">
+          <div className="eyebrow">Elevare</div>
+          <h1>Find the right support for your goals.</h1>
+          <p>
+            Elevare is the marketplace layer inside ElevareFit for browsing published profiles, saving the people
+            you want to compare, and sending lightweight consultation requests when the fit looks right.
+          </p>
+          <div className="button-row">
+            <TrackedLink
+              className="button button-primary"
+              href="/professionals/"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Find your match",
+                cta_context: "elevare_hero",
+                product: "Elevare",
+              }}
+            >
+              Find your match
+            </TrackedLink>
+            <TrackedLink
+              className="button button-secondary"
+              href="/account/professional-profile/"
+              eventName="cta_click"
+              eventParams={{
+                cta_name: "Join as a Pro",
+                cta_context: "elevare_hero",
+                product: "Elevare",
+              }}
+            >
+              Join as a Pro
+            </TrackedLink>
+          </div>
+        </div>
+
+        <div className="product-hero-visual">
+          <div className="product-hero-logo-frame product-hero-logo-frame-wordmark">
+            <Image
+              src="/elevare-wordmark.png"
+              alt="Elevare professional marketplace logo"
+              width={1086}
+              height={362}
+              sizes="(max-width: 720px) 240px, 360px"
+              className="product-hero-logo"
+              priority
+            />
+          </div>
         </div>
       </section>
 

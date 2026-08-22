@@ -359,6 +359,15 @@ select {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.product-hero-logo-frame-wordmark {
+  padding: 26px 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.98), transparent 62%),
+    linear-gradient(145deg, #eef5f7, #c8d8dd);
+  border-color: rgba(104, 199, 212, 0.42);
+}
+
 .product-hero-logo {
   display: block;
   width: 100%;
