@@ -41,7 +41,7 @@ test("all Prep Files rely on ArticleLayout for their single H1", () => {
   const prepFiles = walkFiles(path.join(projectRoot, "content", "blog"))
     .filter((filePath) => /mens-physique-classic-physique-prep-\d+-weeks-out\.mdx$/.test(filePath));
 
-  assert.equal(prepFiles.length, 12);
+  assert.equal(prepFiles.length, 13);
 
   for (const filePath of prepFiles) {
     const source = fs.readFileSync(filePath, "utf8");
