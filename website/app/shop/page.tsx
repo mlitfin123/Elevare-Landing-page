@@ -40,13 +40,13 @@ export default async function ShopPage() {
       <section className="hero shop-hero">
         <div className="eyebrow">Shop</div>
         <h1>ElevareFit Shop</h1>
-        <p>Products will be available here as they launch.</p>
+        <p>Competition prep essentials, built for show day and beyond.</p>
       </section>
 
       <section className="section" aria-labelledby="shop-products-title">
         <div className="section-head">
           <div className="eyebrow">Products</div>
-          <h2 id="shop-products-title">Products from ElevareFit.</h2>
+          <h2 id="shop-products-title">Featured Products</h2>
         </div>
 
         <div className="shop-product-grid">
@@ -74,9 +74,7 @@ export default async function ShopPage() {
                 </span>
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
-                {availability === "coming_soon" ? (
-                  <p className="shop-availability-note">Sales are not open yet.</p>
-                ) : availability === "restocking" ? (
+                {availability === "coming_soon" ? null : availability === "restocking" ? (
                   <p className="shop-availability-note">This product is temporarily unavailable.</p>
                 ) : (
                   <ShopCheckout productId={product.id} />

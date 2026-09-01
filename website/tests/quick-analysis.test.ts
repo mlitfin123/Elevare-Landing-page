@@ -631,6 +631,8 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.doesNotMatch(checkoutRoute, /success_url:|cancel_url:/);
   assert.match(checkoutRoute, /clientSecret: session\.client_secret/);
   assert.match(checkoutRoute, /payment_method_types: \["card"\]/);
+  assert.match(checkoutRoute, /CHECKOUT_SESSION_TTL_MS = 35 \* 60 \* 1_000/);
+  assert.match(checkoutRoute, /expires_at: Math\.floor\(checkoutNonceExpiresAt\.getTime\(\) \/ 1_000\)/);
   assert.match(checkoutRoute, /analysis_mode: context\.analysisMode/);
   const ctaTracker = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCtaViewTracker.tsx"), "utf8");
   const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");

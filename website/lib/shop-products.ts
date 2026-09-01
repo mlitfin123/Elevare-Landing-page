@@ -19,7 +19,7 @@ export const shopProducts: readonly ShopProduct[] = [
     slug: "show-day-kit",
     name: "Show Day Kit",
     status: "coming_soon",
-    description: "Final product details and availability will be announced before sales open.",
+    description: "Everything you need for show day, organized in one convenient kit.",
     image: null,
     stripePriceId: null,
     stripeShippingRateId: null,
