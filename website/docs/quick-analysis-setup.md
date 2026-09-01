@@ -31,7 +31,8 @@ Confirm that the existing Vercel variables `SECOND_SUPABASE_URL` and `SECOND_SUP
 6. Subscribe it to `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
 7. Copy the endpoint signing secret into `STRIPE_WEBHOOK_SECRET`.
 8. Put the matching test secret key in `STRIPE_SECRET_KEY`.
-9. Complete the test matrix before replacing all three Stripe values with their matching live-mode values.
+9. Copy the matching publishable key into `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`. This key is public by design and is used only to mount Stripe Embedded Checkout; all price and payment creation logic remains server-side.
+10. Complete the test matrix before replacing all Stripe values with their matching live-mode values.
 
 Never mix a test secret key, live price, or webhook secret from different Stripe modes.
 
@@ -51,6 +52,7 @@ Add these to Preview first, then Production after the test flow succeeds:
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 STRIPE_QUICK_ANALYSIS_PRICE_ID
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 OPENAI_API_KEY
 OPENAI_QUICK_ANALYSIS_MODEL
 QUICK_ANALYSIS_TOKEN_PEPPER
@@ -65,7 +67,7 @@ Generate independent high-entropy values for `QUICK_ANALYSIS_TOKEN_PEPPER` and `
 
 Use Stripe test cards and a mocked or tightly budgeted OpenAI project. Verify:
 
-1. Successful checkout returns to the clean result route and activates one entitlement.
+1. Successful checkout completes in the embedded payment form, returns through the verified result route, and activates one entitlement.
 2. Canceled and failed payments do not activate an entitlement.
 3. Duplicate webhooks and a replayed Stripe success return do not create another purchase or another entitlement.
 4. Three and five valid JPEG, PNG, or WebP photos work.

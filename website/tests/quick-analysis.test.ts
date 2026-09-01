@@ -597,7 +597,9 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   assert.match(checkout, /useState\(false\)/);
   assert.match(checkout, /Privacy Policy/);
   assert.match(checkout, /Terms of Service/);
-  assert.match(checkout, /window\.location\.assign\(payload\.checkoutUrl\)/);
+  assert.match(checkout, /EmbeddedCheckoutProvider/);
+  assert.match(checkout, /EmbeddedCheckout className="quick-analysis-embedded-checkout"/);
+  assert.match(checkout, /window\.location\.assign\(`\/stagelab\/quick-analysis\/return\/\?session_id=/);
   assert.match(resultExperience, /Upload your check-in/);
   assert.match(resultExperience, /Upload your physique photos/);
   assert.match(styles, /\.quick-analysis-faq summary:focus-visible/);
@@ -613,6 +615,11 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.match(checkout, /analysisMode === "competition_prep" && competitionStatus === "preparing"/);
   assert.match(checkout, /analysisMode === "physique_check" \? "assessing"/);
   assert.match(checkoutRoute, /line_items: \[\{ price: priceId, quantity: 1 \}\]/);
+  assert.match(checkoutRoute, /ui_mode: "embedded"/);
+  assert.match(checkoutRoute, /redirect_on_completion: "if_required"/);
+  assert.match(checkoutRoute, /return_url:/);
+  assert.doesNotMatch(checkoutRoute, /success_url:|cancel_url:/);
+  assert.match(checkoutRoute, /clientSecret: session\.client_secret/);
   assert.match(checkoutRoute, /payment_method_types: \["card"\]/);
   assert.match(checkoutRoute, /analysis_mode: context\.analysisMode/);
   const ctaTracker = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCtaViewTracker.tsx"), "utf8");

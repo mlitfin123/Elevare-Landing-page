@@ -119,7 +119,7 @@ test("source attribution reaches the existing funnel without entering analysis d
   assert.match(checkout, /quick_analysis_view[\s\S]*source/);
   assert.match(checkout, /quick_analysis_checkout_started[\s\S]*source/);
   assert.match(checkoutRoute, /separateQuickAnalysisAttribution/);
-  assert.match(checkoutRoute, /success_url:[^\n]*sourceSuffix/);
+  assert.match(checkoutRoute, /return_url:[^\n]*sourceSuffix/);
   assert.match(returnRoute, /purchase=confirmed\$\{sourceSuffix\}/);
   assert.match(resultExperience, /quick_analysis_purchase[\s\S]*source: attributionSource\.current/);
   assert.match(resultExperience, /quick_analysis_completed[\s\S]*source: attributionSource\.current/);

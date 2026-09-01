@@ -1,7 +1,9 @@
 "use client";
 
+import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import {
@@ -14,9 +16,51 @@ import {
   type QuickAnalysisMode,
 } from "@/lib/quick-analysis";
 
-type CheckoutResponse = { checkoutUrl?: string; error?: string };
+type CheckoutResponse = { clientSecret?: string; checkoutSessionId?: string; error?: string };
 type CheckoutField = "analysisMode" | "division" | "weeksOut" | "ageConfirmed" | "aiConsentConfirmed";
 type CheckoutFieldErrors = Partial<Record<CheckoutField, string>>;
+
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+
+function QuickAnalysisEmbeddedPayment({
+  checkoutSessionId,
+  clientSecret,
+  source,
+  onCancel,
+}: {
+  checkoutSessionId: string;
+  clientSecret: string;
+  source: string | null | undefined;
+  onCancel: () => void;
+}) {
+  const handleComplete = useCallback(() => {
+    const sourceSuffix = source ? `&source=${encodeURIComponent(source)}` : "";
+    window.location.assign(`/stagelab/quick-analysis/return/?session_id=${encodeURIComponent(checkoutSessionId)}${sourceSuffix}`);
+  }, [checkoutSessionId, source]);
+  const options = useMemo(() => ({ clientSecret, onComplete: handleComplete }), [clientSecret, handleComplete]);
+
+  return (
+    <section className="quick-analysis-form quick-analysis-embedded-payment panel" aria-labelledby="quick-analysis-payment-title">
+      <div className="quick-analysis-form-head">
+        <div>
+          <div className="eyebrow">Secure payment</div>
+          <h2 id="quick-analysis-payment-title">Complete your one-time purchase.</h2>
+        </div>
+        <div className="quick-analysis-price" aria-label={`${formatQuickAnalysisPrice()} one time`}>
+          <strong>{formatQuickAnalysisPrice()}</strong>
+          <span>one time</span>
+        </div>
+      </div>
+      <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
+        <EmbeddedCheckout className="quick-analysis-embedded-checkout" />
+      </EmbeddedCheckoutProvider>
+      <button className="button button-secondary quick-analysis-payment-back" type="button" onClick={onCancel}>
+        Back to analysis details
+      </button>
+    </section>
+  );
+}
 
 export function QuickAnalysisCheckout() {
   const searchParams = useSearchParams();
@@ -29,6 +73,9 @@ export function QuickAnalysisCheckout() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [aiConsentConfirmed, setAiConsentConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null);
+  const [checkoutCancelled, setCheckoutCancelled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
 
@@ -57,6 +104,12 @@ export function QuickAnalysisCheckout() {
       return;
     }
 
+    if (!stripePromise) {
+      setError("Secure payment is temporarily unavailable. Please try again later.");
+      return;
+    }
+
+    setCheckoutCancelled(false);
     setSubmitting(true);
     trackEvent("quick_analysis_checkout_started", {
       product: "StageLab Quick Analysis",
@@ -82,21 +135,39 @@ export function QuickAnalysisCheckout() {
         }),
       });
       const payload = (await response.json()) as CheckoutResponse;
-      if (!response.ok || !payload.checkoutUrl) {
+      if (!response.ok || !payload.clientSecret || !payload.checkoutSessionId) {
         throw new Error(payload.error || "Checkout could not be started. Please try again.");
       }
-      window.location.assign(payload.checkoutUrl);
+      setClientSecret(payload.clientSecret);
+      setCheckoutSessionId(payload.checkoutSessionId);
+      setSubmitting(false);
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
       setSubmitting(false);
     }
   }
 
-  const paymentNotice = searchParams.get("cancelled") === "1"
+  const paymentNotice = checkoutCancelled || searchParams.get("cancelled") === "1"
     ? "Checkout was canceled. You have not been charged."
     : searchParams.has("payment")
       ? "We could not verify that payment. If you were charged, contact support so we can help."
       : null;
+
+  if (clientSecret && checkoutSessionId) {
+    return (
+      <QuickAnalysisEmbeddedPayment
+        checkoutSessionId={checkoutSessionId}
+        clientSecret={clientSecret}
+        source={source}
+        onCancel={() => {
+          setClientSecret(null);
+          setCheckoutSessionId(null);
+          setCheckoutCancelled(true);
+          setSubmitting(false);
+        }}
+      />
+    );
+  }
 
   return (
     <form className="quick-analysis-form panel" onSubmit={handleSubmit} noValidate>
@@ -202,7 +273,7 @@ export function QuickAnalysisCheckout() {
 
       <div className="form-actions">
         <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting}>
-          {submitting ? "Opening secure checkout..." : `Get My Quick Analysis — ${formatQuickAnalysisPrice()}`}
+          {submitting ? "Loading secure payment..." : `Get My Quick Analysis — ${formatQuickAnalysisPrice()}`}
         </button>
         <p className="fine-print">
           No subscription, automatic renewal, StageLab app credit, or mobile entitlement. By continuing, you agree to the <a href="/terms-of-service/">Terms of Service</a>.

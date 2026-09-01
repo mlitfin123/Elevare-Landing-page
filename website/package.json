@@ -32,6 +32,8 @@
   ],
   "license": "UNLICENSED",
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.8.2",
+    "@stripe/stripe-js": "^9.15.0",
     "@supabase/supabase-js": "^2.112.3",
     "@vercel/analytics": "^2.0.1",
     "gray-matter": "^4.0.3",

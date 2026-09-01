@@ -3391,6 +3391,21 @@ select {
   width: 100%;
 }
 
+.quick-analysis-embedded-payment {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.quick-analysis-embedded-checkout {
+  width: 100%;
+  min-width: 0;
+}
+
+.quick-analysis-payment-back {
+  width: 100%;
+  margin-top: 16px;
+}
+
 .quick-analysis-faq-list {
   display: grid;
   max-width: 920px;

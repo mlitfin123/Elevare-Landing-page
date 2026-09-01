@@ -51,10 +51,11 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+        ui_mode: "embedded",
+        redirect_on_completion: "if_required",
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}${sourceSuffix}`,
-        cancel_url: `${origin}/stagelab/quick-analysis/?cancelled=1${sourceSuffix}`,
+        return_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}${sourceSuffix}`,
         metadata: {
           product: "stagelab_quick_analysis",
           quick_analysis_id: analysisId,
@@ -76,10 +77,10 @@ export async function POST(request: Request) {
       { idempotencyKey: `quick-analysis-checkout-${analysisId}` },
     );
 
-    if (!session.url) throw new Error("Stripe Checkout did not return a URL.");
+    if (!session.client_secret) throw new Error("Stripe Embedded Checkout did not return a client secret.");
     await attachCheckoutSession(supabase, analysisId, session.id);
     const response = NextResponse.json(
-      { checkoutUrl: session.url },
+      { clientSecret: session.client_secret, checkoutSessionId: session.id },
       { headers: { "Cache-Control": "no-store" } },
     );
     response.cookies.set({
