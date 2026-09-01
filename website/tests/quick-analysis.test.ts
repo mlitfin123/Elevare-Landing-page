@@ -625,7 +625,7 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.match(checkout, /analysisMode === "competition_prep" && competitionStatus === "preparing"/);
   assert.match(checkout, /analysisMode === "physique_check" \? "assessing"/);
   assert.match(checkoutRoute, /line_items: \[\{ price: priceId, quantity: 1 \}\]/);
-  assert.match(checkoutRoute, /ui_mode: "embedded"/);
+  assert.match(checkoutRoute, /ui_mode: "embedded_page"/);
   assert.match(checkoutRoute, /redirect_on_completion: "if_required"/);
   assert.match(checkoutRoute, /return_url:/);
   assert.doesNotMatch(checkoutRoute, /success_url:|cancel_url:/);
