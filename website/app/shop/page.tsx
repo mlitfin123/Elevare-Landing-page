@@ -40,7 +40,7 @@ export default async function ShopPage() {
       <section className="hero shop-hero">
         <div className="eyebrow">Shop</div>
         <h1>ElevareFit Shop</h1>
-        <p>Competition prep essentials, built for show day and beyond.</p>
+        <p>Fitness essentials for training, prep, and performance.</p>
       </section>
 
       <section className="section" aria-labelledby="shop-products-title">
