@@ -4051,6 +4051,132 @@ select {
   }
 }
 
+.shop-hero {
+  max-width: 820px;
+}
+
+.shop-product-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 900px;
+}
+
+.shop-product-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+  padding: 0;
+  overflow: hidden;
+}
+
+.shop-product-media {
+  position: relative;
+  display: grid;
+  min-height: 340px;
+  place-items: center;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(116, 200, 214, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(22, 22, 36, 0.9), rgba(8, 8, 16, 0.96));
+  border-right: 1px solid rgba(42, 42, 62, 0.86);
+}
+
+.shop-product-media img {
+  object-fit: cover;
+}
+
+.shop-product-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 5vw, 54px);
+}
+
+.shop-product-copy h3 {
+  margin: 10px 0 8px;
+  font-size: clamp(30px, 5vw, 48px);
+  letter-spacing: -0.045em;
+}
+
+.shop-product-copy > p {
+  max-width: 52ch;
+}
+
+.shop-availability-note {
+  margin: 18px 0 0;
+  color: var(--brand-bright);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shop-purchase-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-top: 22px;
+}
+
+.shop-embedded-payment {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.shop-embedded-checkout {
+  width: 100%;
+  min-height: 500px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+.shop-checkout-back {
+  justify-self: start;
+}
+
+.shop-confirmation {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.shop-confirmation .panel {
+  display: grid;
+  gap: 14px;
+}
+
+.shop-confirmation h1,
+.shop-confirmation p {
+  margin: 0;
+}
+
+.shop-confirmation .button {
+  justify-self: start;
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .shop-product-card {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-product-media {
+    min-height: 240px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(42, 42, 62, 0.86);
+  }
+
+  .shop-product-copy {
+    padding: 24px;
+  }
+}
+
 .site-footer {
   padding-bottom: 26px;
 }

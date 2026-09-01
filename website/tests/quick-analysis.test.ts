@@ -607,6 +607,16 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   assert.doesNotMatch(productionPriceSources, /\$0\.99|value:\s*0\.99/);
 });
 
+test("optional recent-analysis checks stay quiet when no access cookie exists", () => {
+  const returnLink = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisReturnLink.tsx"), "utf8");
+  const statusRoute = fs.readFileSync(path.join(projectRoot, "app", "api", "quick-analysis", "status", "route.ts"), "utf8");
+
+  assert.match(returnLink, /status\/\?optional=1/);
+  assert.match(statusRoute, /optionalAccessCheck/);
+  assert.match(statusRoute, /error\.code === "MISSING_ACCESS_TOKEN"/);
+  assert.match(statusRoute, /\{ state: null \}/);
+});
+
 test("both modes share the same $0.99 entitlement and the UI branches without storing sensitive analytics", () => {
   const checkout = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCheckout.tsx"), "utf8");
   const report = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisReport.tsx"), "utf8");

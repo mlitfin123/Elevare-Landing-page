@@ -57,6 +57,7 @@ const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-da
 const staticSiteRoutes = [
   "/",
   "/apps",
+  "/shop",
   "/logbook",
   "/stagelab",
   "/stagelab/quick-analysis",

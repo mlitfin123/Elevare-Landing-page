@@ -17,6 +17,7 @@ export function Footer() {
           <Link href="/workouts/">Workouts</Link>
           <Link href="/nutrition/">Nutrition</Link>
           <Link href="/apps/">Apps</Link>
+          <Link href="/shop/">Shop</Link>
           <Link href="/blog/">Blog</Link>
           <Link href="/professionals/">Find Support</Link>
           <AuthNavigationLink />

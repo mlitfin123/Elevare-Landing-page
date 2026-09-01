@@ -20,7 +20,7 @@ export function QuickAnalysisReturnLink() {
 
     async function checkForRecentAnalysis() {
       try {
-        const response = await fetch("/api/quick-analysis/status/", {
+        const response = await fetch("/api/quick-analysis/status/?optional=1", {
           method: "POST",
           cache: "no-store",
           signal: controller.signal,

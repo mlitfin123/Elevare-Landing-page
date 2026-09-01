@@ -4,6 +4,7 @@ import {
   toQuickAnalysisPublicState,
 } from "@/lib/quick-analysis-repository";
 import {
+  QuickAnalysisServerError,
   assertQuickAnalysisSameOrigin,
   enforceQuickAnalysisRateLimit,
   getQuickAnalysisAccessToken,
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const optionalAccessCheck = new URL(request.url).searchParams.get("optional") === "1";
   try {
     assertQuickAnalysisSameOrigin(request);
     const supabase = getQuickAnalysisSupabase();
@@ -26,6 +28,16 @@ export async function POST(request: Request) {
       { headers: { "Cache-Control": "no-store", Pragma: "no-cache" } },
     );
   } catch (error) {
+    if (
+      optionalAccessCheck &&
+      error instanceof QuickAnalysisServerError &&
+      error.code === "MISSING_ACCESS_TOKEN"
+    ) {
+      return NextResponse.json(
+        { state: null },
+        { headers: { "Cache-Control": "no-store", Pragma: "no-cache" } },
+      );
+    }
     return quickAnalysisErrorResponse(error);
   }
 }
