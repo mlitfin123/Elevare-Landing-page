@@ -194,19 +194,26 @@ test("public marketplace output excludes auth identifiers and reporting resolves
   assert.match(migration, /submit_professional_profile_report/);
 });
 
-test("Google Analytics remains opt-in while Vercel provides cookie-free aggregate measurement", () => {
+test("Google Consent Mode keeps analytics storage opt-in while Vercel provides cookie-free aggregate measurement", () => {
   const consent = readFileSync(`${projectRoot}components/AnalyticsConsent.tsx`, "utf8");
+  const consentState = readFileSync(`${projectRoot}lib/analytics-consent.ts`, "utf8");
   const layout = readFileSync(`${projectRoot}app/layout.tsx`, "utf8");
   const packageJson = readFileSync(`${projectRoot}package.json`, "utf8");
 
-  assert.match(consent, /analytics_storage: "denied"/);
-  assert.match(consent, /nextChoice === "accepted"/);
+  assert.match(consentState, /analytics_storage: storedChoice === "accepted" \? "granted" : "denied"/);
+  assert.match(consent, /choice === "accepted"/);
+  assert.match(`${consent}\n${consentState}`, /ad_storage: "denied"/);
+  assert.match(`${consent}\n${consentState}`, /ad_user_data: "denied"/);
+  assert.match(`${consent}\n${consentState}`, /ad_personalization: "denied"/);
   assert.match(consent, /Decline Google Analytics/);
   assert.match(consent, /clearAnalyticsCookies\(\)/);
-  assert.doesNotMatch(layout, /googletagmanager\.com\/gtag\/js/);
+  assert.match(layout, /google-analytics-consent-default/);
+  assert.match(layout, /strategy="beforeInteractive"/);
+  assert.match(layout, /googletagmanager\.com\/gtag\/js/);
+  assert.match(layout, /<GoogleAnalyticsPageTracker measurementId=\{googleAnalyticsId\}/);
   assert.match(`${layout}\n${packageJson}`, /@vercel\/analytics/);
   assert.match(layout, /<Analytics \/>/);
-  assert.match(layout, /<AnalyticsConsent measurementId=\{googleAnalyticsId\}/);
+  assert.match(layout, /<AnalyticsConsent \/>/);
 });
 
 test("legal source files map to clean production routes and StageLab links never use html filenames", () => {

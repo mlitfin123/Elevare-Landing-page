@@ -3,7 +3,7 @@
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { trackEvent } from "@/lib/analytics";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import {
@@ -78,8 +78,11 @@ export function QuickAnalysisCheckout() {
   const [checkoutCancelled, setCheckoutCancelled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
+  const hasTrackedView = useRef(false);
 
   useEffect(() => {
+    if (hasTrackedView.current) return;
+    hasTrackedView.current = true;
     trackEvent("quick_analysis_view", { product: "StageLab Quick Analysis", source });
   }, [source]);
 

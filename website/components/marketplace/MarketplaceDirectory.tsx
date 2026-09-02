@@ -360,7 +360,7 @@ function MarketplaceDirectoryState({
     trackEvent("professional_search_performed", {
       source_page: sourcePage,
       category: nextCategorySlug ?? "all",
-      location: nextFilters.location,
+      has_location: Boolean(nextFilters.location.trim()),
       service_mode: nextFilters.serviceMode,
       specialty: nextFilters.specialty,
       query_length: nextFilters.query.length,
@@ -371,7 +371,7 @@ function MarketplaceDirectoryState({
       trackEvent("professional_search_zero_results", {
         source_page: sourcePage,
         category: nextCategorySlug ?? "all",
-        location: nextFilters.location,
+        has_location: Boolean(nextFilters.location.trim()),
         service_mode: nextFilters.serviceMode,
         specialty: nextFilters.specialty,
         fallback_result_count: nextFallbackCount,

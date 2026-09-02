@@ -1,42 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ANALYTICS_CONSENT_STORAGE_KEY, type AnalyticsConsentChoice } from "@/lib/analytics-consent";
-import { trackPageView } from "@/lib/analytics";
-
-type AnalyticsConsentProps = {
-  measurementId: string;
-};
-
-function initializeConsentMode() {
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function gtag(...args: unknown[]) {
-    window.dataLayer.push(args);
-  };
-  window.gtag("consent", "default", {
-    analytics_storage: "denied",
-    ad_storage: "denied",
-    ad_user_data: "denied",
-    ad_personalization: "denied",
-  });
-}
-
-function loadAnalytics(measurementId: string) {
-  initializeConsentMode();
-  window.gtag?.("consent", "update", { analytics_storage: "granted" });
-
-  if (!document.getElementById("google-analytics-script")) {
-    const script = document.createElement("script");
-    script.id = "google-analytics-script";
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
-    document.head.appendChild(script);
-  }
-
-  window.gtag?.("js", new Date());
-  window.gtag?.("config", measurementId, { send_page_view: false });
-}
+import {
+  readAnalyticsConsentChoice,
+  storeAnalyticsConsentChoice,
+  type AnalyticsConsentChoice,
+} from "@/lib/analytics-consent";
 
 function clearAnalyticsCookies() {
   document.cookie.split(";").forEach((cookie) => {
@@ -48,41 +17,32 @@ function clearAnalyticsCookies() {
   });
 }
 
-export function AnalyticsConsent({ measurementId }: AnalyticsConsentProps) {
-  const pathname = usePathname();
-  const [choice, setChoice] = useState<AnalyticsConsentChoice | null>(null);
+function updateGoogleConsent(choice: AnalyticsConsentChoice) {
+  window.gtag?.("consent", "update", {
+    analytics_storage: choice === "accepted" ? "granted" : "denied",
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+  });
+}
+
+export function AnalyticsConsent() {
   const [isChoosing, setIsChoosing] = useState(false);
 
   useEffect(() => {
-    initializeConsentMode();
-    const storedChoice = window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY);
-    const nextChoice = storedChoice === "accepted" || storedChoice === "declined" ? storedChoice : null;
+    const nextChoice = readAnalyticsConsentChoice();
     const hydrationTask = window.setTimeout(() => {
-      setChoice(nextChoice);
       setIsChoosing(nextChoice === null);
     }, 0);
-    if (nextChoice === "accepted") loadAnalytics(measurementId);
     return () => window.clearTimeout(hydrationTask);
-  }, [measurementId]);
-
-  useEffect(() => {
-    if (choice !== "accepted") return;
-    trackPageView(pathname, measurementId);
-  }, [choice, measurementId, pathname]);
+  }, []);
 
   function saveChoice(nextChoice: AnalyticsConsentChoice) {
-    window.localStorage.setItem(ANALYTICS_CONSENT_STORAGE_KEY, nextChoice);
-    setChoice(nextChoice);
+    storeAnalyticsConsentChoice(nextChoice);
     setIsChoosing(false);
+    updateGoogleConsent(nextChoice);
 
-    if (nextChoice === "accepted") {
-      loadAnalytics(measurementId);
-      return;
-    }
-
-    initializeConsentMode();
-    window.gtag?.("consent", "update", { analytics_storage: "denied" });
-    clearAnalyticsCookies();
+    if (nextChoice === "declined") clearAnalyticsCookies();
   }
 
   return (
@@ -92,7 +52,7 @@ export function AnalyticsConsent({ measurementId }: AnalyticsConsentProps) {
           <div>
             <strong>Optional Google Analytics</strong>
             <p>
-              ElevareFit uses anonymous, cookie-free traffic measurement. With your permission, Google Analytics provides additional usage insights. Read our{" "}
+              ElevareFit uses anonymous, cookie-free traffic measurement. With your permission, Google Analytics may use analytics cookies to provide additional usage insights. Read our{" "}
               <a href="/privacy-policy/">Privacy Policy</a>.
             </p>
           </div>

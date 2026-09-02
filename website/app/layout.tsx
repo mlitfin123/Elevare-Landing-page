@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { DM_Mono, DM_Sans } from "next/font/google";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { Footer } from "@/components/Footer";
+import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
 import { StructuredData } from "@/components/StructuredData";
+import { buildGoogleAnalyticsBootstrap } from "@/lib/analytics-consent";
 import { buildSiteStructuredData, siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -44,9 +47,30 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        {googleAnalyticsId ? (
+          <>
+            <Script
+              id="google-analytics-consent-default"
+              strategy="beforeInteractive"
+              dangerouslySetInnerHTML={{ __html: buildGoogleAnalyticsBootstrap(googleAnalyticsId) }}
+            />
+            <Script
+              id="google-analytics-script"
+              src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleAnalyticsId)}`}
+              strategy="afterInteractive"
+            />
+          </>
+        ) : null}
+      </head>
       <body className={`${dmSans.variable} ${dmMono.variable}`}>
         <StructuredData data={buildSiteStructuredData()} />
-        {googleAnalyticsId ? <AnalyticsConsent measurementId={googleAnalyticsId} /> : null}
+        {googleAnalyticsId ? (
+          <>
+            <AnalyticsConsent />
+            <GoogleAnalyticsPageTracker measurementId={googleAnalyticsId} />
+          </>
+        ) : null}
         <div className="site-shell">
           <Header />
           <main className="page-main">{children}</main>
