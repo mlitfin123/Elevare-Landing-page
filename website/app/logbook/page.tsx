@@ -108,6 +108,23 @@ export default function LogbookPage() {
         </div>
       </section>
 
+      <section className="section logbook-demo" aria-labelledby="logbook-demo-heading">
+        <div className="logbook-demo-copy">
+          <h2 id="logbook-demo-heading">See Logbook in Action</h2>
+          <p>See how Logbook helps you track your nutrition, build workouts, log your training, and follow your progress.</p>
+        </div>
+        <div className="logbook-video-frame">
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/Stqu2-1rN_8"
+            title="Logbook fitness tracker app walkthrough"
+            loading="lazy"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        </div>
+      </section>
+
       <section className="section">
         <div className="grid-3">
           <article className="panel"><span className="stat-label">Workouts</span><h3>Keep a reliable training history</h3><p>Record exercises, sets, reps, and performance so each session has context from the one before it.</p></article>
