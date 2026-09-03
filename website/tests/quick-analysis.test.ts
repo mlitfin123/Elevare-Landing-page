@@ -570,6 +570,14 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   assert.match(landingPage, /No subscription/);
   assert.match(landingPage, /No account required/);
   assert.match(landingPage, /Photos never stored by ElevareFit/);
+  assert.match(landingPage, /See How It Works/);
+  assert.match(landingPage, /Watch a quick walkthrough of the StageLab Visual Analysis before getting yours\./);
+  assert.match(landingPage, /https:\/\/www\.youtube-nocookie\.com\/embed\/BbAHsUA-yH0/);
+  assert.match(landingPage, /title="StageLab Visual Analysis walkthrough"/);
+  assert.match(landingPage, /loading="lazy"/);
+  assert.doesNotMatch(landingPage, /youtube\.com\/embed\/BbAHsUA-yH0|autoplay=1/);
+  assert.ok(landingPage.indexOf("quick-analysis-intro-grid") < landingPage.indexOf("quick-analysis-demo"));
+  assert.ok(landingPage.indexOf("quick-analysis-demo") < landingPage.indexOf("quick-analysis-checkout-layout"));
   assert.match(landingPage, /<details className="quick-analysis-faq panel"/);
   assert.match(landingPage, /<summary>{faq\.question}<\/summary>/);
   assert.doesNotMatch(landingPage, /tool-faq-grid/);
@@ -602,6 +610,8 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   assert.match(checkout, /window\.location\.assign\(`\/stagelab\/quick-analysis\/return\/\?session_id=/);
   assert.match(resultExperience, /Upload your check-in/);
   assert.match(resultExperience, /Upload your physique photos/);
+  assert.match(styles, /\.quick-analysis-video-frame\s*{[\s\S]*aspect-ratio:\s*16\s*\/\s*9/);
+  assert.match(styles, /\.quick-analysis-video-frame iframe\s*{[\s\S]*width:\s*100%[\s\S]*height:\s*100%/);
   assert.match(styles, /\.quick-analysis-faq summary:focus-visible/);
   assert.match(styles, /@media \(max-width: 640px\)[\s\S]*\.quick-analysis-faq summary/);
   assert.doesNotMatch(productionPriceSources, /\$0\.99|value:\s*0\.99/);

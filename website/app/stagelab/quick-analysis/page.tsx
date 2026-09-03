@@ -65,6 +65,23 @@ export default function QuickAnalysisPage() {
         <article className="panel"><span className="stat-label">Secure checkout</span><h2>Pay once through Stripe.</h2><p>The {QUICK_ANALYSIS_PRICE_DISPLAY} payment is non-recurring and covers one successfully completed website analysis.</p></article>
       </section>
 
+      <section className="section quick-analysis-demo" aria-labelledby="quick-analysis-demo-heading">
+        <div className="quick-analysis-demo-copy">
+          <h2 id="quick-analysis-demo-heading">See How It Works</h2>
+          <p>Watch a quick walkthrough of the StageLab Visual Analysis before getting yours.</p>
+        </div>
+        <div className="quick-analysis-video-frame">
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/BbAHsUA-yH0"
+            title="StageLab Visual Analysis walkthrough"
+            loading="lazy"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        </div>
+      </section>
+
       <section className="section quick-analysis-checkout-layout" id="start-analysis">
         <div className="quick-analysis-checkout-copy">
           <div className="eyebrow">Before checkout</div>
