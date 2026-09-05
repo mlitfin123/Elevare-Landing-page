@@ -64,6 +64,7 @@ export async function generateMetadata({ params }: WorkoutPageProps) {
         title: "Workout category not found",
         description: "The requested workout category could not be found.",
         pathname: `/workouts/${slug}`,
+        localizedAlternates: true,
       });
     }
 
@@ -71,6 +72,7 @@ export async function generateMetadata({ params }: WorkoutPageProps) {
       title: goal.title,
       description: goal.description,
       pathname: `/workouts/${slug}`,
+      localizedAlternates: true,
     });
   }
 
@@ -81,6 +83,7 @@ export async function generateMetadata({ params }: WorkoutPageProps) {
       title: "Workout not found",
       description: "The requested workout template could not be found.",
       pathname: `/workouts/${slug}`,
+      localizedAlternates: true,
     });
   }
 
@@ -88,6 +91,7 @@ export async function generateMetadata({ params }: WorkoutPageProps) {
     title: workoutTemplate.seoTitle ?? workoutTemplate.name,
     description: workoutTemplate.seoDescription ?? buildWorkoutSummary(workoutTemplate),
     pathname: `/workouts/${workoutTemplate.slug}`,
+    localizedAlternates: true,
   });
 }
 

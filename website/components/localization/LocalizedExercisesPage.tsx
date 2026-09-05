@@ -110,7 +110,7 @@ async function ExerciseIndex({ locale }: { locale: Locale }) {
         <h1>{messages.index.title}</h1>
         <p className="page-intro">{messages.index.intro}</p>
         <div className="hero-actions">
-          <TrackedLink className="button button-primary" href="/workouts/" hrefLang="en" eventName="cta_click" eventParams={{ cta_name: "Browse workouts", cta_context: "localized_exercises_hero", product: "Logbook" }}>{messages.index.browseWorkouts}</TrackedLink>
+          <TrackedLink className="button button-primary" href={localizePathname("/workouts/", locale)} eventName="cta_click" eventParams={{ cta_name: "Browse workouts", cta_context: "localized_exercises_hero", product: "Logbook" }}>{messages.index.browseWorkouts}</TrackedLink>
           <TrackedLink className="button button-secondary" href={localizePathname("/logbook/", locale)} eventName="cta_click" eventParams={{ cta_name: "See Logbook", cta_context: "localized_exercises_hero", product: "Logbook" }}>{messages.index.learnLogbook}</TrackedLink>
         </div>
         <div className="hero-proof">

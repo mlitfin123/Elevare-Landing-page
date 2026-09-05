@@ -20,6 +20,8 @@ import {
   localizeExerciseText,
   localizeNutritionProduct,
 } from "../lib/i18n/catalog-content.ts";
+import { getLocalizedTool, translateCalculatorText } from "../lib/i18n/calculator-content.ts";
+import { tools } from "../lib/tools.ts";
 import english from "../locales/en/marketing.ts";
 import spanish from "../locales/es-419/marketing.ts";
 import portuguese from "../locales/pt-BR/marketing.ts";
@@ -29,6 +31,9 @@ import portugueseQuickAnalysis from "../locales/pt-BR/quick-analysis.ts";
 import englishCatalog from "../locales/en/catalog.ts";
 import spanishCatalog from "../locales/es-419/catalog.ts";
 import portugueseCatalog from "../locales/pt-BR/catalog.ts";
+import englishCalculators from "../locales/en/calculators.ts";
+import spanishCalculators from "../locales/es-419/calculators.ts";
+import portugueseCalculators from "../locales/pt-BR/calculators.ts";
 import {
   inferLocalizedDocumentLocale,
   setDocumentLanguage,
@@ -132,6 +137,31 @@ test("exercise and nutrition dictionaries preserve key and interpolation-placeho
   }
 });
 
+test("calculator dictionaries cover all tools and preserve message structure", () => {
+  assert.deepEqual(Object.keys(spanishCalculators), Object.keys(englishCalculators));
+  assert.deepEqual(Object.keys(portugueseCalculators), Object.keys(englishCalculators));
+  assert.deepEqual(leafPaths(spanishCalculators.shell), leafPaths(englishCalculators.shell));
+  assert.deepEqual(leafPaths(portugueseCalculators.shell), leafPaths(englishCalculators.shell));
+  assert.equal(Object.keys(spanishCalculators.toolTitles).length, tools.length);
+  assert.equal(Object.keys(portugueseCalculators.toolTitles).length, tools.length);
+
+  for (const tool of tools) {
+    assert.notEqual(getLocalizedTool(tool.slug, "es-419").title, "");
+    assert.notEqual(getLocalizedTool(tool.slug, "pt-BR").title, "");
+  }
+});
+
+test("calculator presentation content localizes without changing canonical values", () => {
+  assert.equal(translateCalculatorText("Calculate", "es-419"), "Calcular");
+  assert.equal(translateCalculatorText("Calculate", "pt-BR"), "Calcular");
+  assert.equal(translateCalculatorText("12 weeks out", "es-419"), "12 semanas para el show");
+  assert.equal(translateCalculatorText("12 weeks out", "pt-BR"), "12 semanas para o show");
+  assert.equal(translateCalculatorText("Men's Physique prep countdown", "es-419"), "Cuenta regresiva de preparación: Men's Physique");
+  assert.equal(translateCalculatorText("Men's Physique prep countdown", "pt-BR"), "Contagem regressiva de preparação: Men's Physique");
+  assert.equal(translateCalculatorText("Board shorts", "es-419"), "Shorts de Men's Physique");
+  assert.equal(translateCalculatorText("Board shorts", "pt-BR"), "Bermuda de Men's Physique");
+});
+
 test("database catalog content is localized at presentation while canonical identity and brands are preserved", () => {
   assert.equal(localizeExerciseName("Dumbbell Bench Press", "es-419"), "con mancuernas press de banca");
   assert.equal(localizeExerciseName("Dumbbell Bench Press", "pt-BR"), "com halteres supino");
@@ -226,10 +256,12 @@ test("localized pages preserve supported routes and identify deferred destinatio
   assert.match(home, /hrefLang=\{hrefLanguage/);
   assert.match(header, /hrefLang=\{englishOnlyHrefLang\}/);
   assert.match(footer, /hrefLang="en"/);
-  assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/exercises/", "/nutrition/"]);
+  assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"]);
+  assert.equal(localizePathname("/calculators/protein-calculator/", "es-419"), "/es/calculators/protein-calculator/");
   assert.equal(localizePathname("/exercises/dumbbell-bench-press/", "es-419"), "/es/exercises/dumbbell-bench-press/");
+  assert.equal(localizePathname("/workouts/3-day-full-body-split/", "es-419"), "/es/workouts/3-day-full-body-split/");
   assert.equal(localizePathname("/nutrition/chipotle/high-protein/", "pt-BR"), "/pt-br/nutrition/chipotle/high-protein/");
-  for (const pathName of ["/calculators/", "/workouts/", "/professionals/", "/shop/", "/blog/"]) {
+  for (const pathName of ["/professionals/", "/shop/", "/blog/"]) {
     assert.equal(localizePathname(pathName, "es-419"), "/es/");
     assert.equal(localizePathname(pathName, "pt-BR"), "/pt-br/");
   }

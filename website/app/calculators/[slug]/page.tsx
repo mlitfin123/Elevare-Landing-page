@@ -34,6 +34,7 @@ export async function generateMetadata({ params }: CalculatorPageProps) {
     title: tool.title,
     description: tool.metaDescription,
     pathname: getCalculatorPath(tool.slug),
+    localizedAlternates: true,
   });
 }
 

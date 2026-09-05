@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import {
+  CalculatorLocaleProvider,
+  localizeCalculatorNode,
+  useCalculatorLocale,
+  useCalculatorToolSlug,
+  useCalculatorTranslation,
+} from "@/components/tools/CalculatorLocalization";
+import { getLocalizedTool } from "@/lib/i18n/calculator-content";
 import { QuickAnalysisCTA } from "@/components/quick-analysis/QuickAnalysisCTA";
 import {
   BmiCalculator,
@@ -64,6 +72,7 @@ import {
   type Sex,
 } from "@/lib/tool-calculators";
 import type { ToolSlug } from "@/lib/tools";
+import type { Locale } from "@/lib/i18n/config";
 
 const activityOptions: Array<{ value: ActivityLevel; label: string }> = [
   { value: "sedentary", label: "Sedentary" },
@@ -135,15 +144,20 @@ function ToolFormCard({
   description: string;
   children: React.ReactNode;
 }) {
+  const locale = useCalculatorLocale();
+  const toolSlug = useCalculatorToolSlug();
+  const translate = useCalculatorTranslation();
+  const localizedTool = locale !== "en" && toolSlug ? getLocalizedTool(toolSlug, locale) : null;
+
   return (
     <section className="section">
       <article className="panel tool-form-card">
         <div className="section-head tool-form-head">
-          <span className="meta-pill">Calculator</span>
-          <h2>{title}</h2>
-          <p>{description}</p>
+          <span className="meta-pill">{translate("Calculator")}</span>
+          <h2>{localizedTool?.title ?? translate(title)}</h2>
+          <p>{localizedTool?.intro ?? translate(description)}</p>
         </div>
-        {children}
+        {localizeCalculatorNode(children, locale)}
       </article>
     </section>
   );
@@ -156,9 +170,11 @@ function Field({
   label: string;
   children: React.ReactNode;
 }) {
+  const translate = useCalculatorTranslation();
+
   return (
     <label className="field">
-      <span className="field-label">{label}</span>
+      <span className="field-label">{translate(label)}</span>
       {children}
     </label>
   );
@@ -169,15 +185,17 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 function SelectInput(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} />;
+  const locale = useCalculatorLocale();
+  return <select {...props}>{localizeCalculatorNode(props.children, locale)}</select>;
 }
 
 function FormError({ message }: { message: string | null }) {
+  const translate = useCalculatorTranslation();
   if (!message) {
     return null;
   }
 
-  return <div className="form-feedback is-error">{message}</div>;
+  return <div className="form-feedback is-error">{translate(message)}</div>;
 }
 
 function ResultCard({
@@ -187,10 +205,12 @@ function ResultCard({
   title: string;
   children: React.ReactNode;
 }) {
+  const translate = useCalculatorTranslation();
+
   return (
     <article className="panel tool-result-card">
-      <span className="meta-pill">Result</span>
-      <h3>{title}</h3>
+      <span className="meta-pill">{translate("Result")}</span>
+      <h3>{translate(title)}</h3>
       {children}
     </article>
   );
@@ -207,15 +227,19 @@ function ResultMetric({
   label: string;
   value: string;
 }) {
+  const translate = useCalculatorTranslation();
+
   return (
     <div className="tool-result-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <span>{translate(label)}</span>
+      <strong>{translate(value)}</strong>
     </div>
   );
 }
 
 function FormActions({ toolSlug, children }: { toolSlug: ToolSlug; children?: React.ReactNode }) {
+  const translate = useCalculatorTranslation();
+
   return (
     <div className="form-actions">
       <button
@@ -223,7 +247,7 @@ function FormActions({ toolSlug, children }: { toolSlug: ToolSlug; children?: Re
         type="submit"
         onClick={() => trackToolCalculation(toolSlug)}
       >
-        Calculate
+        {translate("Calculate")}
       </button>
       {children}
     </div>
@@ -527,6 +551,7 @@ function MacroCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
 }
 
 function GoalWeightTimelineCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
+  const locale = useCalculatorLocale();
   const [currentWeight, setCurrentWeight] = useState("200");
   const [goalWeight, setGoalWeight] = useState("180");
   const [weeklyRate, setWeeklyRate] = useState("1");
@@ -604,7 +629,7 @@ function GoalWeightTimelineCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
             <ResultMetric label="Direction" value={result.direction} />
             <ResultMetric label="Total change" value={`${result.totalChangeLb} lb`} />
             <ResultMetric label="Estimated weeks" value={`${result.totalWeeks}`} />
-            <ResultMetric label="Estimated target date" value={formatDateLabel(result.targetDate)} />
+            <ResultMetric label="Estimated target date" value={formatDateLabel(result.targetDate, locale)} />
           </ResultGrid>
           {result.aggressiveLoss ? (
             <p className="tool-warning">
@@ -1161,6 +1186,7 @@ function ContestPrepCountdownCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
 }
 
 function CompetitionTimelineGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
+  const locale = useCalculatorLocale();
   const [showDate, setShowDate] = useState("");
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("intermediate");
   const [division, setDivision] = useState<string>("Men's Physique");
@@ -1229,7 +1255,7 @@ function CompetitionTimelineGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
                 </div>
                 <div className="tool-timeline-meta">
                   <span>{milestone.weeksOut === 0 ? "Show day" : `${milestone.weeksOut} weeks out`}</span>
-                  <strong>{formatDateLabel(milestone.date)}</strong>
+                  <strong>{formatDateLabel(milestone.date, locale)}</strong>
                 </div>
               </div>
             ))}
@@ -1319,7 +1345,7 @@ function ShowDayChecklistGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
   );
 }
 
-export function ToolCalculatorRenderer({ toolSlug }: { toolSlug: ToolSlug }) {
+function ToolCalculatorRendererContent({ toolSlug }: { toolSlug: ToolSlug }) {
   switch (toolSlug) {
     case "calorie-calculator":
       return <CalorieEstimator toolSlug={toolSlug} mode="full" />;
@@ -1404,4 +1430,12 @@ export function ToolCalculatorRenderer({ toolSlug }: { toolSlug: ToolSlug }) {
     default:
       return null;
   }
+}
+
+export function ToolCalculatorRenderer({ toolSlug, locale = "en" }: { toolSlug: ToolSlug; locale?: Locale }) {
+  return (
+    <CalculatorLocaleProvider locale={locale} toolSlug={toolSlug}>
+      <ToolCalculatorRendererContent toolSlug={toolSlug} />
+    </CalculatorLocaleProvider>
+  );
 }

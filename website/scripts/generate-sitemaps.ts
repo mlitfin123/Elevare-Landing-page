@@ -187,9 +187,11 @@ function buildSiteEntries() {
 
 function buildCalculatorEntries() {
   return [
-    toSitemapEntry("/calculators", undefined, "priority_index"),
+    ...withLocalizedCatalogEntries([
+      toSitemapEntry("/calculators", undefined, "priority_index"),
+      ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), undefined, "priority_index")),
+    ]),
     toSitemapEntry("/tools/workout-generator", undefined, "priority_index"),
-    ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), undefined, "priority_index")),
   ];
 }
 
@@ -214,7 +216,7 @@ function buildWorkoutEntries(workouts: WorkoutTemplateRecord[]) {
   );
   const goalPages = WORKOUT_GOALS.map((goal) => toSitemapEntry(`/workouts/${goal.slug}`, undefined, "priority_index"));
 
-  return [toSitemapEntry("/workouts", undefined, "priority_index"), ...goalPages, ...workoutPages];
+  return withLocalizedCatalogEntries([toSitemapEntry("/workouts", undefined, "priority_index"), ...goalPages, ...workoutPages]);
 }
 
 function buildNutritionEntries(products: NutritionProduct[]) {

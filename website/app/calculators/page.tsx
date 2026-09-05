@@ -9,6 +9,7 @@ export const metadata = buildMetadata({
   description:
     "Explore free calorie, macro, body fat, strength, and contest prep calculators from Elevare.",
   pathname: "/calculators",
+  localizedAlternates: true,
 });
 
 export default function CalculatorsIndexPage() {

@@ -14,6 +14,7 @@ export const metadata = buildMetadata({
   description:
     "Explore beginner, muscle-building, weight-loss, and strength workout templates with exercises, sets, reps, and rest guidance.",
   pathname: "/workouts",
+  localizedAlternates: true,
 });
 
 export default async function WorkoutsIndexPage() {

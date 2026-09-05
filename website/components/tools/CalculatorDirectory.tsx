@@ -11,30 +11,34 @@ import {
   tools,
   type ToolGroupKey,
 } from "@/lib/tools";
+import { getCalculatorMessages } from "@/lib/i18n/calculator-messages";
+import { getLocalizedTool } from "@/lib/i18n/calculator-content";
+import { formatNumber, localizePathname, type Locale } from "@/lib/i18n/config";
 
 const orderedGroups: ToolGroupKey[] = ["nutrition", "strength", "prep"];
 
 type CalculatorDirectoryProps = {
   sourcePage: "calculators_index" | "tools_index";
+  locale?: Locale;
 };
 
-function matchesCalculatorSearch(query: string, groupKey: ToolGroupKey) {
-  const group = TOOL_GROUPS[groupKey];
+function matchesCalculatorSearch(query: string, group: { title: string; description: string }) {
 
   return (title: string, description: string, intro: string) =>
     `${title} ${description} ${intro} ${group.title} ${group.description}`.toLowerCase().includes(query);
 }
 
-export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
+export function CalculatorDirectory({ sourcePage, locale = "en" }: CalculatorDirectoryProps) {
+  const messages = getCalculatorMessages(locale);
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const lastTrackedQuery = useRef("");
   const hasQuery = deferredQuery.length > 0;
 
   const groupedTools = orderedGroups.map((groupKey) => {
-    const group = TOOL_GROUPS[groupKey];
-    const groupTools = getToolsByGroup(groupKey);
-    const isMatch = matchesCalculatorSearch(deferredQuery, groupKey);
+    const group = { ...TOOL_GROUPS[groupKey], ...messages.groups[groupKey] };
+    const groupTools = getToolsByGroup(groupKey).map((tool) => getLocalizedTool(tool.slug, locale));
+    const isMatch = matchesCalculatorSearch(deferredQuery, group);
 
     return {
       group,
@@ -65,41 +69,39 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
       <section className="section">
         <article className="panel training-directory-card">
           <div className="section-head tool-form-head">
-            <div className="eyebrow">Calculator finder</div>
-            <h2 className="section-title">Search for the calculator you need.</h2>
-            <p className="section-copy">
-              Find calculators faster by searching for calories, protein, body fat, strength, cardio, or contest
-              prep topics.
-            </p>
+            <div className="eyebrow">{messages.index.finderEyebrow}</div>
+            <h2 className="section-title">{messages.index.finderTitle}</h2>
+            <p className="section-copy">{messages.index.finderCopy}</p>
           </div>
 
           <div className="tool-form-grid training-filter-grid">
             <label className="field">
-              <span className="field-label">Search calculators</span>
+              <span className="field-label">{messages.index.searchLabel}</span>
               <input
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search calorie, protein, body fat, strength..."
+                placeholder={messages.index.searchPlaceholder}
               />
             </label>
           </div>
 
           <div className="training-results-head">
             <strong>
-              {filteredCount.toLocaleString()} of {tools.length.toLocaleString()} calculators
+              {messages.index.countTemplate
+                .replace("{count}", formatNumber(filteredCount, locale))
+                .replace("{total}", formatNumber(tools.length, locale))}
             </strong>
             <span>
               {hasQuery
-                ? `Showing matches for "${query.trim()}".`
-                : "Search by calculator name, topic, or goal."}
+                ? messages.index.matchesTemplate.replace("{query}", query.trim())
+                : messages.index.searchHint}
             </span>
           </div>
 
           {hasQuery && filteredCount === 0 ? (
             <div className="tool-warning">
-              No calculators matched that search. Try a broader keyword like calories, macros, body fat, strength,
-              cardio, or prep.
+              {messages.index.noMatches}
             </div>
           ) : null}
         </article>
@@ -121,11 +123,12 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
             {group.slug === "bodybuilding-contest-prep" ? (
               <QuickAnalysisCTA
                 source="calculators-hub"
-                heading="Calculators use your numbers. StageLab looks at your physique."
-                description="Upload 3-5 current photos for a one-time visual assessment of conditioning, muscularity, symmetry, and presentation."
-                buttonText="Analyze My Physique"
+                heading={messages.index.quickAnalysisHeading}
+                description={messages.index.quickAnalysisDescription}
+                buttonText={messages.index.quickAnalysisButton}
                 variant="compact"
                 headingLevel={3}
+                locale={locale}
               />
             ) : null}
 
@@ -137,14 +140,14 @@ export function CalculatorDirectory({ sourcePage }: CalculatorDirectoryProps) {
                   <p>{tool.metaDescription}</p>
                   <TrackedLink
                     className="button button-secondary"
-                    href={getCalculatorPath(tool.slug)}
+                    href={localizePathname(getCalculatorPath(tool.slug), locale)}
                     eventName="tool_open"
                     eventParams={{
                       tool_slug: tool.slug,
                       source_page: sourcePage,
                     }}
                   >
-                    Open calculator
+                    {messages.index.openCalculator}
                   </TrackedLink>
                 </article>
               ))}

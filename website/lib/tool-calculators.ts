@@ -487,8 +487,8 @@ export function generateShowDayChecklist({
   return checklist;
 }
 
-export function formatDateLabel(date: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDateLabel(date: Date, locale = "en-US") {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : locale, {
     month: "long",
     day: "numeric",
     year: "numeric",

@@ -24,9 +24,9 @@ export function Footer() {
         </div>
 
         <nav className="footer-links" aria-label={messages.footerNavigationLabel}>
-          <Link href="/calculators/" hrefLang={englishOnlyHrefLang}>{messages.navigation.tools}</Link>
+          <Link href={localizePathname("/calculators/", locale)}>{messages.navigation.tools}</Link>
           <Link href={localizePathname("/exercises/", locale)}>{messages.navigation.exercises}</Link>
-          <Link href="/workouts/" hrefLang={englishOnlyHrefLang}>{messages.navigation.workouts}</Link>
+          <Link href={localizePathname("/workouts/", locale)}>{messages.navigation.workouts}</Link>
           <Link href={localizePathname("/nutrition/", locale)}>{messages.navigation.nutrition}</Link>
           <Link href="/apps/" hrefLang={englishOnlyHrefLang}>{messages.navigation.apps}</Link>
           <Link href="/shop/" hrefLang={englishOnlyHrefLang}>{messages.navigation.shop}</Link>

@@ -52,8 +52,8 @@ export function Header() {
             <Link
               key={item.href}
               className="nav-link"
-              href={item.label === "exercises" || item.label === "nutrition" ? localizePathname(item.href, locale) : item.href}
-              hrefLang={item.label === "exercises" || item.label === "nutrition" ? undefined : englishOnlyHrefLang}
+              href={item.label === "tools" || item.label === "exercises" || item.label === "workouts" || item.label === "nutrition" ? localizePathname(item.href, locale) : item.href}
+              hrefLang={item.label === "tools" || item.label === "exercises" || item.label === "workouts" || item.label === "nutrition" ? undefined : englishOnlyHrefLang}
             >
               {messages.navigation[item.label]}
             </Link>

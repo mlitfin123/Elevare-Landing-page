@@ -1,0 +1,71 @@
+import { tools, TOOL_GROUPS } from "../../lib/tools.ts";
+import type { CalculatorMessages } from "../../lib/i18n/calculator-types.ts";
+
+const messages = {
+  seo: {
+    indexTitle: "Fitness Calculators",
+    indexDescription: "Explore free calorie, macro, body fat, strength, and contest prep calculators from Elevare.",
+  },
+  index: {
+    eyebrow: "Calculators",
+    title: "Free fitness calculators for calories, strength, and prep.",
+    intro: "Explore practical calculators and planning tools across nutrition, training, and bodybuilding prep.",
+    finderEyebrow: "Calculator finder",
+    finderTitle: "Search for the calculator you need.",
+    finderCopy: "Find calculators faster by searching for calories, protein, body fat, strength, cardio, or contest prep topics.",
+    searchLabel: "Search calculators",
+    searchPlaceholder: "Search calorie, protein, body fat, strength...",
+    countTemplate: "{count} of {total} calculators",
+    matchesTemplate: "Showing matches for \"{query}\".",
+    searchHint: "Search by calculator name, topic, or goal.",
+    noMatches: "No calculators matched that search. Try a broader keyword like calories, macros, body fat, strength, cardio, or prep.",
+    openCalculator: "Open calculator",
+    quickAnalysisHeading: "Calculators use your numbers. StageLab looks at your physique.",
+    quickAnalysisDescription: "Upload 3-5 current photos for a one-time visual assessment of conditioning, muscularity, symmetry, and presentation.",
+    quickAnalysisButton: "Analyze My Physique",
+    featuredTool: "Featured tool",
+    workoutFeatureTitle: "Need help picking a workout plan?",
+    workoutFeatureCopy: "Answer a few quick questions and get a workout template recommendation based on your goal, schedule, equipment, and experience level.",
+    openWorkoutGenerator: "Open workout generator",
+    browseWorkoutTemplates: "Browse workout templates",
+  },
+  groups: TOOL_GROUPS,
+  shell: {
+    calculators: "Calculators",
+    howItWorks: "How it works",
+    explanationHeading: "How to use the {title}",
+    explanationParagraphs: [
+      "Use the {title} to turn your current information into a practical estimate you can understand and apply.",
+      "Enter realistic, current values and review the complete result rather than focusing on a single number without context.",
+      "Treat the result as a starting point. Compare it with your real-world progress and adjust gradually when your consistent data supports a change.",
+    ],
+    faq: "FAQ",
+    faqTitle: "Common questions about the {title}.",
+    faqIntro: "Use these quick answers as a starting point, then compare the result with your real-world progress.",
+    faqQuestions: [
+      "What does the {title} calculate?",
+      "How accurate is the {title}?",
+      "What should I do with my result?",
+      "Who is this calculator for?",
+    ],
+    faqAnswers: [
+      "It uses the information you enter to provide a practical {title} estimate.",
+      "The result is an estimate based on standard formulas. Individual needs, performance, and daily conditions can differ.",
+      "Use it as a starting point, track what happens over time, and make measured changes from consistent data.",
+      "It is designed for anyone who wants a straightforward planning estimate without creating an account.",
+    ],
+    relatedEyebrow: "Related calculators",
+    relatedTitle: "Keep going with the next useful calculator.",
+    relatedCopy: "These related tools support the same planning workflow across nutrition, training, and competition prep.",
+    openTool: "Open tool",
+    disclaimerLabel: "Estimate disclaimer",
+    disclaimer: "Estimates are provided for informational and educational purposes only and may not reflect your individual needs or actual body composition. They are not medical advice.",
+    ctaEyebrow: "Track it",
+    ctaTitle: "Track your nutrition and workouts for free in Logbook.",
+    ctaCopy: "Logbook gives you a simple place to record the daily information behind your plan and review your progress over time.",
+  },
+  toolTitles: Object.fromEntries(tools.map((tool) => [tool.slug, tool.title])),
+  ui: {},
+} satisfies CalculatorMessages;
+
+export default messages;

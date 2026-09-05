@@ -8,6 +8,8 @@ import {
   type QuickAnalysisSource,
 } from "@/lib/quick-analysis-attribution";
 import { formatQuickAnalysisPrice } from "@/lib/quick-analysis";
+import { useCalculatorLocale } from "@/components/tools/CalculatorLocalization";
+import { localizePathname, type Locale } from "@/lib/i18n/config";
 
 type QuickAnalysisCTAProps = {
   source: QuickAnalysisSource;
@@ -17,6 +19,7 @@ type QuickAnalysisCTAProps = {
   variant?: "compact" | "full";
   headingLevel?: 2 | 3 | 4;
   className?: string;
+  locale?: Locale;
 };
 
 function Heading({ level, children }: { level: 2 | 3 | 4; children: ReactNode }) {
@@ -33,7 +36,10 @@ export function QuickAnalysisCTA({
   variant = "full",
   headingLevel = 3,
   className,
+  locale,
 }: QuickAnalysisCTAProps) {
+  const inheritedLocale = useCalculatorLocale();
+  const activeLocale = locale ?? inheritedLocale;
   const targetRef = useRef<HTMLElement>(null);
   const hasTrackedView = useRef(false);
 
@@ -73,13 +79,15 @@ export function QuickAnalysisCTA({
   return (
     <aside ref={targetRef} className={classes} aria-label="StageLab Quick Analysis">
       <div className="quick-analysis-entry-copy">
-        <span className="stat-label">StageLab Quick Analysis · {formatQuickAnalysisPrice()} one time</span>
+        <span className="stat-label">
+          StageLab Quick Analysis · {formatQuickAnalysisPrice()} {activeLocale === "es-419" ? "pago único" : activeLocale === "pt-BR" ? "pagamento único" : "one time"}
+        </span>
         <Heading level={headingLevel}>{heading}</Heading>
         <p>{description}</p>
       </div>
       <TrackedLink
         className="button button-secondary quick-analysis-entry-button"
-        href={getQuickAnalysisEntryHref(source)}
+        href={localizePathname(getQuickAnalysisEntryHref(source), activeLocale)}
         eventName="quick_analysis_cta_clicked"
         eventParams={{ source }}
       >

@@ -15,7 +15,7 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/quick-analysis/result/",
 ] as const;
 
-export const LOCALIZED_CATALOG_PATH_PREFIXES = ["/exercises/", "/nutrition/"] as const;
+export const LOCALIZED_CATALOG_PATH_PREFIXES = ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"] as const;
 
 const LATIN_AMERICAN_SPANISH_REGIONS = new Set([
   "419",

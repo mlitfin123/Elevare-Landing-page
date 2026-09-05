@@ -1,5 +1,9 @@
+import { getCalculatorMessages } from "@/lib/i18n/calculator-messages";
+import type { Locale } from "@/lib/i18n/config";
+
 type ContentDisclaimerProps = {
   kind: "estimate" | "training" | "article";
+  locale?: Locale;
 };
 
 const disclaimerContent = {
@@ -20,19 +24,24 @@ const disclaimerContent = {
   },
 } as const;
 
-export function ContentDisclaimer({ kind }: ContentDisclaimerProps) {
+export function ContentDisclaimer({ kind, locale = "en" }: ContentDisclaimerProps) {
   const content = disclaimerContent[kind];
+  const localizedEstimate = kind === "estimate" && locale !== "en"
+    ? getCalculatorMessages(locale).shell
+    : null;
+  const label = localizedEstimate?.disclaimerLabel ?? content.label;
+  const message = localizedEstimate?.disclaimer ?? content.message;
 
   return (
-    <aside className="callout tool-disclaimer-card" aria-label={content.label}>
-      <span className="meta-pill">Disclaimer</span>
-      <p>{content.message}</p>
+    <aside className="callout tool-disclaimer-card" aria-label={label}>
+      <span className="meta-pill">{locale === "es-419" ? "Aviso" : locale === "pt-BR" ? "Aviso" : "Disclaimer"}</span>
+      <p>{message}</p>
     </aside>
   );
 }
 
-export function EstimateDisclaimer() {
-  return <ContentDisclaimer kind="estimate" />;
+export function EstimateDisclaimer({ locale = "en" }: { locale?: Locale }) {
+  return <ContentDisclaimer kind="estimate" locale={locale} />;
 }
 
 export function TrainingDisclaimer() {

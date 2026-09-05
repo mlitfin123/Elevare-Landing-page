@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LocalizedHomePage } from "@/components/localization/LocalizedHomePage";
 import { LocalizedExercisesPage } from "@/components/localization/LocalizedExercisesPage";
+import { LocalizedCalculatorsPage } from "@/components/localization/LocalizedCalculatorsPage";
 import { LocalizedNutritionPage } from "@/components/localization/LocalizedNutritionPage";
+import { LocalizedWorkoutsPage } from "@/components/localization/LocalizedWorkoutsPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
@@ -16,14 +18,18 @@ import {
   localizePathname,
 } from "@/lib/i18n/config";
 import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
+import { getCalculatorMessages } from "@/lib/i18n/calculator-messages";
+import { getLocalizedTool } from "@/lib/i18n/calculator-content";
 import { localizeExerciseName, localizeEquipmentLabel, localizeMuscleLabel } from "@/lib/i18n/catalog-content";
 import { getMarketingMessages } from "@/lib/i18n/messages";
 import { getQuickAnalysisMessages } from "@/lib/i18n/quick-analysis-messages";
+import { getWorkoutMessages, localizeWorkoutGoal, localizeWorkoutName } from "@/lib/i18n/workout-content";
 import { getNutritionRestaurants, getRestaurantBySlug } from "@/lib/nutrition";
 import { fastFoodNutritionViews, isFastFoodNutritionView, isRestaurantNutritionView, restaurantNutritionViews } from "@/lib/nutrition-pages";
 import { buildMetadata } from "@/lib/site";
-import { getAllExercises, getExerciseBySlug } from "@/lib/training";
-import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, getExerciseCategoryInfo } from "@/lib/training-data";
+import { getAllExercises, getAllWorkoutTemplates, getExerciseBySlug, getWorkoutTemplateBySlug } from "@/lib/training";
+import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, getExerciseCategoryInfo, getWorkoutGoalInfo, WORKOUT_GOALS } from "@/lib/training-data";
+import { getTool, tools } from "@/lib/tools";
 
 type LocalizedPageParams = {
   locale: string;
@@ -36,7 +42,7 @@ export async function generateStaticParams() {
   const baseParams = getLocalizedRouteParams();
   if (!baseParams.length) return [];
 
-  const [exercises, restaurants] = await Promise.all([getAllExercises(), getNutritionRestaurants()]);
+  const [exercises, workoutTemplates, restaurants] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants()]);
   const categorySlugs = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) => category.slug);
   const locales = ["es-419", "pt-BR"] as const;
   const catalogParams = locales.flatMap((locale) => {
@@ -45,6 +51,11 @@ export async function generateStaticParams() {
       { locale: localeSegment, slug: ["exercises"] },
       ...categorySlugs.map((slug) => ({ locale: localeSegment, slug: ["exercises", slug] })),
       ...exercises.map((exercise) => ({ locale: localeSegment, slug: ["exercises", exercise.slug] })),
+      { locale: localeSegment, slug: ["workouts"] },
+      ...WORKOUT_GOALS.map((goal) => ({ locale: localeSegment, slug: ["workouts", goal.slug] })),
+      ...workoutTemplates.map((template) => ({ locale: localeSegment, slug: ["workouts", template.slug] })),
+      { locale: localeSegment, slug: ["calculators"] },
+      ...tools.map((tool) => ({ locale: localeSegment, slug: ["calculators", tool.slug] })),
       { locale: localeSegment, slug: ["nutrition"] },
       { locale: localeSegment, slug: ["nutrition", "methodology"] },
       ...fastFoodNutritionViews.map((view) => ({ locale: localeSegment, slug: ["nutrition", "fast-food", view] })),
@@ -74,6 +85,12 @@ function resolvePage(params: LocalizedPageParams) {
   }
   if (slug[0] === "exercises" && slug.length <= 2) {
     return { locale, page: "exercises" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
+  }
+  if (slug[0] === "workouts" && slug.length <= 2) {
+    return { locale, page: "workouts" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
+  }
+  if (slug[0] === "calculators" && slug.length <= 2) {
+    return { locale, page: "calculators" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
   }
   if (slug[0] === "nutrition" && slug.length <= 3) {
     return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
@@ -147,6 +164,41 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
     });
   }
 
+  if (resolved.page === "workouts") {
+    const messages = getWorkoutMessages(resolved.locale);
+    const workoutTemplate = resolved.catalogSlug ? await getWorkoutTemplateBySlug(resolved.catalogSlug) : null;
+    const canonicalGoal = resolved.catalogSlug ? getWorkoutGoalInfo(resolved.catalogSlug) : null;
+    const goal = canonicalGoal ? localizeWorkoutGoal(canonicalGoal, resolved.locale) : null;
+    const name = workoutTemplate ? localizeWorkoutName(workoutTemplate.name, resolved.locale) : null;
+    return buildMetadata({
+      title: name
+        ? messages.seo.detailTitle.replace("{name}", name)
+        : goal?.title ?? messages.seo.indexTitle,
+      description: name
+        ? messages.seo.detailDescription.replace("{name}", name)
+        : goal?.description ?? messages.seo.indexDescription,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
+
+  if (resolved.page === "calculators") {
+    const messages = getCalculatorMessages(resolved.locale);
+    const tool = resolved.catalogSlug ? getTool(resolved.catalogSlug) : null;
+    if (resolved.catalogSlug && !tool) return {};
+    const localizedTool = tool ? getLocalizedTool(tool.slug, resolved.locale) : null;
+    return buildMetadata({
+      title: localizedTool?.title ?? messages.seo.indexTitle,
+      description: localizedTool?.metaDescription ?? messages.seo.indexDescription,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
+
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
   const messages = await getMarketingMessages(resolved.locale);
   const seo = resolved.page === "home"
@@ -183,6 +235,14 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
 
   if (resolved.page === "nutrition") {
     return <LocalizedNutritionPage locale={resolved.locale} segments={resolved.catalogSegments} />;
+  }
+
+  if (resolved.page === "workouts") {
+    return <LocalizedWorkoutsPage locale={resolved.locale} slug={resolved.catalogSlug} />;
+  }
+
+  if (resolved.page === "calculators") {
+    return <LocalizedCalculatorsPage locale={resolved.locale} slug={resolved.catalogSlug} />;
   }
 
   const messages = await getMarketingMessages(resolved.locale);
