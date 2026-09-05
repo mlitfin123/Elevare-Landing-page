@@ -8,6 +8,7 @@ type ProductCtaButtonsProps = {
   eventName?: string;
   eventParams?: AnalyticsEventParams;
   storeEventNames?: Partial<Record<"ios" | "android", string>>;
+  displayLabels?: Partial<Record<"ios" | "android" | "primary", string>>;
 };
 
 export function ProductCtaButtons({
@@ -16,6 +17,7 @@ export function ProductCtaButtons({
   eventName = "cta_click",
   eventParams,
   storeEventNames,
+  displayLabels,
 }: ProductCtaButtonsProps) {
   const config = productConfig[product];
   const storeLinks = config.storeLinks;
@@ -37,7 +39,7 @@ export function ProductCtaButtons({
               ...eventParams,
             }}
           >
-            {storeLink.label}
+            {displayLabels?.[storeLink.store] ?? storeLink.label}
           </TrackedLink>
         ))}
       </div>
@@ -56,7 +58,7 @@ export function ProductCtaButtons({
         ...eventParams,
       }}
     >
-      {config.ctaLabel}
+      {displayLabels?.primary ?? config.ctaLabel}
     </TrackedLink>
   );
 }

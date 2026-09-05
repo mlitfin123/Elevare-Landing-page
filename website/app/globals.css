@@ -149,6 +149,28 @@ select {
   justify-content: flex-end;
 }
 
+.language-selector {
+  display: inline-flex;
+  width: 154px;
+  flex: 0 0 154px;
+}
+
+.language-selector select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  color: var(--text);
+  border: 1px solid rgba(116, 200, 214, 0.22);
+  border-radius: 999px;
+  background: rgba(18, 18, 31, 0.92);
+  cursor: pointer;
+}
+
+.language-selector select:focus-visible {
+  outline: 2px solid var(--brand-bright);
+  outline-offset: 2px;
+}
+
 .nav-link {
   color: var(--muted);
   font-size: 13px;
@@ -3874,7 +3896,9 @@ select {
 .quick-analysis-report {
   display: grid;
   gap: 18px;
+  min-width: 0;
   padding-top: 22px;
+  overflow-wrap: break-word;
 }
 
 .quick-analysis-report-hero,
@@ -4302,6 +4326,164 @@ select {
   color: var(--text);
 }
 
+.translation-feedback-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.translation-feedback-link:hover,
+.translation-feedback-link:focus-visible {
+  color: var(--text);
+}
+
+.translation-feedback-dialog {
+  width: min(600px, calc(100vw - 32px));
+  max-height: min(760px, calc(100dvh - 32px));
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid rgba(116, 200, 214, 0.24);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.translation-feedback-dialog::backdrop {
+  background: rgba(5, 7, 12, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+.translation-feedback-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid rgba(42, 42, 62, 0.86);
+}
+
+.translation-feedback-dialog-header h2,
+.translation-feedback-dialog-header p,
+.translation-feedback-page,
+.translation-feedback-warning,
+.translation-feedback-success p {
+  margin: 0;
+}
+
+.translation-feedback-dialog-header h2 {
+  font-size: clamp(24px, 5vw, 32px);
+  letter-spacing: -0.04em;
+}
+
+.translation-feedback-dialog-header p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.translation-feedback-close {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(116, 200, 214, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.translation-feedback-form,
+.translation-feedback-success {
+  display: grid;
+  gap: 16px;
+  padding: 22px 24px 24px;
+}
+
+.translation-feedback-page {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.translation-feedback-form .field {
+  margin: 0;
+}
+
+.translation-feedback-form .field small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.translation-feedback-warning {
+  padding: 12px 14px;
+  border: 1px solid rgba(116, 200, 214, 0.16);
+  border-radius: 12px;
+  background: rgba(79, 153, 168, 0.08);
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: break-word;
+}
+
+.translation-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.translation-feedback-actions .button {
+  min-width: 0;
+}
+
+.translation-feedback-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.translation-feedback-success {
+  min-height: 190px;
+  align-content: center;
+}
+
+.translation-feedback-success p {
+  font-size: 20px;
+}
+
+@media (max-width: 520px) {
+  .translation-feedback-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 18px;
+  }
+
+  .translation-feedback-dialog-header,
+  .translation-feedback-form,
+  .translation-feedback-success {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .translation-feedback-actions {
+    display: grid;
+  }
+
+  .translation-feedback-actions .button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 1024px) {
   .landing-hero,
   .trust-layout,
@@ -4520,6 +4702,11 @@ select {
     padding-right: 0;
     border: 0;
     background: transparent;
+  }
+
+  .language-selector {
+    width: 100%;
+    flex-basis: 100%;
   }
 
   .nutrition-desktop-view {

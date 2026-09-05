@@ -13,6 +13,8 @@ type TrackedLinkProps = {
   eventName?: string;
   eventParams?: AnalyticsEventParams;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
+  hrefLang?: string;
+  title?: string;
 };
 
 export function TrackedLink({
@@ -23,6 +25,8 @@ export function TrackedLink({
   eventName,
   eventParams,
   onClick,
+  hrefLang,
+  title,
 }: TrackedLinkProps) {
   const normalizedHref = href.startsWith("/") ? normalizeSitePath(href) : href;
 
@@ -40,7 +44,7 @@ export function TrackedLink({
   };
 
   return (
-    <Link href={normalizedHref} className={className} prefetch={prefetch} onClick={handleClick}>
+    <Link href={normalizedHref} className={className} prefetch={prefetch} onClick={handleClick} hrefLang={hrefLang} title={title}>
       {children}
     </Link>
   );

@@ -14,6 +14,7 @@ export const metadata = buildMetadata({
   description:
     "Discover personal trainers, nutrition coaches, bodybuilding coaches, life coaches, wellness specialists, and more on Elevare.",
   pathname: "/",
+  localizedAlternates: true,
 });
 
 export default async function HomePage() {

@@ -10,6 +10,7 @@ export const metadata = buildMetadata({
   description:
     "Track workouts, nutrition, macros, bodyweight, and progress with Logbook, a focused fitness tracker available free on iOS and Android.",
   pathname: "/logbook",
+  localizedAlternates: true,
 });
 
 const faqs = [

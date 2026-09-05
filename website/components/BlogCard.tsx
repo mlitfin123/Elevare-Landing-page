@@ -4,9 +4,11 @@ import { formatDate, type BlogPostSummary } from "@/lib/blog";
 type BlogCardProps = {
   post: BlogPostSummary;
   sourcePage?: string;
+  locale?: string;
+  readLabel?: string;
 };
 
-export function BlogCard({ post, sourcePage = "blog_index" }: BlogCardProps) {
+export function BlogCard({ post, sourcePage = "blog_index", locale = "en-US", readLabel = "Read article" }: BlogCardProps) {
   return (
     <article className="blog-card">
       <div className="blog-card-top">
@@ -16,10 +18,11 @@ export function BlogCard({ post, sourcePage = "blog_index" }: BlogCardProps) {
       <h2>{post.title}</h2>
       <p>{post.description}</p>
       <div className="blog-card-footer">
-        <span className="footer-copy">{formatDate(post.date)}</span>
+        <span className="footer-copy">{formatDate(post.date, locale)}</span>
         <TrackedLink
           className="blog-link"
           href={`/blog/${post.slug}`}
+          hrefLang={locale === "en" || locale === "en-US" ? undefined : "en"}
           eventName="article_click"
           eventParams={{
             article_slug: post.slug,
@@ -29,7 +32,7 @@ export function BlogCard({ post, sourcePage = "blog_index" }: BlogCardProps) {
             source_page: sourcePage,
           }}
         >
-          Read article
+          {readLabel}
         </TrackedLink>
       </div>
     </article>

@@ -1,15 +1,17 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages */
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
+import { getSafeAuthRedirect } from "@/lib/auth-redirect";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = useMemo(() => searchParams.get("redirect") || "/account/", [searchParams]);
+  const redirectPath = useMemo(() => getSafeAuthRedirect(searchParams.get("redirect")), [searchParams]);
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

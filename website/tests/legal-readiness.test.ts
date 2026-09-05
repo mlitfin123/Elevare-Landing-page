@@ -197,6 +197,7 @@ test("public marketplace output excludes auth identifiers and reporting resolves
 test("Google Consent Mode keeps analytics storage opt-in while Vercel provides cookie-free aggregate measurement", () => {
   const consent = readFileSync(`${projectRoot}components/AnalyticsConsent.tsx`, "utf8");
   const consentState = readFileSync(`${projectRoot}lib/analytics-consent.ts`, "utf8");
+  const shellMessages = readFileSync(`${projectRoot}lib/i18n/shell-messages.ts`, "utf8");
   const layout = readFileSync(`${projectRoot}app/layout.tsx`, "utf8");
   const packageJson = readFileSync(`${projectRoot}package.json`, "utf8");
 
@@ -205,7 +206,8 @@ test("Google Consent Mode keeps analytics storage opt-in while Vercel provides c
   assert.match(`${consent}\n${consentState}`, /ad_storage: "denied"/);
   assert.match(`${consent}\n${consentState}`, /ad_user_data: "denied"/);
   assert.match(`${consent}\n${consentState}`, /ad_personalization: "denied"/);
-  assert.match(consent, /Decline Google Analytics/);
+  assert.match(consent, /consentMessages\.decline/);
+  assert.match(shellMessages, /decline: "Decline Google Analytics"/);
   assert.match(consent, /clearAnalyticsCookies\(\)/);
   assert.match(layout, /google-analytics-consent-default/);
   assert.match(layout, /strategy="beforeInteractive"/);

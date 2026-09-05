@@ -11,6 +11,7 @@ import {
 } from "@/lib/quick-analysis-repository";
 import { parseQuickAnalysisContext } from "@/lib/quick-analysis-schema";
 import { QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS } from "@/lib/quick-analysis";
+import { normalizeStoredQuickAnalysisLocale } from "@/lib/quick-analysis-locale";
 import {
   QuickAnalysisServerError,
   assertQuickAnalysisSameOrigin,
@@ -68,7 +69,12 @@ export async function POST(request: Request) {
       ageConfirmed: true,
       aiConsentConfirmed: true,
     });
-    const providerResult = await requestQuickAnalysisFromOpenAI({ context, images: upload.images });
+    const generationLocale = normalizeStoredQuickAnalysisLocale(claimedRow.generation_locale);
+    const providerResult = await requestQuickAnalysisFromOpenAI({
+      context,
+      images: upload.images,
+      generationLocale,
+    });
     if (
       providerResult.result.photo_coverage === "limited" &&
       QUICK_ANALYSIS_REQUIRED_PHOTO_VIEWS.every((view) => providerResult.result.missing_or_limited_views.includes(view))

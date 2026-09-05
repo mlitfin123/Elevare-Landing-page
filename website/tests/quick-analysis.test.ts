@@ -37,6 +37,8 @@ import {
 } from "../lib/quick-analysis-stripe.ts";
 
 const projectRoot = process.cwd();
+const quickAnalysisEnglish = fs.readFileSync(path.join(projectRoot, "locales", "en", "quick-analysis.ts"), "utf8");
+const localizedQuickAnalysisPage = fs.readFileSync(path.join(projectRoot, "components", "localization", "LocalizedQuickAnalysisPage.tsx"), "utf8");
 const context: QuickAnalysisContext = {
   analysisMode: "competition_prep",
   division: "Men's Physique",
@@ -536,16 +538,18 @@ test("the public landing is indexed while the result is noindex and excluded fro
   const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
   const resultPage = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "quick-analysis", "result", "page.tsx"), "utf8");
   const sitemapGenerator = fs.readFileSync(path.join(projectRoot, "scripts", "generate-sitemaps.ts"), "utf8");
-  assert.match(landingPage, /available for 72 hours on the same browser and device used for checkout/);
-  assert.match(landingPage, /QuickAnalysisReturnLink/);
+  assert.match(quickAnalysisEnglish, /available for 72 hours on the same browser and device used for checkout/);
+  assert.match(localizedQuickAnalysisPage, /QuickAnalysisReturnLink/);
   assert.match(returnLink, /\/api\/quick-analysis\/status\//);
-  assert.match(returnLink, /View my recent analysis/);
-  assert.match(returnLink, /Continue my analysis/);
-  assert.match(returnLink, /Check analysis status/);
+  assert.match(quickAnalysisEnglish, /View my recent analysis/);
+  assert.match(quickAnalysisEnglish, /Continue my analysis/);
+  assert.match(quickAnalysisEnglish, /Check analysis status/);
   assert.match(returnLink, /\/stagelab\/quick-analysis\/result\//);
   assert.match(returnLink, /quick_analysis_return_clicked/);
   assert.doesNotMatch(returnLink, /stage_readiness|body_fat|photo|optional_context/);
-  assert.match(resultExperience, /Use this same browser and device/);
+  assert.match(quickAnalysisEnglish, /Use this same browser and device/);
+  assert.match(landingPage, /LocalizedQuickAnalysisPage/);
+  assert.match(resultExperience, /messages\.browserAccessBody/);
   assert.match(resultPage, /index:\s*false/);
   assert.match(resultPage, /follow:\s*false/);
   assert.match(sitemapGenerator, /"\/stagelab\/quick-analysis"/);
@@ -559,28 +563,30 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   const styles = fs.readFileSync(path.join(projectRoot, "app", "globals.css"), "utf8");
   const productionPriceSources = [
     landingPage,
+    localizedQuickAnalysisPage,
+    quickAnalysisEnglish,
     checkout,
     resultExperience,
     fs.readFileSync(path.join(projectRoot, "app", "page.tsx"), "utf8"),
     fs.readFileSync(path.join(projectRoot, "app", "stagelab", "page.tsx"), "utf8"),
   ].join("\n");
 
-  assert.match(landingPage, /See how your physique measures up\./);
-  assert.match(landingPage, /QUICK_ANALYSIS_PRICE_DISPLAY/);
-  assert.match(landingPage, /No subscription/);
-  assert.match(landingPage, /No account required/);
-  assert.match(landingPage, /Photos never stored by ElevareFit/);
-  assert.match(landingPage, /See How It Works/);
-  assert.match(landingPage, /Watch a quick walkthrough of the StageLab Visual Analysis before getting yours\./);
-  assert.match(landingPage, /https:\/\/www\.youtube-nocookie\.com\/embed\/BbAHsUA-yH0/);
-  assert.match(landingPage, /title="StageLab Visual Analysis walkthrough"/);
-  assert.match(landingPage, /loading="lazy"/);
-  assert.doesNotMatch(landingPage, /youtube\.com\/embed\/BbAHsUA-yH0|autoplay=1/);
-  assert.ok(landingPage.indexOf("quick-analysis-intro-grid") < landingPage.indexOf("quick-analysis-demo"));
-  assert.ok(landingPage.indexOf("quick-analysis-demo") < landingPage.indexOf("quick-analysis-checkout-layout"));
-  assert.match(landingPage, /<details className="quick-analysis-faq panel"/);
-  assert.match(landingPage, /<summary>{faq\.question}<\/summary>/);
-  assert.doesNotMatch(landingPage, /tool-faq-grid/);
+  assert.match(quickAnalysisEnglish, /See how your physique measures up\./);
+  assert.match(quickAnalysisEnglish, /QUICK_ANALYSIS_PRICE_DISPLAY/);
+  assert.match(quickAnalysisEnglish, /No subscription/);
+  assert.match(quickAnalysisEnglish, /No account required/);
+  assert.match(quickAnalysisEnglish, /Photos never stored by ElevareFit/);
+  assert.match(quickAnalysisEnglish, /See How It Works/);
+  assert.match(quickAnalysisEnglish, /Watch a quick walkthrough of the StageLab Visual Analysis before getting yours\./);
+  assert.match(localizedQuickAnalysisPage, /https:\/\/www\.youtube-nocookie\.com\/embed\/BbAHsUA-yH0/);
+  assert.match(localizedQuickAnalysisPage, /title={landing\.demoIframeTitle}/);
+  assert.match(localizedQuickAnalysisPage, /loading="lazy"/);
+  assert.doesNotMatch(localizedQuickAnalysisPage, /youtube\.com\/embed\/BbAHsUA-yH0|autoplay=1/);
+  assert.ok(localizedQuickAnalysisPage.indexOf("quick-analysis-intro-grid") < localizedQuickAnalysisPage.indexOf("quick-analysis-demo"));
+  assert.ok(localizedQuickAnalysisPage.indexOf("quick-analysis-demo") < localizedQuickAnalysisPage.indexOf("quick-analysis-checkout-layout"));
+  assert.match(localizedQuickAnalysisPage, /<details className="quick-analysis-faq panel"/);
+  assert.match(localizedQuickAnalysisPage, /<summary>{faq\.question}<\/summary>/);
+  assert.doesNotMatch(localizedQuickAnalysisPage, /tool-faq-grid/);
 
   const orderedFaqs = [
     "What does StageLab Quick Analysis assess?",
@@ -592,24 +598,24 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
     "Is this medical or official judging advice?",
   ];
   orderedFaqs.forEach((question, index) => {
-    assert.ok(landingPage.indexOf(question) >= 0);
-    if (index > 0) assert.ok(landingPage.indexOf(orderedFaqs[index - 1]!) < landingPage.indexOf(question));
+    assert.ok(quickAnalysisEnglish.indexOf(question) >= 0);
+    if (index > 0) assert.ok(quickAnalysisEnglish.indexOf(orderedFaqs[index - 1]!) < quickAnalysisEnglish.indexOf(question));
   });
 
-  assert.match(checkout, /Get My Quick Analysis — \$\{formatQuickAnalysisPrice\(\)}/);
-  assert.match(checkout, /Review the highlighted fields below/);
-  assert.match(checkout, /Choose Competition Prep or Physique Check/);
-  assert.match(checkout, /Select a division or comparison standard/);
-  assert.match(checkout, /Confirm that you are at least 18 years old/);
-  assert.match(checkout, /Confirm AI processing before continuing/);
+  assert.match(quickAnalysisEnglish, /Get My Quick Analysis/);
+  assert.match(quickAnalysisEnglish, /Review the highlighted fields below/);
+  assert.match(quickAnalysisEnglish, /Choose Competition Prep or Physique Check/);
+  assert.match(quickAnalysisEnglish, /Select a division or comparison standard/);
+  assert.match(quickAnalysisEnglish, /Confirm that you are at least 18 years old/);
+  assert.match(quickAnalysisEnglish, /Confirm AI processing before continuing/);
   assert.match(checkout, /useState\(false\)/);
-  assert.match(checkout, /Privacy Policy/);
-  assert.match(checkout, /Terms of Service/);
+  assert.match(quickAnalysisEnglish, /Privacy Policy/);
+  assert.match(quickAnalysisEnglish, /Terms of Service/);
   assert.match(checkout, /EmbeddedCheckoutProvider/);
   assert.match(checkout, /EmbeddedCheckout className="quick-analysis-embedded-checkout"/);
   assert.match(checkout, /window\.location\.assign\(`\/stagelab\/quick-analysis\/return\/\?session_id=/);
-  assert.match(resultExperience, /Upload your check-in/);
-  assert.match(resultExperience, /Upload your physique photos/);
+  assert.match(quickAnalysisEnglish, /Upload your check-in/);
+  assert.match(quickAnalysisEnglish, /Upload your physique photos/);
   assert.match(styles, /\.quick-analysis-video-frame\s*{[\s\S]*aspect-ratio:\s*16\s*\/\s*9/);
   assert.match(styles, /\.quick-analysis-video-frame iframe\s*{[\s\S]*width:\s*100%[\s\S]*height:\s*100%/);
   assert.match(styles, /\.quick-analysis-faq summary:focus-visible/);
@@ -631,7 +637,9 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   const checkout = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisCheckout.tsx"), "utf8");
   const report = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisReport.tsx"), "utf8");
   const checkoutRoute = fs.readFileSync(path.join(projectRoot, "app", "api", "quick-analysis", "checkout", "route.ts"), "utf8");
-  assert.match(checkout, /What do you want to assess\?/);
+  const checkoutContent = `${checkout}\n${quickAnalysisEnglish}`;
+  const reportContent = `${report}\n${quickAnalysisEnglish}`;
+  assert.match(checkoutContent, /What do you want to assess\?/);
   assert.match(checkout, /analysisMode === "competition_prep" && competitionStatus === "preparing"/);
   assert.match(checkout, /analysisMode === "physique_check" \? "assessing"/);
   assert.match(checkoutRoute, /line_items: \[\{ price: priceId, quantity: 1 \}\]/);
@@ -648,12 +656,12 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   const resultExperience = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisResultExperience.tsx"), "utf8");
   const photoUploader = fs.readFileSync(path.join(projectRoot, "components", "quick-analysis", "QuickAnalysisPhotoUploader.tsx"), "utf8");
   const styles = fs.readFileSync(path.join(projectRoot, "app", "globals.css"), "utf8");
-  assert.match(report, /Stage Readiness is a composite visual profile/);
-  assert.match(report, /Presentation in submitted photos/);
-  assert.match(report, /What still separates you from stage condition/i);
-  assert.match(report, /Judge&apos;s Perspective/);
-  assert.match(report, /What can affect this read/);
-  assert.match(report, /aria-label={`\$\{score\} out of 100`}/);
+  assert.match(reportContent, /Stage Readiness is a composite visual profile/);
+  assert.match(reportContent, /Presentation in submitted photos/);
+  assert.match(reportContent, /What still separates you from stage condition/i);
+  assert.match(reportContent, /Judge's Perspective/);
+  assert.match(reportContent, /What can affect this read/);
+  assert.match(report, /aria-label={messages\.scoreOutOf\.replace\("{score}", String\(/);
   assert.match(report, /Download|StageLab/);
   assert.match(report, /quick_analysis_stagelab_ios_clicked/);
   assert.match(report, /quick_analysis_stagelab_android_clicked/);
@@ -664,14 +672,14 @@ test("both modes share the same $0.99 entitlement and the UI branches without st
   assert.match(resultExperience, /quick_analysis_photo_set_started/);
   assert.match(resultExperience, /quick_analysis_photo_set_completed/);
   assert.doesNotMatch(resultExperience, /quick_analysis_completed[^\n]*(?:stage_readiness|body_fat|photo|optional_context)/);
-  assert.match(photoUploader, /Competition Prep:/);
-  assert.match(photoUploader, /Use your normal check-in or division poses when possible/);
-  assert.match(photoUploader, /No posing experience needed/);
-  assert.match(photoUploader, /Full physique visible/);
+  assert.match(quickAnalysisEnglish, /Competition Prep/);
+  assert.match(quickAnalysisEnglish, /Use your normal check-in or division poses when possible/);
+  assert.match(quickAnalysisEnglish, /No posing experience needed/);
+  assert.match(quickAnalysisEnglish, /Full physique visible/);
   assert.match(photoUploader, /aria-required={content\.required}/);
   assert.match(photoUploader, /aria-describedby=/);
   assert.match(photoUploader, /type="button"/);
-  assert.match(photoUploader, /alt={`\$\{content\.label\} photo preview`}/);
+  assert.match(photoUploader, /alt={messages\.previewAlt\.replace\("{label}", content\.label\)}/);
   assert.match(photoUploader, /previewUrl/);
   assert.match(resultExperience, /URL\.createObjectURL/);
   assert.match(resultExperience, /URL\.revokeObjectURL/);

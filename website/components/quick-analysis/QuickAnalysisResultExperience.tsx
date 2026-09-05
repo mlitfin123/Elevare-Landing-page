@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -9,8 +10,16 @@ import {
 } from "@/components/quick-analysis/QuickAnalysisPhotoUploader";
 import { QuickAnalysisReport } from "@/components/quick-analysis/QuickAnalysisReport";
 import { trackEvent } from "@/lib/analytics";
+import type { Locale } from "@/lib/i18n/config";
+import { localizePathname } from "@/lib/i18n/config";
+import type { QuickAnalysisMessages } from "@/lib/i18n/quick-analysis-types";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import { prepareQuickAnalysisPhotos } from "@/lib/quick-analysis-client-images";
+import {
+  QuickAnalysisPollingController,
+  type QuickAnalysisPollingStopReason,
+} from "@/lib/quick-analysis-polling";
+import { markQuickAnalysisRecoveryCandidate } from "@/lib/quick-analysis-recovery-marker";
 import {
   QUICK_ANALYSIS_MAX_PHOTOS,
   QUICK_ANALYSIS_MIN_PHOTOS,
@@ -21,20 +30,28 @@ import {
   type QuickAnalysisPublicState,
 } from "@/lib/quick-analysis";
 
-type StatusPayload = { state?: QuickAnalysisPublicState; error?: string };
+type StatusPayload = { state?: QuickAnalysisPublicState; error?: string; code?: string };
 
-export function QuickAnalysisResultExperience() {
+function localizedError(messages: QuickAnalysisMessages["result"], code: string | undefined, fallback: string) {
+  return (code && messages.errors[code]) || fallback;
+}
+
+export function QuickAnalysisResultExperience({ locale, messages }: { locale: Locale; messages: QuickAnalysisMessages["result"] }) {
   const searchParams = useSearchParams();
   const attributionSource = useRef(normalizeQuickAnalysisSource(searchParams.get("source")));
   const previewUrls = useRef(new Map<QuickAnalysisPhotoView, string>());
   const photoSetStarted = useRef(false);
   const photoSetCompleted = useRef(false);
+  const pollingController = useRef<QuickAnalysisPollingController | null>(null);
   const [state, setState] = useState<QuickAnalysisPublicState | null>(null);
   const [selectedPhotos, setSelectedPhotos] = useState<Partial<Record<QuickAnalysisPhotoView, QuickAnalysisSelectedPhoto>>>({});
   const [photoErrors, setPhotoErrors] = useState<Partial<Record<QuickAnalysisPhotoView, string>>>({});
   const [aiConsent, setAiConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processingStage, setProcessingStage] = useState<string | null>(null);
+  const [pollingStopReason, setPollingStopReason] = useState<QuickAnalysisPollingStopReason | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,17 +60,20 @@ export function QuickAnalysisResultExperience() {
       try {
         const response = await fetch("/api/quick-analysis/status/", { method: "POST", cache: "no-store" });
         const payload = (await response.json()) as StatusPayload;
-        if (!response.ok || !payload.state) throw new Error(payload.error || "This analysis could not be opened.");
-        if (active) setState(payload.state);
+        if (!response.ok || !payload.state) throw new Error(localizedError(messages, payload.code, messages.couldNotOpen));
+        if (active) {
+          markQuickAnalysisRecoveryCandidate();
+          setState(payload.state);
+        }
       } catch (statusError) {
-        if (active) setError(statusError instanceof Error ? statusError.message : "This analysis could not be opened.");
+        if (active) setError(statusError instanceof Error ? statusError.message : messages.couldNotOpen);
       } finally {
         if (active) setLoading(false);
       }
     }
     void loadStatus();
     return () => { active = false; };
-  }, []);
+  }, [messages]);
 
   useEffect(() => () => {
     for (const previewUrl of previewUrls.current.values()) URL.revokeObjectURL(previewUrl);
@@ -82,16 +102,31 @@ export function QuickAnalysisResultExperience() {
 
   useEffect(() => {
     if (state?.analysisStatus !== "processing") return;
-    const interval = window.setInterval(async () => {
-      try {
-        const response = await fetch("/api/quick-analysis/status/", { method: "POST", cache: "no-store" });
-        const payload = (await response.json()) as StatusPayload;
-        if (response.ok && payload.state) setState(payload.state);
-      } catch {
-        // Keep the current processing state and let the next poll retry.
-      }
-    }, 3_000);
-    return () => window.clearInterval(interval);
+    const controller = new QuickAnalysisPollingController({
+      fetchStatus: async (signal) => {
+        const response = await fetch("/api/quick-analysis/status/", {
+          method: "POST",
+          cache: "no-store",
+          signal,
+        });
+        const payload = await response.json().catch(() => ({})) as StatusPayload;
+        return { status: response.status, state: response.ok ? payload.state : undefined };
+      },
+      onState: setState,
+      onAutomaticStop: setPollingStopReason,
+      isVisible: () => document.visibilityState === "visible",
+      subscribeToVisibility: (listener) => {
+        document.addEventListener("visibilitychange", listener);
+        return () => document.removeEventListener("visibilitychange", listener);
+      },
+    });
+    pollingController.current = controller;
+    controller.start();
+
+    return () => {
+      controller.dispose();
+      if (pollingController.current === controller) pollingController.current = null;
+    };
   }, [state?.analysisStatus]);
 
   useEffect(() => {
@@ -106,8 +141,8 @@ export function QuickAnalysisResultExperience() {
       source: attributionSource.current,
     });
     sessionStorage.setItem(key, "true");
-    window.history.replaceState({}, "", "/stagelab/quick-analysis/result/");
-  }, [searchParams, state]);
+    window.history.replaceState({}, "", localizePathname("/stagelab/quick-analysis/result/", locale));
+  }, [locale, searchParams, state]);
 
   function resetPhotos() {
     for (const previewUrl of previewUrls.current.values()) URL.revokeObjectURL(previewUrl);
@@ -115,6 +150,7 @@ export function QuickAnalysisResultExperience() {
     setSelectedPhotos({});
     setPhotoErrors({});
     setAiConsent(false);
+    setConsentError(false);
   }
 
   function handlePhotoChange(view: QuickAnalysisPhotoView, file: File | null) {
@@ -138,6 +174,13 @@ export function QuickAnalysisResultExperience() {
     setSelectedPhotos((current) => ({ ...current, [view]: { file, previewUrl } }));
   }
 
+  async function handleManualStatusCheck() {
+    if (checkingStatus || !pollingController.current) return;
+    setCheckingStatus(true);
+    await pollingController.current.checkNow();
+    setCheckingStatus(false);
+  }
+
   async function handleAnalyze(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -145,19 +188,22 @@ export function QuickAnalysisResultExperience() {
     const selectedViews = QUICK_ANALYSIS_PHOTO_VIEWS.filter((view) => Boolean(selectedPhotos[view]));
     const missingViews = getMissingQuickAnalysisPhotoViews(selectedViews);
     if (missingViews.length > 0) {
-      setPhotoErrors(Object.fromEntries(missingViews.map((view) => [view, `${view[0]?.toUpperCase()}${view.slice(1)} photo is required.`])));
-      setError("Add a front, side, and back photo before starting your analysis.");
+      setPhotoErrors(Object.fromEntries(missingViews.map((view) => [view, messages.requiredPhoto.replace("{view}", messages.uploader.slots[view].label)])));
+      setError(messages.addRequiredPhotos);
       document.getElementById(`quick-analysis-photo-${missingViews[0]}`)?.focus();
       return;
     }
     if (selectedViews.length < QUICK_ANALYSIS_MIN_PHOTOS || selectedViews.length > QUICK_ANALYSIS_MAX_PHOTOS) {
-      setError(`Choose ${QUICK_ANALYSIS_MIN_PHOTOS}-${QUICK_ANALYSIS_MAX_PHOTOS} photos.`);
+      setError(messages.choosePhotoCount.replace("{min}", String(QUICK_ANALYSIS_MIN_PHOTOS)).replace("{max}", String(QUICK_ANALYSIS_MAX_PHOTOS)));
       return;
     }
     if (!aiConsent) {
-      setError("Confirm AI photo processing before starting your analysis.");
+      setConsentError(true);
+      setError(messages.confirmAiProcessing);
+      requestAnimationFrame(() => document.getElementById("quick-analysis-upload-consent")?.focus());
       return;
     }
+    setConsentError(false);
 
     trackEvent("quick_analysis_upload_started", {
       photo_count: selectedViews.length,
@@ -165,7 +211,7 @@ export function QuickAnalysisResultExperience() {
       source: attributionSource.current,
     });
     try {
-      setProcessingStage("Preparing photos");
+      setProcessingStage(messages.preparingPhotos);
       const prepared = await prepareQuickAnalysisPhotos(selectedViews.map((view) => ({
         view,
         file: selectedPhotos[view]!.file,
@@ -173,11 +219,12 @@ export function QuickAnalysisResultExperience() {
       const form = new FormData();
       form.set("aiConsent", "true");
       prepared.forEach(({ view, file }) => form.set(`photo_${view}`, file));
-      setProcessingStage("Analyzing your check-in...");
+      setProcessingStage(messages.analyzing);
       const response = await fetch("/api/quick-analysis/analyze/", { method: "POST", body: form });
       const payload = (await response.json()) as StatusPayload;
-      if (!response.ok || !payload.state) throw new Error(payload.error || "The analysis could not be completed.");
-      setProcessingStage("Building your report");
+      if (!response.ok || !payload.state) throw new Error(localizedError(messages, payload.code, messages.couldNotComplete));
+      setProcessingStage(messages.buildingReport);
+      setPollingStopReason(null);
       setState(payload.state);
       trackEvent("quick_analysis_completed", {
         product: "StageLab Quick Analysis",
@@ -186,47 +233,71 @@ export function QuickAnalysisResultExperience() {
       });
       resetPhotos();
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : "The analysis could not be completed.");
+      setError(analysisError instanceof Error ? analysisError.message : messages.couldNotComplete);
+      trackEvent("quick_analysis_failed", {
+        analysis_mode: analysisMode,
+        source: attributionSource.current,
+      });
     } finally {
       setProcessingStage(null);
     }
   }
 
   if (loading) {
-    return <section className="quick-analysis-state panel"><div className="quick-analysis-spinner" aria-hidden="true" /><h1>Opening your analysis...</h1><p>Confirming your one-time purchase securely.</p></section>;
+    return <section className="quick-analysis-state panel" role="status" aria-live="polite" aria-busy="true"><div className="quick-analysis-spinner" aria-hidden="true" /><h1>{messages.opening}</h1><p>{messages.confirmingPurchase}</p></section>;
   }
 
   if (state?.analysisStatus === "completed" && state.result) {
-    return <QuickAnalysisReport result={state.result} />;
+    return (
+      <>
+        {state.generationLocale !== locale ? (
+          <p className="quick-analysis-language-notice panel" role="status">
+            {messages.reportLanguageNotice.replace("{language}", messages.languageLabels[state.generationLocale] ?? state.generationLocale)}
+          </p>
+        ) : null}
+        <QuickAnalysisReport result={state.result} locale={locale} messages={messages.report} />
+      </>
+    );
   }
 
   if (state?.analysisStatus === "expired") {
-    return <section className="quick-analysis-state panel"><div className="eyebrow">Result expired</div><h1>This analysis is no longer available.</h1><p>Quick Analysis results are available for 72 hours. Start a new analysis if you would like another current snapshot.</p><Link className="button button-primary" href="/stagelab/quick-analysis/">Start a new analysis</Link></section>;
+    return <section className="quick-analysis-state panel"><div className="eyebrow">{messages.resultExpired}</div><h1>{messages.expiredTitle}</h1><p>{messages.expiredBody}</p><Link className="button button-primary" href={localizePathname("/stagelab/quick-analysis/", locale)}>{messages.startNew}</Link></section>;
   }
 
   if (state?.analysisStatus === "processing") {
-    return <section className="quick-analysis-state panel"><div className="quick-analysis-spinner" aria-hidden="true" /><h1>Your analysis is processing.</h1><p>Keep this page open. The report will appear here when it is ready.</p></section>;
+    return (
+      <section className="quick-analysis-state panel" role="status" aria-live="polite" aria-busy={pollingStopReason ? undefined : "true"}>
+        <div className="quick-analysis-spinner" aria-hidden="true" />
+        <h1>{messages.processingTitle}</h1>
+        <p>{pollingStopReason ? messages.pollingPausedBody : messages.processingBody}</p>
+        {pollingStopReason ? (
+          <button className="button button-secondary" type="button" onClick={() => void handleManualStatusCheck()} disabled={checkingStatus}>
+            {checkingStatus ? messages.checkingAgain : messages.checkAgain}
+          </button>
+        ) : null}
+      </section>
+    );
   }
 
   if (!state || !state.canAnalyze) {
-    return <section className="quick-analysis-state panel"><div className="eyebrow">Access unavailable</div><h1>We couldn&apos;t open this analysis.</h1><p>{error || "Return from your completed Stripe checkout, or contact support if payment was completed."}</p><Link className="button button-secondary" href="/stagelab/quick-analysis/">Back to Quick Analysis</Link></section>;
+    return <section className="quick-analysis-state panel"><div className="eyebrow">{messages.accessUnavailable}</div><h1>{messages.accessTitle}</h1><p>{error || messages.accessBody}</p><Link className="button button-secondary" href={localizePathname("/stagelab/quick-analysis/", locale)}>{messages.backToAnalysis}</Link></section>;
   }
 
   return (
     <div className="quick-analysis-upload-layout">
       <section className="quick-analysis-upload-copy">
-        <div className="eyebrow">Payment confirmed - StageLab Quick Analysis</div>
-        <h1>{state.analysisMode === "competition_prep" ? "Upload your check-in" : "Upload your physique photos"}</h1>
+        <div className="eyebrow">{messages.paymentConfirmed}</div>
+        <h1>{state.analysisMode === "competition_prep" ? messages.uploadCheckIn : messages.uploadPhysique}</h1>
         <p>{state.analysisMode === "competition_prep"
-          ? "For the most useful analysis, upload a clear front, side, and back view from the same session."
-          : "Upload a clear front, side, and back view. Natural photos are enough for a useful physique assessment."}</p>
+          ? messages.prepUploadBody
+          : messages.physiqueUploadBody}</p>
         <div className="quick-analysis-privacy-note">
-          <strong>Your photos are used only for this analysis.</strong>
-          <span>They are prepared in your browser, sent securely to the AI service for transient processing, and discarded after the request completes. ElevareFit never stores them or creates a photo history.</span>
+          <strong>{messages.photosOnlyTitle}</strong>
+          <span>{messages.photosOnlyBody}</span>
         </div>
         <div className="quick-analysis-privacy-note">
-          <strong>This browser keeps your result access.</strong>
-          <span>Your report remains available here for 72 hours. Use this same browser and device, and do not clear its cookies until you are finished viewing the result.</span>
+          <strong>{messages.browserAccessTitle}</strong>
+          <span>{messages.browserAccessBody}</span>
         </div>
       </section>
 
@@ -237,19 +308,21 @@ export function QuickAnalysisResultExperience() {
           errors={photoErrors}
           disabled={Boolean(processingStage)}
           onPhotoChange={handlePhotoChange}
+          messages={messages.uploader}
         />
 
         <label className="quick-analysis-check">
-          <input type="checkbox" checked={aiConsent} onChange={(event) => setAiConsent(event.target.checked)} disabled={Boolean(processingStage)} />
-          <span>I understand that these photos will be used only for this one-time analysis, sent to an AI service for processing, and never stored by ElevareFit. They are discarded after processing. See the <a href="/privacy-policy/">Privacy Policy</a>.</span>
+          <input id="quick-analysis-upload-consent" type="checkbox" checked={aiConsent} onChange={(event) => { setAiConsent(event.target.checked); setConsentError(false); }} disabled={Boolean(processingStage)} aria-invalid={consentError} aria-describedby={consentError ? "quick-analysis-upload-consent-error" : undefined} />
+          <span>{messages.uploadConsentBefore}<a href="/privacy-policy/" hrefLang="en">{messages.privacyPolicy}</a>{messages.uploadConsentAfter}</span>
         </label>
+        {consentError ? <p className="field-error" id="quick-analysis-upload-consent-error">{messages.confirmAiProcessing}</p> : null}
 
         <button className="button button-primary" type="submit" disabled={Boolean(processingStage)}>
-          {processingStage || "Analyze my photos"}
+          {processingStage || messages.analyzePhotos}
         </button>
-        {processingStage ? <div className="quick-analysis-processing" role="status"><div className="quick-analysis-spinner" aria-hidden="true" /><div><strong>{processingStage}</strong><span>Keep this page open while the report is prepared.</span></div></div> : null}
+        {processingStage ? <div className="quick-analysis-processing" role="status" aria-live="polite" aria-busy="true"><div className="quick-analysis-spinner" aria-hidden="true" /><div><strong>{processingStage}</strong><span>{messages.keepOpen}</span></div></div> : null}
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
-        <p className="fine-print">If a technical issue prevents delivery, your paid entitlement remains valid for another upload attempt. You will not be charged again. Attempts used: {state.retryCount} of {state.maxRetries}.</p>
+        <p className="fine-print">{messages.retryBody} {messages.attemptsUsed}: {state.retryCount} {messages.of} {state.maxRetries}.</p>
       </form>
     </div>
   );

@@ -10,6 +10,7 @@ const RATE_LIMIT_WINDOWS = {
   session: { limit: 20, seconds: 60 * 60 },
   analyze: { limit: 6, seconds: 60 * 60 },
   status: { limit: 120, seconds: 60 * 60 },
+  translation_feedback: { limit: 5, seconds: 60 * 60 },
 } as const;
 
 export type QuickAnalysisRateLimitAction = keyof typeof RATE_LIMIT_WINDOWS;

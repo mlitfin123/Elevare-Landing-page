@@ -21,13 +21,16 @@ test("the public shop launches with one Coming Soon Show Day Kit", () => {
   assert.equal(shopProducts.length, 1);
   assert.equal(showDayKit.name, "Show Day Kit");
   assert.equal(showDayKit.status, "coming_soon");
+  assert.equal(showDayKit.description, "Everything you need for show day, organized in one convenient kit.");
   assert.equal(showDayKit.stripePriceId, null);
   assert.equal(showDayKit.stripeShippingRateId, null);
   assert.equal(getPublicShopProducts().length, 1);
 
   const page = fs.readFileSync(path.join(projectRoot, "app", "shop", "page.tsx"), "utf8");
   assert.match(page, /Coming Soon/);
-  assert.match(page, /Sales are not open yet/);
+  assert.match(page, /Fitness essentials for training, prep, and performance/);
+  assert.match(page, /Featured Products/);
+  assert.doesNotMatch(page, /Sales are not open yet/);
   assert.doesNotMatch(page, /Add to Cart|Preorder|Reserve/);
 });
 
@@ -186,7 +189,7 @@ test("Shop checkout is server-authoritative and isolated from Quick Analysis", (
   assert.doesNotMatch(checkoutRoute, /inventory\.availableToSell < availability\.quantity/);
   assert.match(checkoutRoute, /inventory\.stripePriceId !== availability\.product\.stripePriceId/);
   assert.match(checkoutRoute, /shipping_address_collection/);
-  assert.match(checkoutRoute, /ui_mode: "embedded"/);
+  assert.match(checkoutRoute, /ui_mode: "embedded_page"/);
   assert.match(webhookRoute, /metadata\?\.product === "stagelab_quick_analysis"/);
   assert.match(webhookRoute, /metadata\?\.product === "elevare_shop"/);
   assert.match(quickCheckout, /stagelab_quick_analysis/);

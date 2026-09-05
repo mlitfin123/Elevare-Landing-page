@@ -1,5 +1,7 @@
 "use client";
 
+import { localeFromPathname } from "./i18n/config.ts";
+
 export type AnalyticsEventParams = Record<string, string | number | boolean | undefined>;
 
 declare global {
@@ -67,6 +69,10 @@ export function trackEvent(eventName: string, params: AnalyticsEventParams = {})
     return;
   }
 
+  params = {
+    ...params,
+    locale: localeFromPathname(window.location.pathname),
+  };
   window.gtag("event", eventName, sanitizeAnalyticsParams(params));
 }
 
@@ -82,6 +88,7 @@ export function trackPageView(pagePath: string, measurementId: string) {
     page_path: sanitizedPath,
     page_location: `${window.location.origin}${sanitizedPath}`,
     page_title: isProfessionalProfile ? "Professional profile | ElevareFit" : document.title,
+    locale: localeFromPathname(window.location.pathname),
     send_to: measurementId,
   });
 }

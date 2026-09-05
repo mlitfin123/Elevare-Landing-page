@@ -152,6 +152,7 @@ async function WorkoutGoalPage({ slug }: { slug: string }) {
                 key={workoutTemplate.slug}
                 workoutTemplate={workoutTemplate}
                 sourcePage={`workout_goal_${goal.slug}`}
+                prefetch={false}
               />
             ))}
           </div>

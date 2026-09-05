@@ -8,9 +8,10 @@ Target only the Elevare marketplace project:
 
 - Project: `Elevare-Prod`
 - Project ref: `cnfqpfynjpwlzdtblzps`
-- Migration: `../supabase/migrations/20260821120000_stage_lab_quick_analysis.sql`
+- Base migration: `../supabase/migrations/20260821120000_stage_lab_quick_analysis.sql`
+- Locale migration: `../supabase/migrations/20260904090000_quick_analysis_generation_locale.sql`
 
-Verify the linked target before applying the migration. The migration creates `quick_analyses`, `quick_analysis_rate_limits`, and two server-only functions. It creates no storage bucket and no image or photo columns.
+Verify the linked target before applying the migrations. The base migration creates `quick_analyses`, `quick_analysis_rate_limits`, and two server-only functions. The locale migration adds only the nullable, allowlisted `generation_locale` column; legacy null values continue to render in English. Neither migration creates a storage bucket or image/photo columns.
 
 ```powershell
 npx supabase link --project-ref cnfqpfynjpwlzdtblzps
@@ -18,6 +19,8 @@ npx supabase migration list
 npx supabase db push --dry-run
 npx supabase db push
 ```
+
+The locale migration follows the repository's normal one-time, ordered migration workflow. It is safe for existing rows and guards repeat execution of its named constraint, but production history should still be advanced through `supabase db push` rather than by rerunning SQL manually. The safest operational rollback is to disable both localized-generation flags while leaving the additive nullable column in place. If a full schema rollback is ever required after the application has been rolled back, first confirm no deployed code reads `generation_locale`, then drop `quick_analyses_generation_locale_check` and the column; this removes locale metadata but does not delete analysis, payment, or entitlement rows.
 
 Confirm that the existing Vercel variables `SECOND_SUPABASE_URL` and `SECOND_SUPABASE_SERVICE_ROLE_KEY` point to this same project. The service-role key must remain server-only.
 

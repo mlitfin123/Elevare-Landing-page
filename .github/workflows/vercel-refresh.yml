@@ -2,7 +2,7 @@ name: Refresh Vercel website data
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "23 8 * * *"
   workflow_dispatch:
 
 jobs:

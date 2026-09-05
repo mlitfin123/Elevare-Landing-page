@@ -254,8 +254,8 @@ export function getAllCategories(): BlogCategory[] {
   return BLOG_CATEGORIES.filter((category) => categories.has(category));
 }
 
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDate(date: string, locale = "en-US") {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     day: "numeric",
     year: "numeric",

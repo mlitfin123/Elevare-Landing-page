@@ -6,6 +6,7 @@ import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
+import { LocaleRuntime } from "@/components/localization/LocaleRuntime";
 import { StructuredData } from "@/components/StructuredData";
 import { buildGoogleAnalyticsBootstrap } from "@/lib/analytics-consent";
 import { buildSiteStructuredData, siteConfig } from "@/lib/site";
@@ -46,7 +47,7 @@ export default function RootLayout({
   const googleAnalyticsId = siteConfig.analytics.googleAnalyticsId;
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {googleAnalyticsId ? (
           <>
@@ -64,6 +65,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className={`${dmSans.variable} ${dmMono.variable}`}>
+        <LocaleRuntime />
         <StructuredData data={buildSiteStructuredData()} />
         {googleAnalyticsId ? (
           <>

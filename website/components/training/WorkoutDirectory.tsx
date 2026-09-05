@@ -79,6 +79,7 @@ export function WorkoutDirectory({ workoutTemplates }: WorkoutDirectoryProps) {
                 key={workoutTemplate.slug}
                 workoutTemplate={workoutTemplate}
                 sourcePage="workout_directory"
+                prefetch={false}
               />
             ))}
           </div>

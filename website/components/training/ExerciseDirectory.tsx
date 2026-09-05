@@ -68,7 +68,7 @@ export function ExerciseDirectory({ exercises }: ExerciseDirectoryProps) {
         {filteredExercises.length > 0 ? (
           <div className="training-grid">
             {filteredExercises.map((exercise) => (
-              <ExerciseCard key={exercise.slug} exercise={exercise} sourcePage="exercise_directory" />
+              <ExerciseCard key={exercise.slug} exercise={exercise} sourcePage="exercise_directory" prefetch={false} />
             ))}
           </div>
         ) : (

@@ -1,4 +1,10 @@
 import type { Metadata } from "next";
+import {
+  isLocalizedIndexingEnabled,
+  localizePathname,
+  type Locale,
+  toOpenGraphLocale,
+} from "./i18n/config.ts";
 
 export const PRIMARY_SITE_ORIGIN = "https://www.elevarefit.com";
 export const LEGACY_SITE_ORIGINS = [
@@ -205,6 +211,8 @@ export function buildMetadata({
   type = "website",
   robots,
   imageUrl,
+  locale = "en",
+  localizedAlternates = false,
 }: {
   title: string;
   description: string;
@@ -213,6 +221,8 @@ export function buildMetadata({
   type?: "website" | "article";
   robots?: Metadata["robots"];
   imageUrl?: string;
+  locale?: Locale;
+  localizedAlternates?: boolean;
 }): Metadata {
   const canonical = normalizeSitePath(canonicalPath ?? pathname);
   const url = absoluteUrl(canonical);
@@ -220,6 +230,14 @@ export function buildMetadata({
   const socialImage = imageUrl
     ? imageUrl.startsWith("/") ? absoluteUrl(imageUrl) : imageUrl
     : absoluteUrl("/logo_transparent.png");
+  const languageAlternates = localizedAlternates && isLocalizedIndexingEnabled()
+    ? {
+        en: absoluteUrl(localizePathname(canonical, "en")),
+        "es-419": absoluteUrl(localizePathname(canonical, "es-419")),
+        "pt-BR": absoluteUrl(localizePathname(canonical, "pt-BR")),
+        "x-default": absoluteUrl(localizePathname(canonical, "en")),
+      }
+    : undefined;
 
   return {
     title: {
@@ -228,6 +246,7 @@ export function buildMetadata({
     description,
     alternates: {
       canonical,
+      languages: languageAlternates,
     },
     openGraph: {
       title: pageTitle,
@@ -235,6 +254,7 @@ export function buildMetadata({
       url,
       siteName: siteConfig.title,
       type,
+      locale: toOpenGraphLocale(locale),
       images: [{ url: socialImage, alt: pageTitle }],
     },
     twitter: {

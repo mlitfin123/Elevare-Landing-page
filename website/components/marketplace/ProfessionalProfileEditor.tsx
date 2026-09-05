@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";

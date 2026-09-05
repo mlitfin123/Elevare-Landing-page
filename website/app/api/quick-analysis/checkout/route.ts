@@ -3,11 +3,17 @@ import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { separateQuickAnalysisAttribution } from "@/lib/quick-analysis-attribution";
 import { parseQuickAnalysisContext } from "@/lib/quick-analysis-schema";
 import {
+  getStripeCheckoutLocale,
+  parseQuickAnalysisLocale,
+  resolveQuickAnalysisGenerationLocale,
+} from "@/lib/quick-analysis-locale";
+import {
   attachCheckoutSession,
   createQuickAnalysisCheckoutRecord,
   removeUnusedCheckoutRecord,
 } from "@/lib/quick-analysis-repository";
 import {
+  QuickAnalysisServerError,
   assertQuickAnalysisSameOrigin,
   enforceQuickAnalysisRateLimit,
   generateQuickAnalysisToken,
@@ -26,6 +32,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CHECKOUT_SESSION_TTL_MS = 35 * 60 * 1_000;
+
+const STRIPE_SUBMIT_MESSAGES = {
+  en: "One-time StageLab Quick Analysis. No subscription or automatic renewal.",
+  "es-419": "StageLab Quick Analysis de pago único. Sin suscripción ni renovación automática.",
+  "pt-BR": "StageLab Quick Analysis com pagamento único. Sem assinatura ou renovação automática.",
+} as const;
 
 function logCheckoutFailure(error: unknown) {
   const stripeError = error as {
@@ -52,9 +64,16 @@ export async function POST(request: Request) {
     assertQuickAnalysisSameOrigin(request);
     const supabase = getQuickAnalysisSupabase();
     await enforceQuickAnalysisRateLimit(request, "checkout", supabase);
-    const payload = await request.json();
-    const { contextPayload, source } = separateQuickAnalysisAttribution(payload);
+    const payload = await request.json() as Record<string, unknown>;
+    const requestedLocale = parseQuickAnalysisLocale(payload.locale);
+    if (!requestedLocale) {
+      throw new QuickAnalysisServerError("INVALID_LOCALE", "The selected language is not supported.");
+    }
+    const payloadWithoutLocale = { ...payload };
+    delete payloadWithoutLocale.locale;
+    const { contextPayload, source } = separateQuickAnalysisAttribution(payloadWithoutLocale);
     const context = parseQuickAnalysisContext(contextPayload);
+    const generationLocale = resolveQuickAnalysisGenerationLocale(requestedLocale);
     const stripe = getQuickAnalysisStripe();
     const priceId = await verifyConfiguredQuickAnalysisPrice(stripe);
     const checkoutNonce = generateQuickAnalysisToken();
@@ -65,34 +84,38 @@ export async function POST(request: Request) {
     }, {
       hash: hashQuickAnalysisToken(checkoutNonce),
       expiresAt: checkoutNonceExpiresAt.toISOString(),
-    });
+    }, generationLocale);
 
     const origin = getQuickAnalysisReturnOrigin(request);
     const sourceSuffix = source ? `&source=${encodeURIComponent(source)}` : "";
+    const localeSuffix = `&locale=${encodeURIComponent(requestedLocale)}`;
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
         ui_mode: "embedded_page",
+        locale: getStripeCheckoutLocale(requestedLocale),
         redirect_on_completion: "if_required",
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
-        return_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}${sourceSuffix}`,
+        return_url: `${origin}/stagelab/quick-analysis/return/?session_id={CHECKOUT_SESSION_ID}${sourceSuffix}${localeSuffix}`,
         metadata: {
           product: "stagelab_quick_analysis",
           quick_analysis_id: analysisId,
           analysis_mode: context.analysisMode,
+          generation_locale: generationLocale,
         },
         payment_intent_data: {
           metadata: {
             product: "stagelab_quick_analysis",
             quick_analysis_id: analysisId,
             analysis_mode: context.analysisMode,
+            generation_locale: generationLocale,
           },
         },
         expires_at: Math.floor(checkoutNonceExpiresAt.getTime() / 1_000),
         submit_type: "pay",
         custom_text: {
-          submit: { message: "One-time StageLab Quick Analysis. No subscription or automatic renewal." },
+          submit: { message: STRIPE_SUBMIT_MESSAGES[requestedLocale] },
         },
       },
       { idempotencyKey: `quick-analysis-checkout-${analysisId}` },
@@ -101,7 +124,7 @@ export async function POST(request: Request) {
     if (!session.client_secret) throw new Error("Stripe Embedded Checkout did not return a client secret.");
     await attachCheckoutSession(supabase, analysisId, session.id);
     const response = NextResponse.json(
-      { clientSecret: session.client_secret, checkoutSessionId: session.id },
+      { clientSecret: session.client_secret, checkoutSessionId: session.id, generationLocale },
       { headers: { "Cache-Control": "no-store" } },
     );
     response.cookies.set({

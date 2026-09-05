@@ -12,6 +12,7 @@ export const metadata = buildMetadata({
   description:
     "Track bodybuilding contest prep with weekly check-ins, physique photos, conditioning trends, and structured recommendations for athletes and coaches.",
   pathname: "/stagelab",
+  localizedAlternates: true,
 });
 
 const faqs = [

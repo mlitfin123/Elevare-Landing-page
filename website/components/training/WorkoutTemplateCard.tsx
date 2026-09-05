@@ -10,9 +10,10 @@ import {
 type WorkoutTemplateCardProps = {
   workoutTemplate: WorkoutTemplateRecord;
   sourcePage: string;
+  prefetch?: boolean;
 };
 
-export function WorkoutTemplateCard({ workoutTemplate, sourcePage }: WorkoutTemplateCardProps) {
+export function WorkoutTemplateCard({ workoutTemplate, sourcePage, prefetch }: WorkoutTemplateCardProps) {
   return (
     <article className="panel training-card">
       <div className="training-card-top">
@@ -36,6 +37,7 @@ export function WorkoutTemplateCard({ workoutTemplate, sourcePage }: WorkoutTemp
       <TrackedLink
         className="button button-secondary"
         href={`/workouts/${workoutTemplate.slug}`}
+        prefetch={prefetch}
         eventName="workout_open"
         eventParams={{
           workout_slug: workoutTemplate.slug,

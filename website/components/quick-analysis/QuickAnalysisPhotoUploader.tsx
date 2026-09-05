@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ChangeEvent } from "react";
+import type { QuickAnalysisMessages } from "@/lib/i18n/quick-analysis-types";
 import {
   QUICK_ANALYSIS_PHOTO_VIEWS,
   type QuickAnalysisMode,
@@ -18,52 +19,22 @@ type QuickAnalysisPhotoUploaderProps = {
   photos: Partial<Record<QuickAnalysisPhotoView, QuickAnalysisSelectedPhoto>>;
   errors: Partial<Record<QuickAnalysisPhotoView, string>>;
   disabled: boolean;
+  messages: QuickAnalysisMessages["result"]["uploader"];
   onPhotoChange: (view: QuickAnalysisPhotoView, file: File | null) => void;
-};
-
-const SLOT_CONTENT: Record<QuickAnalysisPhotoView, { label: string; help: string; required: boolean }> = {
-  front: {
-    label: "Front",
-    help: "Face the camera with your full physique visible.",
-    required: true,
-  },
-  side: {
-    label: "Side",
-    help: "Turn to either side and keep your full physique visible.",
-    required: true,
-  },
-  back: {
-    label: "Back",
-    help: "Face away from the camera with your full physique visible.",
-    required: true,
-  },
-  additional_1: {
-    label: "Additional View",
-    help: "Optional: another pose, the opposite side, or a useful closer view.",
-    required: false,
-  },
-  additional_2: {
-    label: "Additional View",
-    help: "Optional: another pose, the opposite side, or a useful closer view.",
-    required: false,
-  },
 };
 
 const PHOTO_VIEW_GUIDES = [
   {
-    label: "Front",
+    view: "front",
     src: "/images/quick-analysis/front-guide.webp",
-    alt: "Front physique photo positioning example",
   },
   {
-    label: "Side",
+    view: "side",
     src: "/images/quick-analysis/side-guide.webp",
-    alt: "Side physique photo positioning example",
   },
   {
-    label: "Back",
+    view: "back",
     src: "/images/quick-analysis/back-guide.webp",
-    alt: "Back physique photo positioning example",
   },
 ] as const;
 
@@ -72,15 +43,17 @@ function PhotoSlot({
   photo,
   error,
   disabled,
+  messages,
   onPhotoChange,
 }: {
   view: QuickAnalysisPhotoView;
   photo?: QuickAnalysisSelectedPhoto;
   error?: string;
   disabled: boolean;
+  messages: QuickAnalysisMessages["result"]["uploader"];
   onPhotoChange: (view: QuickAnalysisPhotoView, file: File | null) => void;
 }) {
-  const content = SLOT_CONTENT[view];
+  const content = messages.slots[view];
   const inputId = `quick-analysis-photo-${view}`;
   const helpId = `${inputId}-help`;
   const errorId = `${inputId}-error`;
@@ -95,9 +68,9 @@ function PhotoSlot({
       <div className="quick-analysis-photo-slot-head">
         <div>
           <strong id={`${inputId}-label`}>{content.label}</strong>
-          <span className="quick-analysis-photo-requirement">{content.required ? "Required" : "Optional"}</span>
+          <span className="quick-analysis-photo-requirement">{content.required ? messages.required : messages.optional}</span>
         </div>
-        {photo ? <span className="quick-analysis-photo-ready">Ready</span> : null}
+        {photo ? <span className="quick-analysis-photo-ready">{messages.ready}</span> : null}
       </div>
 
       <p id={helpId}>{content.help}</p>
@@ -106,19 +79,19 @@ function PhotoSlot({
         <div className="quick-analysis-photo-preview">
           <div className="quick-analysis-photo-preview-image">
             {/* The object URL is browser-local and revoked by the parent when replaced or unmounted. */}
-            <Image src={photo.previewUrl} alt={`${content.label} photo preview`} fill sizes="(max-width: 640px) 100vw, 260px" unoptimized />
+            <Image src={photo.previewUrl} alt={messages.previewAlt.replace("{label}", content.label)} fill sizes="(max-width: 640px) 100vw, 260px" unoptimized />
           </div>
           <div className="quick-analysis-photo-actions">
-            <label className="button button-secondary" htmlFor={inputId}>Replace</label>
+            <label className="button button-secondary" htmlFor={inputId}>{messages.replace}</label>
             <button className="quick-analysis-photo-remove" type="button" onClick={() => onPhotoChange(view, null)} disabled={disabled}>
-              Remove
+              {messages.remove}
             </button>
           </div>
         </div>
       ) : (
         <label className="quick-analysis-photo-add" htmlFor={inputId}>
           <span aria-hidden="true">+</span>
-          Choose photo
+          {messages.choose}
         </label>
       )}
 
@@ -143,17 +116,18 @@ export function QuickAnalysisPhotoUploader({
   photos,
   errors,
   disabled,
+  messages,
   onPhotoChange,
 }: QuickAnalysisPhotoUploaderProps) {
   const modeGuidance = mode === "competition_prep"
     ? (
         <p className="quick-analysis-mode-guidance">
-          <strong>Competition Prep:</strong> Use your normal check-in or division poses when possible. Division-appropriate poses can improve the presentation and division-specific assessment.
+          <strong>{messages.prepLabel}:</strong> {messages.prepGuidance}
         </p>
       )
     : (
         <p className="quick-analysis-mode-guidance">
-          <strong>Physique Check:</strong> No posing experience needed. Stand naturally and keep your full physique visible.
+          <strong>{messages.physiqueLabel}:</strong> {messages.physiqueGuidance}
         </p>
       );
 
@@ -163,31 +137,26 @@ export function QuickAnalysisPhotoUploader({
 
       <section className="quick-analysis-photo-guide" aria-labelledby="quick-analysis-photo-guide-title">
         <div>
-          <span className="stat-label" id="quick-analysis-photo-guide-title">For the best read</span>
-          <div className="quick-analysis-view-guide" aria-label="Submit front, side, and back views">
+          <span className="stat-label" id="quick-analysis-photo-guide-title">{messages.bestRead}</span>
+          <div className="quick-analysis-view-guide" aria-label={messages.guideAria}>
             {PHOTO_VIEW_GUIDES.map((guide) => (
-              <span key={guide.label}>
+              <span key={guide.view}>
                 <Image
                   className="quick-analysis-view-guide-image"
                   src={guide.src}
-                  alt={guide.alt}
+                  alt={messages.guideAlt[guide.view]}
                   width={600}
                   height={400}
                   sizes="(max-width: 640px) 30vw, 180px"
                 />
-                {guide.label}
+                {messages.slots[guide.view].label}
               </span>
             ))}
           </div>
         </div>
-        <ul>
-          <li>Full physique visible</li>
-          <li>Clear, even lighting</li>
-          <li>Fitted athletic clothing</li>
-          <li>Camera straight-on</li>
-        </ul>
-        <p>Keep the camera roughly straight-on and, if possible, use photos from the same session. Mirror photos are fine when the phone or frame does not block large areas of your physique.</p>
-        <small><strong>Avoid:</strong> heavy shadows, baggy clothing, extreme camera angles, or blocking your physique with the phone.</small>
+        <ul>{messages.checklist.map((item) => <li key={item}>{item}</li>)}</ul>
+        <p>{messages.guideBody}</p>
+        <small><strong>{messages.avoidLabel}:</strong> {messages.avoidBody}</small>
       </section>
 
       <div className="quick-analysis-photo-slots">
@@ -198,13 +167,14 @@ export function QuickAnalysisPhotoUploader({
             photo={photos[view]}
             error={errors[view]}
             disabled={disabled}
+            messages={messages}
             onPhotoChange={onPhotoChange}
           />
         ))}
       </div>
 
       <p className="quick-analysis-upload-privacy">
-        Your photos are processed for this analysis and are not retained by ElevareFit.
+        {messages.privacy}
       </p>
     </div>
   );

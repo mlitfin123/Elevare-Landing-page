@@ -10,6 +10,8 @@ import {
   type QuickAnalysisResult,
   type QuickAnalysisStatus,
 } from "./quick-analysis.ts";
+import type { Locale } from "./i18n/config.ts";
+import { normalizeStoredQuickAnalysisLocale } from "./quick-analysis-locale.ts";
 import {
   QuickAnalysisServerError,
   deriveQuickAnalysisToken,
@@ -28,6 +30,7 @@ export type QuickAnalysisRow = {
   payment_status: "unpaid" | "paid" | "refunded" | "failed";
   analysis_status: QuickAnalysisStatus;
   analysis_mode: QuickAnalysisMode | null;
+  generation_locale: Locale | null;
   division: string;
   competition_status: "preparing" | "assessing";
   weeks_out: number | null;
@@ -51,12 +54,14 @@ export async function createQuickAnalysisCheckoutRecord(
   context: QuickAnalysisContext,
   legalVersions: { termsVersion: string; privacyVersion: string },
   checkoutNonce: { hash: string; expiresAt: string },
+  generationLocale: Locale = "en",
 ) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("quick_analyses")
     .insert({
       analysis_mode: context.analysisMode,
+      generation_locale: generationLocale,
       division: context.division,
       competition_status: context.competitionStatus,
       weeks_out: context.weeksOut,
@@ -236,6 +241,7 @@ export function toQuickAnalysisPublicState(row: QuickAnalysisRow): QuickAnalysis
     row.retry_count < QUICK_ANALYSIS_MAX_RETRIES;
   return {
     analysisMode: row.analysis_mode ?? row.result_json?.analysis_mode ?? "competition_prep",
+    generationLocale: normalizeStoredQuickAnalysisLocale(row.generation_locale),
     paymentStatus: row.payment_status,
     analysisStatus: row.analysis_status,
     canAnalyze,

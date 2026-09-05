@@ -11,6 +11,8 @@ import {
   parseQuickAnalysisResult,
 } from "./quick-analysis-schema.ts";
 import { getRequiredServerEnv } from "./quick-analysis-server.ts";
+import type { Locale } from "./i18n/config.ts";
+import { getQuickAnalysisLanguageInstruction } from "./quick-analysis-locale.ts";
 
 export const QUICK_ANALYSIS_SYSTEM_PROMPT = `You are the StageLab Quick Analysis visual assessment model for bodybuilding and physique evaluation.
 
@@ -118,7 +120,11 @@ function includesRefusal(payload: OpenAIResponsePayload) {
     .some((content) => content.type === "refusal" || Boolean(content.refusal));
 }
 
-function buildContextPrompt(context: QuickAnalysisContext, repair = false) {
+export function buildQuickAnalysisContextPrompt(
+  context: QuickAnalysisContext,
+  generationLocale: Locale = "en",
+  repair = false,
+) {
   const details = {
     analysis_mode: context.analysisMode,
     selected_division: context.division,
@@ -128,13 +134,15 @@ function buildContextPrompt(context: QuickAnalysisContext, repair = false) {
     optional_context: context.optionalContext,
   };
   const modeInstructions = context.analysisMode === "physique_check" ? PHYSIQUE_CHECK_PROMPT : COMPETITION_PREP_PROMPT;
-  return `${repair ? "The previous response did not match the required schema or mode rules. Return a corrected response only.\n\n" : ""}${modeInstructions}\n\nAssess the current labeled front, side, back, and optional photos as one snapshot. Do not infer change over time. Context:\n${JSON.stringify(details)}`;
+  const languageInstruction = getQuickAnalysisLanguageInstruction(generationLocale);
+  return `${repair ? "The previous response did not match the required schema or mode rules. Return a corrected response only.\n\n" : ""}${modeInstructions}\n\nLanguage instruction:\n${languageInstruction}\n\nAssess the current labeled front, side, back, and optional photos as one snapshot. Do not infer change over time. Context:\n${JSON.stringify(details)}`;
 }
 
 function buildRequestBody(
   model: string,
   context: QuickAnalysisContext,
   images: NormalizedQuickAnalysisImage[],
+  generationLocale: Locale,
   repair: boolean,
 ) {
   const labeledImages = images.flatMap((image, index) => [
@@ -159,7 +167,7 @@ function buildRequestBody(
       {
         role: "user",
         content: [
-          { type: "input_text", text: buildContextPrompt(context, repair) },
+          { type: "input_text", text: buildQuickAnalysisContextPrompt(context, generationLocale, repair) },
           ...labeledImages,
         ],
       },
@@ -179,6 +187,7 @@ function buildRequestBody(
 export async function requestQuickAnalysisFromOpenAI({
   context,
   images,
+  generationLocale = "en",
   fetchImpl = fetch,
   apiKey = getRequiredServerEnv("OPENAI_API_KEY"),
   model = getRequiredServerEnv("OPENAI_QUICK_ANALYSIS_MODEL"),
@@ -186,6 +195,7 @@ export async function requestQuickAnalysisFromOpenAI({
 }: {
   context: QuickAnalysisContext;
   images: NormalizedQuickAnalysisImage[];
+  generationLocale?: Locale;
   fetchImpl?: typeof fetch;
   apiKey?: string;
   model?: string;
@@ -202,7 +212,7 @@ export async function requestQuickAnalysisFromOpenAI({
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(buildRequestBody(model, context, images, attempt === 1)),
+        body: JSON.stringify(buildRequestBody(model, context, images, generationLocale, attempt === 1)),
         signal: controller.signal,
       });
 

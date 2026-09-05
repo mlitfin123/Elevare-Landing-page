@@ -2,20 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { TrackedLink } from "@/components/TrackedLink";
+import type { Locale } from "@/lib/i18n/config";
+import { localizePathname } from "@/lib/i18n/config";
+import type { QuickAnalysisMessages } from "@/lib/i18n/quick-analysis-types";
 import type { QuickAnalysisPublicState } from "@/lib/quick-analysis";
+import {
+  clearQuickAnalysisRecoveryCandidate,
+  hasExplicitQuickAnalysisRecoveryContext,
+  hasRecentQuickAnalysisRecoveryCandidate,
+} from "@/lib/quick-analysis-recovery-marker";
 
-type StatusPayload = { state?: QuickAnalysisPublicState };
+type StatusPayload = { state?: QuickAnalysisPublicState | null };
 
-function getReturnLabel(state: QuickAnalysisPublicState) {
-  if (state.analysisStatus === "completed") return "View my recent analysis";
-  if (state.analysisStatus === "processing") return "Check analysis status";
-  return "Continue my analysis";
+function getReturnLabel(state: QuickAnalysisPublicState, messages: QuickAnalysisMessages["returnLink"]) {
+  if (state.analysisStatus === "completed") return messages.view;
+  if (state.analysisStatus === "processing") return messages.check;
+  return messages.continue;
 }
 
-export function QuickAnalysisReturnLink() {
+export function QuickAnalysisReturnLink({ locale, messages }: { locale: Locale; messages: QuickAnalysisMessages["returnLink"] }) {
   const [state, setState] = useState<QuickAnalysisPublicState | null>(null);
 
   useEffect(() => {
+    const explicitRecovery = hasExplicitQuickAnalysisRecoveryContext(window.location.search);
+    if (!explicitRecovery && !hasRecentQuickAnalysisRecoveryCandidate()) return;
+
     const controller = new AbortController();
 
     async function checkForRecentAnalysis() {
@@ -29,6 +40,8 @@ export function QuickAnalysisReturnLink() {
         const payload = (await response.json()) as StatusPayload;
         if (payload.state && payload.state.analysisStatus !== "expired") {
           setState(payload.state);
+        } else {
+          clearQuickAnalysisRecoveryCandidate();
         }
       } catch {
         // Most visitors have no recent analysis, so access-check failures stay silent.
@@ -42,21 +55,21 @@ export function QuickAnalysisReturnLink() {
   if (!state) return null;
 
   return (
-    <aside className="quick-analysis-return-card" aria-label="Recent Quick Analysis">
+    <aside className="quick-analysis-return-card" aria-label={messages.ariaLabel}>
       <div>
-        <strong>{state.analysisStatus === "completed" ? "Your recent result is still available." : "You have an analysis in progress."}</strong>
-        <span>Open it from this browser and device during the 72-hour access period.</span>
+        <strong>{state.analysisStatus === "completed" ? messages.completedTitle : messages.inProgressTitle}</strong>
+        <span>{messages.body}</span>
       </div>
       <TrackedLink
         className="button button-secondary"
-        href="/stagelab/quick-analysis/result/"
+        href={localizePathname("/stagelab/quick-analysis/result/", locale)}
         eventName="quick_analysis_return_clicked"
         eventParams={{
           analysis_mode: state.analysisMode,
           analysis_status: state.analysisStatus,
         }}
       >
-        {getReturnLabel(state)}
+        {getReturnLabel(state, messages)}
       </TrackedLink>
     </aside>
   );

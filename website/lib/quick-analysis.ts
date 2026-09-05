@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n/config.ts";
+
 export const QUICK_ANALYSIS_PRODUCT_NAME = "StageLab Quick Analysis";
 export const QUICK_ANALYSIS_PRICE_CENTS = 99;
 export const QUICK_ANALYSIS_PRICE_VALUE = QUICK_ANALYSIS_PRICE_CENTS / 100;
@@ -128,6 +130,7 @@ export type QuickAnalysisResult = {
 
 export type QuickAnalysisPublicState = {
   analysisMode: QuickAnalysisMode;
+  generationLocale: Locale;
   paymentStatus: "unpaid" | "paid" | "refunded" | "failed";
   analysisStatus: QuickAnalysisStatus;
   canAnalyze: boolean;

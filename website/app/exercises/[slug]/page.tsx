@@ -255,6 +255,7 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
                 key={exercise.slug}
                 exercise={exercise}
                 sourcePage={`exercise_category_${category.slug}`}
+                prefetch={false}
               />
             ))}
           </div>
@@ -284,6 +285,7 @@ async function ExerciseCategoryPage({ slug }: { slug: string }) {
                 key={exercise.slug}
                 exercise={exercise}
                 sourcePage={`exercise_category_${category.slug}_supporting`}
+                prefetch={false}
               />
             ))}
           </div>

@@ -25,6 +25,7 @@ import {
   fastFoodNutritionViews,
 } from "../lib/nutrition-pages.ts";
 import { absoluteUrl, normalizeSitePath } from "../lib/site.ts";
+import { isLocalizedIndexingEnabled, localizePathname } from "../lib/i18n/config.ts";
 import {
   canonicalizeTrainingSnapshot,
   EXERCISE_EQUIPMENT_CATEGORIES,
@@ -158,7 +159,17 @@ function writeFileSafely(filePath: string, contents: string) {
 }
 
 function buildSiteEntries() {
-  return staticSiteRoutes.map((route) => toSitemapEntry(route, undefined, "priority_index"));
+  const entries = staticSiteRoutes.map((route) => toSitemapEntry(route, undefined, "priority_index"));
+
+  if (!isLocalizedIndexingEnabled()) return entries;
+
+  const localizedRoutes = (["es-419", "pt-BR"] as const).flatMap((locale) =>
+    ["/", "/logbook/", "/stagelab/", "/stagelab/quick-analysis/"].map((route) =>
+      toSitemapEntry(localizePathname(route, locale), undefined, "priority_index"),
+    ),
+  );
+
+  return [...entries, ...localizedRoutes];
 }
 
 function buildCalculatorEntries() {
