@@ -5,6 +5,7 @@ import { LocalizedExercisesPage } from "@/components/localization/LocalizedExerc
 import { LocalizedCalculatorsPage } from "@/components/localization/LocalizedCalculatorsPage";
 import { LocalizedNutritionPage } from "@/components/localization/LocalizedNutritionPage";
 import { LocalizedWorkoutsPage } from "@/components/localization/LocalizedWorkoutsPage";
+import { LocalizedWorkoutGeneratorPage } from "@/components/localization/LocalizedWorkoutGeneratorPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
@@ -24,6 +25,7 @@ import { localizeExerciseName, localizeEquipmentLabel, localizeMuscleLabel } fro
 import { getMarketingMessages } from "@/lib/i18n/messages";
 import { getQuickAnalysisMessages } from "@/lib/i18n/quick-analysis-messages";
 import { getWorkoutMessages, localizeWorkoutGoal, localizeWorkoutName } from "@/lib/i18n/workout-content";
+import { getWorkoutGeneratorMessages } from "@/lib/i18n/workout-generator-content";
 import { getNutritionRestaurants, getRestaurantBySlug } from "@/lib/nutrition";
 import { fastFoodNutritionViews, isFastFoodNutritionView, isRestaurantNutritionView, restaurantNutritionViews } from "@/lib/nutrition-pages";
 import { buildMetadata } from "@/lib/site";
@@ -91,6 +93,9 @@ function resolvePage(params: LocalizedPageParams) {
   }
   if (slug[0] === "calculators" && slug.length <= 2) {
     return { locale, page: "calculators" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
+  }
+  if (slug.length === 2 && slug[0] === "tools" && slug[1] === "workout-generator") {
+    return { locale, page: "workout-generator" as const, pathname: "/tools/workout-generator/" };
   }
   if (slug[0] === "nutrition" && slug.length <= 3) {
     return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
@@ -199,6 +204,18 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
     });
   }
 
+  if (resolved.page === "workout-generator") {
+    const messages = getWorkoutGeneratorMessages(resolved.locale);
+    return buildMetadata({
+      title: messages.seo.title,
+      description: messages.seo.description,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
+
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
   const messages = await getMarketingMessages(resolved.locale);
   const seo = resolved.page === "home"
@@ -243,6 +260,10 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
 
   if (resolved.page === "calculators") {
     return <LocalizedCalculatorsPage locale={resolved.locale} slug={resolved.catalogSlug} />;
+  }
+
+  if (resolved.page === "workout-generator") {
+    return <LocalizedWorkoutGeneratorPage locale={resolved.locale} />;
   }
 
   const messages = await getMarketingMessages(resolved.locale);

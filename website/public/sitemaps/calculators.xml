@@ -124,6 +124,9 @@
     <loc>https://www.elevarefit.com/calculators/show-day-checklist-generator/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/tools/workout-generator/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/es/calculators/</loc>
   </url>
   <url>
@@ -245,6 +248,9 @@
   </url>
   <url>
     <loc>https://www.elevarefit.com/es/calculators/show-day-checklist-generator/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/es/tools/workout-generator/</loc>
   </url>
   <url>
     <loc>https://www.elevarefit.com/pt-br/calculators/</loc>
@@ -370,6 +376,6 @@
     <loc>https://www.elevarefit.com/pt-br/calculators/show-day-checklist-generator/</loc>
   </url>
   <url>
-    <loc>https://www.elevarefit.com/tools/workout-generator/</loc>
+    <loc>https://www.elevarefit.com/pt-br/tools/workout-generator/</loc>
   </url>
 </urlset>

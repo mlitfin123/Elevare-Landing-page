@@ -11,6 +11,7 @@ export const metadata = buildMetadata({
   description:
     "Answer a few questions and get a personalized workout recommendation based on your goals, experience, schedule, and equipment.",
   pathname: "/tools/workout-generator",
+  localizedAlternates: true,
 });
 
 const faqs = [

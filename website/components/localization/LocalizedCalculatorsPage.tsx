@@ -29,8 +29,7 @@ function LocalizedWorkoutFeature({ locale }: { locale: Locale }) {
         <div className="hero-actions">
           <TrackedLink
             className="button button-primary"
-            href="/tools/workout-generator/"
-            hrefLang="en"
+            href={localizePathname("/tools/workout-generator/", locale)}
             eventName="tool_open"
             eventParams={{ tool_slug: "workout-generator", source_page: "localized_calculators_index" }}
           >

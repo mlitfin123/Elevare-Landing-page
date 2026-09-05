@@ -1,5 +1,6 @@
 import { getCalculatorMessages } from "@/lib/i18n/calculator-messages";
 import type { Locale } from "@/lib/i18n/config";
+import { getWorkoutMessages } from "@/lib/i18n/workout-content";
 
 type ContentDisclaimerProps = {
   kind: "estimate" | "training" | "article";
@@ -29,8 +30,11 @@ export function ContentDisclaimer({ kind, locale = "en" }: ContentDisclaimerProp
   const localizedEstimate = kind === "estimate" && locale !== "en"
     ? getCalculatorMessages(locale).shell
     : null;
-  const label = localizedEstimate?.disclaimerLabel ?? content.label;
-  const message = localizedEstimate?.disclaimer ?? content.message;
+  const localizedTraining = kind === "training" && locale !== "en"
+    ? getWorkoutMessages(locale).disclaimer
+    : null;
+  const label = localizedEstimate?.disclaimerLabel ?? localizedTraining?.label ?? content.label;
+  const message = localizedEstimate?.disclaimer ?? localizedTraining?.message ?? content.message;
 
   return (
     <aside className="callout tool-disclaimer-card" aria-label={label}>
@@ -44,8 +48,8 @@ export function EstimateDisclaimer({ locale = "en" }: { locale?: Locale }) {
   return <ContentDisclaimer kind="estimate" locale={locale} />;
 }
 
-export function TrainingDisclaimer() {
-  return <ContentDisclaimer kind="training" />;
+export function TrainingDisclaimer({ locale = "en" }: { locale?: Locale }) {
+  return <ContentDisclaimer kind="training" locale={locale} />;
 }
 
 export function ArticleDisclaimer() {

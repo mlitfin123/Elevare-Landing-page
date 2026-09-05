@@ -21,6 +21,8 @@ import {
   localizeNutritionProduct,
 } from "../lib/i18n/catalog-content.ts";
 import { getLocalizedTool, translateCalculatorText } from "../lib/i18n/calculator-content.ts";
+import { getWorkoutGeneratorMessages, localizeWorkoutRecommendationReason } from "../lib/i18n/workout-generator-content.ts";
+import { WORKOUT_GENERATOR_GOALS } from "../lib/workout-recommendations.ts";
 import { tools } from "../lib/tools.ts";
 import english from "../locales/en/marketing.ts";
 import spanish from "../locales/es-419/marketing.ts";
@@ -83,6 +85,7 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/stagelab/",
     "/stagelab/quick-analysis/",
     "/stagelab/quick-analysis/result/",
+    "/tools/workout-generator/",
   ]);
   assert.equal(localizePathname("/logbook/", "en"), "/logbook/");
   assert.equal(localizePathname("/logbook/", "es-419"), "/es/logbook/");
@@ -103,7 +106,7 @@ test("localized route generation obeys the public route flag", () => {
   process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = "false";
   assert.deepEqual(getLocalizedRouteParams(), []);
   process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = "true";
-  assert.equal(getLocalizedRouteParams().length, 10);
+  assert.equal(getLocalizedRouteParams().length, 12);
   if (previous === undefined) delete process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES;
   else process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = previous;
 });
@@ -160,6 +163,20 @@ test("calculator presentation content localizes without changing canonical value
   assert.equal(translateCalculatorText("Men's Physique prep countdown", "pt-BR"), "Contagem regressiva de preparação: Men's Physique");
   assert.equal(translateCalculatorText("Board shorts", "es-419"), "Shorts de Men's Physique");
   assert.equal(translateCalculatorText("Board shorts", "pt-BR"), "Bermuda de Men's Physique");
+});
+
+test("workout generator localizes presentation while preserving canonical recommendation values", () => {
+  const spanishGenerator = getWorkoutGeneratorMessages("es-419");
+  const portugueseGenerator = getWorkoutGeneratorMessages("pt-BR");
+  assert.equal(WORKOUT_GENERATOR_GOALS[0].value, "weight-loss");
+  assert.equal(spanishGenerator.tool.options.goals["weight-loss"], "Pérdida de peso");
+  assert.equal(portugueseGenerator.tool.options.goals["weight-loss"], "Perda de peso");
+  assert.equal(
+    localizeWorkoutRecommendationReason("It is structured around 3 training days per week.", "es-419"),
+    "Está estructurado para 3 días de entrenamiento por semana.",
+  );
+  assert.equal(localizePathname("/tools/workout-generator/", "es-419"), "/es/tools/workout-generator/");
+  assert.equal(localizePathname("/tools/workout-generator/", "pt-BR"), "/pt-br/tools/workout-generator/");
 });
 
 test("database catalog content is localized at presentation while canonical identity and brands are preserved", () => {

@@ -110,7 +110,7 @@ async function WorkoutIndex({ locale }: { locale: Locale }) {
         <p className="page-intro">{messages.index.intro}</p>
         <div className="hero-actions">
           <TrackedLink className="button button-primary" href={localizePathname("/exercises/", locale)} eventName="cta_click" eventParams={{ cta_name: "Browse exercises", cta_context: "localized_workouts_hero", product: "Logbook" }}>{messages.index.browseExercises}</TrackedLink>
-          <TrackedLink className="button button-secondary" href="/tools/workout-generator/" hrefLang="en" eventName="tool_open" eventParams={{ tool_slug: "workout-generator", source_page: "localized_workouts_hero" }}>{messages.index.useGenerator}</TrackedLink>
+          <TrackedLink className="button button-secondary" href={localizePathname("/tools/workout-generator/", locale)} eventName="tool_open" eventParams={{ tool_slug: "workout-generator", source_page: "localized_workouts_hero" }}>{messages.index.useGenerator}</TrackedLink>
         </div>
         <div className="hero-proof">
           <article className="proof-card"><span className="proof-label">{messages.index.templates}</span><div className="proof-value">{formatNumber(templates.length, locale)}</div><p className="proof-copy">{messages.index.templatesCopy}</p></article>

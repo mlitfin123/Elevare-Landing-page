@@ -13,6 +13,7 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/",
   "/stagelab/quick-analysis/",
   "/stagelab/quick-analysis/result/",
+  "/tools/workout-generator/",
 ] as const;
 
 export const LOCALIZED_CATALOG_PATH_PREFIXES = ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"] as const;
@@ -186,6 +187,7 @@ export function getLocalizedRouteParams() {
       { locale: localeSegment, slug: ["stagelab"] },
       { locale: localeSegment, slug: ["stagelab", "quick-analysis"] },
       { locale: localeSegment, slug: ["stagelab", "quick-analysis", "result"] },
+      { locale: localeSegment, slug: ["tools", "workout-generator"] },
     ];
   });
 }

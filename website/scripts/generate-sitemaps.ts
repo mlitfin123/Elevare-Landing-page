@@ -186,13 +186,11 @@ function buildSiteEntries() {
 }
 
 function buildCalculatorEntries() {
-  return [
-    ...withLocalizedCatalogEntries([
-      toSitemapEntry("/calculators", undefined, "priority_index"),
-      ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), undefined, "priority_index")),
-    ]),
+  return withLocalizedCatalogEntries([
+    toSitemapEntry("/calculators", undefined, "priority_index"),
+    ...tools.map((tool) => toSitemapEntry(getCalculatorPath(tool.slug), undefined, "priority_index")),
     toSitemapEntry("/tools/workout-generator", undefined, "priority_index"),
-  ];
+  ]);
 }
 
 function buildExerciseEntries(exercises: ExerciseRecord[]) {
