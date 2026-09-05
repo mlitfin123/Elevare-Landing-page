@@ -1,4 +1,14 @@
 import { TrackedLink } from "@/components/TrackedLink";
+import type { Locale } from "@/lib/i18n/config";
+import {
+  localizeDifficultyLabel,
+  localizeEquipmentLabel,
+  localizeExerciseName,
+  localizeExerciseTypeLabel,
+  localizeMuscleLabel,
+} from "@/lib/i18n/catalog-content";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
+import { localizePathname } from "@/lib/i18n/config";
 import {
   buildExerciseSummary,
   formatDifficultyLabel,
@@ -12,24 +22,31 @@ type ExerciseCardProps = {
   exercise: ExerciseRecord;
   sourcePage: string;
   prefetch?: boolean;
+  locale?: Locale;
 };
 
-export function ExerciseCard({ exercise, sourcePage, prefetch }: ExerciseCardProps) {
+export function ExerciseCard({ exercise, sourcePage, prefetch, locale = "en" }: ExerciseCardProps) {
+  const messages = getCatalogMessages(locale).exercise;
+  const name = localizeExerciseName(exercise.name, locale);
+  const summary = locale === "en"
+    ? buildExerciseSummary(exercise)
+    : `${name} ${messages.detail.primaryMuscleCopy.toLowerCase()} ${localizeMuscleLabel(exercise.primaryMuscleGroup, locale)}.`;
+
   return (
     <article className="panel training-card">
       <div className="training-card-top">
-        <span className="meta-pill">{formatMuscleLabel(exercise.primaryMuscleGroup)}</span>
-        {exercise.equipment[0] ? <span className="meta-pill">{formatEquipmentLabel(exercise.equipment[0])}</span> : null}
+        <span className="meta-pill">{locale === "en" ? formatMuscleLabel(exercise.primaryMuscleGroup) : localizeMuscleLabel(exercise.primaryMuscleGroup, locale)}</span>
+        {exercise.equipment[0] ? <span className="meta-pill">{locale === "en" ? formatEquipmentLabel(exercise.equipment[0]) : localizeEquipmentLabel(exercise.equipment[0], locale)}</span> : null}
       </div>
-      <h3>{exercise.name}</h3>
-      <p>{buildExerciseSummary(exercise)}</p>
+      <h3>{name}</h3>
+      <p>{summary}</p>
       <div className="training-card-meta">
-        <span>{formatDifficultyLabel(exercise.difficulty)}</span>
-        <span>{formatExerciseTypeLabel(exercise.exerciseType)}</span>
+        <span>{locale === "en" ? formatDifficultyLabel(exercise.difficulty) : localizeDifficultyLabel(exercise.difficulty, locale)}</span>
+        <span>{locale === "en" ? formatExerciseTypeLabel(exercise.exerciseType) : localizeExerciseTypeLabel(exercise.exerciseType, locale)}</span>
       </div>
       <TrackedLink
         className="button button-secondary"
-        href={`/exercises/${exercise.slug}`}
+        href={localizePathname(`/exercises/${exercise.slug}`, locale)}
         prefetch={prefetch}
         eventName="exercise_open"
         eventParams={{
@@ -37,7 +54,7 @@ export function ExerciseCard({ exercise, sourcePage, prefetch }: ExerciseCardPro
           source_page: sourcePage,
         }}
       >
-        View exercise
+        {messages.card.view}
       </TrackedLink>
     </article>
   );

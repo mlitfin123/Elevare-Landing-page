@@ -3,6 +3,10 @@
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import { TrackedLink } from "@/components/TrackedLink";
 import { searchRestaurants, type RestaurantSummary } from "@/lib/nutrition-data";
+import { localizeNutritionText } from "@/lib/i18n/catalog-content";
+import type { Locale } from "@/lib/i18n/config";
+import { formatNumber, localizePathname } from "@/lib/i18n/config";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
 
 type SearchIndexEntry = {
   id: string;
@@ -22,13 +26,15 @@ type CompactSearchIndex = {
 
 type NutritionSearchProps = {
   restaurants: RestaurantSummary[];
+  locale?: Locale;
 };
 
 function formatMacro(value: number | null, suffix = "") {
   return value == null ? "-" : `${value}${suffix}`;
 }
 
-export function NutritionSearch({ restaurants }: NutritionSearchProps) {
+export function NutritionSearch({ restaurants, locale = "en" }: NutritionSearchProps) {
+  const messages = getCatalogMessages(locale).nutrition.search;
   const [restaurantQuery, setRestaurantQuery] = useState("");
   const [itemQuery, setItemQuery] = useState("");
   const [itemIndex, setItemIndex] = useState<SearchIndexEntry[]>([]);
@@ -91,7 +97,7 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
   );
 
   const itemResults = useMemo(() => {
-    const normalized = deferredItemQuery.trim().toLowerCase();
+    const normalized = deferredItemQuery.trim().toLocaleLowerCase(locale);
 
     if (normalized.length < 2) {
       return [];
@@ -99,10 +105,12 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
 
     return itemIndex
       .filter((item) =>
-        `${item.restaurantName} ${item.productName} ${item.category ?? ""}`.toLowerCase().includes(normalized),
+        `${item.restaurantName} ${item.productName} ${item.category ?? ""} ${localizeNutritionText(item.productName, locale) ?? ""} ${localizeNutritionText(item.category, locale) ?? ""}`
+          .toLocaleLowerCase(locale)
+          .includes(normalized),
       )
       .slice(0, 12);
-  }, [itemIndex, deferredItemQuery]);
+  }, [itemIndex, deferredItemQuery, locale]);
 
   const slugByRestaurant = useMemo(
     () =>
@@ -115,21 +123,19 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
   return (
     <section className="section">
       <div className="section-head">
-        <div className="eyebrow">Search</div>
-        <h2 className="section-title">Search restaurants and menu items.</h2>
-        <p className="section-copy">
-          Search by restaurant name or jump straight to menu items and their macros.
-        </p>
+        <div className="eyebrow">{messages.eyebrow}</div>
+        <h2 className="section-title">{messages.title}</h2>
+        <p className="section-copy">{messages.copy}</p>
       </div>
 
       <div className="nutrition-search-grid">
         <article className="panel">
           <label className="field">
-            <span className="field-label">Search restaurants</span>
+            <span className="field-label">{messages.restaurantsLabel}</span>
             <input
               type="text"
               value={restaurantQuery}
-              placeholder="Chipotle, Subway, Starbucks..."
+              placeholder={messages.restaurantsPlaceholder}
               onChange={(event) => setRestaurantQuery(event.target.value)}
             />
           </label>
@@ -139,7 +145,7 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
                 <TrackedLink
                   key={restaurant.slug}
                   className="nutrition-search-result"
-                  href={`/nutrition/${restaurant.slug}`}
+                  href={localizePathname(`/nutrition/${restaurant.slug}`, locale)}
                   eventName="restaurant_open"
                   eventParams={{
                     restaurant_slug: restaurant.slug,
@@ -148,22 +154,22 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
                   }}
                 >
                   <strong>{restaurant.name}</strong>
-                  <span>{restaurant.itemCount} items</span>
+                  <span>{formatNumber(restaurant.itemCount, locale)} {restaurant.itemCount === 1 ? messages.itemSingular : messages.itemPlural}</span>
                 </TrackedLink>
               ))
             ) : (
-              <p className="footer-copy">No restaurants matched that search.</p>
+              <p className="footer-copy">{messages.noRestaurants}</p>
             )}
           </div>
         </article>
 
         <article className="panel">
           <label className="field">
-            <span className="field-label">Search menu items</span>
+            <span className="field-label">{messages.itemsLabel}</span>
             <input
               type="text"
               value={itemQuery}
-              placeholder="Chicken bowl, grilled nuggets..."
+              placeholder={messages.itemsPlaceholder}
               onFocus={loadItemIndex}
               onChange={(event) => {
                 const nextValue = event.target.value;
@@ -177,13 +183,13 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
           </label>
           <div className="nutrition-search-results">
             {deferredItemQuery.trim().length < 2 ? (
-              <p className="footer-copy">Type at least 2 characters to search menu items.</p>
+              <p className="footer-copy">{messages.typeMore}</p>
             ) : itemIndexStatus === "loading" || itemIndexStatus === "idle" ? (
-              <p className="footer-copy">Loading menu item search...</p>
+              <p className="footer-copy">{messages.loading}</p>
             ) : itemIndexStatus === "error" ? (
-              <p className="footer-copy">Menu item search is temporarily unavailable. Try again.</p>
+              <p className="footer-copy">{messages.unavailable}</p>
             ) : !itemResults.length ? (
-              <p className="footer-copy">No menu items matched that search.</p>
+              <p className="footer-copy">{messages.noItems}</p>
             ) : (
               itemResults.map((item) => {
                 const slug = slugByRestaurant.get(item.restaurantName.toLowerCase());
@@ -196,7 +202,7 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
                   <TrackedLink
                     key={item.id}
                     className="nutrition-search-result"
-                    href={`/nutrition/${slug}?q=${encodeURIComponent(item.productName)}`}
+                    href={`${localizePathname(`/nutrition/${slug}`, locale)}?q=${encodeURIComponent(localizeNutritionText(item.productName, locale) ?? item.productName)}`}
                     eventName="nutrition_item_search_click"
                     eventParams={{
                       restaurant_name: item.restaurantName,
@@ -205,11 +211,11 @@ export function NutritionSearch({ restaurants }: NutritionSearchProps) {
                     }}
                   >
                     <strong>
-                      {item.productName} <span className="nutrition-inline-restaurant">at {item.restaurantName}</span>
+                      {localizeNutritionText(item.productName, locale)} <span className="nutrition-inline-restaurant">{messages.at} {item.restaurantName}</span>
                     </strong>
                     <span>
-                      {formatMacro(item.calories)} cal | {formatMacro(item.proteinG, "g")} protein |{" "}
-                      {formatMacro(item.carbsG, "g")} carbs | {formatMacro(item.fatG, "g")} fat
+                      {formatMacro(item.calories)} {messages.caloriesShort} | {formatMacro(item.proteinG, "g")} {messages.protein} |{" "}
+                      {formatMacro(item.carbsG, "g")} {messages.carbs} | {formatMacro(item.fatG, "g")} {messages.fat}
                     </span>
                   </TrackedLink>
                 );

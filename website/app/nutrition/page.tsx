@@ -16,6 +16,7 @@ export const metadata = buildMetadata({
   description:
     "Search restaurant nutrition facts, compare calories and macros, and explore popular menu items from restaurants like Chipotle, Chick-fil-A, Starbucks, and more.",
   pathname: "/nutrition",
+  localizedAlternates: true,
 });
 
 export default async function NutritionIndexPage() {

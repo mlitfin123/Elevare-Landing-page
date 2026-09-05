@@ -1,39 +1,45 @@
 import type { NutritionFiltersState } from "@/lib/nutrition-data";
+import { localizeNutritionText } from "@/lib/i18n/catalog-content";
+import type { Locale } from "@/lib/i18n/config";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
 
 type NutritionFiltersProps = {
   categories: string[];
   filters: NutritionFiltersState;
   onChange: (filters: NutritionFiltersState) => void;
+  locale?: Locale;
 };
 
-export function NutritionFilters({ categories, filters, onChange }: NutritionFiltersProps) {
+export function NutritionFilters({ categories, filters, onChange, locale = "en" }: NutritionFiltersProps) {
+  const messages = getCatalogMessages(locale).nutrition.explorer;
+
   return (
     <div className="tool-form-grid nutrition-filter-grid">
       <label className="field">
-        <span className="field-label">Search items</span>
+        <span className="field-label">{messages.searchLabel}</span>
         <input
           type="text"
           value={filters.search}
-          placeholder="Search menu items"
+          placeholder={messages.searchPlaceholder}
           onChange={(event) => onChange({ ...filters, search: event.target.value })}
         />
       </label>
       <label className="field">
-        <span className="field-label">Category</span>
+        <span className="field-label">{messages.category}</span>
         <select
           value={filters.category}
           onChange={(event) => onChange({ ...filters, category: event.target.value })}
         >
-          <option value="">All categories</option>
+          <option value="">{messages.allCategories}</option>
           {categories.map((category) => (
             <option key={category} value={category}>
-              {category}
+              {localizeNutritionText(category, locale)}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        <span className="field-label">Max calories</span>
+        <span className="field-label">{messages.maxCalories}</span>
         <input
           type="number"
           min="0"
@@ -44,7 +50,7 @@ export function NutritionFilters({ categories, filters, onChange }: NutritionFil
         />
       </label>
       <label className="field">
-        <span className="field-label">Min protein</span>
+        <span className="field-label">{messages.minProtein}</span>
         <input
           type="number"
           min="0"
@@ -55,7 +61,7 @@ export function NutritionFilters({ categories, filters, onChange }: NutritionFil
         />
       </label>
       <label className="field">
-        <span className="field-label">Max carbs</span>
+        <span className="field-label">{messages.maxCarbs}</span>
         <input
           type="number"
           min="0"
@@ -66,7 +72,7 @@ export function NutritionFilters({ categories, filters, onChange }: NutritionFil
         />
       </label>
       <label className="field">
-        <span className="field-label">Max fat</span>
+        <span className="field-label">{messages.maxFat}</span>
         <input
           type="number"
           min="0"
@@ -82,7 +88,7 @@ export function NutritionFilters({ categories, filters, onChange }: NutritionFil
           checked={filters.hideExtras}
           onChange={(event) => onChange({ ...filters, hideExtras: event.target.checked })}
         />
-        <span>Hide drinks, sauces, toppings, and add-ons</span>
+        <span>{messages.hideExtras}</span>
       </label>
     </div>
   );

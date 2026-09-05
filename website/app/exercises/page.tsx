@@ -19,6 +19,7 @@ export const metadata = buildMetadata({
   description:
     "Explore a beginner-friendly exercise database with muscles worked, equipment, instructions, and related workout templates.",
   pathname: "/exercises",
+  localizedAlternates: true,
 });
 
 export default async function ExercisesIndexPage() {

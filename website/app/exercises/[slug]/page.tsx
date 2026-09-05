@@ -82,6 +82,7 @@ export async function generateMetadata({ params }: ExercisePageProps) {
         title: "Exercise category not found",
         description: "The requested exercise category could not be found.",
         pathname: `/exercises/${slug}`,
+        localizedAlternates: true,
       });
     }
 
@@ -89,6 +90,7 @@ export async function generateMetadata({ params }: ExercisePageProps) {
       title: category.title,
       description: getExerciseCategoryMetaDescription(category),
       pathname: `/exercises/${slug}`,
+      localizedAlternates: true,
     });
   }
 
@@ -99,6 +101,7 @@ export async function generateMetadata({ params }: ExercisePageProps) {
       title: "Exercise not found",
       description: "The requested exercise could not be found.",
       pathname: `/exercises/${slug}`,
+      localizedAlternates: true,
     });
   }
 
@@ -106,6 +109,7 @@ export async function generateMetadata({ params }: ExercisePageProps) {
     title: buildExerciseMetadataTitle(exercise),
     description: exercise.seoDescription ?? buildExerciseSummary(exercise),
     pathname: `/exercises/${exercise.slug}`,
+    localizedAlternates: true,
     robots: getExerciseIndexPriority(exercise) === "low_priority"
       ? { index: false, follow: true }
       : undefined,

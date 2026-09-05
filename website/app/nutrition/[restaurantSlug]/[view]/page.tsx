@@ -61,6 +61,7 @@ export async function generateMetadata({ params }: RestaurantNutritionVariantPag
       title: "Restaurant Nutrition View",
       description: "The requested nutrition view could not be found.",
       pathname: `/nutrition/${restaurantSlug}/${view}`,
+      localizedAlternates: true,
     });
   }
 
@@ -71,6 +72,7 @@ export async function generateMetadata({ params }: RestaurantNutritionVariantPag
       title: "Restaurant Nutrition View",
       description: "The requested nutrition view could not be found.",
       pathname: `/nutrition/${restaurantSlug}/${view}`,
+      localizedAlternates: true,
     });
   }
 
@@ -86,6 +88,7 @@ export async function generateMetadata({ params }: RestaurantNutritionVariantPag
     title: pageCopy.title,
     description: pageCopy.description,
     pathname: pageCopy.pathname,
+    localizedAlternates: true,
     robots: isNutritionVariantIndexable(variantItems) ? undefined : { index: false, follow: true },
   });
 }

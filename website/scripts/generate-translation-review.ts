@@ -3,6 +3,9 @@ import path from "node:path";
 import english from "../locales/en/marketing.ts";
 import spanish from "../locales/es-419/marketing.ts";
 import portuguese from "../locales/pt-BR/marketing.ts";
+import englishCatalog from "../locales/en/catalog.ts";
+import spanishCatalog from "../locales/es-419/catalog.ts";
+import portugueseCatalog from "../locales/pt-BR/catalog.ts";
 
 type FlatValues = Map<string, string>;
 
@@ -36,9 +39,9 @@ function reviewFlag(key: string, englishValue: string) {
   return flags.join("|") || "STANDARD_REVIEW";
 }
 
-const englishValues = flatten(english);
-const spanishValues = flatten(spanish);
-const portugueseValues = flatten(portuguese);
+const englishValues = flatten({ marketing: english, catalog: englishCatalog });
+const spanishValues = flatten({ marketing: spanish, catalog: spanishCatalog });
+const portugueseValues = flatten({ marketing: portuguese, catalog: portugueseCatalog });
 const rows = [["key", "english", "es-419", "pt-BR", "review_flag"].map(csv).join(",")];
 
 for (const [key, englishValue] of englishValues) {

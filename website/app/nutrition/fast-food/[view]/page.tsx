@@ -55,6 +55,7 @@ export async function generateMetadata({ params }: FastFoodNutritionVariantPageP
       title: "Fast Food Nutrition",
       description: "The requested fast food nutrition view could not be found.",
       pathname: `/nutrition/fast-food/${view}`,
+      localizedAlternates: true,
     });
   }
 
@@ -64,6 +65,7 @@ export async function generateMetadata({ params }: FastFoodNutritionVariantPageP
     title: pageCopy.title,
     description: pageCopy.description,
     pathname: pageCopy.pathname,
+    localizedAlternates: true,
   });
 }
 

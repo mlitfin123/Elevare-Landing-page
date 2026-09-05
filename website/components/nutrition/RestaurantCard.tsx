@@ -1,24 +1,30 @@
 import { TrackedLink } from "@/components/TrackedLink";
 import type { RestaurantSummary } from "@/lib/nutrition-data";
+import { localizeNutritionText } from "@/lib/i18n/catalog-content";
+import type { Locale } from "@/lib/i18n/config";
+import { formatNumber, localizePathname } from "@/lib/i18n/config";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
 
 type RestaurantCardProps = {
   restaurant: RestaurantSummary;
   sourcePage: string;
+  locale?: Locale;
 };
 
-export function RestaurantCard({ restaurant, sourcePage }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, sourcePage, locale = "en" }: RestaurantCardProps) {
+  const messages = getCatalogMessages(locale).nutrition.card;
+  const count = formatNumber(restaurant.itemCount, locale);
+
   return (
     <article className="panel restaurant-card">
-      <span className="meta-pill">{restaurant.itemCount} items</span>
+      <span className="meta-pill">{count} {restaurant.itemCount === 1 ? messages.itemSingular : messages.itemPlural}</span>
       <h3>{restaurant.name}</h3>
-      <p>
-        Explore calories, protein, carbs, and fat across {restaurant.itemCount} menu items.
-      </p>
+      <p>{messages.description.replace("{count}", count)}</p>
       {restaurant.topCategories.length ? (
         <div className="nutrition-chip-row">
           {restaurant.topCategories.map((category) => (
             <span key={category} className="nutrition-chip">
-              {category}
+              {localizeNutritionText(category, locale)}
             </span>
           ))}
         </div>
@@ -26,7 +32,7 @@ export function RestaurantCard({ restaurant, sourcePage }: RestaurantCardProps) 
       <div className="button-row">
         <TrackedLink
           className="button button-secondary"
-          href={`/nutrition/${restaurant.slug}`}
+          href={localizePathname(`/nutrition/${restaurant.slug}`, locale)}
           eventName="restaurant_open"
           eventParams={{
             restaurant_slug: restaurant.slug,
@@ -34,7 +40,7 @@ export function RestaurantCard({ restaurant, sourcePage }: RestaurantCardProps) 
             source_page: sourcePage,
           }}
         >
-          View nutrition facts
+          {messages.view}
         </TrackedLink>
       </div>
     </article>

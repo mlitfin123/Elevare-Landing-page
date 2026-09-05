@@ -8,6 +8,7 @@ export const metadata = buildMetadata({
   description:
     "Learn how ElevareFit organizes restaurant nutrition data, handles serving and recipe changes, and presents calorie and macro estimates responsibly.",
   pathname: "/nutrition/methodology",
+  localizedAlternates: true,
 });
 
 export default function NutritionMethodologyPage() {

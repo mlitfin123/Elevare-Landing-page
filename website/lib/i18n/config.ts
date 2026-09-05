@@ -15,6 +15,8 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/quick-analysis/result/",
 ] as const;
 
+export const LOCALIZED_CATALOG_PATH_PREFIXES = ["/exercises/", "/nutrition/"] as const;
+
 const LATIN_AMERICAN_SPANISH_REGIONS = new Set([
   "419",
   "AR",
@@ -147,7 +149,9 @@ export function stripLocalePrefix(pathname: string) {
 
 export function isLocalizedMarketingPath(pathname: string) {
   const { path } = splitPath(stripLocalePrefix(pathname));
-  return LOCALIZED_MARKETING_PATHS.includes(normalizePathOnly(path) as (typeof LOCALIZED_MARKETING_PATHS)[number]);
+  const normalizedPath = normalizePathOnly(path);
+  return LOCALIZED_MARKETING_PATHS.includes(normalizedPath as (typeof LOCALIZED_MARKETING_PATHS)[number])
+    || LOCALIZED_CATALOG_PATH_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
 }
 
 export function localizePathname(pathname: string, locale: Locale) {

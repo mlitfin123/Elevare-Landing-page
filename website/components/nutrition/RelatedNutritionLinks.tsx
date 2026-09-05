@@ -1,4 +1,7 @@
 import { TrackedLink } from "@/components/TrackedLink";
+import type { Locale } from "@/lib/i18n/config";
+import { localizePathname } from "@/lib/i18n/config";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
 
 type RelatedNutritionLinksProps = {
   title: string;
@@ -8,6 +11,7 @@ type RelatedNutritionLinksProps = {
     label: string;
   }>;
   sourcePage: string;
+  locale?: Locale;
 };
 
 export function RelatedNutritionLinks({
@@ -15,11 +19,14 @@ export function RelatedNutritionLinks({
   description,
   links,
   sourcePage,
+  locale = "en",
 }: RelatedNutritionLinksProps) {
+  const messages = getCatalogMessages(locale).nutrition.links;
+
   return (
     <section className="section">
       <div className="section-head">
-        <div className="eyebrow">Related nutrition links</div>
+        <div className="eyebrow">{messages.eyebrow}</div>
         <h2 className="section-title">{title}</h2>
         <p className="section-copy">{description}</p>
       </div>
@@ -29,7 +36,7 @@ export function RelatedNutritionLinks({
           <TrackedLink
             key={link.href}
             className="nutrition-link-pill"
-            href={link.href}
+            href={localizePathname(link.href, locale)}
             eventName="nutrition_related_click"
             eventParams={{
               source_page: sourcePage,

@@ -49,7 +49,12 @@ export function Header() {
 
         <nav className="header-nav" aria-label={messages.primaryNavigationLabel}>
           {navigation.map((item) => (
-            <Link key={item.href} className="nav-link" href={item.href} hrefLang={englishOnlyHrefLang}>
+            <Link
+              key={item.href}
+              className="nav-link"
+              href={item.label === "exercises" || item.label === "nutrition" ? localizePathname(item.href, locale) : item.href}
+              hrefLang={item.label === "exercises" || item.label === "nutrition" ? undefined : englishOnlyHrefLang}
+            >
               {messages.navigation[item.label]}
             </Link>
           ))}

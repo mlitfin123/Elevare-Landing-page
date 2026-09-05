@@ -137,6 +137,19 @@ function keepIndexableEntries(entries: SitemapEntry[]) {
   return entries.filter((entry) => entry.priority !== "low_priority");
 }
 
+function withLocalizedCatalogEntries(entries: SitemapEntry[]) {
+  if (!isLocalizedIndexingEnabled()) return entries;
+
+  const localizedEntries = (["es-419", "pt-BR"] as const).flatMap((locale) =>
+    keepIndexableEntries(entries).map((entry) => ({
+      ...entry,
+      url: absoluteUrl(localizePathname(new URL(entry.url).pathname, locale)),
+    })),
+  );
+
+  return [...entries, ...localizedEntries];
+}
+
 function assertUniqueSitemapEntries(sitemaps: Array<{ name: string; entries: SitemapEntry[] }>) {
   const ownerByUrl = new Map<string, string>();
 
@@ -188,7 +201,11 @@ function buildExerciseEntries(exercises: ExerciseRecord[]) {
     toSitemapEntry(`/exercises/${category.slug}`, undefined, "priority_index"),
   );
 
-  return [toSitemapEntry("/exercises", undefined, "priority_index"), ...categoryPages, ...exercisePages];
+  return withLocalizedCatalogEntries([
+    toSitemapEntry("/exercises", undefined, "priority_index"),
+    ...categoryPages,
+    ...exercisePages,
+  ]);
 }
 
 function buildWorkoutEntries(workouts: WorkoutTemplateRecord[]) {
@@ -250,13 +267,13 @@ function buildNutritionEntries(products: NutritionProduct[]) {
       : [];
   });
 
-  return [
+  return withLocalizedCatalogEntries([
     toSitemapEntry("/nutrition", latestContentDate(products.map((item) => item.updatedAt)), "priority_index"),
     toSitemapEntry("/nutrition/methodology", undefined, "standard_index"),
     ...restaurantPages,
     ...variantPages,
     ...fastFoodPages,
-  ];
+  ]);
 }
 
 function buildBlogEntries() {

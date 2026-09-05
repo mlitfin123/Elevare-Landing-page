@@ -49,6 +49,7 @@ export async function generateMetadata({ params }: RestaurantNutritionPageProps)
       title: "Restaurant Nutrition Facts",
       description: "The requested restaurant nutrition page could not be found.",
       pathname: `/nutrition/${restaurantSlug}`,
+      localizedAlternates: true,
     });
   }
 
@@ -56,6 +57,7 @@ export async function generateMetadata({ params }: RestaurantNutritionPageProps)
     title: `${restaurantData.summary.name} Nutrition Facts`,
     description: `Explore ${restaurantData.summary.name} nutrition facts, calories, protein, carbs, fat, and serving sizes across menu items.`,
     pathname: `/nutrition/${restaurantData.summary.slug}`,
+    localizedAlternates: true,
   });
 }
 

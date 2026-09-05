@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LocalizedHomePage } from "@/components/localization/LocalizedHomePage";
+import { LocalizedExercisesPage } from "@/components/localization/LocalizedExercisesPage";
+import { LocalizedNutritionPage } from "@/components/localization/LocalizedNutritionPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
@@ -10,11 +12,18 @@ import {
   getLocalizedRouteParams,
   isLocalizedIndexingEnabled,
   localeFromSegment,
+  localeToSegment,
   localizePathname,
 } from "@/lib/i18n/config";
+import { getCatalogMessages } from "@/lib/i18n/catalog-messages";
+import { localizeExerciseName, localizeEquipmentLabel, localizeMuscleLabel } from "@/lib/i18n/catalog-content";
 import { getMarketingMessages } from "@/lib/i18n/messages";
 import { getQuickAnalysisMessages } from "@/lib/i18n/quick-analysis-messages";
+import { getNutritionRestaurants, getRestaurantBySlug } from "@/lib/nutrition";
+import { fastFoodNutritionViews, isFastFoodNutritionView, isRestaurantNutritionView, restaurantNutritionViews } from "@/lib/nutrition-pages";
 import { buildMetadata } from "@/lib/site";
+import { getAllExercises, getExerciseBySlug } from "@/lib/training";
+import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, getExerciseCategoryInfo } from "@/lib/training-data";
 
 type LocalizedPageParams = {
   locale: string;
@@ -23,8 +32,30 @@ type LocalizedPageParams = {
 
 export const dynamicParams = false;
 
-export function generateStaticParams() {
-  return getLocalizedRouteParams();
+export async function generateStaticParams() {
+  const baseParams = getLocalizedRouteParams();
+  if (!baseParams.length) return [];
+
+  const [exercises, restaurants] = await Promise.all([getAllExercises(), getNutritionRestaurants()]);
+  const categorySlugs = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) => category.slug);
+  const locales = ["es-419", "pt-BR"] as const;
+  const catalogParams = locales.flatMap((locale) => {
+    const localeSegment = localeToSegment(locale);
+    return [
+      { locale: localeSegment, slug: ["exercises"] },
+      ...categorySlugs.map((slug) => ({ locale: localeSegment, slug: ["exercises", slug] })),
+      ...exercises.map((exercise) => ({ locale: localeSegment, slug: ["exercises", exercise.slug] })),
+      { locale: localeSegment, slug: ["nutrition"] },
+      { locale: localeSegment, slug: ["nutrition", "methodology"] },
+      ...fastFoodNutritionViews.map((view) => ({ locale: localeSegment, slug: ["nutrition", "fast-food", view] })),
+      ...restaurants.flatMap((restaurant) => [
+        { locale: localeSegment, slug: ["nutrition", restaurant.slug] },
+        ...restaurantNutritionViews.map((view) => ({ locale: localeSegment, slug: ["nutrition", restaurant.slug, view] })),
+      ]),
+    ];
+  });
+
+  return [...baseParams, ...catalogParams];
 }
 
 function resolvePage(params: LocalizedPageParams) {
@@ -41,12 +72,80 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 3 && slug[0] === "stagelab" && slug[1] === "quick-analysis" && slug[2] === "result") {
     return { locale, page: "quick-analysis-result" as const, pathname: "/stagelab/quick-analysis/result/" };
   }
+  if (slug[0] === "exercises" && slug.length <= 2) {
+    return { locale, page: "exercises" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
+  }
+  if (slug[0] === "nutrition" && slug.length <= 3) {
+    return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
+  }
   return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<LocalizedPageParams> }): Promise<Metadata> {
   const resolved = resolvePage(await params);
   if (!resolved || !areLocalizedRoutesEnabled()) return {};
+
+  const indexingEnabled = isLocalizedIndexingEnabled();
+  if (resolved.page === "exercises") {
+    const messages = getCatalogMessages(resolved.locale).exercise;
+    const exercise = resolved.catalogSlug ? await getExerciseBySlug(resolved.catalogSlug) : null;
+    const category = resolved.catalogSlug ? getExerciseCategoryInfo(resolved.catalogSlug) : null;
+    const categoryLabel = category
+      ? category.kind === "muscle"
+        ? localizeMuscleLabel(category.slug, resolved.locale)
+        : localizeEquipmentLabel(category.slug, resolved.locale)
+      : null;
+    const name = exercise ? localizeExerciseName(exercise.name, resolved.locale) : null;
+    return buildMetadata({
+      title: name
+        ? messages.seo.detailTitle.replace("{name}", name)
+        : categoryLabel
+          ? `${categoryLabel}: ${messages.seo.categoryFallbackTitle}`
+          : messages.seo.indexTitle,
+      description: name
+        ? messages.seo.detailDescription.replaceAll("{name}", name)
+        : categoryLabel
+          ? `${messages.seo.categoryFallbackDescription} ${categoryLabel}.`
+          : messages.seo.indexDescription,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
+
+  if (resolved.page === "nutrition") {
+    const messages = getCatalogMessages(resolved.locale).nutrition;
+    const [first, second] = resolved.catalogSegments;
+    let title = messages.seo.indexTitle;
+    let description = messages.seo.indexDescription;
+    if (first === "methodology") {
+      title = messages.seo.methodologyTitle;
+      description = messages.seo.methodologyDescription;
+    } else if (first === "fast-food" && second && isFastFoodNutritionView(second)) {
+      const view = messages.explorer.variants[second] ?? second;
+      title = `${messages.variant.fastFoodEyebrow}: ${view}`;
+      description = `${messages.variant.fastFoodGuidesCopy} ${view}.`;
+    } else if (first) {
+      const restaurant = await getRestaurantBySlug(first);
+      if (!restaurant || (second && !isRestaurantNutritionView(second))) return {};
+      const view = second ? messages.explorer.variants[second] ?? second : null;
+      title = view
+        ? `${restaurant.summary.name}: ${view}`
+        : messages.seo.restaurantTitle.replace("{restaurant}", restaurant.summary.name);
+      description = view
+        ? `${messages.restaurant.intro.replace("{restaurant}", restaurant.summary.name)} ${view}.`
+        : messages.seo.restaurantDescription.replace("{restaurant}", restaurant.summary.name);
+    }
+    return buildMetadata({
+      title,
+      description,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
 
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
   const messages = await getMarketingMessages(resolved.locale);
@@ -58,8 +157,6 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
         ? quickAnalysisMessages.seo
         : { title: quickAnalysisMessages.result.seoTitle, description: quickAnalysisMessages.result.seoDescription };
   const pathname = localizePathname(resolved.pathname, resolved.locale);
-  const indexingEnabled = isLocalizedIndexingEnabled();
-
   const metadata = buildMetadata({
     title: seo.title,
     description: seo.description,
@@ -79,6 +176,14 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
 export default async function LocalizedMarketingRoute({ params }: { params: Promise<LocalizedPageParams> }) {
   const resolved = resolvePage(await params);
   if (!resolved || !areLocalizedRoutesEnabled()) notFound();
+
+  if (resolved.page === "exercises") {
+    return <LocalizedExercisesPage locale={resolved.locale} slug={resolved.catalogSlug} />;
+  }
+
+  if (resolved.page === "nutrition") {
+    return <LocalizedNutritionPage locale={resolved.locale} segments={resolved.catalogSegments} />;
+  }
 
   const messages = await getMarketingMessages(resolved.locale);
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
