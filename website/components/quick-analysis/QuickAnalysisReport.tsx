@@ -55,7 +55,7 @@ function StageLabResultCta({ mode, locale, messages }: { mode: QuickAnalysisMode
   );
 }
 
-function CompetitionPrepReport({ result, locale, messages }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages }) {
+function CompetitionPrepReport({ result, locale, messages, showCta }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages; showCta: boolean }) {
   return (
     <>
       <section className="quick-analysis-report-hero panel">
@@ -82,12 +82,12 @@ function CompetitionPrepReport({ result, locale, messages }: { result: QuickAnal
 
       <section className="panel quick-analysis-judge-panel"><span className="eyebrow">{messages.judgesPerspective}</span><h2>{messages.currentDivisionRead}</h2><p>{result.judges_perspective}</p></section>
       <ResultLimitations result={result} mode="competition_prep" messages={messages} />
-      <StageLabResultCta mode="competition_prep" locale={locale} messages={messages} />
+      {showCta ? <StageLabResultCta mode="competition_prep" locale={locale} messages={messages} /> : null}
     </>
   );
 }
 
-function PhysiqueCheckReport({ result, locale, messages }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages }) {
+function PhysiqueCheckReport({ result, locale, messages, showCta }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages; showCta: boolean }) {
   const distance = messages.distanceLabels[result.stage_condition_distance ?? "unavailable"] ?? messages.distanceLabels.unavailable;
   const scoreCards = [
     [messages.conditioning, result.conditioning_score, result.conditioning_assessment],
@@ -136,12 +136,12 @@ function PhysiqueCheckReport({ result, locale, messages }: { result: QuickAnalys
 
       <section className="panel quick-analysis-judge-panel"><span className="eyebrow">{messages.judgesPerspective}</span><h2>{messages.currentDivisionRead}</h2><p>{result.judges_perspective}</p></section>
       <ResultLimitations result={result} mode="physique_check" messages={messages} />
-      <StageLabResultCta mode="physique_check" locale={locale} messages={messages} />
+      {showCta ? <StageLabResultCta mode="physique_check" locale={locale} messages={messages} /> : null}
     </>
   );
 }
 
-export function QuickAnalysisReport({ result, locale, messages }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages }) {
+export function QuickAnalysisReport({ result, locale, messages, showCta = true }: { result: QuickAnalysisResult; locale: Locale; messages: ReportMessages; showCta?: boolean }) {
   const mode = result.analysis_mode ?? "competition_prep";
-  return <div className="quick-analysis-report">{mode === "physique_check" ? <PhysiqueCheckReport result={result} locale={locale} messages={messages} /> : <CompetitionPrepReport result={result} locale={locale} messages={messages} />}</div>;
+  return <div className="quick-analysis-report">{mode === "physique_check" ? <PhysiqueCheckReport result={result} locale={locale} messages={messages} showCta={showCta} /> : <CompetitionPrepReport result={result} locale={locale} messages={messages} showCta={showCta} />}</div>;
 }

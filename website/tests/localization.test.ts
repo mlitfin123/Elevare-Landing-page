@@ -85,6 +85,10 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/stagelab/",
     "/stagelab/quick-analysis/",
     "/stagelab/quick-analysis/result/",
+    "/stagelab/posing-analysis/",
+    "/stagelab/posing-analysis/result/",
+    "/stagelab/complete-stage-analysis/",
+    "/stagelab/complete-stage-analysis/result/",
     "/tools/workout-generator/",
   ]);
   assert.equal(localizePathname("/logbook/", "en"), "/logbook/");
@@ -106,7 +110,7 @@ test("localized route generation obeys the public route flag", () => {
   process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = "false";
   assert.deepEqual(getLocalizedRouteParams(), []);
   process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = "true";
-  assert.equal(getLocalizedRouteParams().length, 12);
+  assert.equal(getLocalizedRouteParams().length, LOCALIZED_MARKETING_PATHS.length * 2);
   if (previous === undefined) delete process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES;
   else process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = previous;
 });

@@ -129,6 +129,7 @@ export type QuickAnalysisResult = {
 };
 
 export type QuickAnalysisPublicState = {
+  product?: "physique_analysis" | "posing_analysis" | "complete_stage_analysis";
   analysisMode: QuickAnalysisMode;
   generationLocale: Locale;
   paymentStatus: "unpaid" | "paid" | "refunded" | "failed";

@@ -19,6 +19,12 @@
     <loc>https://www.elevarefit.com/stagelab/quick-analysis/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/stagelab/posing-analysis/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/stagelab/complete-stage-analysis/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/elevare/</loc>
   </url>
   <url>
@@ -40,6 +46,12 @@
     <loc>https://www.elevarefit.com/es/stagelab/quick-analysis/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/es/stagelab/posing-analysis/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/es/stagelab/complete-stage-analysis/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/pt-br/</loc>
   </url>
   <url>
@@ -50,5 +62,11 @@
   </url>
   <url>
     <loc>https://www.elevarefit.com/pt-br/stagelab/quick-analysis/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/stagelab/posing-analysis/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/stagelab/complete-stage-analysis/</loc>
   </url>
 </urlset>

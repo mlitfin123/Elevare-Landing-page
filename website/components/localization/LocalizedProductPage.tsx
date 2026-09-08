@@ -3,6 +3,7 @@ import { Callout } from "@/components/Callout";
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
+import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
 import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { ProductPageMessages } from "@/lib/i18n/marketing-types";
@@ -94,6 +95,8 @@ export function LocalizedProductPage({ locale, product, messages }: { locale: Lo
         </div>
         <div className="product-hero-visual"><div className="product-hero-logo-frame"><Image src={details.logo} alt={messages.hero.logoAlt} width={isLogbook ? 360 : 720} height={isLogbook ? 360 : 720} sizes="(max-width: 720px) 240px, 360px" className={details.logoClass} priority /></div></div>
       </section>
+
+      {!isLogbook ? <StageAnalysisProducts locale={locale} /> : null}
 
       {isLogbook && messages.demo ? (
         <section className="section logbook-demo" aria-labelledby={`logbook-demo-${locale}`}>

@@ -62,6 +62,8 @@ const staticSiteRoutes = [
   "/logbook",
   "/stagelab",
   "/stagelab/quick-analysis",
+  "/stagelab/posing-analysis",
+  "/stagelab/complete-stage-analysis",
   "/elevare",
   "/privacy-policy/",
   "/terms-of-service/",
@@ -177,7 +179,14 @@ function buildSiteEntries() {
   if (!isLocalizedIndexingEnabled()) return entries;
 
   const localizedRoutes = (["es-419", "pt-BR"] as const).flatMap((locale) =>
-    ["/", "/logbook/", "/stagelab/", "/stagelab/quick-analysis/"].map((route) =>
+    [
+      "/",
+      "/logbook/",
+      "/stagelab/",
+      "/stagelab/quick-analysis/",
+      "/stagelab/posing-analysis/",
+      "/stagelab/complete-stage-analysis/",
+    ].map((route) =>
       toSitemapEntry(localizePathname(route, locale), undefined, "priority_index"),
     ),
   );

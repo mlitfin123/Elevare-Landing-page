@@ -3,19 +3,19 @@
   "documents": [
     {
       "documentKey": "terms_of_service",
-      "version": "2026-08-21",
-      "effectiveDate": "2026-08-20",
-      "archiveFilePath": "/legal/archive/terms/2026-08-21.html",
-      "archivePath": "/legal/archive/terms/2026-08-21/",
-      "sha256": "e0d41bff58e658f6a569ccbe21529bee70d814fb6ad69c4834c21e39f1d88a58"
+      "version": "2026-09-07",
+      "effectiveDate": "2026-09-07",
+      "archiveFilePath": "/legal/archive/terms/2026-09-07.html",
+      "archivePath": "/legal/archive/terms/2026-09-07/",
+      "sha256": "ad792377892d9b7c7118011caa91c04de73c8a1f7834ee14cc0065b0a71fad4b"
     },
     {
       "documentKey": "privacy_policy",
-      "version": "2026-08-21",
-      "effectiveDate": "2026-08-20",
-      "archiveFilePath": "/legal/archive/privacy/2026-08-21.html",
-      "archivePath": "/legal/archive/privacy/2026-08-21/",
-      "sha256": "957eb2293fc5ae02e8c7d0592686f52876db8862fdf092edf4431c81abab503e"
+      "version": "2026-09-07",
+      "effectiveDate": "2026-09-07",
+      "archiveFilePath": "/legal/archive/privacy/2026-09-07.html",
+      "archivePath": "/legal/archive/privacy/2026-09-07/",
+      "sha256": "2a57e4dbb104265d589855de3120877632a3a7c8e0c29db1f1ed45f5d8d6f718"
     }
   ]
 }

@@ -8,7 +8,10 @@ import { LocalizedWorkoutsPage } from "@/components/localization/LocalizedWorkou
 import { LocalizedWorkoutGeneratorPage } from "@/components/localization/LocalizedWorkoutGeneratorPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
+import { LocalizedStageAnalysisPage } from "@/components/localization/LocalizedStageAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
+import { CompleteStageAnalysisResultExperience } from "@/components/stage-analysis/CompleteStageAnalysisResultExperience";
+import { PosingAnalysisResultExperience } from "@/components/stage-analysis/PosingAnalysisResultExperience";
 import { Suspense } from "react";
 import {
   areLocalizedRoutesEnabled,
@@ -24,6 +27,7 @@ import { getLocalizedTool } from "@/lib/i18n/calculator-content";
 import { localizeExerciseName, localizeEquipmentLabel, localizeMuscleLabel } from "@/lib/i18n/catalog-content";
 import { getMarketingMessages } from "@/lib/i18n/messages";
 import { getQuickAnalysisMessages } from "@/lib/i18n/quick-analysis-messages";
+import { getStageAnalysisMessages } from "@/lib/i18n/stage-analysis-messages";
 import { getWorkoutMessages, localizeWorkoutGoal, localizeWorkoutName } from "@/lib/i18n/workout-content";
 import { getWorkoutGeneratorMessages } from "@/lib/i18n/workout-generator-content";
 import { getNutritionRestaurants, getRestaurantBySlug } from "@/lib/nutrition";
@@ -84,6 +88,18 @@ function resolvePage(params: LocalizedPageParams) {
   }
   if (slug.length === 3 && slug[0] === "stagelab" && slug[1] === "quick-analysis" && slug[2] === "result") {
     return { locale, page: "quick-analysis-result" as const, pathname: "/stagelab/quick-analysis/result/" };
+  }
+  if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "posing-analysis") {
+    return { locale, page: "posing-analysis" as const, pathname: "/stagelab/posing-analysis/" };
+  }
+  if (slug.length === 3 && slug[0] === "stagelab" && slug[1] === "posing-analysis" && slug[2] === "result") {
+    return { locale, page: "posing-analysis-result" as const, pathname: "/stagelab/posing-analysis/result/" };
+  }
+  if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "complete-stage-analysis") {
+    return { locale, page: "complete-stage-analysis" as const, pathname: "/stagelab/complete-stage-analysis/" };
+  }
+  if (slug.length === 3 && slug[0] === "stagelab" && slug[1] === "complete-stage-analysis" && slug[2] === "result") {
+    return { locale, page: "complete-stage-analysis-result" as const, pathname: "/stagelab/complete-stage-analysis/result/" };
   }
   if (slug[0] === "exercises" && slug.length <= 2) {
     return { locale, page: "exercises" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
@@ -216,6 +232,30 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
     });
   }
 
+  if (
+    resolved.page === "posing-analysis" ||
+    resolved.page === "posing-analysis-result" ||
+    resolved.page === "complete-stage-analysis" ||
+    resolved.page === "complete-stage-analysis-result"
+  ) {
+    const messages = getStageAnalysisMessages(resolved.locale);
+    const product = resolved.page.startsWith("posing-") ? "posing_analysis" : "complete_stage_analysis";
+    const isResult = resolved.page.endsWith("-result");
+    const metadata = buildMetadata({
+      title: isResult
+        ? product === "posing_analysis" ? messages.result.reportTitle : messages.result.completeTitle
+        : messages.seo[product].title,
+      description: messages.seo[product].description,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: isResult
+        ? { index: false, follow: false, noarchive: true, nosnippet: true }
+        : indexingEnabled ? undefined : { index: false, follow: false },
+    });
+    return isResult ? { ...metadata, referrer: "no-referrer" } : metadata;
+  }
+
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
   const messages = await getMarketingMessages(resolved.locale);
   const seo = resolved.page === "home"
@@ -268,6 +308,7 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
 
   const messages = await getMarketingMessages(resolved.locale);
   const quickAnalysisMessages = getQuickAnalysisMessages(resolved.locale);
+  const stageAnalysisMessages = getStageAnalysisMessages(resolved.locale);
 
   if (resolved.page === "home") {
     return <LocalizedHomePage locale={resolved.locale} messages={messages.home} categoryTranslations={messages.marketplaceCategories} />;
@@ -282,6 +323,34 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
       <div className="container">
         <Suspense fallback={<section className="quick-analysis-state panel"><h1>{quickAnalysisMessages.result.opening}</h1></section>}>
           <QuickAnalysisResultExperience locale={resolved.locale} messages={quickAnalysisMessages.result} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (resolved.page === "posing-analysis") {
+    return <LocalizedStageAnalysisPage product="posing_analysis" locale={resolved.locale} messages={stageAnalysisMessages} />;
+  }
+
+  if (resolved.page === "complete-stage-analysis") {
+    return <LocalizedStageAnalysisPage product="complete_stage_analysis" locale={resolved.locale} messages={stageAnalysisMessages} />;
+  }
+
+  if (resolved.page === "posing-analysis-result") {
+    return (
+      <div className="container">
+        <Suspense fallback={<section className="quick-analysis-state panel"><h1>{stageAnalysisMessages.result.opening}</h1></section>}>
+          <PosingAnalysisResultExperience product="posing_analysis" locale={resolved.locale} messages={stageAnalysisMessages.result} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (resolved.page === "complete-stage-analysis-result") {
+    return (
+      <div className="container">
+        <Suspense fallback={<section className="quick-analysis-state panel"><h1>{stageAnalysisMessages.result.opening}</h1></section>}>
+          <CompleteStageAnalysisResultExperience locale={resolved.locale} quickMessages={quickAnalysisMessages.result} stageMessages={stageAnalysisMessages.result} />
         </Suspense>
       </div>
     );

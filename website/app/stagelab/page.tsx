@@ -3,6 +3,7 @@ import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { Callout } from "@/components/Callout";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
+import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
 import { QUICK_ANALYSIS_PRICE_DISPLAY } from "@/lib/quick-analysis";
 import { getQuickAnalysisEntryHref } from "@/lib/quick-analysis-attribution";
 import { absoluteUrl, buildMetadata, productConfig } from "@/lib/site";
@@ -116,6 +117,8 @@ export default function StageLabPage() {
           </div>
         </div>
       </section>
+
+      <StageAnalysisProducts />
 
       <section className="section">
         <div className="grid-3">

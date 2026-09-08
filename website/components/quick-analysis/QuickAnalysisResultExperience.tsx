@@ -36,7 +36,19 @@ function localizedError(messages: QuickAnalysisMessages["result"], code: string 
   return (code && messages.errors[code]) || fallback;
 }
 
-export function QuickAnalysisResultExperience({ locale, messages }: { locale: Locale; messages: QuickAnalysisMessages["result"] }) {
+export function QuickAnalysisResultExperience({
+  locale,
+  messages,
+  resultPath = "/stagelab/quick-analysis/result/",
+  trackPurchase = true,
+  showReportCta = true,
+}: {
+  locale: Locale;
+  messages: QuickAnalysisMessages["result"];
+  resultPath?: string;
+  trackPurchase?: boolean;
+  showReportCta?: boolean;
+}) {
   const searchParams = useSearchParams();
   const attributionSource = useRef(normalizeQuickAnalysisSource(searchParams.get("source")));
   const previewUrls = useRef(new Map<QuickAnalysisPhotoView, string>());
@@ -130,7 +142,7 @@ export function QuickAnalysisResultExperience({ locale, messages }: { locale: Lo
   }, [state?.analysisStatus]);
 
   useEffect(() => {
-    if (searchParams.get("purchase") !== "confirmed" || !state) return;
+    if (!trackPurchase || searchParams.get("purchase") !== "confirmed" || !state) return;
     const key = "stagelab_quick_analysis_purchase_tracked";
     if (sessionStorage.getItem(key)) return;
     trackEvent("quick_analysis_purchase", {
@@ -141,8 +153,8 @@ export function QuickAnalysisResultExperience({ locale, messages }: { locale: Lo
       source: attributionSource.current,
     });
     sessionStorage.setItem(key, "true");
-    window.history.replaceState({}, "", localizePathname("/stagelab/quick-analysis/result/", locale));
-  }, [locale, searchParams, state]);
+    window.history.replaceState({}, "", localizePathname(resultPath, locale));
+  }, [locale, resultPath, searchParams, state, trackPurchase]);
 
   function resetPhotos() {
     for (const previewUrl of previewUrls.current.values()) URL.revokeObjectURL(previewUrl);
@@ -255,7 +267,7 @@ export function QuickAnalysisResultExperience({ locale, messages }: { locale: Lo
             {messages.reportLanguageNotice.replace("{language}", messages.languageLabels[state.generationLocale] ?? state.generationLocale)}
           </p>
         ) : null}
-        <QuickAnalysisReport result={state.result} locale={locale} messages={messages.report} />
+        <QuickAnalysisReport result={state.result} locale={locale} messages={messages.report} showCta={showReportCta} />
       </>
     );
   }
