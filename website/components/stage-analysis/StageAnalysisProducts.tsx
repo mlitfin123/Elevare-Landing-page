@@ -11,7 +11,7 @@ const copy = {
     body: "Review your physique, your posing, or both. Each purchase is a private one-time snapshot and does not require a StageLab account.",
     products: {
       physique_analysis: ["AI Physique Analysis", "Use current photos to assess visible conditioning, muscularity, symmetry, and division alignment."],
-      posing_analysis: ["AI Posing Analysis", "Use a short video to assess detected poses, presentation, consistency, and priority corrections."],
+      posing_analysis: ["Bodybuilding Posing Analysis", "Use a short video to assess detected poses, presentation, consistency, and priority corrections."],
       complete_stage_analysis: ["Complete Stage Analysis", "Receive both reports from one purchase, with physique and posing scored separately."],
     },
     action: "View analysis",
@@ -22,7 +22,7 @@ const copy = {
     body: "Revisa tu físico, tus poses o ambos. Cada compra es una evaluación privada y única, sin necesidad de una cuenta de StageLab.",
     products: {
       physique_analysis: ["Análisis de físico con IA", "Usa fotos actuales para evaluar condición visible, musculatura, simetría y alineación con la división."],
-      posing_analysis: ["Análisis de poses con IA", "Usa un video corto para evaluar poses detectadas, presentación, consistencia y correcciones prioritarias."],
+      posing_analysis: ["Análisis de poses de fisicoculturismo", "Usa un video corto para evaluar poses detectadas, presentación, consistencia y correcciones prioritarias."],
       complete_stage_analysis: ["Análisis completo de escenario", "Recibe ambos informes con una sola compra y puntuaciones separadas para físico y poses."],
     },
     action: "Ver análisis",
@@ -33,7 +33,7 @@ const copy = {
     body: "Avalie seu físico, suas poses ou ambos. Cada compra é uma análise privada e única, sem exigir uma conta da StageLab.",
     products: {
       physique_analysis: ["Análise de físico com IA", "Use fotos atuais para avaliar condicionamento visível, muscularidade, simetria e alinhamento com a categoria."],
-      posing_analysis: ["Análise de poses com IA", "Use um vídeo curto para avaliar poses detectadas, apresentação, consistência e correções prioritárias."],
+      posing_analysis: ["Análise de poses de fisiculturismo", "Use um vídeo curto para avaliar poses detectadas, apresentação, consistência e correções prioritárias."],
       complete_stage_analysis: ["Análise completa de palco", "Receba os dois relatórios em uma compra, com físico e poses avaliados separadamente."],
     },
     action: "Ver análise",

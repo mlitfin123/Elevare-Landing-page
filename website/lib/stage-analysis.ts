@@ -12,7 +12,7 @@ export type PaidStageAnalysisProduct = Exclude<StageAnalysisProduct, "physique_a
 
 export const STAGE_ANALYSIS_PRODUCT_CONFIG = {
   physique_analysis: { priceCents: 99, label: "AI Physique Analysis" },
-  posing_analysis: { priceCents: 99, label: "AI Posing Analysis" },
+  posing_analysis: { priceCents: 99, label: "Bodybuilding Posing Analysis" },
   complete_stage_analysis: { priceCents: 149, label: "Complete Stage Analysis" },
 } as const satisfies Record<StageAnalysisProduct, { priceCents: number; label: string }>;
 

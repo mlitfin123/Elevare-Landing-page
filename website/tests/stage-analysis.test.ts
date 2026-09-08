@@ -19,6 +19,7 @@ const read = (...segments: string[]) => fs.readFileSync(path.join(projectRoot, .
 test("stage analysis products preserve the required one-time prices and divisions", () => {
   assert.equal(STAGE_ANALYSIS_PRODUCT_CONFIG.physique_analysis.priceCents, 99);
   assert.equal(STAGE_ANALYSIS_PRODUCT_CONFIG.posing_analysis.priceCents, 99);
+  assert.equal(STAGE_ANALYSIS_PRODUCT_CONFIG.posing_analysis.label, "Bodybuilding Posing Analysis");
   assert.equal(STAGE_ANALYSIS_PRODUCT_CONFIG.complete_stage_analysis.priceCents, 149);
   assert.deepEqual(POSING_DIVISIONS, ["Men's Physique", "Classic Physique", "Bodybuilding", "Bikini", "Wellness", "Figure"]);
 });
