@@ -8,6 +8,8 @@ import { SignOutButton } from "@/components/marketplace/SignOutButton";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { getMarketplaceAppUserByAuthId, type MarketplaceAppUserRecord } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { localeFromPathname, localizePathname, stripLocalePrefix } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type ProfessionalAccountState = {
   id: string;
@@ -62,6 +64,9 @@ export function useMarketplaceAccountState() {
 
 export function MarketplaceAccountShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  const locale = localeFromPathname(pathname);
+  const canonicalPathname = stripLocalePrefix(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const { user, isLoading: isSessionLoading, isConfigured } = useSupabaseSession();
   const [appUser, setAppUser] = useState<MarketplaceAppUserRecord | null>(null);
   const [hasClientProfile, setHasClientProfile] = useState(false);
@@ -180,38 +185,40 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
     <MarketplaceAccountContext.Provider value={accountState}>
       <section className="account-hero" aria-labelledby="account-heading">
         <div className="account-hero-copy">
-          <div className="eyebrow">Account</div>
-          <h1 id="account-heading">Your Elevare account</h1>
+          <div className="eyebrow">{t("Account")}</div>
+          <h1 id="account-heading">{t("Your Elevare account")}</h1>
           <p>
-            {visibleProfessionalProfile
+            {t(visibleProfessionalProfile
               ? "Manage your marketplace activity, Pro profile, and client requests."
-              : "Manage your preferences, saved profiles, and consultation requests."}
+              : "Manage your preferences, saved profiles, and consultation requests.")}
           </p>
         </div>
 
         {user ? (
           <div id="account-settings" className="account-settings-row">
             <div>
-              <span className="stat-label">Account settings</span>
-              <span className="account-email">Signed in as {user.email}</span>
+              <span className="stat-label">{t("Account settings")}</span>
+              <span className="account-email">{t("Signed in as")} {user.email}</span>
             </div>
             <SignOutButton />
           </div>
         ) : null}
       </section>
 
-      <nav className="account-nav" aria-label="Account">
+      <nav className="account-nav" aria-label={t("Account")}>
         {accountLinks.map((link) => {
-          const isActive = isActivePath(pathname, link.href);
+          const isActive = isActivePath(canonicalPathname, link.href);
+          const canLocalize = link.href === "/account/" || link.href === "/professionals/" || link.href === "/account/professional-profile/";
 
           return (
             <Link
               key={link.href}
               className={`subnav-link${isActive ? " is-active" : ""}`}
-              href={link.href}
+              href={canLocalize ? localizePathname(link.href, locale) : link.href}
+              hrefLang={!canLocalize && locale !== "en" ? "en" : undefined}
               aria-current={isActive ? "page" : undefined}
             >
-              {link.label}
+              {t(link.label)}
             </Link>
           );
         })}

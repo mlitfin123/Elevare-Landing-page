@@ -13,6 +13,15 @@ import { QuickAnalysisResultExperience } from "@/components/quick-analysis/Quick
 import { CompleteStageAnalysisResultExperience } from "@/components/stage-analysis/CompleteStageAnalysisResultExperience";
 import { PosingAnalysisResultExperience } from "@/components/stage-analysis/PosingAnalysisResultExperience";
 import { Suspense } from "react";
+import { MarketplaceDirectory } from "@/components/marketplace/MarketplaceDirectory";
+import { MarketplaceAccountShell } from "@/components/marketplace/MarketplaceAccountShell";
+import { AccountDashboard } from "@/components/marketplace/AccountDashboard";
+import { ProfessionalProfileEditor } from "@/components/marketplace/ProfessionalProfileEditor";
+import { StructuredData } from "@/components/StructuredData";
+import {
+  LocalizedProfessionalRoutePage,
+  buildProfessionalRouteMetadata,
+} from "@/app/professionals/[slug]/page";
 import {
   areLocalizedRoutesEnabled,
   getLocalizedRouteParams,
@@ -32,10 +41,13 @@ import { getWorkoutMessages, localizeWorkoutGoal, localizeWorkoutName } from "@/
 import { getWorkoutGeneratorMessages } from "@/lib/i18n/workout-generator-content";
 import { getNutritionRestaurants, getRestaurantBySlug } from "@/lib/nutrition";
 import { fastFoodNutritionViews, isFastFoodNutritionView, isRestaurantNutritionView, restaurantNutritionViews } from "@/lib/nutrition-pages";
-import { buildMetadata } from "@/lib/site";
+import { absoluteUrl, buildMetadata } from "@/lib/site";
 import { getAllExercises, getAllWorkoutTemplates, getExerciseBySlug, getWorkoutTemplateBySlug } from "@/lib/training";
 import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, getExerciseCategoryInfo, getWorkoutGoalInfo, WORKOUT_GOALS } from "@/lib/training-data";
 import { getTool, tools } from "@/lib/tools";
+import { getMarketplaceCategories, getMarketplaceProfessionals } from "@/lib/marketplace";
+import { findTopCategories } from "@/lib/marketplace-helpers";
+import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type LocalizedPageParams = {
   locale: string;
@@ -48,7 +60,7 @@ export async function generateStaticParams() {
   const baseParams = getLocalizedRouteParams();
   if (!baseParams.length) return [];
 
-  const [exercises, workoutTemplates, restaurants] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants()]);
+  const [exercises, workoutTemplates, restaurants, marketplaceCategories, professionals] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants(), getMarketplaceCategories(), getMarketplaceProfessionals()]);
   const categorySlugs = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) => category.slug);
   const locales = ["es-419", "pt-BR"] as const;
   const catalogParams = locales.flatMap((locale) => {
@@ -69,6 +81,9 @@ export async function generateStaticParams() {
         { locale: localeSegment, slug: ["nutrition", restaurant.slug] },
         ...restaurantNutritionViews.map((view) => ({ locale: localeSegment, slug: ["nutrition", restaurant.slug, view] })),
       ]),
+      { locale: localeSegment, slug: ["professionals"] },
+      ...marketplaceCategories.map((category) => ({ locale: localeSegment, slug: ["professionals", category.slug] })),
+      ...professionals.map((professional) => ({ locale: localeSegment, slug: ["professionals", professional.profileSlug] })),
     ];
   });
 
@@ -116,6 +131,15 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug[0] === "nutrition" && slug.length <= 3) {
     return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
   }
+  if (slug[0] === "professionals" && slug.length <= 2) {
+    return { locale, page: "professionals" as const, pathname: `/${slug.join("/")}/`, catalogSlug: slug[1] };
+  }
+  if (slug.length === 1 && slug[0] === "account") {
+    return { locale, page: "account" as const, pathname: "/account/" };
+  }
+  if (slug.length === 2 && slug[0] === "account" && slug[1] === "professional-profile") {
+    return { locale, page: "professional-account" as const, pathname: "/account/professional-profile/" };
+  }
   return null;
 }
 
@@ -124,6 +148,29 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
   if (!resolved || !areLocalizedRoutesEnabled()) return {};
 
   const indexingEnabled = isLocalizedIndexingEnabled();
+  if (resolved.page === "professionals") {
+    if (resolved.catalogSlug) return buildProfessionalRouteMetadata(resolved.catalogSlug, resolved.locale);
+    const t = (value: string) => marketplaceText(resolved.locale, value);
+    return buildMetadata({
+      title: t("Find Trainers, Coaches & Wellness Experts | Elevare"),
+      description: t("Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare."),
+      pathname: localizePathname("/professionals/", resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? undefined : { index: false, follow: false },
+    });
+  }
+
+  if (resolved.page === "account" || resolved.page === "professional-account") {
+    return buildMetadata({
+      title: marketplaceText(resolved.locale, resolved.page === "account" ? "Your Elevare account" : "Your Pro Profile"),
+      description: marketplaceText(resolved.locale, "Manage your Elevare account and professional profile."),
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: { index: false, follow: false },
+    });
+  }
   if (resolved.page === "exercises") {
     const messages = getCatalogMessages(resolved.locale).exercise;
     const exercise = resolved.catalogSlug ? await getExerciseBySlug(resolved.catalogSlug) : null;
@@ -304,6 +351,51 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
 
   if (resolved.page === "workout-generator") {
     return <LocalizedWorkoutGeneratorPage locale={resolved.locale} />;
+  }
+
+  if (resolved.page === "professionals") {
+    if (resolved.catalogSlug) {
+      return <LocalizedProfessionalRoutePage slug={resolved.catalogSlug} locale={resolved.locale} />;
+    }
+
+    const [categories, professionals] = await Promise.all([getMarketplaceCategories(), getMarketplaceProfessionals()]);
+    const topCategories = findTopCategories(categories, professionals, 8);
+    const localizedCategories = categories.map((category) => localizeMarketplaceCategory(category, resolved.locale));
+    const directoryPath = localizePathname("/professionals/", resolved.locale);
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: marketplaceText(resolved.locale, "Find the right support for your goals."),
+      url: absoluteUrl(directoryPath),
+      inLanguage: resolved.locale,
+      mainEntity: {
+        "@type": "ItemList",
+        itemListElement: localizedCategories.map((category, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: category.label,
+          url: absoluteUrl(localizePathname(`/professionals/${category.slug}/`, resolved.locale)),
+        })),
+      },
+    };
+    return (
+      <div className="container">
+        <StructuredData data={structuredData} />
+        <Suspense fallback={null}>
+          <MarketplaceDirectory categories={categories} professionals={professionals} sourcePage={`professionals_index_${resolved.locale}`} topCategories={topCategories} showMobileAppSection />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (resolved.page === "account" || resolved.page === "professional-account") {
+    return (
+      <div className="container">
+        <MarketplaceAccountShell>
+          {resolved.page === "account" ? <AccountDashboard /> : <ProfessionalProfileEditor />}
+        </MarketplaceAccountShell>
+      </div>
+    );
   }
 
   const messages = await getMarketingMessages(resolved.locale);

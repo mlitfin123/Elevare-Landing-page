@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 export function SignOutButton() {
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = localeFromPathname(pathname);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSignOut() {
@@ -19,7 +23,7 @@ export function SignOutButton() {
 
     try {
       await supabase.auth.signOut();
-      router.push("/professionals/");
+      router.push(localizePathname("/professionals/", locale));
       router.refresh();
     } finally {
       setIsSubmitting(false);
@@ -28,7 +32,7 @@ export function SignOutButton() {
 
   return (
     <button type="button" className="button button-secondary" onClick={handleSignOut} disabled={isSubmitting}>
-      {isSubmitting ? "Logging out..." : "Log out"}
+      {marketplaceText(locale, isSubmitting ? "Logging out..." : "Log out")}
     </button>
   );
 }

@@ -327,7 +327,11 @@ function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
       toSitemapEntry(`/professionals/${category.slug}`, undefined, "priority_index"),
     );
 
-  return [toSitemapEntry("/professionals", undefined, "priority_index"), ...categoryEntries, ...profileEntries];
+  return withLocalizedCatalogEntries([
+    toSitemapEntry("/professionals", undefined, "priority_index"),
+    ...categoryEntries,
+    ...profileEntries,
+  ]);
 }
 
 function main() {

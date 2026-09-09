@@ -61,9 +61,8 @@ function QuickAnalysisEmbeddedPayment({
           <div className="eyebrow">{messages.securePayment}</div>
           <h2 id="quick-analysis-payment-title">{messages.completePurchase}</h2>
         </div>
-        <div className="quick-analysis-price" aria-label={`${formatQuickAnalysisPrice()} ${messages.oneTime}`}>
+        <div className="quick-analysis-price" aria-label={formatQuickAnalysisPrice()}>
           <strong>{formatQuickAnalysisPrice()}</strong>
-          <span>{messages.oneTime}</span>
         </div>
       </div>
       <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
@@ -201,9 +200,8 @@ export function QuickAnalysisCheckout({ locale, messages }: { locale: Locale; me
           <div className="eyebrow">{messages.snapshot}</div>
           <h2>{messages.setContext}</h2>
         </div>
-        <div className="quick-analysis-price" aria-label={`${formatQuickAnalysisPrice()} ${messages.oneTime}`}>
+        <div className="quick-analysis-price" aria-label={formatQuickAnalysisPrice()}>
           <strong>{formatQuickAnalysisPrice()}</strong>
-          <span>{messages.oneTime}</span>
         </div>
       </div>
 

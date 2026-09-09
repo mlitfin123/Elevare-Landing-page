@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
+import { localeFromPathname } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type ProfessionalSaveButtonProps = {
   professionalId: string;
@@ -19,6 +21,9 @@ export function ProfessionalSaveButton({
   professionalName,
 }: ProfessionalSaveButtonProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const [appUserId, setAppUserId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -60,7 +65,7 @@ export function ProfessionalSaveButton({
       })
       .catch(() => {
         if (isMounted) {
-          setFeedback("We could not check your saved profiles right now.");
+          setFeedback(marketplaceText(locale, "We could not check your saved profiles right now."));
           setFeedbackType("error");
         }
       });
@@ -68,26 +73,26 @@ export function ProfessionalSaveButton({
     return () => {
       isMounted = false;
     };
-  }, [professionalId, user]);
+  }, [locale, professionalId, user]);
 
   const effectiveIsSaved = user ? isSaved : false;
 
   async function handleSave() {
     if (!isConfigured) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
 
     if (!user) {
-      window.location.href = `/sign-in/?redirect=${encodeURIComponent(pathname)}`;
+      router.push(`/sign-in/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
@@ -95,7 +100,7 @@ export function ProfessionalSaveButton({
     const resolvedAppUserId = appUserId ?? (await getMarketplaceAppUserByAuthId(supabase, user.id))?.id ?? null;
 
     if (!resolvedAppUserId) {
-      setFeedback("We couldn't find your marketplace user record yet.");
+      setFeedback(t("We couldn't find your marketplace user record yet."));
       setFeedbackType("error");
       return;
     }
@@ -118,7 +123,7 @@ export function ProfessionalSaveButton({
         }
 
         setIsSaved(false);
-        setFeedback("Removed from saved profiles.");
+        setFeedback(t("Removed from saved profiles."));
         setFeedbackType("success");
         trackEvent("professional_unsaved", {
           professional_slug: professionalSlug,
@@ -137,14 +142,14 @@ export function ProfessionalSaveButton({
       }
 
       setIsSaved(true);
-      setFeedback("Saved to your account.");
+      setFeedback(t("Saved to your account."));
       setFeedbackType("success");
       trackEvent("professional_saved", {
         professional_slug: professionalSlug,
         professional_name: professionalName,
       });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not update your saved profiles.");
+    } catch {
+      setFeedback(t("We could not update your saved profiles."));
       setFeedbackType("error");
     } finally {
       setIsWorking(false);
@@ -159,7 +164,7 @@ export function ProfessionalSaveButton({
         onClick={handleSave}
         disabled={isLoading || isWorking}
       >
-        {isWorking ? "Updating..." : effectiveIsSaved ? "Saved" : "Save profile"}
+        {isWorking ? t("Updating...") : effectiveIsSaved ? t("Saved") : t("Save profile")}
       </button>
       {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
     </div>

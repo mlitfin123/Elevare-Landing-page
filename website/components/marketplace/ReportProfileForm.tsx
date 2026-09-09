@@ -1,11 +1,13 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ProfessionalProfileRecord } from "@/lib/marketplace-types";
+import { localeFromPathname } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type ReportProfileFormProps = {
   professional: ProfessionalProfileRecord;
@@ -22,6 +24,9 @@ const reportReasons = [
 
 export function ReportProfileForm({ professional }: ReportProfileFormProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const { user, isConfigured } = useSupabaseSession();
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState(reportReasons[0]);
@@ -32,13 +37,13 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
 
   function handleStart() {
     if (!isConfigured) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
 
     if (!user) {
-      window.location.href = `/sign-in/?redirect=${encodeURIComponent(pathname)}`;
+      router.push(`/sign-in/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -54,14 +59,14 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
     event.preventDefault();
 
     if (!user) {
-      window.location.href = `/sign-in/?redirect=${encodeURIComponent(pathname)}`;
+      router.push(`/sign-in/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
@@ -81,7 +86,7 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
         throw error;
       }
 
-      setFeedback("Report submitted. The Elevare review team can review it separately.");
+      setFeedback(t("Report submitted. The Elevare review team can review it separately."));
       setFeedbackType("success");
       setDetails("");
       trackEvent("professional_report_submitted", {
@@ -89,8 +94,8 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
         professional_name: professional.displayName,
         report_reason: reason,
       });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not submit your report right now.");
+    } catch {
+      setFeedback(t("We could not submit your report right now."));
       setFeedbackType("error");
     } finally {
       setIsSubmitting(false);
@@ -100,41 +105,40 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
   return (
     <div className="marketplace-report-stack">
       <button type="button" className="hero-text-link" onClick={handleStart}>
-        Report this profile
+        {t("Report this profile")}
       </button>
 
       {isOpen ? (
         <form className="marketplace-inline-form marketplace-report-form" onSubmit={handleSubmit}>
           <div className="field-grid">
             <label className="field">
-              <span className="field-label">Reason</span>
+              <span className="field-label">{t("Reason")}</span>
               <select value={reason} onChange={(event) => setReason(event.target.value)}>
                 {reportReasons.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {t(option)}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field field-full">
-              <span className="field-label">Details</span>
+              <span className="field-label">{t("Details")}</span>
               <textarea
                 rows={4}
                 value={details}
                 onChange={(event) => setDetails(event.target.value)}
-                placeholder="Share the specific issue you want the review team to check."
+                placeholder={t("Share the specific issue you want the review team to check.")}
               />
             </label>
             <div className="form-note field-full">
-              Include only information relevant to the report. Do not submit medical records, passwords, payment
-              card details, or other highly sensitive information.
+              {t("Include only information relevant to the report. Do not submit medical records, passwords, payment card details, or other highly sensitive information.")}
             </div>
           </div>
 
           <div className="form-actions">
             <button type="submit" className="button button-secondary" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit report"}
+              {isSubmitting ? t("Submitting...") : t("Submit report")}
             </button>
             {feedback ? (
               <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>

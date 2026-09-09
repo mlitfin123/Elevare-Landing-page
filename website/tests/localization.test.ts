@@ -90,13 +90,16 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/stagelab/complete-stage-analysis/",
     "/stagelab/complete-stage-analysis/result/",
     "/tools/workout-generator/",
+    "/account/",
+    "/account/professional-profile/",
   ]);
   assert.equal(localizePathname("/logbook/", "en"), "/logbook/");
   assert.equal(localizePathname("/logbook/", "es-419"), "/es/logbook/");
   assert.equal(localizePathname("/pt-br/stagelab/", "es-419"), "/es/stagelab/");
   assert.equal(getLocaleSwitchHref("/es/logbook/", "pt-BR"), "/pt-br/logbook/");
   assert.equal(getLocaleSwitchHref("/es/stagelab/quick-analysis/", "pt-BR"), "/pt-br/stagelab/quick-analysis/");
-  assert.equal(localizePathname("/account/", "es-419"), "/es/");
+  assert.equal(localizePathname("/account/", "es-419"), "/es/account/");
+  assert.equal(localizePathname("/account/professional-profile/", "pt-BR"), "/pt-br/account/professional-profile/");
 });
 
 test("localized routes and indexing require separate opt-in flags", () => {
@@ -258,8 +261,8 @@ test("SEO rollout excludes localized routes until indexing review is enabled", (
   assert.match(routeSource, /localizedAlternates: true/);
 });
 
-test("private flows stay outside the localized route allowlist while Quick Analysis is localized", () => {
-  for (const pathName of ["/sign-in/", "/account/", "/professionals/", "/shop/", "/privacy-policy/", "/terms-of-service/"]) {
+test("deferred private and legal flows stay outside the localized route allowlist", () => {
+  for (const pathName of ["/sign-in/", "/shop/", "/privacy-policy/", "/terms-of-service/"]) {
     assert.equal(LOCALIZED_MARKETING_PATHS.includes(pathName as never), false);
   }
   assert.equal(LOCALIZED_MARKETING_PATHS.includes("/stagelab/quick-analysis/"), true);
@@ -275,14 +278,17 @@ test("localized pages preserve supported routes and identify deferred destinatio
   assert.match(home, /localizePathname\(getQuickAnalysisEntryHref\("homepage"\), locale\)/);
   assert.match(product, /localizePathname\(getQuickAnalysisEntryHref\("stagelab"\), locale\)/);
   assert.match(home, /hrefLang=\{hrefLanguage/);
-  assert.match(header, /hrefLang=\{englishOnlyHrefLang\}/);
+  assert.match(header, /item\.label === "findSupport"/);
+  assert.match(header, /signedInHref=\{localizePathname\("\/account\/", locale\)\}/);
   assert.match(footer, /hrefLang="en"/);
-  assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"]);
+  assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/calculators/", "/exercises/", "/workouts/", "/nutrition/", "/professionals/"]);
   assert.equal(localizePathname("/calculators/protein-calculator/", "es-419"), "/es/calculators/protein-calculator/");
   assert.equal(localizePathname("/exercises/dumbbell-bench-press/", "es-419"), "/es/exercises/dumbbell-bench-press/");
   assert.equal(localizePathname("/workouts/3-day-full-body-split/", "es-419"), "/es/workouts/3-day-full-body-split/");
   assert.equal(localizePathname("/nutrition/chipotle/high-protein/", "pt-BR"), "/pt-br/nutrition/chipotle/high-protein/");
-  for (const pathName of ["/professionals/", "/shop/", "/blog/"]) {
+  assert.equal(localizePathname("/professionals/", "es-419"), "/es/professionals/");
+  assert.equal(localizePathname("/professionals/", "pt-BR"), "/pt-br/professionals/");
+  for (const pathName of ["/shop/", "/blog/"]) {
     assert.equal(localizePathname(pathName, "es-419"), "/es/");
     assert.equal(localizePathname(pathName, "pt-BR"), "/pt-br/");
   }

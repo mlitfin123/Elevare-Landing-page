@@ -18,9 +18,17 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/complete-stage-analysis/",
   "/stagelab/complete-stage-analysis/result/",
   "/tools/workout-generator/",
+  "/account/",
+  "/account/professional-profile/",
 ] as const;
 
-export const LOCALIZED_CATALOG_PATH_PREFIXES = ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"] as const;
+export const LOCALIZED_CATALOG_PATH_PREFIXES = [
+  "/calculators/",
+  "/exercises/",
+  "/workouts/",
+  "/nutrition/",
+  "/professionals/",
+] as const;
 
 const LATIN_AMERICAN_SPANISH_REGIONS = new Set([
   "419",
@@ -196,6 +204,8 @@ export function getLocalizedRouteParams() {
       { locale: localeSegment, slug: ["stagelab", "complete-stage-analysis"] },
       { locale: localeSegment, slug: ["stagelab", "complete-stage-analysis", "result"] },
       { locale: localeSegment, slug: ["tools", "workout-generator"] },
+      { locale: localeSegment, slug: ["account"] },
+      { locale: localeSegment, slug: ["account", "professional-profile"] },
     ];
   });
 }

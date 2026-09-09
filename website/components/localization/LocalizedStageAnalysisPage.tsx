@@ -66,7 +66,6 @@ export function LocalizedStageAnalysisPage({
           <p>{landing.body}</p>
           <div className="quick-analysis-badges">
             <span>{price}</span>
-            <span>{messages.checkout.oneTime}</span>
             <span>{messages.result.privacyTitle}</span>
           </div>
         </div>

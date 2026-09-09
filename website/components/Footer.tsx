@@ -31,12 +31,13 @@ export function Footer() {
           <Link href="/apps/" hrefLang={englishOnlyHrefLang}>{messages.navigation.apps}</Link>
           <Link href="/shop/" hrefLang={englishOnlyHrefLang}>{messages.navigation.shop}</Link>
           <Link href="/blog/" hrefLang={englishOnlyHrefLang}>{messages.navigation.blog}</Link>
-          <Link href="/professionals/" hrefLang={englishOnlyHrefLang}>{messages.navigation.findSupport}</Link>
+          <Link href={localizePathname("/professionals/", locale)}>{messages.navigation.findSupport}</Link>
           <AuthNavigationLink
             signedInLabel={messages.authentication.signedIn}
             signInLabel={messages.authentication.signIn}
             signInHref={signInHref}
-            hrefLang={englishOnlyHrefLang}
+            signedInHref={localizePathname("/account/", locale)}
+            hrefLang={undefined}
           />
           {/* Static legal documents intentionally use full browser navigation. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}

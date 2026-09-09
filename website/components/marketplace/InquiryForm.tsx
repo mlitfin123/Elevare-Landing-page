@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { type FormEvent, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import {
   CLIENT_TIMELINE_OPTIONS,
@@ -12,6 +12,12 @@ import { getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import type { ProfessionalProfileRecord } from "@/lib/marketplace-types";
+import { localeFromPathname } from "@/lib/i18n/config";
+import {
+  localizeMarketplaceCategory,
+  localizeServiceMode,
+  marketplaceText,
+} from "@/lib/i18n/marketplace-content";
 
 type InquiryFormProps = {
   professional: ProfessionalProfileRecord;
@@ -19,6 +25,9 @@ type InquiryFormProps = {
 
 export function InquiryForm({ professional }: InquiryFormProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const { user, isConfigured } = useSupabaseSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,23 +42,23 @@ export function InquiryForm({ professional }: InquiryFormProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
 
-  const interestOptions = useMemo(
-    () => [
-      ...professional.services.map((service) => service.name),
-      ...professional.categories.map((category) => category.label),
-    ],
-    [professional.categories, professional.services],
-  );
+  const interestOptions = [
+    ...professional.services.map((service) => ({ value: service.name, label: service.name })),
+    ...professional.categories.map((category) => ({
+      value: category.label,
+      label: localizeMarketplaceCategory(category, locale).label,
+    })),
+  ];
 
   async function handleStart() {
     if (!isConfigured) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
 
     if (!user) {
-      window.location.href = `/sign-in/?redirect=${encodeURIComponent(pathname)}`;
+      router.push(`/sign-in/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -104,20 +113,20 @@ export function InquiryForm({ professional }: InquiryFormProps) {
     event.preventDefault();
 
     if (!user) {
-      window.location.href = `/sign-in/?redirect=${encodeURIComponent(pathname)}`;
+      router.push(`/sign-in/?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setFeedback("Marketplace auth is not configured yet.");
+      setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
       return;
     }
 
     if (!clientFirstName.trim() || !goal.trim()) {
-      setFeedback("Please add your first name and a short goal before sending the request.");
+      setFeedback(t("Please add your first name and a short goal before sending the request."));
       setFeedbackType("error");
       return;
     }
@@ -129,7 +138,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
 
       if (!appUser) {
-        throw new Error("We couldn't find your marketplace user record yet.");
+        throw new Error(t("We couldn't find your marketplace user record yet."));
       }
 
       await supabase.from("users").update({ first_name: clientFirstName.trim() }).eq("id", appUser.id);
@@ -192,7 +201,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
         throw error;
       }
 
-      setFeedback("Request sent. They can review it in their Elevare account.");
+      setFeedback(t("Request sent. They can review it in their Elevare account."));
       setFeedbackType("success");
       setGoal("");
       setMessage("");
@@ -203,8 +212,8 @@ export function InquiryForm({ professional }: InquiryFormProps) {
         professional_slug: professional.profileSlug,
         professional_name: professional.displayName,
       });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not send your request right now.");
+    } catch {
+      setFeedback(t("We could not send your request right now."));
       setFeedbackType("error");
     } finally {
       setIsSubmitting(false);
@@ -214,90 +223,87 @@ export function InquiryForm({ professional }: InquiryFormProps) {
   return (
     <div className="marketplace-action-stack">
       <button type="button" className="button button-primary" onClick={handleStart}>
-        Request consultation
+        {t("Request consultation")}
       </button>
 
       {isOpen ? (
         <form className="marketplace-inline-form" onSubmit={handleSubmit}>
-          {isLoadingPreferences ? <div className="form-note">Loading your saved preferences...</div> : null}
+          {isLoadingPreferences ? <div className="form-note">{t("Loading your saved preferences...")}</div> : null}
           <div className="field-grid">
             <label className="field">
-              <span className="field-label">First name</span>
+              <span className="field-label">{t("First name")}</span>
               <input
                 type="text"
                 value={clientFirstName}
                 onChange={(event) => setClientFirstName(event.target.value)}
-                placeholder="Your first name"
+                placeholder={t("Your first name")}
                 required
               />
             </label>
 
             <label className="field">
-              <span className="field-label">Service or category of interest</span>
+              <span className="field-label">{t("Service or category of interest")}</span>
               <select value={serviceInterest} onChange={(event) => setServiceInterest(event.target.value)}>
-                <option value="">Select one</option>
+                <option value="">{t("Select one")}</option>
                 {interestOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field field-full">
-              <span className="field-label">What are you looking for help with?</span>
+              <span className="field-label">{t("What are you looking for help with?")}</span>
               <input
                 type="text"
                 value={goal}
                 onChange={(event) => setGoal(event.target.value)}
-                placeholder="Fat loss, prep support, mobility work, running structure..."
+                placeholder={t("Fat loss, prep support, mobility work, running structure...")}
                 required
               />
             </label>
 
             <label className="field">
-              <span className="field-label">Preferred service mode</span>
+              <span className="field-label">{t("Preferred service mode")}</span>
               <select
                 value={preferredServiceMode}
                 onChange={(event) => setPreferredServiceMode(event.target.value)}
               >
-                <option value="">Select one</option>
-                <option value="in_person">In person</option>
-                <option value="online">Online</option>
-                <option value="hybrid">Either</option>
+                <option value="">{t("Select one")}</option>
+                <option value="in_person">{localizeServiceMode("in_person", locale)}</option>
+                <option value="online">{localizeServiceMode("online", locale)}</option>
+                <option value="hybrid">{t("Either")}</option>
               </select>
             </label>
 
             <label className="field">
-              <span className="field-label">When would you like to start?</span>
+              <span className="field-label">{t("When would you like to start?")}</span>
               <select value={startTimeline} onChange={(event) => setStartTimeline(event.target.value)}>
-                <option value="">No preference</option>
+                <option value="">{t("No preference")}</option>
                 {CLIENT_TIMELINE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>{t(option.label)}</option>
                 ))}
               </select>
             </label>
 
             <label className="field field-full">
-              <span className="field-label">Optional message</span>
+              <span className="field-label">{t("Optional message")}</span>
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                placeholder="Share any scheduling constraints, experience level, or context that would help."
+                placeholder={t("Share any scheduling constraints, experience level, or context that would help.")}
                 rows={4}
               />
             </label>
             <div className="form-note field-full">
-              Share only the information needed for this request. Do not include medical records, account passwords,
-              payment card details, or other highly sensitive information. Your request will be shared with the
-              independent professional you contact. Sending a request does not create a booking, paid contract, or
-              guaranteed appointment.
+              {t("Share only the information needed for this request. Do not include medical records, account passwords, payment card details, or other highly sensitive information. Your request will be shared with the independent professional you contact. Sending a request does not create a booking, paid contract, or guaranteed appointment.")}
             </div>
           </div>
 
           <div className="form-actions">
             <button type="submit" className="button button-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Sending..." : "Send request"}
+              {isSubmitting ? t("Sending...") : t("Send request")}
             </button>
             {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
           </div>

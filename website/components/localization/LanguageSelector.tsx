@@ -12,6 +12,7 @@ import {
   SUPPORTED_LOCALES,
 } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function saveLocalePreference(locale: Locale) {
   window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
@@ -32,6 +33,14 @@ export function LanguageSelector() {
   function handleChange(event: ChangeEvent<HTMLSelectElement>) {
     const locale = event.target.value as Locale;
     saveLocalePreference(locale);
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      void supabase.auth.getSession().then(({ data }) => {
+        if (data.session?.user) {
+          void supabase.rpc("set_my_preferred_locale", { p_locale: locale });
+        }
+      });
+    }
     router.push(getLocaleSwitchHref(pathname, locale));
   }
 

@@ -119,7 +119,7 @@ export function StageAnalysisCheckout({
   if (embeddedOptions && checkoutSessionId) {
     return (
       <section className="quick-analysis-form quick-analysis-embedded-payment panel" aria-labelledby="stage-analysis-payment-title">
-        <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.securePayment}</div><h2 id="stage-analysis-payment-title">{messages.completePurchase}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong><span>{messages.oneTime}</span></div></div>
+        <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.securePayment}</div><h2 id="stage-analysis-payment-title">{messages.completePurchase}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong></div></div>
         <EmbeddedCheckoutProvider stripe={stripePromise} options={embeddedOptions}><EmbeddedCheckout className="quick-analysis-embedded-checkout" /></EmbeddedCheckoutProvider>
         <button className="button button-secondary quick-analysis-payment-back" type="button" onClick={() => { setClientSecret(null); setCheckoutSessionId(null); }}>{messages.back}</button>
       </section>
@@ -129,7 +129,7 @@ export function StageAnalysisCheckout({
   const paymentNotice = searchParams.has("payment") ? messages.cancelled : null;
   return (
     <form className="quick-analysis-form panel" onSubmit={handleSubmit} noValidate>
-      <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.details}</div><h2>{STAGE_ANALYSIS_PRODUCT_CONFIG[product].label}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong><span>{messages.oneTime}</span></div></div>
+      <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.details}</div><h2>{STAGE_ANALYSIS_PRODUCT_CONFIG[product].label}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong></div></div>
       {paymentNotice ? <p className="form-feedback is-error" role="status">{paymentNotice}</p> : null}
       <div className="field-grid">
         <label className="field"><span className="field-label">{messages.division}</span><select value={division} onChange={(event) => setDivision(event.target.value as PosingDivision)} required><option value="">{messages.selectDivision}</option>{POSING_DIVISIONS.map((item) => <option key={item} value={item}>{divisionLabels[locale][item] ?? item}</option>)}</select></label>

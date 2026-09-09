@@ -40,6 +40,22 @@ import {
   isMarketplaceCategoryIndexable,
 } from "@/lib/marketplace-seo";
 import { absoluteUrl, buildMetadata, siteConfig } from "@/lib/site";
+import type { Locale } from "@/lib/i18n/config";
+import { isLocalizedIndexingEnabled, localizePathname } from "@/lib/i18n/config";
+import {
+  buildLocalizedCategoryFaqs,
+  formatLocalizedProfessionalPrice,
+  formatLocalizedServicePrice,
+  formatMarketplaceYears,
+  getLocalizedProfessionalMetadataCopy,
+  localizeApprovalStatus,
+  localizeMarketplaceCategory,
+  localizeMarketplaceLocation,
+  localizeMarketplaceSpecialty,
+  localizeProfessionalPath,
+  localizeServiceMode,
+  marketplaceText,
+} from "@/lib/i18n/marketplace-content";
 
 type ProfessionalRoutePageProps = {
   params: Promise<{
@@ -61,8 +77,7 @@ export async function generateStaticParams() {
   ];
 }
 
-export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
-  const { slug } = await params;
+export async function buildProfessionalRouteMetadata(slug: string, locale: Locale = "en") {
   const [category, professional, professionals] = await Promise.all([
     getMarketplaceCategoryBySlug(slug),
     getMarketplaceProfessionalBySlug(slug),
@@ -70,11 +85,23 @@ export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
   ]);
 
   if (professional) {
+    const primaryCategory = professional.categories.find((entry) => entry.isPrimary) ?? professional.categories[0] ?? null;
+    const localizedCategory = primaryCategory ? localizeMarketplaceCategory(primaryCategory, locale) : null;
+    const role = professional.professionalTitle || localizedCategory?.label || marketplaceText(locale, "Profile");
+    const copy = getLocalizedProfessionalMetadataCopy(
+      locale,
+      professional.displayName,
+      role,
+      localizeMarketplaceLocation(formatPublicLocationLabel(professional), locale),
+    );
     return buildMetadata({
-      title: buildMarketplaceProfessionalSeoTitle(professional),
-      description: buildMarketplaceProfessionalMetaDescription(professional),
-      pathname: `/professionals/${professional.profileSlug}`,
+      title: locale === "en" ? buildMarketplaceProfessionalSeoTitle(professional) : copy.title,
+      description: locale === "en" ? buildMarketplaceProfessionalMetaDescription(professional) : copy.description,
+      pathname: localizeProfessionalPath(`/professionals/${professional.profileSlug}`, locale),
       imageUrl: professional.profilePhotoUrl ?? undefined,
+      locale,
+      localizedAlternates: locale !== "en",
+      robots: locale !== "en" && !isLocalizedIndexingEnabled() ? { index: false, follow: false } : undefined,
     });
   }
 
@@ -82,22 +109,31 @@ export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
     const isIndexable = isMarketplaceCategoryIndexable(category, professionals);
 
     return buildMetadata({
-      title: `${getMarketplaceCategorySeoLabel(category)} | Elevare`,
-      description: buildMarketplaceCategoryMetaDescription(category),
-      pathname: `/professionals/${category.slug}`,
-      robots: isIndexable ? undefined : { index: false, follow: true },
+      title: `${locale === "en" ? getMarketplaceCategorySeoLabel(category) : localizeMarketplaceCategory(category, locale).label} | Elevare`,
+      description: locale === "en" ? buildMarketplaceCategoryMetaDescription(category) : localizeMarketplaceCategory(category, locale).shortDescription ?? category.shortDescription ?? "",
+      pathname: localizeProfessionalPath(`/professionals/${category.slug}`, locale),
+      locale,
+      localizedAlternates: locale !== "en",
+      robots: !isIndexable || (locale !== "en" && !isLocalizedIndexingEnabled()) ? { index: false, follow: true } : undefined,
     });
   }
 
   return buildMetadata({
-    title: "Profile page not found",
-    description: "The requested marketplace profile could not be found.",
-    pathname: `/professionals/${slug}`,
+    title: marketplaceText(locale, "Profile page not found"),
+    description: marketplaceText(locale, "The requested marketplace profile could not be found."),
+    pathname: localizeProfessionalPath(`/professionals/${slug}`, locale),
+    locale,
+    localizedAlternates: locale !== "en",
     robots: { index: false, follow: false },
   });
 }
 
-async function ProfessionalProfilePage({ slug }: { slug: string }) {
+export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
+  const { slug } = await params;
+  return buildProfessionalRouteMetadata(slug, "en");
+}
+
+async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; locale?: Locale }) {
   const [professional, professionals] = await Promise.all([
     getMarketplaceProfessionalBySlug(slug),
     getMarketplaceProfessionals(),
@@ -108,14 +144,17 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
   }
 
   const relatedProfessionals = getRelatedProfessionals(professional, professionals, 3);
-  const yearsExperience = formatYearsExperience(professional.yearsExperience);
-  const priceSummary = formatPriceSummary(professional);
+  const yearsExperience = locale === "en" ? formatYearsExperience(professional.yearsExperience) : formatMarketplaceYears(professional.yearsExperience, locale);
+  const priceSummary = locale === "en"
+    ? formatPriceSummary(professional)
+    : formatLocalizedProfessionalPrice(professional, locale);
   const publicBadges = getProfessionalPublicBadges(professional);
-  const clientStatusLabel = professional.clientAcceptanceStatus === "waitlist"
+  const t = (value: string) => marketplaceText(locale, value);
+  const clientStatusLabel = t(professional.clientAcceptanceStatus === "waitlist"
     ? "Accepting waitlist requests"
     : professional.clientAcceptanceStatus === "not_accepting"
       ? "Not accepting new clients"
-      : "Accepting new clients";
+      : "Accepting new clients");
   const profileLinks = [
     { label: "Website", href: professional.websiteUrl },
     { label: "Instagram", href: professional.socialLinks.instagram },
@@ -124,22 +163,25 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
     { label: "LinkedIn", href: professional.socialLinks.linkedin },
   ].filter((entry): entry is { label: string; href: string } => Boolean(entry.href));
   const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
-  const profileLocation = formatPublicLocationLabel(professional);
-  const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || primaryCategory?.label || "professional"}, ${profileLocation}`;
+  const localizedPrimaryCategory = primaryCategory ? localizeMarketplaceCategory(primaryCategory, locale) : null;
+  const localizedCategories = professional.categories.map((category) => localizeMarketplaceCategory(category, locale));
+  const profileLocation = localizeMarketplaceLocation(formatPublicLocationLabel(professional), locale);
+  const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || localizedPrimaryCategory?.label || t("professional")}, ${profileLocation}`;
+  const profilePath = localizeProfessionalPath(`/professionals/${professional.profileSlug}`, locale);
   const breadcrumbItems = [
     {
       "@type": "ListItem",
       position: 1,
-      name: "Find Support",
-      item: absoluteUrl("/professionals"),
+      name: t("Find Support"),
+      item: absoluteUrl(localizeProfessionalPath("/professionals", locale)),
     },
     ...(primaryCategory
       ? [
           {
             "@type": "ListItem",
             position: 2,
-            name: primaryCategory.label,
-            item: absoluteUrl(`/professionals/${primaryCategory.slug}`),
+            name: localizedPrimaryCategory?.label ?? primaryCategory.label,
+            item: absoluteUrl(localizeProfessionalPath(`/professionals/${primaryCategory.slug}`, locale)),
           },
         ]
       : []),
@@ -147,7 +189,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       "@type": "ListItem",
       position: primaryCategory ? 3 : 2,
       name: professional.displayName,
-      item: absoluteUrl(`/professionals/${professional.profileSlug}`),
+      item: absoluteUrl(profilePath),
     },
   ];
   const structuredData = [
@@ -156,26 +198,30 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       "@type": "BreadcrumbList",
       itemListElement: breadcrumbItems,
     },
-    buildProfessionalSchema(professional, siteConfig.url),
+    {
+      ...buildProfessionalSchema(professional, siteConfig.url),
+      url: absoluteUrl(profilePath),
+      inLanguage: locale,
+    },
   ];
 
   return (
     <div className="container">
       <StructuredData data={structuredData} />
 
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <TrackedLink href="/professionals/" eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
-          Find Support
+      <nav className="breadcrumbs professional-profile-breadcrumbs" aria-label={t("Breadcrumb")}>
+        <TrackedLink href={localizeProfessionalPath("/professionals/", locale)} eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
+          {t("Find Support")}
         </TrackedLink>
         {primaryCategory ? (
           <>
             <span aria-hidden="true">/</span>
             <TrackedLink
-              href={`/professionals/${primaryCategory.slug}/`}
+              href={localizeProfessionalPath(`/professionals/${primaryCategory.slug}/`, locale)}
               eventName="breadcrumb_click"
               eventParams={{ destination: primaryCategory.slug }}
             >
-              {primaryCategory.label}
+              {localizedPrimaryCategory?.label ?? primaryCategory.label}
             </TrackedLink>
           </>
         ) : null}
@@ -202,10 +248,10 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
         </div>
 
         <div className="professional-hero-copy">
-          <div className="eyebrow">Profile</div>
+          <div className="eyebrow">{t("Profile")}</div>
           <h1>{professional.displayName}</h1>
           <p className="professional-title-copy professional-title-copy-large">
-            {professional.professionalTitle || formatCategoryList(professional.categories) || "Profile"}
+            {professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile")}
           </p>
           <p>{professional.bio}</p>
 
@@ -213,7 +259,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             <div className="tag-row">
               {publicBadges.map((badge) => (
                 <span key={badge} className="verification-pill">
-                  {badge}
+                  {t(badge)}
                 </span>
               ))}
             </div>
@@ -221,31 +267,31 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
 
           <div className="hero-proof professional-summary-grid">
             <article className="proof-card">
-              <span className="proof-label">Marketplace status</span>
-              <div className="proof-value">{formatApprovalStatusLabel(professional.approvalStatus)}</div>
-              <p className="proof-copy">Only profiles reviewed for marketplace eligibility and currently active are listed publicly.</p>
+              <span className="proof-label">{t("Marketplace status")}</span>
+              <div className="proof-value">{locale === "en" ? formatApprovalStatusLabel(professional.approvalStatus) : localizeApprovalStatus(professional.approvalStatus, locale)}</div>
+              <p className="proof-copy">{t("Only profiles reviewed for marketplace eligibility and currently active are listed publicly.")}</p>
             </article>
             <article className="proof-card">
-              <span className="proof-label">Identity</span>
+              <span className="proof-label">{t("Identity")}</span>
               <div className="proof-value">
-                {formatIdentityVerificationLabel(professional.identityVerificationStatus)}
+                {t(formatIdentityVerificationLabel(professional.identityVerificationStatus))}
               </div>
-              <p className="proof-copy">Identity review and credential review are tracked separately.</p>
+              <p className="proof-copy">{t("Identity review and credential review are tracked separately.")}</p>
             </article>
             <article className="proof-card">
-              <span className="proof-label">Categories</span>
-              <div className="proof-value">{formatCategoryList(professional.categories) || "Profile"}</div>
-              <p className="proof-copy">Public categories this profile appears under.</p>
+              <span className="proof-label">{t("Categories")}</span>
+              <div className="proof-value">{formatCategoryList(localizedCategories) || t("Profile")}</div>
+              <p className="proof-copy">{t("Public categories this profile appears under.")}</p>
             </article>
             <article className="proof-card">
-              <span className="proof-label">Location</span>
+              <span className="proof-label">{t("Location")}</span>
               <div className="proof-value">{profileLocation}</div>
-              <p className="proof-copy">Service area and availability context for this profile.</p>
+              <p className="proof-copy">{t("Service area and availability context for this profile.")}</p>
             </article>
             <article className="proof-card">
-              <span className="proof-label">Pricing</span>
-              <div className="proof-value">{priceSummary ?? "Contact for pricing"}</div>
-              <p className="proof-copy">Starting price context when this profile has chosen to list it.</p>
+              <span className="proof-label">{t("Pricing")}</span>
+              <div className="proof-value">{priceSummary ?? t("Contact for pricing")}</div>
+              <p className="proof-copy">{t("Starting price context when this profile has chosen to list it.")}</p>
             </article>
           </div>
 
@@ -262,40 +308,40 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       <section className="section">
         <div className="marketplace-detail-grid">
           <article className="panel">
-            <span className="stat-label">Profile details</span>
-            <h2 className="panel-title">What to know before you reach out</h2>
+            <span className="stat-label">{t("Profile details")}</span>
+            <h2 className="panel-title">{t("What to know before you reach out")}</h2>
             <ul>
               <li>
-                <strong>Location:</strong> {profileLocation}
+                <strong>{t("Location")}:</strong> {profileLocation}
               </li>
               <li>
-                <strong>Service modes:</strong>{" "}
+                <strong>{t("Service modes")}:</strong>{" "}
                 {professional.serviceModes.length > 0
-                  ? professional.serviceModes.map((entry) => formatServiceModeLabel(entry)).join(", ")
-                  : "Flexible"}
+                  ? professional.serviceModes.map((entry) => locale === "en" ? formatServiceModeLabel(entry) : localizeServiceMode(entry, locale)).join(", ")
+                  : t("Flexible")}
               </li>
               {yearsExperience ? (
                 <li>
-                  <strong>Experience:</strong> {yearsExperience}
+                  <strong>{t("Experience")}:</strong> {yearsExperience}
                 </li>
               ) : null}
               {professional.availabilitySummary ? (
                 <li>
-                  <strong>Availability:</strong> {professional.availabilitySummary}
+                  <strong>{t("Availability")}:</strong> {professional.availabilitySummary}
                 </li>
               ) : null}
               <li>
-                <strong>New clients:</strong> {clientStatusLabel}
+                <strong>{t("New clients")}:</strong> {clientStatusLabel}
               </li>
             </ul>
 
             {professional.specialties.length > 0 ? (
               <>
-                <span className="stat-label">Specialties</span>
+                <span className="stat-label">{t("Specialties")}</span>
                 <div className="tag-row">
                   {professional.specialties.map((specialty) => (
                     <span key={specialty} className="tag-chip">
-                      {specialty}
+                      {localizeMarketplaceSpecialty(specialty, locale)}
                     </span>
                   ))}
                 </div>
@@ -304,18 +350,15 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
           </article>
 
           <article className="panel">
-            <span className="stat-label">Request consultation</span>
-            <h2 className="panel-title">Start the conversation with context.</h2>
+            <span className="stat-label">{t("Request consultation")}</span>
+            <h2 className="panel-title">{t("Start the conversation with context.")}</h2>
             <p>
-              Send a short request with your goal, preferred service mode, and any helpful background. The
-              person you contact can review it inside their Elevare account.
+              {t("Send a short request with your goal, preferred service mode, and any helpful background. The person you contact can review it inside their Elevare account.")}
             </p>
             <InquiryForm professional={professional} />
             <ReportProfileForm professional={professional} />
             <div className="form-note">
-              Professionals are independent service providers and are not employees or agents of Elevare Fit LLC.
-              Profile approval does not constitute an endorsement or guarantee of services. Confirm current
-              credentials, licensing, insurance, and suitability before engaging a Professional.
+              {t("Professionals are independent service providers and are not employees or agents of Elevare Fit LLC. Profile approval does not constitute an endorsement or guarantee of services. Confirm current credentials, licensing, insurance, and suitability before engaging a Professional.")}
             </div>
           </article>
         </div>
@@ -324,10 +367,10 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       {professional.services.length > 0 ? (
         <section className="section">
           <div className="section-head">
-            <div className="eyebrow">Services offered</div>
-            <h2 className="section-title">A quick look at how this profile works.</h2>
+            <div className="eyebrow">{t("Services offered")}</div>
+            <h2 className="section-title">{t("A quick look at how this profile works.")}</h2>
             <p className="section-copy">
-              Review the services, delivery options, and pricing details this professional currently offers.
+              {t("Review the services, delivery options, and pricing details this professional currently offers.")}
             </p>
           </div>
 
@@ -335,20 +378,22 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
             {professional.services.map((service) => (
               <article key={service.id} className="panel">
                 <span className="meta-pill">
-                  {service.serviceMode ? formatServiceModeLabel(service.serviceMode) : "Flexible"}
+                  {service.serviceMode ? (locale === "en" ? formatServiceModeLabel(service.serviceMode) : localizeServiceMode(service.serviceMode, locale)) : t("Flexible")}
                 </span>
                 <h3>{service.name}</h3>
-                <p>{service.description || "Review this service directly with the person listed here when you reach out."}</p>
+                <p>{service.description || t("Review this service directly with the person listed here when you reach out.")}</p>
                 <ul>
                   {service.durationMinutes ? (
                     <li>
-                      <strong>Duration:</strong> {service.durationMinutes} minutes
+                      <strong>{t("Duration")}:</strong> {service.durationMinutes} {t("minutes")}
                     </li>
                   ) : null}
                   {service.price != null || service.contactForPricing ? (
                     <li>
-                      <strong>Pricing:</strong>{" "}
-                      {formatServicePriceSummary(service)}
+                      <strong>{t("Pricing")}:</strong>{" "}
+                      {locale === "en"
+                        ? formatServicePriceSummary(service)
+                        : formatLocalizedServicePrice(service, locale)}
                     </li>
                   ) : null}
                 </ul>
@@ -361,8 +406,8 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       {profileLinks.length > 0 ? (
         <section className="section">
           <div className="section-head">
-            <div className="eyebrow">Links</div>
-            <h2 className="section-title">Learn more about this professional.</h2>
+            <div className="eyebrow">{t("Links")}</div>
+            <h2 className="section-title">{t("Learn more about this professional.")}</h2>
           </div>
           <div className="button-row">
             {profileLinks.map((entry) => (
@@ -383,10 +428,10 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       {professional.credentials.length > 0 ? (
         <section className="section">
           <div className="section-head">
-            <div className="eyebrow">Credentials</div>
-            <h2 className="section-title">Public credentials listed on this profile.</h2>
+            <div className="eyebrow">{t("Credentials")}</div>
+            <h2 className="section-title">{t("Public credentials listed on this profile.")}</h2>
             <p className="section-copy">
-              Only public-safe credential details are shown here. Identity review and credential review are not the same thing.
+              {t("Only public-safe credential details are shown here. Identity review and credential review are not the same thing.")}
             </p>
           </div>
 
@@ -396,7 +441,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
 
               return (
                 <article key={credential.id} className="panel">
-                  <span className="meta-pill">{publicStatus.label}</span>
+                  <span className="meta-pill">{t(publicStatus.label)}</span>
                   <h3>{credential.credentialName}</h3>
                   <p>
                     {credential.organizationName}
@@ -405,12 +450,12 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
                   <ul>
                     {credential.issueDate ? (
                       <li>
-                        <strong>Issued:</strong> {credential.issueDate}
+                        <strong>{t("Issued")}:</strong> {credential.issueDate}
                       </li>
                     ) : null}
                     {credential.expirationDate ? (
                       <li>
-                        <strong>Expires:</strong> {credential.expirationDate}
+                        <strong>{t("Expires")}:</strong> {credential.expirationDate}
                       </li>
                     ) : null}
                   </ul>
@@ -424,9 +469,9 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       {relatedProfessionals.length > 0 ? (
         <section className="section">
           <div className="section-head">
-            <div className="eyebrow">You may also want to compare</div>
-            <h2 className="section-title">Similar profiles</h2>
-            <p className="section-copy">Compare a few similar profiles before deciding who you want to contact.</p>
+            <div className="eyebrow">{t("You may also want to compare")}</div>
+            <h2 className="section-title">{t("Similar profiles")}</h2>
+            <p className="section-copy">{t("Compare a few similar profiles before deciding who you want to contact.")}</p>
           </div>
           <div className="professional-grid">
             {relatedProfessionals.map((entry) => (
@@ -434,6 +479,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
                 key={entry.id}
                 professional={entry}
                 sourcePage={`professional_${professional.profileSlug}_related`}
+                locale={locale}
               />
             ))}
           </div>
@@ -441,54 +487,54 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
       ) : null}
 
       <section className="section">
-        <h2 className="sr-only">Related ElevareFit resources</h2>
+        <h2 className="sr-only">{t("Related ElevareFit resources")}</h2>
         <div className="grid-3">
           <article className="panel">
-            <span className="stat-label">Related resource</span>
-            <h3>Calorie and macro tools</h3>
+            <span className="stat-label">{t("Related resource")}</span>
+            <h3>{t("Calorie and macro tools")}</h3>
             <p>
-              Use the free calculators if you want more context before you reach out for nutrition or coaching support.
+              {t("Use the free calculators if you want more context before you reach out for nutrition or coaching support.")}
             </p>
             <div className="button-row">
               <TrackedLink
                 className="button button-secondary"
-                href="/calculators/"
+                href={localizePathname("/calculators/", locale)}
                 eventName="cta_click"
                 eventParams={{ cta_name: "Browse calculators", cta_context: "professional_profile_related" }}
               >
-                Browse calculators
+                {t("Browse calculators")}
               </TrackedLink>
             </div>
           </article>
           <article className="panel">
-            <span className="stat-label">Related resource</span>
-            <h3>Workout templates</h3>
-            <p>Explore structured workout templates if you want a clearer starting point before hiring support.</p>
+            <span className="stat-label">{t("Related resource")}</span>
+            <h3>{t("Workout templates")}</h3>
+            <p>{t("Explore structured workout templates if you want a clearer starting point before hiring support.")}</p>
             <div className="button-row">
               <TrackedLink
                 className="button button-secondary"
-                href="/workouts/"
+                href={localizePathname("/workouts/", locale)}
                 eventName="cta_click"
                 eventParams={{ cta_name: "Browse workouts", cta_context: "professional_profile_related" }}
               >
-                Browse workouts
+                {t("Browse workouts")}
               </TrackedLink>
             </div>
           </article>
           <article className="panel">
-            <span className="stat-label">Tracking app</span>
-            <h3>Track progress with Logbook</h3>
+            <span className="stat-label">{t("Tracking app")}</span>
+            <h3>{t("Track progress with Logbook")}</h3>
             <p>
-              Keep your nutrition, workouts, and bodyweight in one place while you compare profiles or work with a coach.
+              {t("Keep your nutrition, workouts, and bodyweight in one place while you compare profiles or work with a coach.")}
             </p>
             <div className="button-row">
               <TrackedLink
                 className="button button-secondary"
-                href="/logbook/"
+                href={localizePathname("/logbook/", locale)}
                 eventName="cta_click"
                 eventParams={{ cta_name: "Explore Logbook", cta_context: "professional_profile_related" }}
               >
-                Explore Logbook
+                {t("Explore Logbook")}
               </TrackedLink>
             </div>
           </article>
@@ -498,7 +544,7 @@ async function ProfessionalProfilePage({ slug }: { slug: string }) {
   );
 }
 
-async function ProfessionalCategoryPage({ slug }: { slug: string }) {
+async function ProfessionalCategoryPage({ slug, locale = "en" }: { slug: string; locale?: Locale }) {
   const [category, categories, professionals] = await Promise.all([
     getMarketplaceCategoryBySlug(slug),
     getMarketplaceCategories(),
@@ -509,7 +555,9 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
     notFound();
   }
 
-  const faqs = buildCategoryFaqs(category);
+  const t = (value: string) => marketplaceText(locale, value);
+  const localizedCategory = localizeMarketplaceCategory(category, locale);
+  const faqs = buildLocalizedCategoryFaqs(category, locale) ?? buildCategoryFaqs(category);
   const categoryProfessionals = getProfessionalsByCategory(professionals, category.slug);
   const structuredData = [
     {
@@ -519,23 +567,24 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
         {
           "@type": "ListItem",
           position: 1,
-          name: "Find Support",
-          item: absoluteUrl("/professionals"),
+          name: t("Find Support"),
+          item: absoluteUrl(localizeProfessionalPath("/professionals", locale)),
         },
         {
           "@type": "ListItem",
           position: 2,
-          name: category.label,
-          item: absoluteUrl(`/professionals/${category.slug}`),
+          name: localizedCategory.label,
+          item: absoluteUrl(localizeProfessionalPath(`/professionals/${category.slug}`, locale)),
         },
       ],
     },
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: category.label,
-      url: absoluteUrl(`/professionals/${category.slug}`),
-      description: category.shortDescription ?? buildCategoryIntro(category),
+      name: localizedCategory.label,
+      url: absoluteUrl(localizeProfessionalPath(`/professionals/${category.slug}`, locale)),
+      description: localizedCategory.shortDescription ?? buildCategoryIntro(category),
+      inLanguage: locale,
       ...(categoryProfessionals.length > 0
         ? {
             mainEntity: {
@@ -544,7 +593,7 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
                 "@type": "ListItem",
                 position: index + 1,
                 name: professional.displayName,
-                url: absoluteUrl(`/professionals/${professional.profileSlug}`),
+                url: absoluteUrl(localizeProfessionalPath(`/professionals/${professional.profileSlug}`, locale)),
               })),
             },
           }
@@ -568,12 +617,12 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
     <div className="container">
       <StructuredData data={structuredData} />
 
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <TrackedLink href="/professionals/" eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
-          Find Support
+      <nav className="breadcrumbs" aria-label={t("Breadcrumb")}>
+        <TrackedLink href={localizeProfessionalPath("/professionals/", locale)} eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
+          {t("Find Support")}
         </TrackedLink>
         <span aria-hidden="true">/</span>
-        <span aria-current="page">{category.label}</span>
+        <span aria-current="page">{localizedCategory.label}</span>
       </nav>
 
       <Suspense fallback={null}>
@@ -582,9 +631,9 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
           professionals={professionals}
           fixedCategorySlug={category.slug}
           sourcePage={`professional_category_${category.slug}`}
-          heroEyebrow="Category"
-          heroTitle={category.label}
-          heroDescription={buildCategoryIntro(category)}
+          heroEyebrow={t("Category")}
+          heroTitle={localizedCategory.label}
+          heroDescription={localizedCategory.shortDescription ?? buildCategoryIntro(category)}
           showCategoryCards={false}
           showHeroActions={false}
           showSecondaryExplanation={false}
@@ -594,8 +643,8 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
       <section className="section">
         <div className="section-head">
           <div className="eyebrow">FAQ</div>
-          <h2 className="section-title">Questions people usually ask first.</h2>
-          <p className="section-copy">Use these answers as a starting point while you compare profiles in this category.</p>
+          <h2 className="section-title">{t("Questions people usually ask first.")}</h2>
+          <p className="section-copy">{t("Use these answers as a starting point while you compare profiles in this category.")}</p>
         </div>
         <div className="grid-3">
           {faqs.map((faq) => (
@@ -607,7 +656,7 @@ async function ProfessionalCategoryPage({ slug }: { slug: string }) {
         </div>
       </section>
 
-      <MarketplaceCategoryResources categorySlug={category.slug} />
+      <MarketplaceCategoryResources categorySlug={category.slug} locale={locale} />
     </div>
   );
 }
@@ -627,5 +676,16 @@ export default async function ProfessionalRoutePage({ params }: ProfessionalRout
     return <ProfessionalCategoryPage slug={slug} />;
   }
 
+  notFound();
+}
+
+export async function LocalizedProfessionalRoutePage({ slug, locale }: { slug: string; locale: Locale }) {
+  const [category, professional] = await Promise.all([
+    getMarketplaceCategoryBySlug(slug),
+    getMarketplaceProfessionalBySlug(slug),
+  ]);
+
+  if (professional) return <ProfessionalProfilePage slug={slug} locale={locale} />;
+  if (category) return <ProfessionalCategoryPage slug={slug} locale={locale} />;
   notFound();
 }

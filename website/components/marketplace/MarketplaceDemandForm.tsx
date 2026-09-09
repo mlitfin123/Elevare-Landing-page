@@ -8,6 +8,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import type { ProfessionalCategoryRecord } from "@/lib/marketplace-types";
 import type { ProfessionalDirectoryFilters } from "@/lib/marketplace-helpers";
+import { localeFromPathname } from "@/lib/i18n/config";
+import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type MarketplaceDemandFormProps = {
   categories: ProfessionalCategoryRecord[];
@@ -32,6 +34,8 @@ export function MarketplaceDemandForm({
   fallbackResultCount,
 }: MarketplaceDemandFormProps) {
   const pathname = usePathname();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const { user, isConfigured } = useSupabaseSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +60,7 @@ export function MarketplaceDemandForm({
     const supabase = getSupabaseBrowserClient();
 
     if (!isConfigured || !supabase) {
-      setFeedback("Marketplace demand capture is not configured yet.");
+      setFeedback(t("Marketplace demand capture is not configured yet."));
       setFeedbackType("error");
       return;
     }
@@ -69,13 +73,13 @@ export function MarketplaceDemandForm({
     const normalizedSearchNotes = normalizeSearchField(searchNotes);
 
     if (!normalizedEmail) {
-      setFeedback("Please add an email so we can follow up when a better match is available.");
+      setFeedback(t("Please add an email so we can follow up when a better match is available."));
       setFeedbackType("error");
       return;
     }
 
     if (!normalizedCategory && !normalizedSpecialty && !normalizedSearchNotes) {
-      setFeedback("Add at least a category, specialty, or short note so we know what to look for.");
+      setFeedback(t("Add at least a category, specialty, or short note so we know what to look for."));
       setFeedbackType("error");
       return;
     }
@@ -127,7 +131,7 @@ export function MarketplaceDemandForm({
         throw error;
       }
 
-      setFeedback("Thanks. We'll use this search to improve marketplace coverage and follow up when it makes sense.");
+      setFeedback(t("Thanks. We'll use this search to improve marketplace coverage and follow up when it makes sense."));
       setFeedbackType("success");
       setBudget("");
       trackEvent("demand_request_submitted", {
@@ -137,8 +141,8 @@ export function MarketplaceDemandForm({
         exact_result_count: exactResultCount,
         fallback_result_count: fallbackResultCount,
       });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not save your request right now.");
+    } catch {
+      setFeedback(t("We could not save your request right now."));
       setFeedbackType("error");
     } finally {
       setIsSubmitting(false);
@@ -148,10 +152,10 @@ export function MarketplaceDemandForm({
   return (
     <div className="marketplace-action-stack">
       <button type="button" className="button button-primary" onClick={() => setIsOpen((current) => !current)}>
-        {isOpen ? "Hide Request Form" : "Tell Us What You Need"}
+        {t(isOpen ? "Hide Request Form" : "Tell Us What You Need")}
       </button>
       <p className="form-note">
-        We reuse your current filters so you do not have to start over just to tell us what is missing.
+        {t("We reuse your current filters so you do not have to start over just to tell us what is missing.")}
       </p>
 
       {isOpen ? (
@@ -159,12 +163,12 @@ export function MarketplaceDemandForm({
           <div className="field-grid">
             {!fixedCategorySlug ? (
               <label className="field">
-                <span className="field-label">Category</span>
+                <span className="field-label">{t("Category")}</span>
                 <select value={category} onChange={(event) => setCategory(event.target.value)}>
-                  <option value="">Not sure yet</option>
+                  <option value="">{t("Not sure yet")}</option>
                   {categoryOptions.map((option) => (
                     <option key={option.slug} value={option.slug}>
-                      {option.label}
+                      {localizeMarketplaceCategory(option, locale).label}
                     </option>
                   ))}
                 </select>
@@ -172,48 +176,48 @@ export function MarketplaceDemandForm({
             ) : null}
 
             <label className="field">
-              <span className="field-label">Preferred service mode</span>
+              <span className="field-label">{t("Preferred service mode")}</span>
               <select value={serviceMode} onChange={(event) => setServiceMode(event.target.value)}>
-                <option value="">Flexible</option>
-                <option value="in_person">In person</option>
-                <option value="online">Online</option>
-                <option value="hybrid">Hybrid</option>
+                <option value="">{t("Flexible")}</option>
+                <option value="in_person">{t("In person")}</option>
+                <option value="online">{t("Online")}</option>
+                <option value="hybrid">{t("Hybrid")}</option>
               </select>
             </label>
 
             <label className="field">
-              <span className="field-label">Specialty</span>
+              <span className="field-label">{t("Specialty")}</span>
               <input
                 type="text"
                 value={specialty}
                 onChange={(event) => setSpecialty(event.target.value)}
-                placeholder="Prep support, fat loss, mobility..."
+                placeholder={t("Prep support, fat loss, mobility...")}
               />
             </label>
 
             <label className="field">
-              <span className="field-label">Location</span>
+              <span className="field-label">{t("Location")}</span>
               <input
                 type="text"
                 value={locationLabel}
                 onChange={(event) => setLocationLabel(event.target.value)}
-                placeholder="Miami, FL or online"
+                placeholder={t("Miami, FL or online")}
               />
             </label>
 
             <label className="field">
-              <span className="field-label">Approximate budget</span>
+              <span className="field-label">{t("Approximate budget")}</span>
               <input
                 type="text"
                 value={budget}
                 onChange={(event) => setBudget(event.target.value)}
-                placeholder="$75/session or $250/month"
+                placeholder={t("$75/session or $250/month")}
               />
             </label>
 
             {!user?.email ? (
               <label className="field">
-                <span className="field-label">Email</span>
+                <span className="field-label">{t("Email")}</span>
                 <input
                   type="email"
                   value={requestEmail}
@@ -225,23 +229,22 @@ export function MarketplaceDemandForm({
             ) : null}
 
             <label className="field field-full">
-              <span className="field-label">Anything else we should know?</span>
+              <span className="field-label">{t("Anything else we should know?")}</span>
               <textarea
                 value={searchNotes}
                 onChange={(event) => setSearchNotes(event.target.value)}
-                placeholder="Share the kind of support, schedule, or coaching style you hoped to find."
+                placeholder={t("Share the kind of support, schedule, or coaching style you hoped to find.")}
                 rows={4}
               />
             </label>
             <div className="form-note field-full">
-              Share only what is needed for this search. Do not include medical records, account passwords, payment
-              card details, or other highly sensitive information.
+              {t("Share only what is needed for this search. Do not include medical records, account passwords, payment card details, or other highly sensitive information.")}
             </div>
           </div>
 
           <div className="form-actions">
             <button type="submit" className="button button-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Submit Search Request"}
+              {t(isSubmitting ? "Saving..." : "Submit Search Request")}
             </button>
             {feedback ? (
               <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>

@@ -1365,6 +1365,10 @@ select {
   text-decoration: underline;
 }
 
+.professional-profile-breadcrumbs {
+  margin-bottom: 16px;
+}
+
 .panel-title {
   margin: 12px 0;
   font-size: 22px;

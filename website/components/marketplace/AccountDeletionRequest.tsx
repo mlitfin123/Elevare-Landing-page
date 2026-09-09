@@ -3,10 +3,13 @@
 import { type FormEvent, useState } from "react";
 import { useMarketplaceAccountState } from "@/components/marketplace/MarketplaceAccountShell";
 import { trackEvent } from "@/lib/analytics";
+import type { Locale } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export function AccountDeletionRequest() {
+export function AccountDeletionRequest({ locale = "en" }: { locale?: Locale }) {
   const { user, appUser } = useMarketplaceAccountState();
+  const t = (value: string) => marketplaceText(locale, value);
   const [isOpen, setIsOpen] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [details, setDetails] = useState("");
@@ -32,13 +35,13 @@ export function AccountDeletionRequest() {
     event.preventDefault();
 
     if (!user || !appUser) {
-      setFeedback("We could not confirm your account. Please refresh the page and try again.");
+      setFeedback(t("We could not confirm your account. Please refresh the page and try again."));
       setFeedbackType("error");
       return;
     }
 
     if (!isConfirmed) {
-      setFeedback("Please confirm that you want to request permanent account deletion.");
+      setFeedback(t("Please confirm that you want to request permanent account deletion."));
       setFeedbackType("error");
       return;
     }
@@ -46,7 +49,7 @@ export function AccountDeletionRequest() {
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setFeedback("Account requests are not configured yet.");
+      setFeedback(t("Account requests are not configured yet."));
       setFeedbackType("error");
       return;
     }
@@ -63,15 +66,15 @@ export function AccountDeletionRequest() {
         throw error;
       }
 
-      setFeedback("Your account deletion request has been submitted. Your account will remain active until the request is processed.");
+      setFeedback(t("Your account deletion request has been submitted. Your account will remain active until the request is processed."));
       setFeedbackType("success");
       setIsOpen(false);
       setIsSubmitted(true);
       setIsConfirmed(false);
       setDetails("");
       trackEvent("account_deletion_request_submitted", { source_page: "account_dashboard" });
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not submit your request right now.");
+    } catch {
+      setFeedback(t("We could not submit your request right now."));
       setFeedbackType("error");
     } finally {
       setIsSubmitting(false);
@@ -83,7 +86,7 @@ export function AccountDeletionRequest() {
       <div className="account-delete-action">
         {!isSubmitted ? (
           <button type="button" className="button button-secondary account-delete-button" onClick={handleOpen}>
-            Request account deletion
+            {t("Request account deletion")}
           </button>
         ) : null}
         {feedback ? (
@@ -98,18 +101,17 @@ export function AccountDeletionRequest() {
   return (
     <form className="marketplace-inline-form account-delete-form" onSubmit={handleSubmit}>
       <p>
-        This sends a request to permanently delete your Elevare account and associated profile information. It does
-        not delete your account immediately.
+        {t("This sends a request to permanently delete your Elevare account and associated profile information. It does not delete your account immediately.")}
       </p>
 
       <label className="field">
-        <span className="field-label">Additional details (optional)</span>
+        <span className="field-label">{t("Additional details (optional)")}</span>
         <textarea
           rows={3}
           maxLength={1000}
           value={details}
           onChange={(event) => setDetails(event.target.value)}
-          placeholder="Share any information that may help us process your request."
+          placeholder={t("Share any information that may help us process your request.")}
         />
       </label>
 
@@ -119,7 +121,7 @@ export function AccountDeletionRequest() {
           checked={isConfirmed}
           onChange={(event) => setIsConfirmed(event.target.checked)}
         />
-        <span>I understand that I am requesting permanent deletion of my Elevare account.</span>
+        <span>{t("I understand that I am requesting permanent deletion of my Elevare account.")}</span>
       </label>
 
       <div className="form-actions">
@@ -129,10 +131,10 @@ export function AccountDeletionRequest() {
             className="button button-secondary account-delete-button"
             disabled={isSubmitting || !isConfirmed}
           >
-            {isSubmitting ? "Submitting request..." : "Submit deletion request"}
+            {isSubmitting ? t("Submitting request...") : t("Submit deletion request")}
           </button>
           <button type="button" className="button button-secondary" onClick={handleCancel} disabled={isSubmitting}>
-            Cancel
+            {t("Cancel")}
           </button>
         </div>
 

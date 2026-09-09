@@ -2,3 +2,6 @@ project_id = "elevare-marketplace-local"
 
 [functions.resend-waitlist]
 verify_jwt = false
+
+[functions.professional-approval-email]
+verify_jwt = true

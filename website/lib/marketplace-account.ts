@@ -10,6 +10,7 @@ export type MarketplaceAppUserRecord = {
   profile_photo_url: string | null;
   is_active: boolean | null;
   profile_photo_storage_path: string | null;
+  preferred_locale: string | null;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -146,7 +147,7 @@ export async function getMarketplaceAppUserByAuthId(
 ) {
   const { data, error } = await supabase
     .from("users")
-    .select("id,auth_id,email,role,first_name,last_name,profile_photo_url,is_active,profile_photo_storage_path")
+    .select("id,auth_id,email,role,first_name,last_name,profile_photo_url,is_active,profile_photo_storage_path,preferred_locale")
     .eq("auth_id", authUserId)
     .maybeSingle();
 

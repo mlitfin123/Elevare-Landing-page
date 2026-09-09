@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AccountDeletionRequest } from "@/components/marketplace/AccountDeletionRequest";
 import { useMarketplaceAccountState } from "@/components/marketplace/MarketplaceAccountShell";
 import {
@@ -21,6 +22,9 @@ import {
   type ProfessionalProfileRecord,
 } from "@/lib/marketplace-types";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import type { Locale } from "@/lib/i18n/config";
+import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type SavedActivityRecord = {
   id: string;
@@ -52,38 +56,39 @@ const EMPTY_ACTIVITY_ERRORS: ActivityErrors = {
   incoming: false,
 };
 
-function formatRequestStatus(status: RequestActivityRecord["status"]) {
+function formatRequestStatus(status: RequestActivityRecord["status"], locale: Locale) {
   switch (status) {
     case "new":
-      return "Sent";
+      return marketplaceText(locale, "Sent");
     case "viewed":
-      return "Viewed";
+      return marketplaceText(locale, "Viewed");
     case "contacted":
-      return "Contacted";
+      return marketplaceText(locale, "Contacted");
     case "closed":
-      return "Closed";
+      return marketplaceText(locale, "Closed");
     default:
       return status;
   }
 }
 
-function formatIncomingRequestStatus(status: RequestActivityRecord["status"]) {
-  return status === "new" ? "New" : formatRequestStatus(status);
+function formatIncomingRequestStatus(status: RequestActivityRecord["status"], locale: Locale) {
+  return status === "new" ? marketplaceText(locale, "New") : formatRequestStatus(status, locale);
 }
 
-function formatActivityDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
+function formatActivityDate(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(new Date(value));
 }
 
-function ActivityLoadErrorCard({ label, onRetry }: Readonly<{ label: string; onRetry: () => void }>) {
+function ActivityLoadErrorCard({ label, onRetry, locale }: Readonly<{ label: string; onRetry: () => void; locale: Locale }>) {
+  const t = (value: string) => marketplaceText(locale, value);
   return (
     <article className="panel account-summary-card account-activity-error">
-      <span className="stat-label">Unable to load</span>
-      <h3>{label}</h3>
-      <p>That part of your account could not be loaded right now. Your other account data is still available.</p>
+      <span className="stat-label">{t("Unable to load")}</span>
+      <h3>{t(label)}</h3>
+      <p>{t("That part of your account could not be loaded right now. Your other account data is still available.")}</p>
       <div className="button-row">
         <button type="button" className="button button-secondary" onClick={onRetry}>
-          Try Again
+          {t("Try Again")}
         </button>
       </div>
     </article>
@@ -91,6 +96,9 @@ function ActivityLoadErrorCard({ label, onRetry }: Readonly<{ label: string; onR
 }
 
 export function AccountDashboard() {
+  const pathname = usePathname();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
   const {
     user,
     appUser,
@@ -231,9 +239,9 @@ export function AccountDashboard() {
   if (!isConfigured) {
     return (
       <article className="callout account-page-callout">
-        <span className="meta-pill">Configuration needed</span>
-        <h2>Marketplace auth is not configured yet.</h2>
-        <p>Add the second Supabase public URL and anon key to enable sign-in and account features.</p>
+        <span className="meta-pill">{t("Configuration needed")}</span>
+        <h2>{t("Marketplace auth is not configured yet.")}</h2>
+        <p>{t("Add the second Supabase public URL and anon key to enable sign-in and account features.")}</p>
       </article>
     );
   }
@@ -241,9 +249,9 @@ export function AccountDashboard() {
   if (isLoading) {
     return (
       <article className="callout account-page-callout">
-        <span className="meta-pill">Loading</span>
-        <h2>Checking your account.</h2>
-        <p>One moment while we load your marketplace access.</p>
+        <span className="meta-pill">{t("Loading")}</span>
+        <h2>{t("Checking your account.")}</h2>
+        <p>{t("One moment while we load your marketplace access.")}</p>
       </article>
     );
   }
@@ -251,12 +259,12 @@ export function AccountDashboard() {
   if (!user) {
     return (
       <article className="callout account-page-callout">
-        <span className="meta-pill">Sign in required</span>
-        <h2>Sign in to access your account.</h2>
-        <p>Use your account to save profiles, send consultation requests, and manage your preferences.</p>
+        <span className="meta-pill">{t("Sign in required")}</span>
+        <h2>{t("Sign in to access your account.")}</h2>
+        <p>{t("Use your account to save profiles, send consultation requests, and manage your preferences.")}</p>
         <div className="button-row">
           <Link className="button button-primary" href="/sign-in/">
-            Sign in
+            {t("Sign in")}
           </Link>
         </div>
       </article>
@@ -266,9 +274,9 @@ export function AccountDashboard() {
   if (isActivityLoading) {
     return (
       <article className="callout account-page-callout account-dashboard-loading" aria-live="polite">
-        <span className="meta-pill">Loading</span>
-        <h2>Loading your dashboard.</h2>
-        <p>We&apos;re gathering your latest marketplace activity.</p>
+        <span className="meta-pill">{t("Loading")}</span>
+        <h2>{t("Loading your dashboard.")}</h2>
+        <p>{t("We're gathering your latest marketplace activity.")}</p>
       </article>
     );
   }
@@ -316,16 +324,16 @@ export function AccountDashboard() {
       case "preferences":
         return (
           <article className="panel account-action-card">
-            <span className="stat-label">Your preferences</span>
-            <h3>{hasClientProfile ? "Your preferences" : "Tell us what you need"}</h3>
+            <span className="stat-label">{t("Your preferences")}</span>
+            <h3>{t(hasClientProfile ? "Your preferences" : "Tell us what you need")}</h3>
             <p>
-              {hasClientProfile
+              {t(hasClientProfile
                 ? "Keep your goals and marketplace preferences up to date."
-                : "Tell Elevare what you're looking for to improve your marketplace results and consultation requests."}
+                : "Tell Elevare what you're looking for to improve your marketplace results and consultation requests.")}
             </p>
             <div className="button-row">
               <Link className="button button-secondary" href="/account/profile/">
-                {hasClientProfile ? "Edit Preferences" : "Set Preferences"}
+                {t(hasClientProfile ? "Edit Preferences" : "Set Preferences")}
               </Link>
             </div>
           </article>
@@ -333,15 +341,15 @@ export function AccountDashboard() {
       case "saved_requests":
         return (
           <article className="panel account-action-card">
-            <span className="stat-label">Saved &amp; requests</span>
-            <h3>Pick up where you left off</h3>
-            <p>Return to saved profiles and keep track of consultation requests you&apos;ve sent.</p>
+            <span className="stat-label">{t("Saved & requests")}</span>
+            <h3>{t("Pick up where you left off")}</h3>
+            <p>{t("Return to saved profiles and keep track of consultation requests you've sent.")}</p>
             <div className="button-row">
               <Link className="button button-secondary" href="/account/saved/">
-                View Saved
+                {t("View Saved")}
               </Link>
               <Link className="button button-secondary" href="/account/inquiries/">
-                View My Requests
+                {t("View My Requests")}
               </Link>
             </div>
           </article>
@@ -350,12 +358,12 @@ export function AccountDashboard() {
       default:
         return (
           <article className="panel account-action-card">
-            <span className="stat-label">Find support</span>
-            <h3>Explore Elevare</h3>
-            <p>Browse trainers, coaches, nutrition, wellness, and other services on Elevare.</p>
+            <span className="stat-label">{t("Find support")}</span>
+            <h3>{t("Explore Elevare")}</h3>
+            <p>{t("Browse trainers, coaches, nutrition, wellness, and other services on Elevare.")}</p>
             <div className="button-row">
-              <Link className="button button-primary" href="/professionals/">
-                Explore Elevare
+              <Link className="button button-primary" href={localizePathname("/professionals/", locale)}>
+                {t("Explore Elevare")}
               </Link>
             </div>
           </article>
@@ -366,9 +374,9 @@ export function AccountDashboard() {
   const activitySection = showActivitySection ? (
     <section className="section account-overview-section" aria-labelledby="recent-activity-heading">
       <div className="section-head section-head-compact">
-        <div className="eyebrow">Your activity</div>
+        <div className="eyebrow">{t("Your activity")}</div>
         <h2 id="recent-activity-heading" className="section-title section-title-compact">
-          Pick up where you left off.
+          {t("Pick up where you left off.")}
         </h2>
       </div>
 
@@ -376,9 +384,9 @@ export function AccountDashboard() {
         {hasRecentSaved ? (
           <article className="panel account-summary-card">
             <div className="account-summary-head">
-              <h3>Recently Saved</h3>
+              <h3>{t("Recently Saved")}</h3>
               <Link className="hero-text-link" href="/account/saved/">
-                View All Saved
+                {t("View All Saved")}
               </Link>
             </div>
             <div className="account-activity-list">
@@ -386,28 +394,28 @@ export function AccountDashboard() {
                 <Link
                   key={professional.id}
                   className="account-activity-row"
-                  href={buildProfessionalPath(professional.profileSlug)}
+                  href={localizePathname(buildProfessionalPath(professional.profileSlug), locale)}
                 >
                   <span>
                     <strong>{professional.displayName}</strong>
                     <small>{professional.professionalTitle}</small>
                     <small>{formatLocationLabel(professional)}</small>
                   </span>
-                  <span aria-hidden="true">View</span>
+                  <span aria-hidden="true">{t("View")}</span>
                 </Link>
               ))}
             </div>
           </article>
         ) : activityErrors.saved ? (
-          <ActivityLoadErrorCard label="Saved profiles" onRetry={retryActivity} />
+          <ActivityLoadErrorCard label="Saved profiles" onRetry={retryActivity} locale={locale} />
         ) : null}
 
         {hasRecentOutgoingRequests ? (
           <article className="panel account-summary-card">
             <div className="account-summary-head">
-              <h3>Recent Requests</h3>
+              <h3>{t("Recent Requests")}</h3>
               <Link className="hero-text-link" href="/account/inquiries/">
-                View My Requests
+                {t("View My Requests")}
               </Link>
             </div>
             <div className="account-activity-list">
@@ -417,22 +425,22 @@ export function AccountDashboard() {
                 return (
                   <div key={request.id} className="account-activity-row is-static">
                     <span>
-                      <strong>{professional?.displayName ?? "Professional profile"}</strong>
-                      <small>{professional?.professionalTitle ?? request.service_interest ?? "Consultation request"}</small>
-                      <small>Sent {formatActivityDate(request.created_at)}</small>
+                      <strong>{professional?.displayName ?? t("Professional profile")}</strong>
+                      <small>{professional?.professionalTitle ?? request.service_interest ?? t("Consultation request")}</small>
+                      <small>{t("Sent")} {formatActivityDate(request.created_at, locale)}</small>
                     </span>
-                    <span className="meta-pill">{formatRequestStatus(request.status)}</span>
+                    <span className="meta-pill">{formatRequestStatus(request.status, locale)}</span>
                   </div>
                 );
               })}
             </div>
           </article>
         ) : activityErrors.outgoing ? (
-          <ActivityLoadErrorCard label="Recent requests" onRetry={retryActivity} />
+          <ActivityLoadErrorCard label="Recent requests" onRetry={retryActivity} locale={locale} />
         ) : null}
 
         {hasDirectoryDetailError ? (
-          <ActivityLoadErrorCard label="Some profile details" onRetry={retryActivity} />
+          <ActivityLoadErrorCard label="Some profile details" onRetry={retryActivity} locale={locale} />
         ) : null}
       </div>
     </section>
@@ -441,9 +449,9 @@ export function AccountDashboard() {
   const actionSection = (
     <section className="section account-overview-section" aria-labelledby="account-actions-heading">
       <div className="section-head section-head-compact">
-        <div className="eyebrow">{hasClientActivity || professionalProfile ? "Account shortcuts" : "Your next step"}</div>
+        <div className="eyebrow">{t(hasClientActivity || professionalProfile ? "Account shortcuts" : "Your next step")}</div>
         <h2 id="account-actions-heading" className="section-title section-title-compact">
-          What would you like to do?
+          {t("What would you like to do?")}
         </h2>
       </div>
 
@@ -458,9 +466,9 @@ export function AccountDashboard() {
   const proSection = professionalProfile && professionalPresentation ? (
     <section className="section account-overview-section" aria-labelledby="pro-overview-heading">
       <div className="section-head section-head-compact">
-        <div className="eyebrow">Pro activity</div>
+        <div className="eyebrow">{t("Pro activity")}</div>
         <h2 id="pro-overview-heading" className="section-title section-title-compact">
-          Your services on Elevare.
+          {t("Your services on Elevare.")}
         </h2>
       </div>
 
@@ -468,19 +476,19 @@ export function AccountDashboard() {
         <article className="panel account-summary-card">
           <div className="account-summary-head">
             <div>
-              <span className="stat-label">Professional account</span>
-              <h3>Your Pro Profile</h3>
+              <span className="stat-label">{t("Professional account")}</span>
+              <h3>{t("Your Pro Profile")}</h3>
             </div>
-            <span className="meta-pill">{professionalPresentation.statusLabel}</span>
+            <span className="meta-pill">{t(professionalPresentation.statusLabel)}</span>
           </div>
-          <p>{professionalStatusMessage}</p>
+          <p>{professionalStatusMessage ? t(professionalStatusMessage) : null}</p>
           <div className="button-row">
-            <Link className="button button-secondary" href="/account/professional-profile/">
-              {professionalPresentation.editorActionLabel}
+            <Link className="button button-secondary" href={localizePathname("/account/professional-profile/", locale)}>
+              {t(professionalPresentation.editorActionLabel)}
             </Link>
             {professionalProfile.isPubliclyListed && professionalProfile.publicSlug ? (
-              <Link className="button button-primary" href={buildProfessionalPath(professionalProfile.publicSlug)}>
-                View Public Profile
+              <Link className="button button-primary" href={localizePathname(buildProfessionalPath(professionalProfile.publicSlug), locale)}>
+                {t("View Public Profile")}
               </Link>
             ) : null}
           </div>
@@ -493,9 +501,9 @@ export function AccountDashboard() {
   const clientRequestsSection = showClientRequestsSection && professionalProfile ? (
     <section className="section account-overview-section" aria-labelledby="client-requests-overview-heading">
       <div className="section-head section-head-compact">
-        <div className="eyebrow">Client requests</div>
+        <div className="eyebrow">{t("Client requests")}</div>
         <h2 id="client-requests-overview-heading" className="section-title section-title-compact">
-          Recent inquiries.
+          {t("Recent inquiries.")}
         </h2>
       </div>
 
@@ -504,37 +512,37 @@ export function AccountDashboard() {
           <article className="panel account-summary-card">
             <div className="account-summary-head">
               <div>
-                <span className="stat-label">Client requests</span>
-                <h3>Recent inquiries</h3>
+                <span className="stat-label">{t("Client requests")}</span>
+                <h3>{t("Recent inquiries")}</h3>
               </div>
               <Link className="hero-text-link" href="/account/client-requests/">
-                View Client Requests
+                {t("View Client Requests")}
               </Link>
             </div>
             <div className="account-activity-list">
               {visibleReceivedRequests.map((request) => (
                 <div key={request.id} className="account-activity-row is-static">
                   <span>
-                    <strong>{request.client_first_name || "Potential client"}</strong>
+                    <strong>{request.client_first_name || t("Potential client")}</strong>
                     <small>{request.service_interest || request.goal}</small>
-                    <small>Received {formatActivityDate(request.created_at)}</small>
+                    <small>{t("Received")} {formatActivityDate(request.created_at, locale)}</small>
                   </span>
-                  <span className="meta-pill">{formatIncomingRequestStatus(request.status)}</span>
+                  <span className="meta-pill">{formatIncomingRequestStatus(request.status, locale)}</span>
                 </div>
               ))}
             </div>
           </article>
         ) : activityErrors.incoming ? (
-          <ActivityLoadErrorCard label="Client requests" onRetry={retryActivity} />
+          <ActivityLoadErrorCard label="Client requests" onRetry={retryActivity} locale={locale} />
         ) : professionalProfile.isPubliclyListed ? (
           <article className="panel account-summary-card account-empty-summary">
-            <span className="stat-label">Client requests</span>
-            <h3>No client requests yet.</h3>
-            <p>Keep your profile complete and up to date so clients can understand what you offer.</p>
+            <span className="stat-label">{t("Client requests")}</span>
+            <h3>{t("No client requests yet.")}</h3>
+            <p>{t("Keep your profile complete and up to date so clients can understand what you offer.")}</p>
             <div className="button-row">
               {professionalProfile.publicSlug ? (
-                <Link className="button button-secondary" href={buildProfessionalPath(professionalProfile.publicSlug)}>
-                  View Pro Profile
+                <Link className="button button-secondary" href={localizePathname(buildProfessionalPath(professionalProfile.publicSlug), locale)}>
+                  {t("View Pro Profile")}
                 </Link>
               ) : null}
             </div>
@@ -548,13 +556,13 @@ export function AccountDashboard() {
     <section className="section account-overview-section">
       <article className="callout account-pro-cta">
         <div>
-          <span className="meta-pill">For professionals</span>
-          <h2>Offer services on Elevare?</h2>
-          <p>Create a public Elevare profile, list your services, and connect with potential clients.</p>
+          <span className="meta-pill">{t("For professionals")}</span>
+          <h2>{t("Offer services on Elevare?")}</h2>
+          <p>{t("Create a public Elevare profile, list your services, and connect with potential clients.")}</p>
         </div>
         <div className="button-row">
-          <Link className="button button-secondary" href="/account/professional-profile/">
-            Join as a Pro
+          <Link className="button button-secondary" href={localizePathname("/account/professional-profile/", locale)}>
+            {t("Join as a Pro")}
           </Link>
         </div>
       </article>
@@ -565,11 +573,11 @@ export function AccountDashboard() {
     <section className="section account-overview-section" aria-labelledby="account-management-heading">
       <article className="panel account-management-card">
         <div>
-          <span className="stat-label">Account management</span>
-          <h2 id="account-management-heading">Account deletion</h2>
-          <p>Submit a request if you want Elevare to permanently delete your account and associated profile data.</p>
+          <span className="stat-label">{t("Account management")}</span>
+          <h2 id="account-management-heading">{t("Account deletion")}</h2>
+          <p>{t("Submit a request if you want Elevare to permanently delete your account and associated profile data.")}</p>
         </div>
-        <AccountDeletionRequest />
+        <AccountDeletionRequest locale={locale} />
       </article>
     </section>
   );
@@ -586,8 +594,8 @@ export function AccountDashboard() {
   return (
     <>
       {welcomeName ? (
-        <section className="account-welcome" aria-label="Account welcome">
-          <h2>Welcome back, {welcomeName}</h2>
+        <section className="account-welcome" aria-label={t("Account welcome")}>
+          <h2>{t("Welcome back")}, {welcomeName}</h2>
         </section>
       ) : null}
 

@@ -8,6 +8,7 @@ type AuthNavigationLinkProps = {
   signedInLabel?: string;
   signInLabel?: string;
   signInHref?: string;
+  signedInHref?: string;
   hrefLang?: string;
 };
 
@@ -16,12 +17,13 @@ export function AuthNavigationLink({
   signedInLabel = "Signed In",
   signInLabel = "Sign In",
   signInHref = "/sign-in/",
+  signedInHref = "/account/",
   hrefLang,
 }: AuthNavigationLinkProps) {
   const { user } = useSupabaseSession();
 
   return (
-    <Link className={className} href={user ? "/account/" : signInHref} hrefLang={hrefLang}>
+    <Link className={className} href={user ? signedInHref : signInHref} hrefLang={hrefLang}>
       {user ? signedInLabel : signInLabel}
     </Link>
   );

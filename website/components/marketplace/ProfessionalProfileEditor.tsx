@@ -2,11 +2,20 @@
 
 /* eslint-disable @next/next/no-html-link-for-pages */
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { trackEvent } from "@/lib/analytics";
+import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
+import {
+  getMarketplaceCategoryCopy,
+  localizeApprovalStatus,
+  localizeMarketplaceSpecialty,
+  localizeServiceMode,
+  marketplaceText,
+} from "@/lib/i18n/marketplace-content";
 import { deriveTrainerModality, getMarketplaceAppUserByAuthId } from "@/lib/marketplace-account";
-import { buildProfessionalPath, formatApprovalStatusLabel, getProfessionalStatusMessage } from "@/lib/marketplace-helpers";
+import { buildProfessionalPath, getProfessionalStatusMessage } from "@/lib/marketplace-helpers";
 import { PROFESSIONAL_ATTESTATION_TEXT, PROFESSIONAL_ATTESTATION_VERSION } from "@/lib/legal";
 import {
   COMMON_CURRENCY_CODES,
@@ -218,7 +227,6 @@ type ServiceOfferingRow = {
 type UploadedProfilePhoto = { publicUrl: string; storagePath: string };
 type FieldErrors = Record<string, string>;
 
-const MARKETPLACE_COUNTRY_OPTIONS = getCountryOptions();
 const CREDENTIAL_DOCUMENT_BUCKET = "credential-documents";
 const CREDENTIAL_DOCUMENT_MAX_BYTES = 8 * 1024 * 1024;
 const CREDENTIAL_DOCUMENT_EXTENSIONS: Record<string, string> = {
@@ -259,6 +267,15 @@ const initialFormState: ProfessionalFormState = {
   primaryCategoryStableId: "",
   additionalCategoryStableIds: [],
 };
+
+function formatLocalizedServicePricingSummary(service: ServiceDraft | ProfessionalFormState, locale: ReturnType<typeof localeFromPathname>) {
+  if (service.contactForPricing) return marketplaceText(locale, "Contact for pricing");
+  if (!service.priceFrom.trim()) return marketplaceText(locale, "Pricing not listed");
+
+  const amount = formatServicePricingSummary({ ...service, pricingBasis: "" });
+  const basis = PRICING_BASIS_OPTIONS.find((option) => option.value === service.pricingBasis)?.label;
+  return basis ? `${amount} · ${marketplaceText(locale, basis)}` : amount;
+}
 
 function createEmptyCredentialDraft(): CredentialDraft {
   return {
@@ -321,8 +338,8 @@ function isLegacyCredentialUrl(value: string) {
   return /^https?:\/\//i.test(value.trim());
 }
 
-function FieldError({ name, errors }: { name: string; errors: FieldErrors }) {
-  return errors[name] ? <span className="field-error" role="alert">{errors[name]}</span> : null;
+function FieldError({ name, errors, translate }: { name: string; errors: FieldErrors; translate?: (value: string) => string }) {
+  return errors[name] ? <span className="field-error" role="alert">{translate?.(errors[name]) ?? errors[name]}</span> : null;
 }
 
 function dollarsToCents(value: string) {
@@ -340,6 +357,7 @@ function ProfessionalSectionHeader({
   statusLabel,
   expanded,
   onToggle,
+  translate = (value) => value,
 }: {
   id: string;
   eyebrow: string;
@@ -349,6 +367,7 @@ function ProfessionalSectionHeader({
   statusLabel?: string;
   expanded: boolean;
   onToggle: () => void;
+  translate?: (value: string) => string;
 }) {
   return (
     <div className="professional-section-header">
@@ -359,7 +378,7 @@ function ProfessionalSectionHeader({
       </div>
       <div className="professional-section-controls">
         <span className={`professional-section-status${complete ? " is-complete" : ""}`}>
-          {statusLabel ?? (complete ? "Complete" : "Needs attention")}
+          {statusLabel ?? translate(complete ? "Complete" : "Needs attention")}
         </span>
         <button
           type="button"
@@ -367,7 +386,7 @@ function ProfessionalSectionHeader({
           aria-expanded={expanded}
           onClick={onToggle}
         >
-          {expanded ? "Collapse" : "Edit"}
+          {translate(expanded ? "Collapse" : "Edit")}
         </button>
       </div>
     </div>
@@ -376,6 +395,10 @@ function ProfessionalSectionHeader({
 
 export function ProfessionalProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
+  const pathname = usePathname();
+  const locale = localeFromPathname(pathname);
+  const t = (value: string) => marketplaceText(locale, value);
+  const marketplaceCountryOptions = getCountryOptions(locale);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const credentialInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [form, setForm] = useState<ProfessionalFormState>(initialFormState);
@@ -642,7 +665,8 @@ export function ProfessionalProfileEditor() {
 
     loadProfile().catch((error) => {
       if (isMounted) {
-        setFeedback(error instanceof Error ? error.message : "We could not load your profile.");
+        console.warn("Professional profile load failed.", error);
+        setFeedback("We could not load your profile.");
         setFeedbackType("error");
       }
     });
@@ -785,7 +809,7 @@ export function ProfessionalProfileEditor() {
     setSelectedCredentialFiles((current) => ({ ...current, [credentialId]: file }));
     setCredentialUploadFeedback((current) => ({
       ...current,
-      [credentialId]: { kind: "info", message: `${file.name} is ready for private upload when you save.` },
+        [credentialId]: { kind: "info", message: "Selected file is ready for private upload when you save." },
     }));
   }
 
@@ -925,7 +949,7 @@ export function ProfessionalProfileEditor() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !user || !selectedPhotoFile) return null;
     const extension = selectedPhotoFile.name.split(".").pop()?.toLowerCase() ?? "png";
-    const filePath = `${user.id}/profile_${Date.now()}.${extension}`;
+    const filePath = `${user.id}/profile_${selectedPhotoFile.lastModified}_${selectedPhotoFile.size}.${extension}`;
     const uploadResult = await supabase.storage.from("profile-photos").upload(filePath, selectedPhotoFile, { cacheControl: "3600", upsert: true });
     if (uploadResult.error) throw uploadResult.error;
     const { data } = supabase.storage.from("profile-photos").getPublicUrl(filePath);
@@ -1131,7 +1155,7 @@ export function ProfessionalProfileEditor() {
                 ...current,
                 [credential.id]: {
                   kind: "error",
-                  message: error instanceof Error ? error.message : "The private document upload failed.",
+                  message: "The private document upload failed.",
                 },
               }));
               throw error;
@@ -1191,6 +1215,11 @@ export function ProfessionalProfileEditor() {
       }
 
       if (nextStatus === "pending_review") {
+        const localeUpdate = await supabase.auth.updateUser({
+          data: { professional_signup_locale: locale },
+        });
+        if (localeUpdate.error) throw localeUpdate.error;
+
         const submissionResult = await supabase.rpc("submit_current_trainer_profile_for_review_attested", {
           requested_email: appUser.email,
           request_notes: null,
@@ -1242,25 +1271,29 @@ export function ProfessionalProfileEditor() {
         const cleanupResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).remove(newlyUploadedCredentialPaths);
         if (cleanupResult.error) console.warn("An incomplete credential upload could not be cleaned up.");
       }
-      setFeedback(error instanceof Error ? error.message : "We could not save your profile.");
+      console.warn("Professional profile save failed.", error);
+      setFeedback("We could not save your profile.");
       setFeedbackType("error");
     } finally {
       setIsSaving(false);
     }
   }
 
-  if (!isConfigured) return <article className="callout"><span className="meta-pill">Configuration needed</span><h2>Marketplace access is not configured yet.</h2><p>Add the Elevare Supabase public URL and anon key to enable profiles.</p></article>;
-  if (isLoading) return <article className="callout"><span className="meta-pill">Loading</span><h2>Loading your profile.</h2><p>One moment while we check your marketplace account.</p></article>;
-  if (!user) return <article className="callout"><span className="meta-pill">Pro Profile</span><h2>Sign in to create your Pro Profile.</h2><div className="button-row"><Link className="button button-primary" href="/sign-in/?redirect=/account/professional-profile/">Sign in</Link></div></article>;
+  if (!isConfigured) return <article className="callout"><span className="meta-pill">{t("Configuration needed")}</span><h2>{t("Marketplace access is not configured yet.")}</h2><p>{t("Profile access is temporarily unavailable. Please try again later.")}</p></article>;
+  if (isLoading) return <article className="callout"><span className="meta-pill">{t("Loading")}</span><h2>{t("Loading your profile.")}</h2><p>{t("One moment while we check your marketplace account.")}</p></article>;
+  if (!user) return <article className="callout"><span className="meta-pill">{t("Pro Profile")}</span><h2>{t("Sign in to create your Pro Profile.")}</h2><div className="button-row"><Link className="button button-primary" href={`/sign-in/?redirect=${encodeURIComponent(localizePathname("/account/professional-profile/", locale))}`}>{t("Sign in")}</Link></div></article>;
 
-  const approvalLabel = formatApprovalStatusLabel(approvalStatus);
+  const approvalLabel = localizeApprovalStatus(approvalStatus, locale);
   const statusMessage = statusMessageOverride ?? getProfessionalStatusMessage(approvalStatus, reviewFeedbackPublic);
   const previewPhoto = removeCurrentPhoto ? "" : photoPreviewUrl || form.profilePhotoUrl;
   const activePreviewServices = services.filter((service) => service.isActive && service.name.trim());
-  const selectedPrimaryCategory = selectedTaxonomyCategories[0]?.label ?? "No primary category selected";
+  const selectedPrimaryCategoryRecord = selectedTaxonomyCategories[0];
+  const selectedPrimaryCategory = selectedPrimaryCategoryRecord
+    ? getMarketplaceCategoryCopy(selectedPrimaryCategoryRecord.publicSlug, locale)?.label ?? selectedPrimaryCategoryRecord.label
+    : t("No primary category selected");
   const selectedModeLabels = SERVICE_MODE_OPTIONS
     .filter((option) => form.serviceModes.includes(option.value))
-    .map((option) => option.label);
+    .map((option) => localizeServiceMode(option.value, locale));
   const selectedAcceptanceLabel = ACCEPTANCE_OPTIONS.find((option) => option.value === form.acceptanceStatus)?.label;
   const completeSectionIds = new Set(
     completeness.items.filter((item) => item.complete).map((item) => item.section),
@@ -1278,34 +1311,35 @@ export function ProfessionalProfileEditor() {
     <section className="section professional-profile-builder">
       <article className="panel professional-builder-intro">
         <div className="section-head tool-form-head">
-          <div className="eyebrow">Pro Profile</div>
-          <h2 className="section-title">Build a profile clients can trust and understand.</h2>
-          <p className="section-copy">Show clients what you offer, how you work, and why you&apos;re a good fit.</p>
+          <div className="eyebrow">{t("Pro Profile")}</div>
+          <h2 className="section-title">{t("Build a profile clients can trust and understand.")}</h2>
+          <p className="section-copy">{t("Show clients what you offer, how you work, and why you're a good fit.")}</p>
         </div>
         <div className="marketplace-status-row">
-          <span className="status-chip">Status: {approvalLabel}</span>
-          {isPubliclyListed && profileSlug ? <Link className="hero-text-link" href={buildProfessionalPath(profileSlug)}>View live profile</Link> : null}
+          <span className="status-chip">{t("Status")}: {approvalLabel}</span>
+          {isPubliclyListed && profileSlug ? <Link className="hero-text-link" href={localizePathname(buildProfessionalPath(profileSlug), locale)}>{t("View live profile")}</Link> : null}
         </div>
-        <div className="form-note">{statusMessage}</div>
+        <div className="form-note">{t(statusMessage)}</div>
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="about-you-heading">
         <ProfessionalSectionHeader
           id="about-you-heading"
-          eyebrow="About you"
-          title="Introduce yourself clearly."
-          summary={`${form.displayName || "Add your name"} · ${form.professionalTitle || "Add your professional title"}`}
+          eyebrow={t("About you")}
+          title={t("Introduce yourself clearly.")}
+          summary={`${form.displayName || t("Add your name")} · ${form.professionalTitle || t("Add your professional title")}`}
           complete={sectionIsComplete("about")}
           expanded={expandedSections.about}
           onToggle={() => toggleSection("about")}
+          translate={t}
         />
         {expandedSections.about ? (
           <div className="tool-form-grid marketplace-editor-grid professional-section-body">
-            <label id="profile-field-name" className="field"><span className="field-label">Name <span aria-hidden="true">*</span></span><input value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Jane Smith" /><FieldError name="name" errors={fieldErrors} /></label>
-            <label id="profile-field-professionalTitle" className="field"><span className="field-label">Professional title <span aria-hidden="true">*</span></span><span className="field-help">Personal Trainer, Competition Prep Coach, Registered Dietitian, Life Coach...</span><input value={form.professionalTitle} onChange={(event) => setForm((current) => ({ ...current, professionalTitle: event.target.value }))} placeholder="Competition Prep Coach" /><FieldError name="professionalTitle" errors={fieldErrors} /></label>
-            <label id="profile-field-yearsExperience" className="field"><span className="field-label">Years of experience</span><input type="number" min="0" value={form.yearsExperience} onChange={(event) => setForm((current) => ({ ...current, yearsExperience: event.target.value }))} placeholder="8" /><FieldError name="yearsExperience" errors={fieldErrors} /></label>
-            <div id="profile-field-photo" className="field field-full"><span className="field-label">Profile photo <span aria-hidden="true">*</span></span><div className="profile-photo-uploader">{previewPhoto ? <img src={previewPhoto} alt="Profile preview" /> : <div className="profile-photo-placeholder">Add a clear photo</div>}<div className="profile-photo-actions"><input ref={photoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => choosePhoto(event.target.files?.[0] ?? null)} /><button type="button" className="button button-secondary" onClick={() => photoInputRef.current?.click()}>{previewPhoto ? "Change photo" : "Upload photo"}</button>{previewPhoto ? <button type="button" className="hero-text-link" onClick={() => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); setPhotoPreviewUrl(""); setSelectedPhotoFile(null); setRemoveCurrentPhoto(true); }}>Remove</button> : null}<span className="field-help">JPG, PNG or WebP. A clear square photo works best.</span></div></div><FieldError name="photo" errors={fieldErrors} /></div>
-            <label id="profile-field-bio" className="field field-full"><span className="field-label">Bio <span aria-hidden="true">*</span></span><span className="field-help">Tell clients who you help, what you specialize in, and what it is like to work with you. Recommended: 100-500 words.</span><textarea rows={7} value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} placeholder="Describe your clients, approach, and the experience you create." /><span className="field-help">{bioWordCount} words</span><FieldError name="bio" errors={fieldErrors} /></label>
+            <label id="profile-field-name" className="field"><span className="field-label">{t("Name")} <span aria-hidden="true">*</span></span><input value={form.displayName} onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Jane Smith" /><FieldError name="name" errors={fieldErrors} translate={t} /></label>
+            <label id="profile-field-professionalTitle" className="field"><span className="field-label">{t("Professional title")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Personal Trainer, Competition Prep Coach, Registered Dietitian, Life Coach...")}</span><input value={form.professionalTitle} onChange={(event) => setForm((current) => ({ ...current, professionalTitle: event.target.value }))} placeholder={t("Competition Prep Coach")} /><FieldError name="professionalTitle" errors={fieldErrors} translate={t} /></label>
+            <label id="profile-field-yearsExperience" className="field"><span className="field-label">{t("Years of experience")}</span><input type="number" min="0" value={form.yearsExperience} onChange={(event) => setForm((current) => ({ ...current, yearsExperience: event.target.value }))} placeholder="8" /><FieldError name="yearsExperience" errors={fieldErrors} translate={t} /></label>
+            <div id="profile-field-photo" className="field field-full"><span className="field-label">{t("Profile photo")} <span aria-hidden="true">*</span></span><div className="profile-photo-uploader">{previewPhoto ? <img src={previewPhoto} alt={t("Profile preview")} /> : <div className="profile-photo-placeholder">{t("Add a clear photo")}</div>}<div className="profile-photo-actions"><input ref={photoInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => choosePhoto(event.target.files?.[0] ?? null)} /><button type="button" className="button button-secondary" onClick={() => photoInputRef.current?.click()}>{previewPhoto ? t("Change photo") : t("Upload photo")}</button>{previewPhoto ? <button type="button" className="hero-text-link" onClick={() => { if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl); setPhotoPreviewUrl(""); setSelectedPhotoFile(null); setRemoveCurrentPhoto(true); }}>{t("Remove")}</button> : null}<span className="field-help">{t("JPG, PNG or WebP. A clear square photo works best.")}</span></div></div><FieldError name="photo" errors={fieldErrors} translate={t} /></div>
+            <label id="profile-field-bio" className="field field-full"><span className="field-label">{t("Bio")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Tell clients who you help, what you specialize in, and what it is like to work with you. Recommended: 100-500 words.")}</span><textarea rows={7} value={form.bio} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} placeholder={t("Describe your clients, approach, and the experience you create.")} /><span className="field-help">{bioWordCount} {t("words")}</span><FieldError name="bio" errors={fieldErrors} translate={t} /></label>
           </div>
         ) : null}
       </article>
@@ -1313,106 +1347,134 @@ export function ProfessionalProfileEditor() {
       <article className="panel profile-form-section" aria-labelledby="offer-heading">
         <ProfessionalSectionHeader
           id="offer-heading"
-          eyebrow="What you offer"
-          title="Help the right clients find you."
-          summary={`${selectedPrimaryCategory} · ${form.selectedSpecialties.length} specialt${form.selectedSpecialties.length === 1 ? "y" : "ies"} · ${activePreviewServices.length} service${activePreviewServices.length === 1 ? "" : "s"}`}
+          eyebrow={t("What you offer")}
+          title={t("Help the right clients find you.")}
+          summary={`${selectedPrimaryCategory} · ${form.selectedSpecialties.length} ${t(form.selectedSpecialties.length === 1 ? "specialty" : "specialties")} · ${activePreviewServices.length} ${t(activePreviewServices.length === 1 ? "service" : "services")}`}
           complete={sectionIsComplete("offer")}
           expanded={expandedSections.offer}
           onToggle={() => toggleSection("offer")}
+          translate={t}
         />
         {expandedSections.offer ? <div className="professional-section-body">
-          <label id="profile-field-primaryCategory" className="field field-full"><span className="field-label">Primary category <span aria-hidden="true">*</span></span><select value={form.primaryCategoryStableId} onChange={(event) => updateCategories(event.target.value, form.additionalCategoryStableIds.filter((entry) => entry !== event.target.value))}><option value="">Select a primary category</option>{MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => <option key={category.stableId} value={category.stableId}>{category.label}</option>)}</select><FieldError name="primaryCategory" errors={fieldErrors} /></label>
-          <div className="profile-subsection"><span className="field-label">Additional categories</span><span className="field-help">Optional. Add up to three categories that genuinely describe your services.</span>{form.additionalCategoryStableIds.length > 0 ? <div className="professional-selection-tags">{form.additionalCategoryStableIds.map((stableId) => { const category = MARKETPLACE_TAXONOMY_CATEGORIES.find((entry) => entry.stableId === stableId); return <button key={stableId} type="button" className="selection-tag" onClick={() => removeAdditionalCategory(stableId)} aria-label={`Remove ${category?.label ?? stableId}`}>{category?.label ?? stableId}<span aria-hidden="true">×</span></button>; })}</div> : null}<div className="professional-inline-add"><select aria-label="Additional category" value={additionalCategoryDraft} disabled={!form.primaryCategoryStableId || form.additionalCategoryStableIds.length >= 3} onChange={(event) => setAdditionalCategoryDraft(event.target.value)}><option value="">Choose a category</option>{availableAdditionalCategories.map((category) => <option key={category.stableId} value={category.stableId}>{category.label}</option>)}</select><button type="button" className="button button-secondary" disabled={!additionalCategoryDraft || form.additionalCategoryStableIds.length >= 3} onClick={addAdditionalCategory}>+ Add category</button></div></div>
-          <div id="profile-field-specialties" className="profile-subsection"><span className="field-label">Specialties <span aria-hidden="true">*</span></span><span className="field-help">Choose specialties from your selected categories. These do not imply a verified credential.</span>{form.selectedSpecialties.length > 0 ? <div className="professional-selection-tags">{form.selectedSpecialties.map((specialty) => <button key={specialty} type="button" className="selection-tag" onClick={() => toggleSpecialty(specialty)} aria-label={`Remove ${specialty}`}>{specialty}<span aria-hidden="true">×</span></button>)}</div> : null}{selectedTaxonomyCategories.length > 0 ? <details className="professional-compact-selector" open={form.selectedSpecialties.length === 0}><summary>Choose specialties</summary><div className="toggle-row">{availableSpecialties.map((specialty) => <button key={specialty} type="button" aria-pressed={form.selectedSpecialties.includes(specialty)} className={`toggle-chip${form.selectedSpecialties.includes(specialty) ? " is-active" : ""}`} onClick={() => toggleSpecialty(specialty)}>{specialty}</button>)}</div></details> : <div className="form-note">Choose a category to see its specialties.</div>}<FieldError name="specialties" errors={fieldErrors} /></div>
-          {selectedCategoryNotes.map((note) => <div key={note} className="form-note">{note}</div>)}
-          <div id="profile-field-services" className="profile-subsection"><span className="field-label">Services <span aria-hidden="true">*</span></span><span className="field-help">Service-level pricing is what clients will see first. Duration is optional.</span><div className="editor-stack">{services.map((service, index) => { const isEditing = editingServiceId === service.id || !service.name.trim(); const modeLabel = SERVICE_MODE_OPTIONS.find((option) => option.value === service.serviceMode)?.label ?? "Flexible"; return isEditing ? <div key={service.id} className="nested-editor-card"><div className="nested-editor-head"><strong>{service.name.trim() || `Service ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setServices((current) => current.filter((entry) => entry.id !== service.id)); setEditingServiceId(null); }}>Remove</button></div><div className="tool-form-grid marketplace-editor-grid"><label className="field"><span className="field-label">Service name</span><input value={service.name} onChange={(event) => updateService(service.id, { name: event.target.value })} placeholder="60-Minute Personal Training" /></label><label className="field"><span className="field-label">Service mode</span><select value={service.serviceMode} onChange={(event) => updateService(service.id, { serviceMode: event.target.value })}><option value="">Flexible</option>{SERVICE_MODE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="field field-full"><span className="field-label">Description</span><textarea rows={3} value={service.description} onChange={(event) => updateService(service.id, { description: event.target.value })} placeholder="What is included and who is this service best for?" /></label><label className="field"><span className="field-label">Duration in minutes <span className="field-optional">Optional</span></span><input type="number" min="5" value={service.durationMinutes} onChange={(event) => updateService(service.id, { durationMinutes: event.target.value })} placeholder="60" /></label><label className="field"><span className="field-label">Pricing basis</span><select value={service.pricingBasis} disabled={service.contactForPricing} onChange={(event) => updateService(service.id, { pricingBasis: event.target.value })}>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="field"><span className="field-label">Starting price</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceFrom} onChange={(event) => updateService(service.id, { priceFrom: event.target.value })} placeholder="75" /></label><label className="field"><span className="field-label">Optional maximum</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceTo} onChange={(event) => updateService(service.id, { priceTo: event.target.value })} placeholder="120" /></label></div><label className="checkbox-row"><input type="checkbox" checked={service.contactForPricing} onChange={(event) => updateService(service.id, { contactForPricing: event.target.checked })} /><span>Contact for pricing</span></label><label className="checkbox-row"><input type="checkbox" checked={service.isActive} onChange={(event) => updateService(service.id, { isActive: event.target.checked })} /><span>Show this service on my profile</span></label><div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!service.name.trim()} onClick={() => setEditingServiceId(null)}>Done</button></div></div> : <div key={service.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{service.name}</strong><span className={`professional-section-status${service.isActive ? " is-complete" : ""}`}>{service.isActive ? "Visible" : "Hidden"}</span></div><p>{modeLabel}{service.durationMinutes ? ` · ${service.durationMinutes} min` : ""} · {formatServicePricingSummary(service)}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingServiceId(service.id)}>Edit</button><button type="button" className="hero-text-link" onClick={() => setServices((current) => current.filter((entry) => entry.id !== service.id))}>Remove</button></div></div>; })}<button type="button" className="button button-secondary" onClick={addService}>+ Add service</button></div><FieldError name="services" errors={fieldErrors} /></div>
+          <label id="profile-field-primaryCategory" className="field field-full"><span className="field-label">{t("Primary category")} <span aria-hidden="true">*</span></span><select value={form.primaryCategoryStableId} onChange={(event) => updateCategories(event.target.value, form.additionalCategoryStableIds.filter((entry) => entry !== event.target.value))}><option value="">{t("Select a primary category")}</option>{MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => <option key={category.stableId} value={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</option>)}</select><FieldError name="primaryCategory" errors={fieldErrors} translate={t} /></label>
+          <div className="profile-subsection"><span className="field-label">{t("Additional categories")}</span><span className="field-help">{t("Optional. Add up to three categories that genuinely describe your services.")}</span>{form.additionalCategoryStableIds.length > 0 ? <div className="professional-selection-tags">{form.additionalCategoryStableIds.map((stableId) => { const category = MARKETPLACE_TAXONOMY_CATEGORIES.find((entry) => entry.stableId === stableId); const categoryLabel = category ? getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label : stableId; return <button key={stableId} type="button" className="selection-tag" onClick={() => removeAdditionalCategory(stableId)} aria-label={`${t("Remove")} ${categoryLabel}`}>{categoryLabel}<span aria-hidden="true">×</span></button>; })}</div> : null}<div className="professional-inline-add"><select aria-label={t("Additional category")} value={additionalCategoryDraft} disabled={!form.primaryCategoryStableId || form.additionalCategoryStableIds.length >= 3} onChange={(event) => setAdditionalCategoryDraft(event.target.value)}><option value="">{t("Choose a category")}</option>{availableAdditionalCategories.map((category) => <option key={category.stableId} value={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</option>)}</select><button type="button" className="button button-secondary" disabled={!additionalCategoryDraft || form.additionalCategoryStableIds.length >= 3} onClick={addAdditionalCategory}>{t("+ Add category")}</button></div></div>
+          <div id="profile-field-specialties" className="profile-subsection"><span className="field-label">{t("Specialties")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Choose specialties from your selected categories. These do not imply a verified credential.")}</span>{form.selectedSpecialties.length > 0 ? <div className="professional-selection-tags">{form.selectedSpecialties.map((specialty) => <button key={specialty} type="button" className="selection-tag" onClick={() => toggleSpecialty(specialty)} aria-label={`${t("Remove")} ${localizeMarketplaceSpecialty(specialty, locale)}`}>{localizeMarketplaceSpecialty(specialty, locale)}<span aria-hidden="true">×</span></button>)}</div> : null}{selectedTaxonomyCategories.length > 0 ? <details className="professional-compact-selector" open={form.selectedSpecialties.length === 0}><summary>{t("Choose specialties")}</summary><div className="toggle-row">{availableSpecialties.map((specialty) => <button key={specialty} type="button" aria-pressed={form.selectedSpecialties.includes(specialty)} className={`toggle-chip${form.selectedSpecialties.includes(specialty) ? " is-active" : ""}`} onClick={() => toggleSpecialty(specialty)}>{localizeMarketplaceSpecialty(specialty, locale)}</button>)}</div></details> : <div className="form-note">{t("Choose a category to see its specialties.")}</div>}<FieldError name="specialties" errors={fieldErrors} translate={t} /></div>
+          {selectedCategoryNotes.map((note) => <div key={note} className="form-note">{t(note)}</div>)}
+          <div id="profile-field-services" className="profile-subsection">
+            <span className="field-label">{t("Services")} <span aria-hidden="true">*</span></span>
+            <span className="field-help">{t("Service-level pricing is what clients will see first. Duration is optional.")}</span>
+            <div className="editor-stack">{services.map((service, index) => {
+              const isEditing = editingServiceId === service.id || !service.name.trim();
+              const modeLabel = service.serviceMode ? localizeServiceMode(service.serviceMode, locale) : t("Flexible");
+              return isEditing ? <div key={service.id} className="nested-editor-card">
+                <div className="nested-editor-head"><strong>{service.name.trim() || `${t("Service")} ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setServices((current) => current.filter((entry) => entry.id !== service.id)); setEditingServiceId(null); }}>{t("Remove")}</button></div>
+                <div className="tool-form-grid marketplace-editor-grid">
+                  <label className="field"><span className="field-label">{t("Service name")}</span><input value={service.name} onChange={(event) => updateService(service.id, { name: event.target.value })} placeholder={t("60-Minute Personal Training")} /></label>
+                  <label className="field"><span className="field-label">{t("Service mode")}</span><select value={service.serviceMode} onChange={(event) => updateService(service.id, { serviceMode: event.target.value })}><option value="">{t("Flexible")}</option>{SERVICE_MODE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{localizeServiceMode(option.value, locale)}</option>)}</select></label>
+                  <label className="field field-full"><span className="field-label">{t("Description")}</span><textarea rows={3} value={service.description} onChange={(event) => updateService(service.id, { description: event.target.value })} placeholder={t("What is included and who is this service best for?")} /></label>
+                  <label className="field"><span className="field-label">{t("Duration in minutes")} <span className="field-optional">{t("Optional")}</span></span><input type="number" min="5" value={service.durationMinutes} onChange={(event) => updateService(service.id, { durationMinutes: event.target.value })} placeholder="60" /></label>
+                  <label className="field"><span className="field-label">{t("Pricing basis")}</span><select value={service.pricingBasis} disabled={service.contactForPricing} onChange={(event) => updateService(service.id, { pricingBasis: event.target.value })}>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
+                  <label className="field"><span className="field-label">{t("Starting price")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceFrom} onChange={(event) => updateService(service.id, { priceFrom: event.target.value })} placeholder="75" /></label>
+                  <label className="field"><span className="field-label">{t("Optional maximum")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceTo} onChange={(event) => updateService(service.id, { priceTo: event.target.value })} placeholder="120" /></label>
+                </div>
+                <label className="checkbox-row"><input type="checkbox" checked={service.contactForPricing} onChange={(event) => updateService(service.id, { contactForPricing: event.target.checked })} /><span>{t("Contact for pricing")}</span></label>
+                <label className="checkbox-row"><input type="checkbox" checked={service.isActive} onChange={(event) => updateService(service.id, { isActive: event.target.checked })} /><span>{t("Show this service on my profile")}</span></label>
+                <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!service.name.trim()} onClick={() => setEditingServiceId(null)}>{t("Done")}</button></div>
+              </div> : <div key={service.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{service.name}</strong><span className={`professional-section-status${service.isActive ? " is-complete" : ""}`}>{t(service.isActive ? "Visible" : "Hidden")}</span></div><p>{modeLabel}{service.durationMinutes ? ` · ${service.durationMinutes} min` : ""} · {formatLocalizedServicePricingSummary(service, locale)}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingServiceId(service.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setServices((current) => current.filter((entry) => entry.id !== service.id))}>{t("Remove")}</button></div></div>;
+            })}<button type="button" className="button button-secondary" onClick={addService}>{t("+ Add service")}</button></div>
+            <FieldError name="services" errors={fieldErrors} translate={t} />
+          </div>
         </div> : null}
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="work-heading">
         <ProfessionalSectionHeader
           id="work-heading"
-          eyebrow="How you work"
-          title="Set expectations before clients contact you."
-          summary={`${selectedModeLabels.join(", ") || "Add a service mode"} · Accepting clients: ${selectedAcceptanceLabel ?? "Not set"}`}
+          eyebrow={t("How you work")}
+          title={t("Set expectations before clients contact you.")}
+          summary={`${selectedModeLabels.join(", ") || t("Add a service mode")} · ${t("Accepting clients")}: ${selectedAcceptanceLabel ? t(selectedAcceptanceLabel) : t("Not set")}`}
           complete={sectionIsComplete("work")}
           expanded={expandedSections.work}
           onToggle={() => toggleSection("work")}
+          translate={t}
         />
         {expandedSections.work ? <div className="professional-section-body">
-          <div id="profile-field-serviceModes" className="profile-subsection"><span className="field-label">Service mode <span aria-hidden="true">*</span></span><div className="toggle-row">{SERVICE_MODE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.serviceModes.includes(option.value)} className={`toggle-chip${form.serviceModes.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("serviceModes", option.value)}>{option.label}</button>)}</div><FieldError name="serviceModes" errors={fieldErrors} /></div>
+          <div id="profile-field-serviceModes" className="profile-subsection"><span className="field-label">{t("Service mode")} <span aria-hidden="true">*</span></span><div className="toggle-row">{SERVICE_MODE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.serviceModes.includes(option.value)} className={`toggle-chip${form.serviceModes.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("serviceModes", option.value)}>{localizeServiceMode(option.value, locale)}</button>)}</div><FieldError name="serviceModes" errors={fieldErrors} translate={t} /></div>
           <div id="profile-field-location" className="tool-form-grid marketplace-editor-grid">
-            <label className="field"><span className="field-label">Country</span><select autoComplete="country" value={form.countryCode} onChange={(event) => updateCountry(event.target.value)}>{MARKETPLACE_COUNTRY_OPTIONS.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select></label>
-            <label className="field"><span className="field-label">City</span><input autoComplete="address-level2" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} placeholder={form.countryCode === "US" ? "Miami" : "City"} /></label>
-            <label className="field"><span className="field-label">{regionLabel}{!isRegionRequired(form.countryCode) ? <span className="field-optional"> Optional</span> : null}</span>{regionOptions.length > 0 ? <select autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}><option value="">Select {regionLabel.toLowerCase()}</option>{form.state && !regionOptions.some(([code]) => code === form.state) ? <option value={form.state}>{form.state}</option> : null}{regionOptions.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select> : <input autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} placeholder={form.countryCode === "GB" ? "Greater London" : regionLabel} />}</label>
-            {offersInPerson ? <label className="field"><span className="field-label">Service radius</span><span className="field-help">Enter the distance you normally travel in {distanceLabel}.</span><input type="number" min="1" max="500" list="service-radius-options" value={form.serviceRadius} onChange={(event) => setForm((current) => ({ ...current, serviceRadius: event.target.value }))} /><datalist id="service-radius-options">{[5, 10, 25, 50].map((distance) => <option key={distance} value={distance} />)}</datalist></label> : null}
-            {offersInPerson ? <label className="field field-full"><span className="field-label">Service area description <span className="field-optional">Optional</span></span><input value={form.serviceArea} onChange={(event) => setForm((current) => ({ ...current, serviceArea: event.target.value }))} placeholder={form.countryCode === "GB" ? "Central London" : "Brickell, Downtown Miami, and Edgewater"} /></label> : null}
-            <FieldError name="location" errors={fieldErrors} />
+            <label className="field"><span className="field-label">{t("Country")}</span><select autoComplete="country" value={form.countryCode} onChange={(event) => updateCountry(event.target.value)}>{marketplaceCountryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select></label>
+            <label className="field"><span className="field-label">{t("City")}</span><input autoComplete="address-level2" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} placeholder={form.countryCode === "US" ? "Miami" : t("City")} /></label>
+            <label className="field"><span className="field-label">{t(regionLabel)}{!isRegionRequired(form.countryCode) ? <span className="field-optional"> {t("Optional")}</span> : null}</span>{regionOptions.length > 0 ? <select autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}><option value="">{t("Select")} {t(regionLabel).toLocaleLowerCase(locale)}</option>{form.state && !regionOptions.some(([code]) => code === form.state) ? <option value={form.state}>{form.state}</option> : null}{regionOptions.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select> : <input autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} placeholder={form.countryCode === "GB" ? "Greater London" : t(regionLabel)} />}</label>
+            {offersInPerson ? <label className="field"><span className="field-label">{t("Service radius")}</span><span className="field-help">{t("Enter the distance you normally travel in")} {distanceLabel}.</span><input type="number" min="1" max="500" list="service-radius-options" value={form.serviceRadius} onChange={(event) => setForm((current) => ({ ...current, serviceRadius: event.target.value }))} /><datalist id="service-radius-options">{[5, 10, 25, 50].map((distance) => <option key={distance} value={distance} />)}</datalist></label> : null}
+            {offersInPerson ? <label className="field field-full"><span className="field-label">{t("Service area description")} <span className="field-optional">{t("Optional")}</span></span><input value={form.serviceArea} onChange={(event) => setForm((current) => ({ ...current, serviceArea: event.target.value }))} placeholder={form.countryCode === "GB" ? "Central London" : "Brickell, Downtown Miami, and Edgewater"} /></label> : null}
+            <FieldError name="location" errors={fieldErrors} translate={t} />
           </div>
-          <div id="profile-field-acceptance" className="profile-subsection"><span className="field-label">Are you accepting new clients? <span aria-hidden="true">*</span></span><div className="toggle-row">{ACCEPTANCE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.acceptanceStatus === option.value} className={`toggle-chip${form.acceptanceStatus === option.value ? " is-active" : ""}`} onClick={() => setForm((current) => ({ ...current, acceptanceStatus: option.value }))}>{option.label}</button>)}</div><FieldError name="acceptance" errors={fieldErrors} /></div>
-          <div id="profile-field-availability" className="profile-subsection"><span className="field-label">Typical availability <span aria-hidden="true">*</span></span><div className="toggle-row">{AVAILABILITY_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.availabilityWindows.includes(option.value)} className={`toggle-chip${form.availabilityWindows.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("availabilityWindows", option.value)}>{option.label}</button>)}</div><FieldError name="availability" errors={fieldErrors} /></div>
-          <label className="field field-full"><span className="field-label">Additional availability details <span className="field-optional">Optional</span></span><textarea rows={3} value={form.availabilityDetails} onChange={(event) => setForm((current) => ({ ...current, availabilityDetails: event.target.value }))} placeholder="Evenings after 5 PM, online check-ins on Sundays..." /></label>
-          <div className="profile-subsection"><span className="field-label">Languages <span className="field-optional">Optional</span></span><span className="field-help">Add the languages you use when working with clients.</span>{form.languages.length > 0 ? <div className="professional-selection-tags">{form.languages.map((language) => <button key={language} type="button" className="selection-tag" onClick={() => setForm((current) => ({ ...current, languages: current.languages.filter((entry) => entry !== language) }))} aria-label={`Remove ${language}`}>{language}<span aria-hidden="true">×</span></button>)}</div> : null}<div className="professional-inline-add"><input list="professional-language-options" value={languageDraft} onChange={(event) => setLanguageDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addLanguage(); } }} placeholder="English" aria-label="Language" /><datalist id="professional-language-options">{PROFESSIONAL_LANGUAGE_SUGGESTIONS.map((language) => <option key={language} value={language} />)}</datalist><button type="button" className="button button-secondary" disabled={!languageDraft.trim()} onClick={addLanguage}>+ Add language</button></div></div>
+          <div id="profile-field-acceptance" className="profile-subsection"><span className="field-label">{t("Are you accepting new clients?")} <span aria-hidden="true">*</span></span><div className="toggle-row">{ACCEPTANCE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.acceptanceStatus === option.value} className={`toggle-chip${form.acceptanceStatus === option.value ? " is-active" : ""}`} onClick={() => setForm((current) => ({ ...current, acceptanceStatus: option.value }))}>{t(option.label)}</button>)}</div><FieldError name="acceptance" errors={fieldErrors} translate={t} /></div>
+          <div id="profile-field-availability" className="profile-subsection"><span className="field-label">{t("Typical availability")} <span aria-hidden="true">*</span></span><div className="toggle-row">{AVAILABILITY_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.availabilityWindows.includes(option.value)} className={`toggle-chip${form.availabilityWindows.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("availabilityWindows", option.value)}>{t(option.label)}</button>)}</div><FieldError name="availability" errors={fieldErrors} translate={t} /></div>
+          <label className="field field-full"><span className="field-label">{t("Additional availability details")} <span className="field-optional">{t("Optional")}</span></span><textarea rows={3} value={form.availabilityDetails} onChange={(event) => setForm((current) => ({ ...current, availabilityDetails: event.target.value }))} placeholder={t("Evenings after 5 PM, online check-ins on Sundays...")} /></label>
+          <div className="profile-subsection"><span className="field-label">{t("Languages")} <span className="field-optional">{t("Optional")}</span></span><span className="field-help">{t("Add the languages you use when working with clients.")}</span>{form.languages.length > 0 ? <div className="professional-selection-tags">{form.languages.map((language) => <button key={language} type="button" className="selection-tag" onClick={() => setForm((current) => ({ ...current, languages: current.languages.filter((entry) => entry !== language) }))} aria-label={`${t("Remove")} ${t(language)}`}>{t(language)}<span aria-hidden="true">×</span></button>)}</div> : null}<div className="professional-inline-add"><input list="professional-language-options" value={languageDraft} onChange={(event) => setLanguageDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addLanguage(); } }} placeholder={t("English")} aria-label={t("Language")} /><datalist id="professional-language-options">{PROFESSIONAL_LANGUAGE_SUGGESTIONS.map((language) => <option key={language} value={language} label={t(language)} />)}</datalist><button type="button" className="button button-secondary" disabled={!languageDraft.trim()} onClick={addLanguage}>{t("+ Add language")}</button></div></div>
         </div> : null}
       </article>
 
       <article id="profile-field-pricing" className="panel profile-form-section" aria-labelledby="pricing-heading">
         <ProfessionalSectionHeader
           id="pricing-heading"
-          eyebrow="General pricing"
-          title="Add optional profile-wide pricing context."
-          summary={form.contactForPricing ? "Contact for pricing" : form.priceFrom ? formatServicePricingSummary(form) : "Service prices are used by default"}
+          eyebrow={t("General pricing")}
+          title={t("Add optional profile-wide pricing context.")}
+          summary={form.contactForPricing ? t("Contact for pricing") : form.priceFrom ? formatLocalizedServicePricingSummary(form, locale) : t("Service prices are used by default")}
           complete
-          statusLabel="Optional"
+          statusLabel={t("Optional")}
           expanded={expandedSections.pricing}
           onToggle={() => toggleSection("pricing")}
+          translate={t}
         />
         {expandedSections.pricing ? <div className="professional-section-body">
-          <p className="field-help">Optional. Use this only when a general range adds helpful context beyond the prices listed on individual services.</p>
-          <label className="checkbox-row"><input type="checkbox" checked={form.contactForPricing} onChange={(event) => setForm((current) => ({ ...current, contactForPricing: event.target.checked }))} /><span>Use contact for pricing as general context</span></label>
+          <p className="field-help">{t("Optional. Use this only when a general range adds helpful context beyond the prices listed on individual services.")}</p>
+          <label className="checkbox-row"><input type="checkbox" checked={form.contactForPricing} onChange={(event) => setForm((current) => ({ ...current, contactForPricing: event.target.checked }))} /><span>{t("Use contact for pricing as general context")}</span></label>
           <div className="tool-form-grid marketplace-editor-grid">
-            <label className="field"><span className="field-label">Currency</span><input list="marketplace-currency-options" maxLength={3} value={form.currencyCode} onChange={(event) => setForm((current) => ({ ...current, currencyCode: event.target.value.toUpperCase() }))} /><datalist id="marketplace-currency-options">{COMMON_CURRENCY_CODES.map((code) => <option key={code} value={code} />)}</datalist></label>
-            <label className="field"><span className="field-label">Starting price</span><input type="number" min="0" step="1" disabled={form.contactForPricing} value={form.priceFrom} onChange={(event) => setForm((current) => ({ ...current, priceFrom: event.target.value }))} placeholder="75" /></label>
-            <label className="field"><span className="field-label">Pricing basis</span><select disabled={form.contactForPricing} value={form.pricingBasis} onChange={(event) => setForm((current) => ({ ...current, pricingBasis: event.target.value }))}><option value="">Select a basis</option>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-            <label className="field"><span className="field-label">Optional maximum price</span><input type="number" min="0" step="1" disabled={form.contactForPricing} value={form.priceTo} onChange={(event) => setForm((current) => ({ ...current, priceTo: event.target.value }))} placeholder="120" /></label>
+            <label className="field"><span className="field-label">{t("Currency")}</span><input list="marketplace-currency-options" maxLength={3} value={form.currencyCode} onChange={(event) => setForm((current) => ({ ...current, currencyCode: event.target.value.toUpperCase() }))} /><datalist id="marketplace-currency-options">{COMMON_CURRENCY_CODES.map((code) => <option key={code} value={code} />)}</datalist></label>
+            <label className="field"><span className="field-label">{t("Starting price")}</span><input type="number" min="0" step="1" disabled={form.contactForPricing} value={form.priceFrom} onChange={(event) => setForm((current) => ({ ...current, priceFrom: event.target.value }))} placeholder="75" /></label>
+            <label className="field"><span className="field-label">{t("Pricing basis")}</span><select disabled={form.contactForPricing} value={form.pricingBasis} onChange={(event) => setForm((current) => ({ ...current, pricingBasis: event.target.value }))}><option value="">{t("Select a basis")}</option>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
+            <label className="field"><span className="field-label">{t("Optional maximum price")}</span><input type="number" min="0" step="1" disabled={form.contactForPricing} value={form.priceTo} onChange={(event) => setForm((current) => ({ ...current, priceTo: event.target.value }))} placeholder="120" /></label>
           </div>
-          <FieldError name="pricing" errors={fieldErrors} />
+          <FieldError name="pricing" errors={fieldErrors} translate={t} />
         </div> : null}
       </article>
 
       <article id="profile-field-credentials" className="panel profile-form-section" aria-labelledby="credentials-heading">
         <ProfessionalSectionHeader
           id="credentials-heading"
-          eyebrow="Credentials"
-          title="Add qualifications clients should know about."
-          summary={credentials.length > 0 ? `${credentials.length} credential${credentials.length === 1 ? "" : "s"} added` : "No credentials added"}
+          eyebrow={t("Credentials")}
+          title={t("Add qualifications clients should know about.")}
+          summary={credentials.length > 0 ? `${credentials.length} ${t(credentials.length === 1 ? "credential added" : "credentials added")}` : t("No credentials added")}
           complete
-          statusLabel="Optional"
+          statusLabel={t("Optional")}
           expanded={expandedSections.credentials}
           onToggle={() => toggleSection("credentials")}
+          translate={t}
         />
         {expandedSections.credentials ? <div className="professional-section-body">
-          <p className="section-copy section-copy-compact">Optional. Elevare reviews credentials separately. Only Elevare can change verification status. Country and jurisdiction provide review context and do not imply that a credential is valid everywhere.</p>
+          <p className="section-copy section-copy-compact">{t("Optional. Elevare reviews credentials separately. Only Elevare can change verification status. Country and jurisdiction provide review context and do not imply that a credential is valid everywhere.")}</p>
           <div className="editor-stack">{credentials.map((credential, index) => {
             const isEditing = editingCredentialId === credential.id || !credential.credentialName.trim() || !credential.organizationName.trim();
-            const verificationLabel = formatCredentialVerificationStatus(credential.verificationStatus, credential.expirationDate);
+            const rawVerificationLabel = formatCredentialVerificationStatus(credential.verificationStatus, credential.expirationDate);
+            const verificationLabel = t(rawVerificationLabel);
             const documentReference = credential.supportingDocumentUrl.trim();
             const hasPrivateDocument = Boolean(user && isPrivateCredentialPath(documentReference, user.id));
             const hasLegacyDocument = isLegacyCredentialUrl(documentReference);
             const uploadFeedback = credentialUploadFeedback[credential.id];
             return isEditing ? <div key={credential.id} className="nested-editor-card">
-              <div className="nested-editor-head"><strong>{credential.credentialName.trim() || `Credential ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setCredentials((current) => current.filter((entry) => entry.id !== credential.id)); setEditingCredentialId(null); }}>Remove</button></div>
+              <div className="nested-editor-head"><strong>{credential.credentialName.trim() || `${t("Credential")} ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setCredentials((current) => current.filter((entry) => entry.id !== credential.id)); setEditingCredentialId(null); }}>{t("Remove")}</button></div>
               <div className="tool-form-grid marketplace-editor-grid">
-                <label className="field"><span className="field-label">Credential name</span><input value={credential.credentialName} onChange={(event) => updateCredential(credential.id, { credentialName: event.target.value })} placeholder="Certified Personal Trainer" /></label>
-                <label className="field"><span className="field-label">Issuing organization</span><input value={credential.organizationName} onChange={(event) => updateCredential(credential.id, { organizationName: event.target.value })} placeholder="Issuing organization" /></label>
-                <label className="field"><span className="field-label">Credential type</span><input value={credential.credentialType} onChange={(event) => updateCredential(credential.id, { credentialType: event.target.value })} placeholder="Certification, license, degree" /></label>
-                <label className="field"><span className="field-label">Credential number</span><input value={credential.credentialNumber} onChange={(event) => updateCredential(credential.id, { credentialNumber: event.target.value })} placeholder="Optional" /></label>
-                <label className="field"><span className="field-label">Credential country</span><select value={credential.countryCode} onChange={(event) => updateCredential(credential.id, { countryCode: event.target.value })}>{MARKETPLACE_COUNTRY_OPTIONS.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select></label>
-                <label className="field"><span className="field-label">Credential jurisdiction <span className="field-optional">Optional</span></span><input value={credential.jurisdiction} onChange={(event) => updateCredential(credential.id, { jurisdiction: event.target.value })} placeholder="Florida, Ontario, England..." /></label>
-                <label className="field"><span className="field-label">Issue date</span><input type="date" value={credential.issueDate} onChange={(event) => updateCredential(credential.id, { issueDate: event.target.value })} /></label>
-                <label className="field"><span className="field-label">Expiration date</span><input type="date" value={credential.expirationDate} onChange={(event) => updateCredential(credential.id, { expirationDate: event.target.value })} /></label>
+                <label className="field"><span className="field-label">{t("Credential name")}</span><input value={credential.credentialName} onChange={(event) => updateCredential(credential.id, { credentialName: event.target.value })} placeholder={t("Certified Personal Trainer")} /></label>
+                <label className="field"><span className="field-label">{t("Issuing organization")}</span><input value={credential.organizationName} onChange={(event) => updateCredential(credential.id, { organizationName: event.target.value })} placeholder={t("Issuing organization")} /></label>
+                <label className="field"><span className="field-label">{t("Credential type")}</span><input value={credential.credentialType} onChange={(event) => updateCredential(credential.id, { credentialType: event.target.value })} placeholder={t("Certification, license, degree")} /></label>
+                <label className="field"><span className="field-label">{t("Credential number")}</span><input value={credential.credentialNumber} onChange={(event) => updateCredential(credential.id, { credentialNumber: event.target.value })} placeholder={t("Optional")} /></label>
+                <label className="field"><span className="field-label">{t("Credential country")}</span><select value={credential.countryCode} onChange={(event) => updateCredential(credential.id, { countryCode: event.target.value })}>{marketplaceCountryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select></label>
+                <label className="field"><span className="field-label">{t("Credential jurisdiction")} <span className="field-optional">{t("Optional")}</span></span><input value={credential.jurisdiction} onChange={(event) => updateCredential(credential.id, { jurisdiction: event.target.value })} placeholder={t("Florida, Ontario, England...")} /></label>
+                <label className="field"><span className="field-label">{t("Issue date")}</span><input type="date" value={credential.issueDate} onChange={(event) => updateCredential(credential.id, { issueDate: event.target.value })} /></label>
+                <label className="field"><span className="field-label">{t("Expiration date")}</span><input type="date" value={credential.expirationDate} onChange={(event) => updateCredential(credential.id, { expirationDate: event.target.value })} /></label>
                 <div className="field field-full">
-                  <span className="field-label">Supporting document <span className="field-optional">Optional</span></span>
+                  <span className="field-label">{t("Supporting document")} <span className="field-optional">{t("Optional")}</span></span>
                   <input
                     ref={(element) => { credentialInputRefs.current[credential.id] = element; }}
                     className="sr-only"
@@ -1422,49 +1484,50 @@ export function ProfessionalProfileEditor() {
                   />
                   <div className="button-row">
                     <button type="button" className="button button-secondary" onClick={() => credentialInputRefs.current[credential.id]?.click()}>
-                      {hasPrivateDocument || hasLegacyDocument ? "Replace document" : "Select document"}
+                      {t(hasPrivateDocument || hasLegacyDocument ? "Replace document" : "Select document")}
                     </button>
-                    {hasPrivateDocument ? <button type="button" className="hero-text-link" onClick={() => void viewCredentialDocument(credential)}>View private document</button> : null}
+                    {hasPrivateDocument ? <button type="button" className="hero-text-link" onClick={() => void viewCredentialDocument(credential)}>{t("View private document")}</button> : null}
                     {selectedCredentialFiles[credential.id] ? <button type="button" className="hero-text-link" onClick={() => {
                       setSelectedCredentialFiles((current) => { const next = { ...current }; delete next[credential.id]; return next; });
                       setCredentialUploadFeedback((current) => { const next = { ...current }; delete next[credential.id]; return next; });
                       if (credentialInputRefs.current[credential.id]) credentialInputRefs.current[credential.id]!.value = "";
-                    }}>Clear selection</button> : null}
+                    }}>{t("Clear selection")}</button> : null}
                   </div>
-                  {hasPrivateDocument ? <span className="field-help">A private document is on file. Temporary owner access expires after 5 minutes.</span> : null}
-                  {hasLegacyDocument ? <span className="field-help">An existing external evidence link is retained for review. Replacing it stores the new file in Elevare&apos;s private credential bucket.</span> : null}
-                  {!hasPrivateDocument && !hasLegacyDocument ? <span className="field-help">PDF, JPG, PNG, or WebP up to 8 MB. The file is private and is uploaded when you save your profile.</span> : null}
-                  {uploadFeedback ? <span className={uploadFeedback.kind === "error" ? "field-error" : "field-help"} role={uploadFeedback.kind === "error" ? "alert" : "status"}>{uploadFeedback.message}</span> : null}
+                  {hasPrivateDocument ? <span className="field-help">{t("A private document is on file. Temporary owner access expires after 5 minutes.")}</span> : null}
+                  {hasLegacyDocument ? <span className="field-help">{t("An existing external evidence link is retained for review. Replacing it stores the new file in Elevare's private credential bucket.")}</span> : null}
+                  {!hasPrivateDocument && !hasLegacyDocument ? <span className="field-help">{t("PDF, JPG, PNG, or WebP up to 8 MB. The file is private and is uploaded when you save your profile.")}</span> : null}
+                  {uploadFeedback ? <span className={uploadFeedback.kind === "error" ? "field-error" : "field-help"} role={uploadFeedback.kind === "error" ? "alert" : "status"}>{t(uploadFeedback.message)}</span> : null}
                 </div>
-                <label className="field field-full"><span className="field-label">Supporting reference URL</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder="Optional public verification link" /><span className="field-help">This may help reviewers confirm the credential, but it does not make the credential verified.</span><FieldError name="credentials" errors={fieldErrors} /></label>
+                <label className="field field-full"><span className="field-label">{t("Supporting reference URL")}</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder={t("Optional public verification link")} /><span className="field-help">{t("This may help reviewers confirm the credential, but it does not make the credential verified.")}</span><FieldError name="credentials" errors={fieldErrors} translate={t} /></label>
               </div>
-              <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!credential.credentialName.trim() || !credential.organizationName.trim()} onClick={() => setEditingCredentialId(null)}>Done</button></div>
-            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${verificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode)}{credential.expirationDate ? ` · Expires ${credential.expirationDate}` : ""}{hasPrivateDocument ? " · Private evidence on file" : hasLegacyDocument ? " · External evidence retained" : ""}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>Edit</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>Remove</button></div></div>;
-          })}<button type="button" className="button button-secondary" onClick={addCredential}>+ Add credential</button></div>
+              <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!credential.credentialName.trim() || !credential.organizationName.trim()} onClick={() => setEditingCredentialId(null)}>{t("Done")}</button></div>
+            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${rawVerificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode, locale)}{credential.expirationDate ? ` · ${t("Expires")} ${credential.expirationDate}` : ""}{hasPrivateDocument ? ` · ${t("Private evidence on file")}` : hasLegacyDocument ? ` · ${t("External evidence retained")}` : ""}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>{t("Remove")}</button></div></div>;
+          })}<button type="button" className="button button-secondary" onClick={addCredential}>{t("+ Add credential")}</button></div>
         </div> : null}
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="links-heading">
         <ProfessionalSectionHeader
           id="links-heading"
-          eyebrow="Links"
-          title="Make it easy to learn more about your work."
-          summary={listedLinkCount > 0 ? `${listedLinkCount} link${listedLinkCount === 1 ? "" : "s"} added` : "No links added"}
+          eyebrow={t("Links")}
+          title={t("Make it easy to learn more about your work.")}
+          summary={listedLinkCount > 0 ? `${listedLinkCount} ${t(listedLinkCount === 1 ? "link added" : "links added")}` : t("No links added")}
           complete
-          statusLabel="Optional"
+          statusLabel={t("Optional")}
           expanded={expandedSections.links}
           onToggle={() => toggleSection("links")}
+          translate={t}
         />
-        {expandedSections.links ? <div className="professional-section-body"><p className="section-copy section-copy-compact">Optional. Use complete URLs beginning with https://.</p><div className="tool-form-grid marketplace-editor-grid">{[["website", "Website", "websiteUrl"], ["instagram", "Instagram", "instagramUrl"], ["tiktok", "TikTok", "tiktokUrl"], ["youtube", "YouTube", "youtubeUrl"], ["linkedin", "LinkedIn", "linkedinUrl"]].map(([key, label, field]) => <label id={`profile-field-${key}`} key={key} className="field"><span className="field-label">{label}</span><input type="url" value={form[field as keyof ProfessionalFormState] as string} onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))} placeholder={`https://${key}.com/...`} /><FieldError name={key} errors={fieldErrors} /></label>)}</div></div> : null}
+        {expandedSections.links ? <div className="professional-section-body"><p className="section-copy section-copy-compact">{t("Optional. Use complete URLs beginning with https://.")}</p><div className="tool-form-grid marketplace-editor-grid">{[["website", "Website", "websiteUrl"], ["instagram", "Instagram", "instagramUrl"], ["tiktok", "TikTok", "tiktokUrl"], ["youtube", "YouTube", "youtubeUrl"], ["linkedin", "LinkedIn", "linkedinUrl"]].map(([key, label, field]) => <label id={`profile-field-${key}`} key={key} className="field"><span className="field-label">{label}</span><input type="url" value={form[field as keyof ProfessionalFormState] as string} onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))} placeholder={`https://${key}.com/...`} /><FieldError name={key} errors={fieldErrors} translate={t} /></label>)}</div></div> : null}
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="submit-heading">
-        <div className="section-head section-head-compact"><div className="eyebrow">Preview and submit</div><h3 id="submit-heading" className="section-title section-title-compact">Review your profile before it goes to Elevare.</h3></div>
-        <div className="profile-completeness"><div className="profile-completeness-head"><strong>Profile {completeness.percent}% complete</strong><span>{completeness.missing.length === 0 ? "Ready to submit" : `${completeness.missing.length} item${completeness.missing.length === 1 ? "" : "s"} left`}</span></div><div className="profile-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completeness.percent}><span style={{ width: `${completeness.percent}%` }} /></div>{completeness.missing.length > 0 ? <div className="profile-completeness-actions"><span className="field-help">Complete these profile basics:</span>{completeness.items.filter((item) => !item.complete).map((item) => <button key={item.id} type="button" className="profile-completeness-item" onClick={() => focusCompletenessItem(item.section, item.id)}>{item.label}<span aria-hidden="true">→</span></button>)}</div> : <p className="field-help">Your profile has the information needed for review. Optional sections can still help clients understand your work.</p>}</div>
-        <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{isPreviewing ? "Hide profile preview" : "Preview public profile"}</button>
-        {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">Private preview</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt="Private profile preview" /> : <div className="profile-photo-placeholder">Photo preview</div>}<div><h3>{form.displayName || "Your name"}</h3><p className="professional-title-copy">{form.professionalTitle || "Your professional title"}</p><p>{form.bio || "Your bio will appear here."}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{specialty}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || "Service details"}</p></div>)}</div> : null}</div> : null}
-        <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{PROFESSIONAL_ATTESTATION_TEXT} I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the <a href="/terms-of-service/">Terms of Service</a> and acknowledge the <a href="/privacy-policy/">Privacy Policy</a>.</span></label><FieldError name="terms" errors={fieldErrors} />
-        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{isSaving ? "Saving..." : "Save draft"}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review"}</button></div>{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{feedback}</div> : null}</div>
+        <div className="section-head section-head-compact"><div className="eyebrow">{t("Preview and submit")}</div><h3 id="submit-heading" className="section-title section-title-compact">{t("Review your profile before it goes to Elevare.")}</h3></div>
+        <div className="profile-completeness"><div className="profile-completeness-head"><strong>{t("Profile")} {completeness.percent}% {t("complete")}</strong><span>{completeness.missing.length === 0 ? t("Ready to submit") : `${completeness.missing.length} ${t(completeness.missing.length === 1 ? "item left" : "items left")}`}</span></div><div className="profile-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completeness.percent}><span style={{ width: `${completeness.percent}%` }} /></div>{completeness.missing.length > 0 ? <div className="profile-completeness-actions"><span className="field-help">{t("Complete these profile basics:")}</span>{completeness.items.filter((item) => !item.complete).map((item) => <button key={item.id} type="button" className="profile-completeness-item" onClick={() => focusCompletenessItem(item.section, item.id)}>{t(item.label)}<span aria-hidden="true">→</span></button>)}</div> : <p className="field-help">{t("Your profile has the information needed for review. Optional sections can still help clients understand your work.")}</p>}</div>
+        <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{t(isPreviewing ? "Hide profile preview" : "Preview public profile")}</button>
+        {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">{t("Private preview")}</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt={t("Private profile preview")} /> : <div className="profile-photo-placeholder">{t("Photo preview")}</div>}<div><h3>{form.displayName || t("Your name")}</h3><p className="professional-title-copy">{form.professionalTitle || t("Your professional title")}</p><p>{form.bio || t("Your bio will appear here.")}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{localizeMarketplaceSpecialty(specialty, locale)}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || t("Service details")}</p></div>)}</div> : null}</div> : null}
+        <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{t(PROFESSIONAL_ATTESTATION_TEXT)} {t("I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the")} <a href="/terms-of-service/">{t("Terms of Service")}</a> {t("and acknowledge the")} <a href="/privacy-policy/">{t("Privacy Policy")}</a>.</span></label><FieldError name="terms" errors={fieldErrors} translate={t} />
+        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}</div>
       </article>
     </section>
   );

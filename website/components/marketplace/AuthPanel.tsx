@@ -2,13 +2,20 @@
 
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { type FormEvent, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { getSafeAuthRedirect } from "@/lib/auth-redirect";
+import {
+  LOCALE_COOKIE_NAME,
+  LOCALE_STORAGE_KEY,
+  localeFromPathname,
+  resolvePreferredLocale,
+} from "@/lib/i18n/config";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = useMemo(() => getSafeAuthRedirect(searchParams.get("redirect")), [searchParams]);
@@ -78,6 +85,21 @@ export function AuthPanel() {
         return;
       }
 
+      const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
+      const localizedPath = [pathname, redirectPath]
+        .find((candidate) => /^\/(?:es|pt-br)(?:\/|$)/i.test(candidate));
+      const pathnameLocale = localizedPath
+        ? localeFromPathname(localizedPath)
+        : null;
+      const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+        ?? readCookie(LOCALE_COOKIE_NAME);
+      const signupLocale = resolvePreferredLocale({
+        explicitLocale: pathnameLocale,
+        savedLocale,
+        browserLocales,
+      });
+      const signupBrowserLocale = resolvePreferredLocale({ browserLocales });
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -91,6 +113,8 @@ export function AuthPanel() {
             age_18_plus: true,
             age_attestation_version: AGE_ATTESTATION_VERSION,
             age_attestation_source: "website_signup",
+            signup_locale: signupLocale,
+            browser_locale_at_signup: signupBrowserLocale,
           },
         },
       });
@@ -223,4 +247,14 @@ export function AuthPanel() {
       </form>
     </article>
   );
+}
+
+function readCookie(name: string) {
+  const prefix = `${encodeURIComponent(name)}=`;
+  const match = document.cookie
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(prefix));
+
+  return match ? decodeURIComponent(match.slice(prefix.length)) : null;
 }

@@ -40,7 +40,7 @@ export function LocalizedQuickAnalysisPage({ locale, messages }: { locale: Local
           <h1>{landing.heroTitle}</h1>
           <p>{landing.heroBody}</p>
           <div className="quick-analysis-badges" aria-label={landing.productDetailsLabel}>
-            <span>{landing.oneTimeBadge}</span><span>{landing.noSubscription}</span><span>{landing.noAccount}</span><span>{landing.photosNotStored}</span>
+            <span>{landing.noSubscription}</span><span>{landing.noAccount}</span><span>{landing.photosNotStored}</span>
           </div>
           <QuickAnalysisReturnLink locale={locale} messages={messages.returnLink} />
         </div>
