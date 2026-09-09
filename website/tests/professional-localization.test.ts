@@ -6,6 +6,9 @@ import {
   buildLocalizedCategoryFaqs,
   formatLocalizedProfessionalPrice,
   formatLocalizedServicePrice,
+  hasMarketplaceSpecialtyTranslation,
+  localizeGeneratedCategoryService,
+  localizeMarketplaceAvailability,
   localizeMarketplaceCategory,
   localizeMarketplaceLocation,
   localizeMarketplaceSpecialty,
@@ -13,6 +16,7 @@ import {
   marketplaceText,
 } from "../lib/i18n/marketplace-content.ts";
 import type { ProfessionalCategoryRecord } from "../lib/marketplace-types.ts";
+import { MARKETPLACE_TAXONOMY_CATEGORIES } from "../lib/marketplace-taxonomy.ts";
 
 const projectRoot = process.cwd();
 const readProjectFile = (relativePath: string) => fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
@@ -54,6 +58,45 @@ test("marketplace-owned profile presentation is localized without changing canon
   assert.equal(portugueseCategory.stableId, category.stableId);
   assert.equal(spanishCategory.label, "Entrenamiento personal");
   assert.equal(portugueseCategory.label, "Treinamento pessoal");
+});
+
+test("every supported marketplace specialty has deterministic Spanish and Portuguese copy", () => {
+  const specialties = [...new Set(MARKETPLACE_TAXONOMY_CATEGORIES.flatMap((entry) => entry.specialties))];
+
+  for (const specialty of specialties) {
+    assert.equal(hasMarketplaceSpecialtyTranslation(specialty, "es-419"), true, `Missing es-419 specialty: ${specialty}`);
+    assert.equal(hasMarketplaceSpecialtyTranslation(specialty, "pt-BR"), true, `Missing pt-BR specialty: ${specialty}`);
+  }
+});
+
+test("structured profile availability is localized", () => {
+  assert.equal(localizeMarketplaceAvailability(["afternoons", "evenings"], "Afternoons, Evenings", "es-419"), "Tardes, Noches");
+  assert.equal(localizeMarketplaceAvailability(["afternoons", "evenings"], "Afternoons, Evenings", "pt-BR"), "Tardes, Noites");
+  assert.equal(localizeMarketplaceAvailability([], "Custom availability", "es-419"), "Custom availability");
+});
+
+test("generated category services are localized while professional-authored services remain verbatim", () => {
+  const sourceCategory = { ...category, stableId: "personal_training" };
+  const generatedService = {
+    id: "professional-id-personal_training",
+    professionalProfileId: "professional-id",
+    name: "Personal Training",
+    description: "English category description.",
+    serviceMode: null,
+    durationMinutes: null,
+    price: null,
+    priceTo: null,
+    pricingBasis: null,
+    contactForPricing: false,
+    sortOrder: 0,
+    isActive: true,
+    currencyCode: "USD",
+  };
+  const customService = { ...generatedService, id: "custom-service-id", name: "My custom service" };
+
+  assert.equal(localizeGeneratedCategoryService(generatedService, [sourceCategory], "es-419").name, "Entrenamiento personal");
+  assert.equal(localizeGeneratedCategoryService(generatedService, [sourceCategory], "pt-BR").name, "Treinamento pessoal");
+  assert.equal(localizeGeneratedCategoryService(customService, [sourceCategory], "es-419").name, "My custom service");
 });
 
 test("category FAQs use localized human provider nouns", () => {

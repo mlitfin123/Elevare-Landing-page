@@ -49,6 +49,8 @@ import {
   formatMarketplaceYears,
   getLocalizedProfessionalMetadataCopy,
   localizeApprovalStatus,
+  localizeGeneratedCategoryService,
+  localizeMarketplaceAvailability,
   localizeMarketplaceCategory,
   localizeMarketplaceLocation,
   localizeMarketplaceSpecialty,
@@ -165,6 +167,14 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
   const localizedPrimaryCategory = primaryCategory ? localizeMarketplaceCategory(primaryCategory, locale) : null;
   const localizedCategories = professional.categories.map((category) => localizeMarketplaceCategory(category, locale));
+  const localizedServices = professional.services.map((service) => (
+    localizeGeneratedCategoryService(service, professional.categories, locale)
+  ));
+  const availabilitySummary = localizeMarketplaceAvailability(
+    professional.typicalAvailability,
+    professional.availabilitySummary,
+    locale,
+  );
   const profileLocation = localizeMarketplaceLocation(formatPublicLocationLabel(professional), locale);
   const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || localizedPrimaryCategory?.label || t("professional")}, ${profileLocation}`;
   const profilePath = localizeProfessionalPath(`/professionals/${professional.profileSlug}`, locale);
@@ -325,9 +335,9 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                   <strong>{t("Experience")}:</strong> {yearsExperience}
                 </li>
               ) : null}
-              {professional.availabilitySummary ? (
+              {availabilitySummary ? (
                 <li>
-                  <strong>{t("Availability")}:</strong> {professional.availabilitySummary}
+                  <strong>{t("Availability")}:</strong> {availabilitySummary}
                 </li>
               ) : null}
               <li>
@@ -364,7 +374,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
         </div>
       </section>
 
-      {professional.services.length > 0 ? (
+      {localizedServices.length > 0 ? (
         <section className="section">
           <div className="section-head">
             <div className="eyebrow">{t("Services offered")}</div>
@@ -375,7 +385,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
           </div>
 
           <div className="grid-3">
-            {professional.services.map((service) => (
+            {localizedServices.map((service) => (
               <article key={service.id} className="panel">
                 <span className="meta-pill">
                   {service.serviceMode ? (locale === "en" ? formatServiceModeLabel(service.serviceMode) : localizeServiceMode(service.serviceMode, locale)) : t("Flexible")}

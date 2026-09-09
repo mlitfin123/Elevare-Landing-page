@@ -5,6 +5,10 @@ import type {
   ProfessionalProfileRecord,
   ProfessionalServiceRecord,
 } from "../marketplace-types.ts";
+import {
+  getMarketplaceSpecialtyTranslation,
+  hasMarketplaceSpecialtyTranslation,
+} from "./marketplace-specialties.ts";
 
 type CategoryCopy = {
   label: string;
@@ -85,15 +89,6 @@ const UI_COPY: Record<Exclude<Locale, "en">, TranslationDictionary> = {
     "Report this profile": "Denunciar este perfil", Reason: "Motivo", Details: "Detalhes", "Submit report": "Enviar denúncia", "Submitting...": "Enviando...",
     Account: "Conta", "Your Elevare account": "Sua conta Elevare", "Account settings": "Configurações da conta", "Signed in as": "Conectado como", Overview: "Visão geral", "Pro Profile": "Perfil profissional", "Client Requests": "Solicitações de clientes", Preferences: "Preferências", "My Requests": "Minhas solicitações", "Sign out": "Sair", "Find support": "Encontrar suporte", "Explore Elevare": "Explorar Elevare", "Your activity": "Sua atividade", "Recently Saved": "Salvos recentemente", "Recent Requests": "Solicitações recentes", "Account shortcuts": "Atalhos da conta", "Your next step": "Seu próximo passo", "Professional account": "Conta profissional", "Your Pro Profile": "Seu perfil profissional", "View Public Profile": "Ver perfil público", "No client requests yet.": "Ainda não há solicitações de clientes.", "For professionals": "Para profissionais", "Account management": "Gerenciamento da conta", "Account deletion": "Exclusão da conta", "Welcome back": "Bem-vindo de volta", Loading: "Carregando", "Sign in required": "É necessário entrar", "Sign in": "Entrar", "Try Again": "Tentar novamente", "Unable to load": "Não foi possível carregar",
     "Build a profile clients can trust and understand.": "Crie um perfil que os clientes entendam e no qual possam confiar.", "About you": "Sobre você", Name: "Nome", "Professional title": "Título profissional", "Years of experience": "Anos de experiência", "Profile photo": "Foto do perfil", "Upload photo": "Enviar foto", Remove: "Remover", Bio: "Biografia", words: "palavras", "What you offer": "O que você oferece", "Primary category": "Categoria principal", "Select a primary category": "Selecione uma categoria principal", "Additional categories": "Categorias adicionais", "Choose a category": "Escolha uma categoria", "+ Add category": "+ Adicionar categoria", "How you work": "Como você trabalha", Country: "País", City: "Cidade", State: "Estado", "Postal code": "CEP", "Service area": "Área de atendimento", "How you deliver services": "Como você oferece os serviços", "Client availability": "Disponibilidade para clientes", "Pricing and availability": "Preços e disponibilidade", "Starting price": "Preço inicial", "Optional maximum": "Máximo opcional", "Pricing basis": "Base de preço", "Availability details": "Detalhes da disponibilidade", Services: "Serviços", "Service name": "Nome do serviço", Description: "Descrição", "Duration in minutes": "Duração em minutos", Optional: "Opcional", Visible: "Visível", Hidden: "Oculto", "+ Add service": "+ Adicionar serviço", "Credentials and verification": "Credenciais e verificação", Credential: "Credencial", Organization: "Organização", "Credential name": "Nome da credencial", "Credential type": "Tipo da credencial", "Credential number": "Número da credencial", "Issue date": "Data de emissão", "Expiration date": "Data de validade", "Supporting document": "Documento comprobatório", "Choose file": "Escolher arquivo", "Clear selection": "Limpar seleção", "Supporting reference URL": "URL de referência", Edit: "Editar", "+ Add credential": "+ Adicionar credencial", "No links added": "Nenhum link adicionado", "Preview and submit": "Visualizar e enviar", Complete: "Completo", "Needs attention": "Precisa de atenção", Collapse: "Recolher", "Ready to submit": "Pronto para enviar", "Save draft": "Salvar rascunho", "Submit for review": "Enviar para análise", "Submit updates for review": "Enviar alterações para análise", "Saving...": "Salvando...", "Private preview": "Visualização privada", "Preview public profile": "Visualizar perfil público", "Hide profile preview": "Ocultar visualização",
-  },
-};
-
-const SPECIALTY_COPY: Record<Exclude<Locale, "en">, TranslationDictionary> = {
-  "es-419": {
-    "General Fitness": "Fitness general", "Beginner Fitness": "Fitness para principiantes", "Strength Training": "Entrenamiento de fuerza", "Muscle Building": "Desarrollo muscular", "Fat Loss": "Pérdida de grasa", "Weight Management": "Control de peso", "Body Recomposition": "Recomposición corporal", "Functional Fitness": "Entrenamiento funcional", Conditioning: "Acondicionamiento", "Competition Prep": "Preparación competitiva", Bodybuilding: "Fisicoculturismo", Powerlifting: "Powerlifting", "Sports Nutrition": "Nutrición deportiva", "Meal Planning": "Planificación de comidas", "Healthy Eating": "Alimentación saludable", "Mobility Training": "Entrenamiento de movilidad", "Flexibility Training": "Entrenamiento de flexibilidad", "Assisted Stretching": "Estiramiento asistido", "Beginner Running": "Running para principiantes", "Race Preparation": "Preparación para carreras", Meditation: "Meditación", Breathwork: "Trabajo de respiración", "Massage Therapy": "Terapia de masaje", "Sports Massage": "Masaje deportivo",
-  },
-  "pt-BR": {
-    "General Fitness": "Condicionamento geral", "Beginner Fitness": "Fitness para iniciantes", "Strength Training": "Treinamento de força", "Muscle Building": "Ganho de massa muscular", "Fat Loss": "Perda de gordura", "Weight Management": "Controle de peso", "Body Recomposition": "Recomposição corporal", "Functional Fitness": "Treinamento funcional", Conditioning: "Condicionamento", "Competition Prep": "Preparação competitiva", Bodybuilding: "Fisiculturismo", Powerlifting: "Powerlifting", "Sports Nutrition": "Nutrição esportiva", "Meal Planning": "Planejamento de refeições", "Healthy Eating": "Alimentação saudável", "Mobility Training": "Treinamento de mobilidade", "Flexibility Training": "Treinamento de flexibilidade", "Assisted Stretching": "Alongamento assistido", "Beginner Running": "Corrida para iniciantes", "Race Preparation": "Preparação para provas", Meditation: "Meditação", Breathwork: "Trabalho respiratório", "Massage Therapy": "Massoterapia", "Sports Massage": "Massagem esportiva",
   },
 };
 
@@ -829,7 +824,43 @@ export function getMarketplaceCategoryCopy(slug: string, locale: Locale) {
 }
 
 export function localizeMarketplaceSpecialty(value: string, locale: Locale) {
-  return locale === "en" ? value : SPECIALTY_COPY[locale][value] ?? value;
+  return getMarketplaceSpecialtyTranslation(value, locale);
+}
+
+export { hasMarketplaceSpecialtyTranslation };
+
+export function localizeMarketplaceAvailability(
+  windows: readonly string[],
+  fallback: string | null,
+  locale: Locale,
+) {
+  if (locale === "en" || windows.length === 0) return fallback;
+
+  return windows
+    .map((window) => marketplaceText(locale, window.charAt(0).toUpperCase() + window.slice(1).toLowerCase()))
+    .join(", ");
+}
+
+export function localizeGeneratedCategoryService(
+  service: ProfessionalServiceRecord,
+  categories: readonly ProfessionalCategoryRecord[],
+  locale: Locale,
+) {
+  if (locale === "en") return service;
+
+  const sourceCategory = categories.find((category) => (
+    service.id === `${service.professionalProfileId}-${category.stableId}`
+    && service.name === category.label
+  ));
+
+  if (!sourceCategory) return service;
+
+  const localizedCategory = localizeMarketplaceCategory(sourceCategory, locale);
+  return {
+    ...service,
+    name: localizedCategory.label,
+    description: localizedCategory.shortDescription ?? localizedCategory.headline,
+  };
 }
 
 export function formatMarketplaceYears(years: number | null, locale: Locale) {
