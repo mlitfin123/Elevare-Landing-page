@@ -170,6 +170,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   const localizedServices = professional.services.map((service) => (
     localizeGeneratedCategoryService(service, professional.categories, locale)
   ));
+  const languages = professional.languages ?? [];
   const availabilitySummary = localizeMarketplaceAvailability(
     professional.typicalAvailability,
     professional.availabilitySummary,
@@ -352,6 +353,19 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                   {professional.specialties.map((specialty) => (
                     <span key={specialty} className="tag-chip">
                       {localizeMarketplaceSpecialty(specialty, locale)}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : null}
+
+            {languages.length > 0 ? (
+              <>
+                <span className="stat-label">{t("Languages")}</span>
+                <div className="tag-row">
+                  {languages.map((language) => (
+                    <span key={language} className="tag-chip">
+                      {t(language)}
                     </span>
                   ))}
                 </div>

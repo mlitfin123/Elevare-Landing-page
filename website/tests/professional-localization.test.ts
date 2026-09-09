@@ -75,6 +75,21 @@ test("structured profile availability is localized", () => {
   assert.equal(localizeMarketplaceAvailability([], "Custom availability", "es-419"), "Custom availability");
 });
 
+test("professional languages flow through the approved public profile and remain locale-aware", () => {
+  const migration = readProjectFile("../supabase/migrations/20260909120000_public_professional_languages.sql");
+  const generator = readProjectFile("scripts/generate-marketplace-data.ts");
+  const profileSource = readProjectFile("app/professionals/[slug]/page.tsx");
+  const helpers = readProjectFile("lib/marketplace-helpers.ts");
+
+  assert.match(migration, /profile\.languages/);
+  assert.match(generator, /languages: parseStringArray\(row\.languages\)/);
+  assert.match(profileSource, /languages\.map/);
+  assert.equal(marketplaceText("es-419", "English"), "Inglés");
+  assert.equal(marketplaceText("pt-BR", "Spanish"), "Espanhol");
+  assert.equal(marketplaceText("es-419", "American Sign Language"), "American Sign Language");
+  assert.match(helpers, /knowsLanguage: professional\.languages/);
+});
+
 test("generated category services are localized while professional-authored services remain verbatim", () => {
   const sourceCategory = { ...category, stableId: "personal_training" };
   const generatedService = {

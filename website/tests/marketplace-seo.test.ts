@@ -40,6 +40,7 @@ function createProfessional(
     bio: "Practical nutrition support for active adults.",
     yearsExperience: 5,
     specialties: ["Sports nutrition"],
+    languages: [],
     city: "Miami",
     state: "FL",
     serviceArea: null,

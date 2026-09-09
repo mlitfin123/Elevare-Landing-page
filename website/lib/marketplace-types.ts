@@ -49,6 +49,7 @@ export type ProfessionalProfileRecord = {
   bio: string;
   yearsExperience: number | null;
   specialties: string[];
+  languages: string[];
   countryCode: string;
   city: string | null;
   state: string | null;

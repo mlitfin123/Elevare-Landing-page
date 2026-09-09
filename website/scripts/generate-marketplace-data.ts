@@ -130,6 +130,7 @@ type MarketplacePublicTrainerRow = {
   pricing_basis: string | null;
   contact_for_pricing: boolean | null;
   service_offerings: unknown;
+  languages: string[] | null;
 };
 
 type MarketplaceInternationalTrainerRow = {
@@ -297,6 +298,7 @@ function normalizeProfessionalSnapshotRecord(professional: ProfessionalProfileRe
       ...(professional.specialties ?? []),
       ...[...impliedSpecialties],
     ]),
+    languages: uniqueStrings(professional.languages ?? []),
     serviceModes: uniqueStrings([
       ...(professional.serviceModes ?? []),
       ...[...impliedServiceModes],
@@ -683,6 +685,7 @@ async function buildSnapshot(): Promise<MarketplaceSnapshot> {
       bio: normalizeText(row.bio) ?? "",
       yearsExperience: normalizeNumber(row.years_experience),
       specialties,
+      languages: parseStringArray(row.languages),
       countryCode,
       city: normalizeText(international?.location_city) ?? normalizeText(row.location_city),
       state: normalizeText(international?.location_region) ?? normalizeText(row.location_state),
