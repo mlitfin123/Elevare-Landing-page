@@ -9,12 +9,15 @@ import {
   CLIENT_CATEGORY_DESCRIPTIONS,
   CLIENT_EXPERIENCE_OPTIONS,
   CLIENT_GOAL_OPTIONS,
+  CLIENT_LANGUAGE_SUGGESTIONS,
   CLIENT_SERVICE_MODE_OPTIONS,
   CLIENT_SUPPORT_FREQUENCY_OPTIONS,
   CLIENT_TIMELINE_OPTIONS,
   getBudgetCents,
   normalizeClientBudgetRange,
   normalizeClientGoalTags,
+  normalizeClientLanguageRequirement,
+  normalizeClientLanguages,
   normalizeClientTimeline,
   shouldShowClientRadius,
   toClientServiceMode,
@@ -54,6 +57,8 @@ type ClientProfileFormState = {
   budgetBasis: string;
   budgetCurrencyCode: string;
   supportFrequency: string;
+  preferredLanguages: string[];
+  languageRequired: boolean;
   notes: string;
   savedBudgetRange: string;
   savedBudgetMinCents: number | null;
@@ -76,6 +81,8 @@ const initialFormState: ClientProfileFormState = {
   budgetBasis: "",
   budgetCurrencyCode: "USD",
   supportFrequency: "",
+  preferredLanguages: [],
+  languageRequired: false,
   notes: "",
   savedBudgetRange: "",
   savedBudgetMinCents: null,
@@ -130,6 +137,7 @@ export function ClientProfileEditor() {
   const [form, setForm] = useState<ClientProfileFormState>(initialFormState);
   const [isSaving, setIsSaving] = useState(false);
   const [isCategoryEditorOpen, setIsCategoryEditorOpen] = useState(true);
+  const [languageDraft, setLanguageDraft] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
 
@@ -185,6 +193,7 @@ export function ClientProfileEditor() {
           data.budget_currency_code,
           getDefaultCurrencyCode(countryCode),
         );
+        const preferredLanguages = normalizeClientLanguages(data.preferred_languages);
 
         setForm({
           firstName: appUser.first_name ?? "",
@@ -201,6 +210,8 @@ export function ClientProfileEditor() {
           budgetBasis: data.budget_basis ?? "",
           budgetCurrencyCode,
           supportFrequency: data.support_frequency ?? "",
+          preferredLanguages,
+          languageRequired: normalizeClientLanguageRequirement(data.language_required, preferredLanguages),
           notes: data.preference_notes ?? "",
           savedBudgetRange: typeof data.budget_range === "string" ? data.budget_range : "",
           savedBudgetMinCents: typeof data.budget_min === "number" ? data.budget_min : null,
@@ -260,6 +271,7 @@ export function ClientProfileEditor() {
         ? null
         : distanceToMeters(Number(form.preferredRadius), getDistanceUnit(form.countryCode));
       const countryCode = normalizeCountryCode(form.countryCode);
+      const preferredLanguages = normalizeClientLanguages(form.preferredLanguages);
 
       const { error } = await supabase.from("client_profiles").upsert(
         {
@@ -281,6 +293,8 @@ export function ClientProfileEditor() {
           budget_max: budgetMaxCents,
           budget_currency_code: normalizeCurrencyCode(form.budgetCurrencyCode, getDefaultCurrencyCode(countryCode)),
           support_frequency: form.supportFrequency || null,
+          preferred_languages: preferredLanguages,
+          language_required: normalizeClientLanguageRequirement(form.languageRequired, preferredLanguages),
           preference_notes: form.notes.trim() || null,
         },
         { onConflict: "user_id" },
@@ -340,6 +354,24 @@ export function ClientProfileEditor() {
   const selectedCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) =>
     form.interestedCategories.includes(category.stableId),
   );
+
+  function addPreferredLanguage() {
+    const nextLanguages = normalizeClientLanguages([...form.preferredLanguages, languageDraft]);
+    if (nextLanguages.length === form.preferredLanguages.length) return;
+    setForm((current) => ({ ...current, preferredLanguages: nextLanguages }));
+    setLanguageDraft("");
+  }
+
+  function removePreferredLanguage(language: string) {
+    setForm((current) => {
+      const preferredLanguages = current.preferredLanguages.filter((entry) => entry !== language);
+      return {
+        ...current,
+        preferredLanguages,
+        languageRequired: preferredLanguages.length > 0 ? current.languageRequired : false,
+      };
+    });
+  }
 
   return (
     <section className="section">
@@ -572,6 +604,72 @@ export function ClientProfileEditor() {
               ))}
             </select>
           </label>
+        </article>
+
+        <article className="panel profile-form-section">
+          <div className="section-head section-head-compact">
+            <div className="eyebrow">Communication</div>
+            <h3 className="section-title section-title-compact">Preferred language(s)</h3>
+            <p className="section-copy section-copy-compact">
+              Choose the languages you would prefer to use with a professional. This does not change the language used by the website.
+            </p>
+          </div>
+          {form.preferredLanguages.length > 0 ? (
+            <div className="professional-selection-tags">
+              {form.preferredLanguages.map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  className="selection-tag"
+                  onClick={() => removePreferredLanguage(language)}
+                  aria-label={`Remove ${language}`}
+                >
+                  {language}<span aria-hidden="true">x</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="professional-inline-add">
+            <input
+              list="client-language-options"
+              value={languageDraft}
+              onChange={(event) => setLanguageDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addPreferredLanguage();
+                }
+              }}
+              placeholder="English"
+              aria-label="Preferred language"
+            />
+            <datalist id="client-language-options">
+              {CLIENT_LANGUAGE_SUGGESTIONS.map((language) => (
+                <option key={language} value={language} />
+              ))}
+            </datalist>
+            <button
+              type="button"
+              className="button button-secondary"
+              disabled={!languageDraft.trim() || form.preferredLanguages.length >= 20}
+              onClick={addPreferredLanguage}
+            >
+              + Add language
+            </button>
+          </div>
+          {form.preferredLanguages.length > 0 ? (
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={form.languageRequired}
+                onChange={(event) => setForm((current) => ({
+                  ...current,
+                  languageRequired: event.target.checked,
+                }))}
+              />
+              <span>I need a professional who works in one of these languages.</span>
+            </label>
+          ) : null}
         </article>
 
         <article className="panel profile-form-section">

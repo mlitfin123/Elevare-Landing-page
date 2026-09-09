@@ -1,9 +1,11 @@
+import Image from "next/image";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { InquiryForm } from "@/components/marketplace/InquiryForm";
 import { MarketplaceCategoryResources } from "@/components/marketplace/MarketplaceCategoryResources";
 import { MarketplaceDirectory } from "@/components/marketplace/MarketplaceDirectory";
 import { ProfessionalCard } from "@/components/marketplace/ProfessionalCard";
+import { ProfessionalProfileViewTracker } from "@/components/marketplace/ProfessionalProfileViewTracker";
 import { ProfessionalSaveButton } from "@/components/marketplace/ProfessionalSaveButton";
 import { ReportProfileForm } from "@/components/marketplace/ReportProfileForm";
 import { StructuredData } from "@/components/StructuredData";
@@ -58,6 +60,7 @@ import {
   localizeServiceMode,
   marketplaceText,
 } from "@/lib/i18n/marketplace-content";
+import { formatWebsiteLinkLabel } from "@/lib/professional-profile";
 
 type ProfessionalRoutePageProps = {
   params: Promise<{
@@ -158,12 +161,24 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
       ? "Not accepting new clients"
       : "Accepting new clients");
   const profileLinks = [
-    { label: "Website", href: professional.websiteUrl },
-    { label: "Instagram", href: professional.socialLinks.instagram },
-    { label: "TikTok", href: professional.socialLinks.tiktok },
-    { label: "YouTube", href: professional.socialLinks.youtube },
-    { label: "LinkedIn", href: professional.socialLinks.linkedin },
-  ].filter((entry): entry is { label: string; href: string } => Boolean(entry.href));
+    {
+      type: "website",
+      label: formatWebsiteLinkLabel(professional.websiteUrl ?? "", professional.socialLinks.website_label),
+      href: professional.websiteUrl,
+    },
+    { type: "instagram", label: "Instagram", href: professional.socialLinks.instagram },
+    { type: "facebook", label: "Facebook", href: professional.socialLinks.facebook },
+    { type: "tiktok", label: "TikTok", href: professional.socialLinks.tiktok },
+    { type: "youtube", label: "YouTube", href: professional.socialLinks.youtube },
+    { type: "linkedin", label: "LinkedIn", href: professional.socialLinks.linkedin },
+  ].flatMap((entry) => entry.href ? [{ ...entry, href: entry.href }] : []);
+  const profileLinkIcons: Record<string, { src: string; width: number; height: number }> = {
+    instagram: { src: "/instagram-icon.png", width: 26, height: 26 },
+    facebook: { src: "/facebook-icon.png", width: 26, height: 26 },
+    tiktok: { src: "/tiktok-icon.png", width: 26, height: 26 },
+    youtube: { src: "/youtube-icon.png", width: 28, height: 19 },
+    linkedin: { src: "/linkedin-icon.png", width: 26, height: 26 },
+  };
   const primaryCategory = professional.categories.find((category) => category.isPrimary) ?? professional.categories[0] ?? null;
   const localizedPrimaryCategory = primaryCategory ? localizeMarketplaceCategory(primaryCategory, locale) : null;
   const localizedCategories = professional.categories.map((category) => localizeMarketplaceCategory(category, locale));
@@ -219,6 +234,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   return (
     <div className="container">
       <StructuredData data={structuredData} />
+      <ProfessionalProfileViewTracker professionalId={professional.id} />
 
       <nav className="breadcrumbs professional-profile-breadcrumbs" aria-label={t("Breadcrumb")}>
         <TrackedLink href={localizeProfessionalPath("/professionals/", locale)} eventName="breadcrumb_click" eventParams={{ destination: "professionals" }}>
@@ -434,17 +450,33 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
             <h2 className="section-title">{t("Learn more about this professional.")}</h2>
           </div>
           <div className="button-row">
-            {profileLinks.map((entry) => (
-              <TrackedLink
-                key={entry.label}
-                className="button button-secondary"
-                href={entry.href}
-                eventName="professional_external_link_click"
-                eventParams={{ professional_slug: professional.profileSlug, link_type: entry.label.toLowerCase() }}
-              >
-                {entry.label}
-              </TrackedLink>
-            ))}
+            {profileLinks.map((entry) => {
+              const icon = profileLinkIcons[entry.type];
+
+              return (
+                <TrackedLink
+                  key={entry.type}
+                  className={`button button-secondary${icon ? " professional-social-icon-link" : " professional-website-link"}`}
+                  href={entry.href}
+                  eventName="professional_external_link_click"
+                  eventParams={{ professional_slug: professional.profileSlug, link_type: entry.type }}
+                  title={icon ? entry.label : undefined}
+                >
+                  {icon ? (
+                    <>
+                      <Image
+                        src={icon.src}
+                        width={icon.width}
+                        height={icon.height}
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">{entry.label}</span>
+                    </>
+                  ) : entry.label}
+                </TrackedLink>
+              );
+            })}
           </div>
         </section>
       ) : null}

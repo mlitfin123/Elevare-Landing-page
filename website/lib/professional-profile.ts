@@ -148,6 +148,10 @@ export function isValidOptionalUrl(value: string) {
   }
 }
 
+export function formatWebsiteLinkLabel(websiteUrl: string, customLabel?: string | null) {
+  return customLabel?.trim() || websiteUrl.trim() || "Website";
+}
+
 export function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }

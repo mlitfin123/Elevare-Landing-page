@@ -94,6 +94,19 @@ export const CLIENT_SUPPORT_FREQUENCY_OPTIONS = [
   { value: "not_sure", label: "Not sure" },
 ] as const;
 
+export const CLIENT_LANGUAGE_SUGGESTIONS = [
+  "English",
+  "Spanish",
+  "French",
+  "Portuguese",
+  "Haitian Creole",
+  "Mandarin",
+  "Cantonese",
+  "Arabic",
+  "Hindi",
+  "Other",
+] as const;
+
 export const CLIENT_CATEGORY_DESCRIPTIONS: Record<string, string> = {
   personal_training: "Fitness, strength & body composition",
   strength_conditioning: "Strength, power & athletic development",
@@ -183,6 +196,25 @@ export function normalizeClientGoalTags(structuredGoals: unknown, legacyGoals: u
       .map((entry) => LEGACY_GOAL_LABELS[entry])
       .filter((entry): entry is string => Boolean(entry)),
   )];
+}
+
+export function normalizeClientLanguages(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  const distinct = new Map<string, string>();
+  for (const entry of value) {
+    if (typeof entry !== "string") continue;
+    const language = entry.trim();
+    if (!language) continue;
+    const key = language.toLocaleLowerCase("en-US");
+    if (!distinct.has(key)) distinct.set(key, language);
+  }
+
+  return [...distinct.values()].slice(0, 20);
+}
+
+export function normalizeClientLanguageRequirement(required: unknown, languages: readonly string[]) {
+  return required === true && languages.length > 0;
 }
 
 export function getPreferenceLabel(

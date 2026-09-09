@@ -1369,6 +1369,24 @@ select {
   margin-bottom: 16px;
 }
 
+.professional-social-icon-link {
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
+}
+
+.professional-social-icon-link img {
+  display: block;
+  object-fit: contain;
+}
+
+.professional-website-link {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
 .panel-title {
   margin: 12px 0;
   font-size: 22px;
@@ -1980,6 +1998,38 @@ select {
   margin: 0;
 }
 
+.professional-profile-view-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(116, 200, 214, 0.18);
+  border-radius: 16px;
+  background: rgba(79, 153, 168, 0.07);
+}
+
+.professional-profile-view-stat > div {
+  display: grid;
+  gap: 5px;
+}
+
+.professional-profile-view-stat strong {
+  color: var(--text);
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1;
+}
+
+.professional-profile-view-stat p {
+  max-width: 390px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: right;
+}
+
 .profile-form-section {
   display: grid;
   gap: 22px;
@@ -2307,6 +2357,16 @@ select {
 }
 
 @media (max-width: 720px) {
+  .professional-profile-view-stat {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .professional-profile-view-stat p {
+    text-align: left;
+  }
+
   .professional-section-header,
   .professional-compact-card {
     align-items: stretch;

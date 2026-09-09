@@ -118,7 +118,9 @@ type ProfessionalFormState = {
   contactForPricing: boolean;
   currencyCode: string;
   websiteUrl: string;
+  websiteLinkText: string;
   instagramUrl: string;
+  facebookUrl: string;
   tiktokUrl: string;
   youtubeUrl: string;
   linkedinUrl: string;
@@ -259,7 +261,9 @@ const initialFormState: ProfessionalFormState = {
   contactForPricing: false,
   currencyCode: "USD",
   websiteUrl: "",
+  websiteLinkText: "",
   instagramUrl: "",
+  facebookUrl: "",
   tiktokUrl: "",
   youtubeUrl: "",
   linkedinUrl: "",
@@ -416,6 +420,7 @@ export function ProfessionalProfileEditor() {
   const [approvalStatus, setApprovalStatus] = useState("draft");
   const [reviewFeedbackPublic, setReviewFeedbackPublic] = useState<string | null>(null);
   const [publicProfileId, setPublicProfileId] = useState<string | null>(null);
+  const [profileViewCount, setProfileViewCount] = useState(0);
   const [profileSlug, setProfileSlug] = useState("");
   const [isPubliclyListed, setIsPubliclyListed] = useState(false);
   const [statusMessageOverride, setStatusMessageOverride] = useState<string | null>(null);
@@ -503,6 +508,7 @@ export function ProfessionalProfileEditor() {
       setIsPubliclyListed(Boolean(statusData?.is_publicly_listed));
 
       if (!profile) {
+        setProfileViewCount(0);
         setForm((current) => ({
           ...current,
           displayName: [appUser.first_name, appUser.last_name].filter(Boolean).join(" "),
@@ -513,6 +519,16 @@ export function ProfessionalProfileEditor() {
 
       setPublicProfileId(profile.id);
       setProfileSlug(statusData?.public_slug ?? profile.public_slug ?? "");
+
+      const viewCountResult = await marketplaceClient
+        .from("professional_profile_view_counts")
+        .select("view_count")
+        .eq("trainer_profile_id", profile.id)
+        .maybeSingle();
+      if (!viewCountResult.error && isMounted) {
+        const count = Number(viewCountResult.data?.view_count ?? 0);
+        setProfileViewCount(Number.isSafeInteger(count) && count >= 0 ? count : 0);
+      }
 
       const [matchingResult, categoryResult, credentialResult, locationResult, offeringResult] = await Promise.all([
         marketplaceClient.from("provider_matching_profiles")
@@ -593,7 +609,9 @@ export function ProfessionalProfileEditor() {
         contactForPricing: Boolean(profile.contact_for_pricing),
         currencyCode,
         websiteUrl: profile.website_url ?? "",
+        websiteLinkText: getJsonString(socialLinks, "website_label"),
         instagramUrl: getJsonString(socialLinks, "instagram"),
+        facebookUrl: getJsonString(socialLinks, "facebook"),
         tiktokUrl: getJsonString(socialLinks, "tiktok"),
         youtubeUrl: getJsonString(socialLinks, "youtube"),
         linkedinUrl: getJsonString(socialLinks, "linkedin"),
@@ -867,10 +885,13 @@ export function ProfessionalProfileEditor() {
     const errors: FieldErrors = {};
     const activeServices = services.filter((service) => service.isActive && service.name.trim());
     const urlFields = [
-      ["website", form.websiteUrl], ["instagram", form.instagramUrl], ["tiktok", form.tiktokUrl],
+      ["website", form.websiteUrl], ["instagram", form.instagramUrl], ["facebook", form.facebookUrl], ["tiktok", form.tiktokUrl],
       ["youtube", form.youtubeUrl], ["linkedin", form.linkedinUrl],
     ];
     urlFields.forEach(([key, value]) => { if (!isValidOptionalUrl(value)) errors[key] = "Enter a complete http:// or https:// URL."; });
+    if (form.websiteLinkText.trim().length > 80) {
+      errors.websiteLinkText = "Keep website link text to 80 characters or fewer.";
+    }
     if (credentials.some((credential) => !isValidOptionalUrl(credential.supportingReferenceUrl))) {
       errors.credentials = "Enter a complete http:// or https:// credential reference URL.";
     }
@@ -932,7 +953,9 @@ export function ProfessionalProfileEditor() {
       availability: "work",
       pricing: "pricing",
       website: "links",
+      websiteLinkText: "links",
       instagram: "links",
+      facebook: "links",
       tiktok: "links",
       youtube: "links",
       linkedin: "links",
@@ -1056,7 +1079,9 @@ export function ProfessionalProfileEditor() {
         contact_for_pricing: form.contactForPricing,
         website_url: form.websiteUrl.trim() || null,
         social_links: {
+          website_label: form.websiteLinkText.trim() || null,
           instagram: form.instagramUrl.trim() || null,
+          facebook: form.facebookUrl.trim() || null,
           tiktok: form.tiktokUrl.trim() || null,
           youtube: form.youtubeUrl.trim() || null,
           linkedin: form.linkedinUrl.trim() || null,
@@ -1304,7 +1329,7 @@ export function ProfessionalProfileEditor() {
   const sectionIsComplete = (section: ProfessionalSectionId) => (
     completeSectionIds.has(section) && !incompleteSectionIds.has(section)
   );
-  const listedLinkCount = [form.websiteUrl, form.instagramUrl, form.tiktokUrl, form.youtubeUrl, form.linkedinUrl]
+  const listedLinkCount = [form.websiteUrl, form.instagramUrl, form.facebookUrl, form.tiktokUrl, form.youtubeUrl, form.linkedinUrl]
     .filter((value) => value.trim()).length;
 
   return (
@@ -1320,6 +1345,17 @@ export function ProfessionalProfileEditor() {
           {isPubliclyListed && profileSlug ? <Link className="hero-text-link" href={localizePathname(buildProfessionalPath(profileSlug), locale)}>{t("View live profile")}</Link> : null}
         </div>
         <div className="form-note">{t(statusMessage)}</div>
+        {publicProfileId ? (
+          <div className="professional-profile-view-stat" aria-label={t("Profile views")}>
+            <div>
+              <span className="stat-label">{t("Profile views")}</span>
+              <strong>{new Intl.NumberFormat(locale).format(profileViewCount)}</strong>
+            </div>
+            <p>{t(isPubliclyListed
+              ? "Public profile visits, counted once per browser session."
+              : "Views will begin counting once your profile is live.")}</p>
+          </div>
+        ) : null}
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="about-you-heading">
@@ -1518,7 +1554,53 @@ export function ProfessionalProfileEditor() {
           onToggle={() => toggleSection("links")}
           translate={t}
         />
-        {expandedSections.links ? <div className="professional-section-body"><p className="section-copy section-copy-compact">{t("Optional. Use complete URLs beginning with https://.")}</p><div className="tool-form-grid marketplace-editor-grid">{[["website", "Website", "websiteUrl"], ["instagram", "Instagram", "instagramUrl"], ["tiktok", "TikTok", "tiktokUrl"], ["youtube", "YouTube", "youtubeUrl"], ["linkedin", "LinkedIn", "linkedinUrl"]].map(([key, label, field]) => <label id={`profile-field-${key}`} key={key} className="field"><span className="field-label">{label}</span><input type="url" value={form[field as keyof ProfessionalFormState] as string} onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))} placeholder={`https://${key}.com/...`} /><FieldError name={key} errors={fieldErrors} translate={t} /></label>)}</div></div> : null}
+        {expandedSections.links ? (
+          <div className="professional-section-body">
+            <p className="section-copy section-copy-compact">{t("Optional. Use complete URLs beginning with https://.")}</p>
+            <div className="tool-form-grid marketplace-editor-grid">
+              <label id="profile-field-website" className="field">
+                <span className="field-label">{t("Website URL")}</span>
+                <input
+                  type="url"
+                  value={form.websiteUrl}
+                  onChange={(event) => setForm((current) => ({ ...current, websiteUrl: event.target.value }))}
+                  placeholder="https://example.com"
+                />
+                <FieldError name="website" errors={fieldErrors} translate={t} />
+              </label>
+              <label id="profile-field-websiteLinkText" className="field">
+                <span className="field-label">{t("Website link text (optional)")}</span>
+                <span className="field-help">{t("Leave blank to show the website URL.")}</span>
+                <input
+                  type="text"
+                  maxLength={80}
+                  value={form.websiteLinkText}
+                  onChange={(event) => setForm((current) => ({ ...current, websiteLinkText: event.target.value }))}
+                  placeholder={t("Visit my website")}
+                />
+                <FieldError name="websiteLinkText" errors={fieldErrors} translate={t} />
+              </label>
+              {[
+                ["instagram", "Instagram", "instagramUrl"],
+                ["facebook", "Facebook", "facebookUrl"],
+                ["tiktok", "TikTok", "tiktokUrl"],
+                ["youtube", "YouTube", "youtubeUrl"],
+                ["linkedin", "LinkedIn", "linkedinUrl"],
+              ].map(([key, label, field]) => (
+                <label id={`profile-field-${key}`} key={key} className="field">
+                  <span className="field-label">{label}</span>
+                  <input
+                    type="url"
+                    value={form[field as keyof ProfessionalFormState] as string}
+                    onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))}
+                    placeholder={`https://${key}.com/...`}
+                  />
+                  <FieldError name={key} errors={fieldErrors} translate={t} />
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </article>
 
       <article className="panel profile-form-section" aria-labelledby="submit-heading">

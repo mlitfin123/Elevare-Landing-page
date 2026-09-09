@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   CLIENT_CATEGORY_DESCRIPTIONS,
@@ -7,6 +8,8 @@ import {
   getBudgetCents,
   normalizeClientBudgetRange,
   normalizeClientGoalTags,
+  normalizeClientLanguageRequirement,
+  normalizeClientLanguages,
   normalizeClientTimeline,
   shouldShowClientRadius,
   toClientServiceMode,
@@ -75,4 +78,30 @@ test("every marketplace category has concise client-facing copy", () => {
     assert.ok(CLIENT_CATEGORY_DESCRIPTIONS[category.stableId]);
     assert.ok(CLIENT_CATEGORY_DESCRIPTIONS[category.stableId].length < 70);
   }
+});
+
+test("client language preferences support multiple distinct languages", () => {
+  assert.deepEqual(
+    normalizeClientLanguages([" English ", "Spanish", "english", "", null, "Portuguese"]),
+    ["English", "Spanish", "Portuguese"],
+  );
+});
+
+test("a language requirement cannot remain enabled without a preferred language", () => {
+  assert.equal(normalizeClientLanguageRequirement(true, ["Spanish"]), true);
+  assert.equal(normalizeClientLanguageRequirement(true, []), false);
+  assert.equal(normalizeClientLanguageRequirement(false, ["Spanish"]), false);
+});
+
+test("client language preferences use additive private-profile database fields", () => {
+  const migration = readFileSync(
+    new URL("../../supabase/migrations/20260909130000_client_language_preferences.sql", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(migration, /alter table public\.client_profiles/);
+  assert.match(migration, /preferred_languages text\[\]/);
+  assert.match(migration, /language_required boolean/);
+  assert.match(migration, /Not inferred from country or site locale/);
+  assert.doesNotMatch(migration, /create table public\.client_profiles/);
 });

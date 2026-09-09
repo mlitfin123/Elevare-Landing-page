@@ -6,6 +6,7 @@ import {
   deriveLegacySpecialties,
   formatCredentialVerificationStatus,
   formatServicePricingSummary,
+  formatWebsiteLinkLabel,
   hasServiceLevelPricing,
   isValidOptionalUrl,
   normalizeStateValue,
@@ -148,4 +149,9 @@ test("optional public links require web URLs when provided", () => {
   assert.equal(isValidOptionalUrl(""), true);
   assert.equal(isValidOptionalUrl("https://example.com/profile"), true);
   assert.equal(isValidOptionalUrl("instagram.com/example"), false);
+});
+
+test("website links use optional professional text or fall back to the URL", () => {
+  assert.equal(formatWebsiteLinkLabel("https://example.com", "Visit my coaching site"), "Visit my coaching site");
+  assert.equal(formatWebsiteLinkLabel("https://example.com", "  "), "https://example.com");
 });

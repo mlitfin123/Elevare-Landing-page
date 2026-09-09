@@ -100,6 +100,8 @@ export type ClientProfileRecord = {
   preferredRadiusMeters: number | null;
   startTimeline: string | null;
   supportFrequency: string | null;
+  preferredLanguages: string[];
+  languageRequired: boolean;
   preferenceNotes: string | null;
   createdAt: string | null;
   updatedAt: string | null;
