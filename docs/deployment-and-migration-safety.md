@@ -37,3 +37,5 @@ npx supabase migration repair --status applied <migration-version>
 Then return to the repository root and run the helper with `-VerifyOnly`. If any operation is missing or differs, do not mark the historical migration applied wholesale. Create a forward-only migration containing only the required delta, verify it against a production schema dump, and apply it through the guarded helper.
 
 The detailed current classification is in `docs/migration-ledger-reconciliation.md`.
+
+The September 11 notification release has a dedicated forward-only helper, `supabase/scripts/apply-notification-migration.ps1`, for migration `20260911120000`. It verifies the committed target, rehearses that exact file in a rolled-back transaction, and applies/records only that version with `-Apply`. This permits the reviewed additive notification delta without replaying or claiming reconciliation of historical migrations. See `website/docs/marketplace-notification-delivery.md` for its rollout and schema-backup requirements.

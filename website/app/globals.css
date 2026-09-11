@@ -1,3 +1,10 @@
+.notification-preferences { margin: 24px 0; padding: 20px; scroll-margin-top: 100px; }
+.notification-preferences summary { cursor: pointer; font-weight: 600; }
+.notification-preferences-fields { display: grid; gap: 16px; border: 0; padding: 0; margin: 16px 0 0; min-width: 0; }
+.notification-preferences-fields label { display: flex; align-items: flex-start; gap: 10px; overflow-wrap: anywhere; }
+.notification-preferences-fields input { width: auto; flex: 0 0 auto; margin-top: 4px; }
+.notification-preferences-fields button { justify-self: start; }
+
 :root {
   --bg: #07070f;
   --surface: #0f0f1a;

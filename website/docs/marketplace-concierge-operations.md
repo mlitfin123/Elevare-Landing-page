@@ -4,7 +4,7 @@
 
 Elevare's concierge workflow is a human-operated discovery and introduction service. It does not use AI to choose professionals, create bookings, collect marketplace payments, provide internal chat, or verify professional qualifications. The separate `Admin_Elevare` project remains the only internal operations interface.
 
-Direct consultation requests to a specific professional continue to use the existing `trainer_profile_inquiries` workflow. Concierge requests use the new case, recommendation, introduction, follow-up, audit, and disabled-notification records documented below.
+Direct consultation requests to a specific professional continue to use the existing `trainer_profile_inquiries` workflow. Concierge requests use the case, recommendation, introduction, follow-up, audit, and notification records documented below.
 
 ## State ownership
 
@@ -76,25 +76,25 @@ The client receives only reviewed shortlist data from public professional profil
 
 After an authorized introduction, the guarded client/professional RPCs may return only the contact fields recorded in `marketplace_concierge_introductions.shared_fields`. Contact information must never be placed in public URLs, third-party analytics, or audit payloads.
 
-## Notifications: prepared but disabled
+## Notifications
 
-The migration creates idempotent records in `marketplace_concierge_notification_outbox`, but every row defaults to `disabled`. No sender or scheduled job is installed by this work, and no email is sent automatically.
+The original Concierge migration created disabled records. The separate `20260911120000_marketplace_notification_delivery.sql` migration and `marketplace-notification-delivery` Edge Function implement delivery for new events. Historical disabled rows remain disabled. See [notification delivery](marketplace-notification-delivery.md) for rollout, preferences, admin alerts, retries, and operations.
 
 Deterministic `en`, `es-419`, and `pt-BR` templates live in `supabase/functions/_shared/concierge-notification-templates.ts`. They contain no request free text, health details, names, phone numbers, professional competitor identities, or contact details. They link to authenticated account routes.
 
-Before enabling delivery:
+The delivery implementation enforces these requirements:
 
-1. Add a server-only worker or Supabase Edge Function that atomically claims eligible outbox rows.
-2. Keep `RESEND_API_KEY`, the transactional From address, and Reply-To address in server-side secrets only.
+1. Atomically claim eligible outbox rows in a server-only worker.
+2. Keep Resend configuration in Supabase secrets.
 3. Verify the recipient owns the referenced case or invitation at send time.
-4. Respect the recipient's transactional notification preference and applicable unsubscribe requirements.
-5. Send with the outbox `idempotency_key` as the provider idempotency key.
+4. Honor account notification preferences; reminders require explicit opt-in.
+5. Send with a stable provider idempotency key derived from the outbox row ID.
 6. Record bounded attempts, retry timing, provider-safe status, and terminal failure without storing email bodies.
-7. Never enable rows created for deleted users or cases whose current state makes the message obsolete.
+7. Suppress deleted users and obsolete messages.
 
 ## Scheduler requirements
 
-No reliable scheduler exists in the audited website or admin project, so automation remains disabled. A future service-role scheduler may:
+The notification delivery guide includes a service-role-authenticated Supabase cron job. It claims and delivers messages, prepares opted-in reminders, and cancels obsolete work. Human operators still manage overdue invitations and follow-ups. Additional lifecycle automation may:
 
 - call `marketplace_concierge_mark_overdue_invitations()` at a controlled interval;
 - query pending follow-ups by `due_at` and expose them as operator work;
@@ -141,7 +141,7 @@ The primary operational measure is successful client-professional connections, s
 
 No new browser-exposed environment variable is required. The website continues using its existing public Supabase URL and anonymous key; the separate admin backend continues using its private Supabase configuration and authenticated operator session.
 
-Future notification delivery would require server-only Resend configuration and a scheduler credential. Those variables must not be added until the disabled sender is separately reviewed and implemented.
+Notification delivery uses server-only Resend configuration, a Vault scheduler credential, and an explicit enable switch. See the separate delivery guide for the exact deployment order.
 
 Deployment order:
 
@@ -152,6 +152,6 @@ Deployment order:
 5. Deploy the website account routes and request form.
 6. Deploy the separate admin project concierge tab.
 7. Run manual role-based smoke tests for client, invited professional, unrelated professional, authorized operator, and anonymous access.
-8. Keep notification delivery and scheduling disabled until their own security and deliverability review is complete.
+8. Follow the separate notification delivery rollout after the case workflow is installed.
 
 This document does not authorize a production migration, deployment, email send, or user contact.

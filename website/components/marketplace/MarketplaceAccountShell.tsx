@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { SignOutButton } from "@/components/marketplace/SignOutButton";
+import { NotificationPreferences } from "@/components/marketplace/NotificationPreferences";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { getMarketplaceAppUserByAuthId, type MarketplaceAppUserRecord } from "@/lib/marketplace-account";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -233,6 +234,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
       </nav>
 
       {children}
+      {visibleAppUser ? <NotificationPreferences key={visibleAppUser.id} userId={visibleAppUser.id} locale={locale} /> : null}
     </MarketplaceAccountContext.Provider>
   );
 }

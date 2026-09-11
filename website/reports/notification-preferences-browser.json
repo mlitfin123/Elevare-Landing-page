@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "browser": "Chromium",
+  "realEmailsSent": 0,
+  "results": [
+    "en: saved, persisted after reload, reminder dependency, no horizontal overflow",
+    "/es: saved, persisted after reload, reminder dependency, no horizontal overflow",
+    "/pt-br: saved, persisted after reload, reminder dependency, no horizontal overflow"
+  ]
+}

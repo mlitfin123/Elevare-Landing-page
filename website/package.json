@@ -27,7 +27,8 @@
     "legal:archive": "node --experimental-strip-types ./scripts/generate-legal-archive.ts --initialize",
     "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts",
     "legal:routes": "node --experimental-strip-types ./scripts/verify-legal-routes.ts",
-    "test:runtime": "node --conditions=react-server --experimental-strip-types tests/integration/professional-runtime.mts"
+    "test:runtime": "node --conditions=react-server --experimental-strip-types tests/integration/professional-runtime.mts",
+    "test:notifications": "node --experimental-strip-types tests/integration/marketplace-notifications.mts"
   },
   "keywords": [
     "nextjs",

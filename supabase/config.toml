@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.professional-publication-delivery]
 verify_jwt = true
+
+[functions.marketplace-notification-delivery]
+verify_jwt = true

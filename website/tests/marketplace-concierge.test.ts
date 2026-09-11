@@ -142,7 +142,7 @@ test("follow-ups are idempotent due work and irrelevant reminders are cancelled"
   assert.match(migration, /marketplace_concierge_cancel_irrelevant_follow_ups/i);
   assert.match(migration, /set status = 'cancelled'/i);
   assert.match(migration, /on conflict \(dedupe_key\) do nothing/i);
-  assert.match(operations, /No sender or scheduled job is installed/i);
+  assert.match(operations, /Historical disabled rows remain disabled/i);
 });
 
 test("no-inventory and outcomes remain honest and self-reported", () => {

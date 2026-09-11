@@ -1,0 +1,20 @@
+{
+  "result": "PASS",
+  "database": "disposable Supabase contract fixture",
+  "realEmailsSent": 0,
+  "results": [
+    "alternate service JWTs authenticate through PostgREST while anonymous, user and forged tokens fail",
+    "historical notifications remain disabled and public callers cannot drain or inspect the queue",
+    "all three admin events queue once and contain no request narrative",
+    "preferences are owner-scoped and stop matching emails before sending",
+    "concurrent claims lease each notification to only one worker and reject stale acknowledgements",
+    "send-time validation cancels an event when preferences change after claiming",
+    "retry backoff and provider idempotency survive a transient failure",
+    "ambiguous deliveries older than the provider key window are never automatically resent",
+    "case transitions enqueue client selection, rematch and closure messages",
+    "professional invitations require the actual owner and a still-eligible unexpired invitation",
+    "inactive recipients and closed requests are suppressed",
+    "optional reminders require opt-in, respect activation time and enqueue only once",
+    "follow-up messages are deduplicated and stop when completed or the case closes"
+  ]
+}
