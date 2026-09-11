@@ -8,15 +8,27 @@ import {
 import {
   buildDirectorySchema,
   findTopCategories,
+  getMarketplaceRotationSeed,
+  toProfessionalDirectoryRecords,
 } from "@/lib/marketplace-helpers";
+import { hasMarketplaceFilterSearchParams } from "@/lib/marketplace-seo";
 import { buildMetadata, siteConfig } from "@/lib/site";
 
-export const metadata = buildMetadata({
-  title: "Find Trainers, Coaches & Wellness Experts | Elevare",
-  description:
-    "Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare.",
-  pathname: "/professionals",
-});
+type ProfessionalsDirectoryPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function generateMetadata({ searchParams }: ProfessionalsDirectoryPageProps) {
+  const filtered = hasMarketplaceFilterSearchParams(await searchParams);
+
+  return buildMetadata({
+    title: "Find Trainers, Coaches & Wellness Experts | Elevare",
+    description:
+      "Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare.",
+    pathname: "/professionals",
+    robots: filtered ? { index: false, follow: true } : undefined,
+  });
+}
 
 export default async function ProfessionalsDirectoryPage() {
   const [categories, professionals] = await Promise.all([
@@ -25,6 +37,7 @@ export default async function ProfessionalsDirectoryPage() {
   ]);
   const topCategories = findTopCategories(categories, professionals, 8);
   const structuredData = buildDirectorySchema(categories, professionals, siteConfig.url);
+  const directoryProfessionals = toProfessionalDirectoryRecords(professionals);
 
   return (
     <div className="container">
@@ -33,9 +46,10 @@ export default async function ProfessionalsDirectoryPage() {
       <Suspense fallback={null}>
         <MarketplaceDirectory
           categories={categories}
-          professionals={professionals}
+          professionals={directoryProfessionals}
           sourcePage="professionals_index"
           topCategories={topCategories}
+          rotationSeed={getMarketplaceRotationSeed("professionals-index")}
           showMobileAppSection
         />
       </Suspense>

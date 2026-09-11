@@ -22,6 +22,7 @@ import {
   localizeServiceMode,
   marketplaceText,
 } from "@/lib/i18n/marketplace-content";
+import { PROFESSIONAL_GOAL_OPTIONS } from "@/lib/professional-profile";
 
 type ProfessionalCardProps = {
   professional: ProfessionalProfileRecord;
@@ -54,6 +55,14 @@ export function ProfessionalCard({
   const publicBadges = getProfessionalPublicBadges(professional);
   const rawLocation = formatLocationLabel(professional);
   const location = localizeMarketplaceLocation(rawLocation, locale);
+  const acceptanceLabel = marketplaceText(locale, professional.clientAcceptanceStatus === "waitlist"
+    ? "Waitlist available"
+    : professional.clientAcceptanceStatus === "not_accepting"
+      ? "Not accepting new clients"
+      : "Accepting new clients");
+  const goalLabels = professional.goalTags.map((goal) => (
+    PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
+  ));
 
   return (
     <article className="panel professional-card">
@@ -63,8 +72,8 @@ export function ProfessionalCard({
         eventName={eventName}
         eventParams={{
           source_page: sourcePage,
-          professional_slug: professional.profileSlug,
-          professional_name: professional.displayName,
+          accepting_status: professional.clientAcceptanceStatus,
+          has_price: Boolean(priceSummary),
           ...eventParams,
         }}
       >
@@ -104,12 +113,14 @@ export function ProfessionalCard({
           <p className="professional-title-copy">
             {professional.professionalTitle || localizedCategories[0]?.label || marketplaceText(locale, "Profile")}
           </p>
+          {professional.publicHeadline ? <p className="professional-card-headline">{professional.publicHeadline}</p> : null}
 
           <div className="professional-stat-list">
             <span>{location}</span>
             {serviceModes ? <span>{serviceModes}</span> : null}
             {yearsExperience ? <span>{yearsExperience}</span> : null}
             {priceSummary ? <span>{priceSummary}</span> : null}
+            <span>{acceptanceLabel}</span>
           </div>
 
           {professional.specialties.length > 0 ? (
@@ -122,8 +133,14 @@ export function ProfessionalCard({
             </div>
           ) : null}
 
+          {goalLabels.length > 0 ? (
+            <div className="tag-row" aria-label={marketplaceText(locale, "Client goals")}>
+              {goalLabels.slice(0, 3).map((goal) => <span key={goal} className="tag-chip">{marketplaceText(locale, goal)}</span>)}
+            </div>
+          ) : null}
+
           <p className="professional-bio-snippet">
-            {professional.bio || marketplaceText(locale, "View this profile to review specialties, services, pricing, and consultation details.")}
+            {professional.bestFitSummary || professional.publicHeadline || marketplaceText(locale, "View this profile to review specialties, services, pricing, and consultation details.")}
           </p>
 
           <span className="proof-action">{marketplaceText(locale, actionLabel)}</span>

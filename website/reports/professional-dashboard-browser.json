@@ -1,0 +1,23 @@
+{
+  "result": "PASS",
+  "browser": "Chromium",
+  "viewports": [
+    "1440x1000",
+    "390x844"
+  ],
+  "checks": [
+    "server-confirmed availability without document reload",
+    "no full dashboard refetch",
+    "conflict reload",
+    "save success with propagation failure",
+    "retry without duplicate write",
+    "aria-live status",
+    "keyboard focus",
+    "no mobile horizontal overflow",
+    "full editor server-confirmed trimmed draft",
+    "unsaved warning set and cleared after commit",
+    "draft absent from public JSON",
+    "full editor HTTP 409 and reload"
+  ],
+  "auxiliaryFixture": "analytics summaries only; all profile mutations use the real local API and PostgREST"
+}

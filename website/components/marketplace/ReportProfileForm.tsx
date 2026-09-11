@@ -1,12 +1,13 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ProfessionalProfileRecord } from "@/lib/marketplace-types";
-import { localeFromPathname } from "@/lib/i18n/config";
+import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
 import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type ReportProfileFormProps = {
@@ -14,13 +15,17 @@ type ReportProfileFormProps = {
 };
 
 const reportReasons = [
-  "False or misleading credentials",
-  "Impersonation",
-  "Incorrect profile information",
-  "Inappropriate content",
-  "Suspicious or fraudulent behavior",
-  "Other",
-];
+  { value: "misleading_profile", label: "Misleading profile information" },
+  { value: "false_or_expired_credential", label: "False or expired credential" },
+  { value: "impersonation", label: "Impersonation" },
+  { value: "unsafe_conduct", label: "Unsafe conduct" },
+  { value: "harassment_or_discrimination", label: "Harassment or discrimination" },
+  { value: "outside_scope", label: "Services outside professional scope" },
+  { value: "fraud_or_payment_solicitation", label: "Fraud or payment solicitation concern" },
+  { value: "other_policy_violation", label: "Other marketplace-policy violation" },
+] as const;
+
+type ReportReason = (typeof reportReasons)[number]["value"];
 
 export function ReportProfileForm({ professional }: ReportProfileFormProps) {
   const pathname = usePathname();
@@ -29,7 +34,7 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
   const t = (value: string) => marketplaceText(locale, value);
   const { user, isConfigured } = useSupabaseSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [reason, setReason] = useState(reportReasons[0]);
+  const [reason, setReason] = useState<ReportReason>(reportReasons[0].value);
   const [details, setDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -49,10 +54,7 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
 
     setIsOpen(true);
     setFeedback(null);
-    trackEvent("professional_report_started", {
-      professional_slug: professional.profileSlug,
-      professional_name: professional.displayName,
-    });
+    trackEvent("report_flow_opened", { source_page: "professional_profile" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -74,6 +76,13 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
     setIsSubmitting(true);
     setFeedback(null);
 
+    if (details.trim().length < 20) {
+      setFeedback(t("Add at least 20 characters so the review team can understand the concern."));
+      setFeedbackType("error");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.rpc("submit_professional_profile_report", {
         target_profile_id: professional.id,
@@ -86,13 +95,12 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
         throw error;
       }
 
-      setFeedback(t("Report submitted. The Elevare review team can review it separately."));
+      setFeedback(t("Report received. Elevare will review it under the marketplace safety process."));
       setFeedbackType("success");
       setDetails("");
-      trackEvent("professional_report_submitted", {
-        professional_slug: professional.profileSlug,
-        professional_name: professional.displayName,
-        report_reason: reason,
+      trackEvent("report_submitted", {
+        source_page: "professional_profile",
+        reason_category: reason,
       });
     } catch {
       setFeedback(t("We could not submit your report right now."));
@@ -113,10 +121,15 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
           <div className="field-grid">
             <label className="field">
               <span className="field-label">{t("Reason")}</span>
-              <select value={reason} onChange={(event) => setReason(event.target.value)}>
+              <select
+                value={reason}
+                onChange={(event) => setReason(
+                  reportReasons.find((option) => option.value === event.target.value)?.value ?? reportReasons[0].value,
+                )}
+              >
                 {reportReasons.map((option) => (
-                  <option key={option} value={option}>
-                    {t(option)}
+                  <option key={option.value} value={option.value}>
+                    {t(option.label)}
                   </option>
                 ))}
               </select>
@@ -126,6 +139,9 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
               <span className="field-label">{t("Details")}</span>
               <textarea
                 rows={4}
+                required
+                minLength={20}
+                maxLength={2000}
                 value={details}
                 onChange={(event) => setDetails(event.target.value)}
                 placeholder={t("Share the specific issue you want the review team to check.")}
@@ -134,6 +150,10 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
             <div className="form-note field-full">
               {t("Include only information relevant to the report. Do not submit medical records, passwords, payment card details, or other highly sensitive information.")}
             </div>
+            <div className="form-note field-full">
+              {t("Elevare is not an emergency or crisis service. If someone is in immediate danger, contact local emergency services.")} {" "}
+              <Link href={localizePathname("/trust-safety/", locale)}>{t("Review Trust and Safety guidance")}</Link>
+            </div>
           </div>
 
           <div className="form-actions">
@@ -141,7 +161,7 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
               {isSubmitting ? t("Submitting...") : t("Submit report")}
             </button>
             {feedback ? (
-              <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>
+              <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role={feedbackType === "error" ? "alert" : "status"} aria-live="polite">
                 {feedback}
               </div>
             ) : null}
@@ -150,7 +170,7 @@ export function ReportProfileForm({ professional }: ReportProfileFormProps) {
       ) : null}
 
       {!isOpen && feedback ? (
-        <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>
+        <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role={feedbackType === "error" ? "alert" : "status"} aria-live="polite">
           {feedback}
         </div>
       ) : null}

@@ -1,16 +1,18 @@
 import Image from "next/image";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { InquiryForm } from "@/components/marketplace/InquiryForm";
 import { MarketplaceCategoryResources } from "@/components/marketplace/MarketplaceCategoryResources";
 import { MarketplaceDirectory } from "@/components/marketplace/MarketplaceDirectory";
 import { ProfessionalCard } from "@/components/marketplace/ProfessionalCard";
+import { PublicProfessionalTrustSummary } from "@/components/marketplace/PublicProfessionalTrustSummary";
 import { ProfessionalProfileViewTracker } from "@/components/marketplace/ProfessionalProfileViewTracker";
 import { ProfessionalSaveButton } from "@/components/marketplace/ProfessionalSaveButton";
 import { ReportProfileForm } from "@/components/marketplace/ReportProfileForm";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import {
+  getMarketplaceCanonicalSlug,
   getMarketplaceCategories,
   getMarketplaceCategoryBySlug,
   getMarketplaceProfessionalBySlug,
@@ -20,18 +22,17 @@ import {
   buildCategoryFaqs,
   buildCategoryIntro,
   buildProfessionalSchema,
-  formatApprovalStatusLabel,
   formatCategoryList,
-  formatIdentityVerificationLabel,
   formatPublicLocationLabel,
   formatPriceSummary,
   formatServicePriceSummary,
   formatServiceModeLabel,
   formatYearsExperience,
   getCredentialPublicStatus,
+  getMarketplaceRotationSeed,
   getProfessionalInitials,
-  getProfessionalPublicBadges,
   getRelatedProfessionals,
+  toProfessionalDirectoryRecords,
   getProfessionalsByCategory,
 } from "@/lib/marketplace-helpers";
 import {
@@ -39,18 +40,18 @@ import {
   buildMarketplaceProfessionalMetaDescription,
   buildMarketplaceProfessionalSeoTitle,
   getMarketplaceCategorySeoLabel,
+  hasMarketplaceFilterSearchParams,
   isMarketplaceCategoryIndexable,
 } from "@/lib/marketplace-seo";
 import { absoluteUrl, buildMetadata, siteConfig } from "@/lib/site";
 import type { Locale } from "@/lib/i18n/config";
-import { isLocalizedIndexingEnabled, localizePathname } from "@/lib/i18n/config";
+import { formatDate, isLocalizedIndexingEnabled, localizePathname } from "@/lib/i18n/config";
 import {
   buildLocalizedCategoryFaqs,
   formatLocalizedProfessionalPrice,
   formatLocalizedServicePrice,
   formatMarketplaceYears,
   getLocalizedProfessionalMetadataCopy,
-  localizeApprovalStatus,
   localizeGeneratedCategoryService,
   localizeMarketplaceAvailability,
   localizeMarketplaceCategory,
@@ -60,29 +61,31 @@ import {
   localizeServiceMode,
   marketplaceText,
 } from "@/lib/i18n/marketplace-content";
-import { formatWebsiteLinkLabel } from "@/lib/professional-profile";
+import {
+  CONSULTATION_TYPE_OPTIONS,
+  formatWebsiteLinkLabel,
+  PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS,
+  PROFESSIONAL_GOAL_OPTIONS,
+} from "@/lib/professional-profile";
 
 type ProfessionalRoutePageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  const [categories, professionals] = await Promise.all([
-    getMarketplaceCategories(),
-    getMarketplaceProfessionals(),
-  ]);
-
-  return [
-    ...categories.map((category) => ({ slug: category.slug })),
-    ...professionals.map((professional) => ({ slug: professional.profileSlug })),
-  ];
+  return (await getMarketplaceCategories()).map((category) => ({ slug: category.slug }));
 }
 
-export async function buildProfessionalRouteMetadata(slug: string, locale: Locale = "en") {
+export async function buildProfessionalRouteMetadata(
+  slug: string,
+  locale: Locale = "en",
+  filteredSearch = false,
+) {
   const [category, professional, professionals] = await Promise.all([
     getMarketplaceCategoryBySlug(slug),
     getMarketplaceProfessionalBySlug(slug),
@@ -119,7 +122,7 @@ export async function buildProfessionalRouteMetadata(slug: string, locale: Local
       pathname: localizeProfessionalPath(`/professionals/${category.slug}`, locale),
       locale,
       localizedAlternates: locale !== "en",
-      robots: !isIndexable || (locale !== "en" && !isLocalizedIndexingEnabled()) ? { index: false, follow: true } : undefined,
+      robots: !isIndexable || filteredSearch || (locale !== "en" && !isLocalizedIndexingEnabled()) ? { index: false, follow: true } : undefined,
     });
   }
 
@@ -133,9 +136,9 @@ export async function buildProfessionalRouteMetadata(slug: string, locale: Local
   });
 }
 
-export async function generateMetadata({ params }: ProfessionalRoutePageProps) {
+export async function generateMetadata({ params, searchParams }: ProfessionalRoutePageProps) {
   const { slug } = await params;
-  return buildProfessionalRouteMetadata(slug, "en");
+  return buildProfessionalRouteMetadata(slug, "en", hasMarketplaceFilterSearchParams(await searchParams));
 }
 
 async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; locale?: Locale }) {
@@ -153,7 +156,6 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   const priceSummary = locale === "en"
     ? formatPriceSummary(professional)
     : formatLocalizedProfessionalPrice(professional, locale);
-  const publicBadges = getProfessionalPublicBadges(professional);
   const t = (value: string) => marketplaceText(locale, value);
   const clientStatusLabel = t(professional.clientAcceptanceStatus === "waitlist"
     ? "Accepting waitlist requests"
@@ -192,6 +194,24 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
     locale,
   );
   const profileLocation = localizeMarketplaceLocation(formatPublicLocationLabel(professional), locale);
+  const serviceModeSummary = professional.serviceModes.length > 0
+    ? professional.serviceModes
+      .map((entry) => locale === "en" ? formatServiceModeLabel(entry) : localizeServiceMode(entry, locale))
+      .join(", ")
+    : t("Flexible");
+  const goalLabels = professional.goalTags.map((goal) => (
+    PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
+  ));
+  const experienceLevelLabels = professional.experienceLevelsServed.map((level) => (
+    PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS.find((option) => option.value === level)?.label ?? level.replaceAll("_", " ")
+  ));
+  const availabilityConfirmedLabel = (() => {
+    if (!professional.availabilityConfirmedAt) return null;
+    const date = new Date(professional.availabilityConfirmedAt);
+    if (Number.isNaN(date.getTime())) return null;
+    const dateLocale = locale === "pt-BR" ? "pt-BR" : locale === "es-419" ? "es-419" : "en-US";
+    return new Intl.DateTimeFormat(dateLocale, { dateStyle: "medium" }).format(date);
+  })();
   const profilePhotoAlt = `${professional.displayName}, ${professional.professionalTitle || localizedPrimaryCategory?.label || t("professional")}, ${profileLocation}`;
   const profilePath = localizeProfessionalPath(`/professionals/${professional.profileSlug}`, locale);
   const breadcrumbItems = [
@@ -275,140 +295,51 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
         </div>
 
         <div className="professional-hero-copy">
-          <div className="eyebrow">{t("Profile")}</div>
+          <div className="eyebrow">{localizedPrimaryCategory?.label ?? t("Profile")}</div>
           <h1>{professional.displayName}</h1>
           <p className="professional-title-copy professional-title-copy-large">
             {professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile")}
           </p>
-          <p>{professional.bio}</p>
+          <p>{professional.publicHeadline || professional.bestFitSummary || professional.bio}</p>
 
-          {publicBadges.length > 0 ? (
-            <div className="tag-row">
-              {publicBadges.map((badge) => (
-                <span key={badge} className="verification-pill">
-                  {t(badge)}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          <div className="professional-stat-list">
+            <span>{profileLocation}</span>
+            <span>{serviceModeSummary}</span>
+            <span>{clientStatusLabel}</span>
+          </div>
 
           <div className="hero-proof professional-summary-grid">
             <article className="proof-card">
-              <span className="proof-label">{t("Marketplace status")}</span>
-              <div className="proof-value">{locale === "en" ? formatApprovalStatusLabel(professional.approvalStatus) : localizeApprovalStatus(professional.approvalStatus, locale)}</div>
-              <p className="proof-copy">{t("Only profiles reviewed for marketplace eligibility and currently active are listed publicly.")}</p>
-            </article>
-            <article className="proof-card">
-              <span className="proof-label">{t("Identity")}</span>
-              <div className="proof-value">
-                {t(formatIdentityVerificationLabel(professional.identityVerificationStatus))}
-              </div>
-              <p className="proof-copy">{t("Identity review and credential review are tracked separately.")}</p>
-            </article>
-            <article className="proof-card">
-              <span className="proof-label">{t("Categories")}</span>
+              <span className="proof-label">{t("Category")}</span>
               <div className="proof-value">{formatCategoryList(localizedCategories) || t("Profile")}</div>
-              <p className="proof-copy">{t("Public categories this profile appears under.")}</p>
             </article>
             <article className="proof-card">
               <span className="proof-label">{t("Location")}</span>
               <div className="proof-value">{profileLocation}</div>
-              <p className="proof-copy">{t("Service area and availability context for this profile.")}</p>
             </article>
             <article className="proof-card">
-              <span className="proof-label">{t("Pricing")}</span>
+              <span className="proof-label">{t("Services")}</span>
+              <div className="proof-value">{serviceModeSummary}</div>
+            </article>
+            <article className="proof-card">
+              <span className="proof-label">{t("Pricing from")}</span>
               <div className="proof-value">{priceSummary ?? t("Contact for pricing")}</div>
-              <p className="proof-copy">{t("Starting price context when this profile has chosen to list it.")}</p>
             </article>
           </div>
 
           <div className="button-row">
-            <ProfessionalSaveButton
-              professionalId={professional.id}
-              professionalSlug={professional.profileSlug}
-              professionalName={professional.displayName}
-            />
+            <ProfessionalSaveButton professionalId={professional.id} />
           </div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="marketplace-detail-grid">
-          <article className="panel">
-            <span className="stat-label">{t("Profile details")}</span>
-            <h2 className="panel-title">{t("What to know before you reach out")}</h2>
-            <ul>
-              <li>
-                <strong>{t("Location")}:</strong> {profileLocation}
-              </li>
-              <li>
-                <strong>{t("Service modes")}:</strong>{" "}
-                {professional.serviceModes.length > 0
-                  ? professional.serviceModes.map((entry) => locale === "en" ? formatServiceModeLabel(entry) : localizeServiceMode(entry, locale)).join(", ")
-                  : t("Flexible")}
-              </li>
-              {yearsExperience ? (
-                <li>
-                  <strong>{t("Experience")}:</strong> {yearsExperience}
-                </li>
-              ) : null}
-              {availabilitySummary ? (
-                <li>
-                  <strong>{t("Availability")}:</strong> {availabilitySummary}
-                </li>
-              ) : null}
-              <li>
-                <strong>{t("New clients")}:</strong> {clientStatusLabel}
-              </li>
-            </ul>
-
-            {professional.specialties.length > 0 ? (
-              <>
-                <span className="stat-label">{t("Specialties")}</span>
-                <div className="tag-row">
-                  {professional.specialties.map((specialty) => (
-                    <span key={specialty} className="tag-chip">
-                      {localizeMarketplaceSpecialty(specialty, locale)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : null}
-
-            {languages.length > 0 ? (
-              <>
-                <span className="stat-label">{t("Languages")}</span>
-                <div className="tag-row">
-                  {languages.map((language) => (
-                    <span key={language} className="tag-chip">
-                      {t(language)}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </article>
-
-          <article className="panel">
-            <span className="stat-label">{t("Request consultation")}</span>
-            <h2 className="panel-title">{t("Start the conversation with context.")}</h2>
-            <p>
-              {t("Send a short request with your goal, preferred service mode, and any helpful background. The person you contact can review it inside their Elevare account.")}
-            </p>
-            <InquiryForm professional={professional} />
-            <ReportProfileForm professional={professional} />
-            <div className="form-note">
-              {t("Professionals are independent service providers and are not employees or agents of Elevare Fit LLC. Profile approval does not constitute an endorsement or guarantee of services. Confirm current credentials, licensing, insurance, and suitability before engaging a Professional.")}
-            </div>
-          </article>
-        </div>
-      </section>
+      <PublicProfessionalTrustSummary professional={professional} />
 
       {localizedServices.length > 0 ? (
         <section className="section">
           <div className="section-head">
-            <div className="eyebrow">{t("Services offered")}</div>
-            <h2 className="section-title">{t("A quick look at how this profile works.")}</h2>
+            <div className="eyebrow">{t("Services and pricing")}</div>
+            <h2 className="section-title">{t("Choose the support that fits your needs.")}</h2>
             <p className="section-copy">
               {t("Review the services, delivery options, and pricing details this professional currently offers.")}
             </p>
@@ -423,6 +354,9 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                 <h3>{service.name}</h3>
                 <p>{service.description || t("Review this service directly with the person listed here when you reach out.")}</p>
                 <ul>
+                  {service.intendedFor ? (
+                    <li><strong>{t("Best for")}:</strong> {service.intendedFor}</li>
+                  ) : null}
                   {service.durationMinutes ? (
                     <li>
                       <strong>{t("Duration")}:</strong> {service.durationMinutes} {t("minutes")}
@@ -436,12 +370,98 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                         : formatLocalizedServicePrice(service, locale)}
                     </li>
                   ) : null}
+                  {service.deliveryCadence ? (
+                    <li><strong>{t("Delivery cadence")}:</strong> {service.deliveryCadence}</li>
+                  ) : null}
+                  {service.minimumCommitment ? (
+                    <li><strong>{t("Minimum commitment")}:</strong> {service.minimumCommitment}</li>
+                  ) : null}
+                  <li>
+                    <strong>{t("Consultation")}:</strong>{" "}
+                    {t(CONSULTATION_TYPE_OPTIONS.find((option) => option.value === service.consultationType)?.label ?? "Ask for details")}
+                  </li>
                 </ul>
+                {service.includedItems.length > 0 ? (
+                  <>
+                    <span className="stat-label">{t("What is included")}</span>
+                    <ul>{service.includedItems.map((item) => <li key={item}>{item}</li>)}</ul>
+                  </>
+                ) : null}
+                {service.additionalCostsNote ? (
+                  <p className="form-note"><strong>{t("Additional costs or requirements")}:</strong> {service.additionalCostsNote}</p>
+                ) : null}
               </article>
             ))}
           </div>
         </section>
       ) : null}
+
+      <section className="section">
+        <div className="section-head">
+          <div className="eyebrow">{t("Client fit")}</div>
+          <h2 className="section-title">{t("Who this professional is best suited to help.")}</h2>
+          {professional.bestFitSummary ? <p className="section-copy">{professional.bestFitSummary}</p> : null}
+        </div>
+        <div className="grid-3">
+          {goalLabels.length > 0 ? (
+            <article className="panel">
+              <span className="stat-label">{t("Common client goals")}</span>
+              <div className="tag-row">
+                {goalLabels.map((goal) => <span key={goal} className="tag-chip">{t(goal)}</span>)}
+              </div>
+            </article>
+          ) : null}
+          {professional.specialties.length > 0 ? (
+            <article className="panel">
+              <span className="stat-label">{t("Specialties")}</span>
+              <div className="tag-row">
+                {professional.specialties.map((specialty) => (
+                  <span key={specialty} className="tag-chip">{localizeMarketplaceSpecialty(specialty, locale)}</span>
+                ))}
+              </div>
+            </article>
+          ) : null}
+          {experienceLevelLabels.length > 0 || languages.length > 0 ? (
+            <article className="panel">
+              {experienceLevelLabels.length > 0 ? (
+                <>
+                  <span className="stat-label">{t("Experience levels served")}</span>
+                  <div className="tag-row">
+                    {experienceLevelLabels.map((level) => <span key={level} className="tag-chip">{t(level)}</span>)}
+                  </div>
+                </>
+              ) : null}
+              {languages.length > 0 ? (
+                <>
+                  <span className="stat-label">{t("Languages")}</span>
+                  <div className="tag-row">
+                    {languages.map((language) => <span key={language} className="tag-chip">{t(language)}</span>)}
+                  </div>
+                </>
+              ) : null}
+            </article>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <div className="eyebrow">{t("Experience and approach")}</div>
+          <h2 className="section-title">{t("How this professional works.")}</h2>
+        </div>
+        <div className="marketplace-detail-grid">
+          <article className="panel">
+            {yearsExperience ? <p><strong>{t("Experience")}:</strong> {yearsExperience}</p> : null}
+            <p>{professional.bio}</p>
+          </article>
+          {professional.coachingStyle ? (
+            <article className="panel">
+              <span className="stat-label">{t("Coaching or training style")}</span>
+              <p>{professional.coachingStyle}</p>
+            </article>
+          ) : null}
+        </div>
+      </section>
 
       {profileLinks.length > 0 ? (
         <section className="section">
@@ -459,7 +479,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                   className={`button button-secondary${icon ? " professional-social-icon-link" : " professional-website-link"}`}
                   href={entry.href}
                   eventName="professional_external_link_click"
-                  eventParams={{ professional_slug: professional.profileSlug, link_type: entry.type }}
+                  eventParams={{ source_page: "professional_profile", link_type: entry.type }}
                   title={icon ? entry.label : undefined}
                 >
                   {icon ? (
@@ -506,12 +526,12 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                   <ul>
                     {credential.issueDate ? (
                       <li>
-                        <strong>{t("Issued")}:</strong> {credential.issueDate}
+                        <strong>{t("Issued")}:</strong> {formatDate(credential.issueDate, locale, { dateStyle: "medium" })}
                       </li>
                     ) : null}
                     {credential.expirationDate ? (
                       <li>
-                        <strong>{t("Expires")}:</strong> {credential.expirationDate}
+                        <strong>{t("Expires")}:</strong> {formatDate(credential.expirationDate, locale, { dateStyle: "medium" })}
                       </li>
                     ) : null}
                   </ul>
@@ -521,6 +541,48 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
           </div>
         </section>
       ) : null}
+
+      <section className="section">
+        <div className="section-head">
+          <div className="eyebrow">{t("Working together")}</div>
+          <h2 className="section-title">{t("What to expect before you reach out.")}</h2>
+        </div>
+        <div className="marketplace-detail-grid">
+          <article className="panel">
+            <span className="stat-label">{t("Availability")}</span>
+            <h3>{clientStatusLabel}</h3>
+            {availabilitySummary ? <p>{availabilitySummary}</p> : null}
+            {availabilityConfirmedLabel ? (
+              <p className="form-note">{t("Availability last confirmed")}: {availabilityConfirmedLabel}</p>
+            ) : null}
+            {professional.consultationExpectations ? (
+              <>
+                <span className="stat-label">{t("After you request a consultation")}</span>
+                <p>{professional.consultationExpectations}</p>
+              </>
+            ) : null}
+            {professional.serviceBoundaries ? (
+              <>
+                <span className="stat-label">{t("Service boundaries")}</span>
+                <p>{professional.serviceBoundaries}</p>
+              </>
+            ) : null}
+          </article>
+
+          <article className="panel">
+            <span className="stat-label">{t("Request consultation")}</span>
+            <h2 className="panel-title">{t("Start the conversation with context.")}</h2>
+            <p>
+              {t("Send a short request with your goal, preferred service mode, and any helpful background. The professional can review it inside their Elevare account.")}
+            </p>
+            <InquiryForm professional={professional} />
+            <ReportProfileForm professional={professional} />
+            <div className="form-note">
+              {t("Professionals are independent service providers and are not employees or agents of Elevare Fit LLC. Profile approval does not constitute an endorsement or guarantee of services. Confirm current credentials, licensing, insurance, and suitability before engaging a Professional.")}
+            </div>
+          </article>
+        </div>
+      </section>
 
       {relatedProfessionals.length > 0 ? (
         <section className="section">
@@ -534,7 +596,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
               <ProfessionalCard
                 key={entry.id}
                 professional={entry}
-                sourcePage={`professional_${professional.profileSlug}_related`}
+                sourcePage="professional_profile_related"
                 locale={locale}
               />
             ))}
@@ -615,6 +677,7 @@ async function ProfessionalCategoryPage({ slug, locale = "en" }: { slug: string;
   const localizedCategory = localizeMarketplaceCategory(category, locale);
   const faqs = buildLocalizedCategoryFaqs(category, locale) ?? buildCategoryFaqs(category);
   const categoryProfessionals = getProfessionalsByCategory(professionals, category.slug);
+  const directoryProfessionals = toProfessionalDirectoryRecords(professionals);
   const structuredData = [
     {
       "@context": "https://schema.org",
@@ -684,9 +747,10 @@ async function ProfessionalCategoryPage({ slug, locale = "en" }: { slug: string;
       <Suspense fallback={null}>
         <MarketplaceDirectory
           categories={categories}
-          professionals={professionals}
+          professionals={directoryProfessionals}
           fixedCategorySlug={category.slug}
           sourcePage={`professional_category_${category.slug}`}
+          rotationSeed={getMarketplaceRotationSeed(`professional-category-${category.slug}-${locale}`)}
           heroEyebrow={t("Category")}
           heroTitle={localizedCategory.label}
           heroDescription={localizedCategory.shortDescription ?? buildCategoryIntro(category)}
@@ -732,6 +796,8 @@ export default async function ProfessionalRoutePage({ params }: ProfessionalRout
     return <ProfessionalCategoryPage slug={slug} />;
   }
 
+  const canonical = await getMarketplaceCanonicalSlug(slug);
+  if (canonical) permanentRedirect(`/professionals/${canonical}/`);
   notFound();
 }
 
@@ -743,5 +809,7 @@ export async function LocalizedProfessionalRoutePage({ slug, locale }: { slug: s
 
   if (professional) return <ProfessionalProfilePage slug={slug} locale={locale} />;
   if (category) return <ProfessionalCategoryPage slug={slug} locale={locale} />;
+  const canonical = await getMarketplaceCanonicalSlug(slug);
+  if (canonical) permanentRedirect(localizeProfessionalPath(`/professionals/${canonical}/`, locale));
   notFound();
 }

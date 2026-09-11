@@ -86,6 +86,7 @@ const messages = {
       professionalTitle: "Publique as informações que os clientes procuram",
       professionalBody: "Adicione categorias, especialidades, credenciais, modalidades, localização e detalhes de preços.",
       browseCta: "Encontrar profissionais",
+      guidedCta: "Ajude-me a encontrar o profissional certo",
       joinCta: "Participar como profissional",
       snapshotLabel: "Visão do marketplace",
       snapshotTitle: "Explore por categoria.",

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   buildMarketplaceCategoryMetaDescription,
@@ -6,6 +7,7 @@ import {
   buildMarketplaceProfessionalSeoTitle,
   getIndexableMarketplaceProfessionals,
   getMarketplaceCategoryProfessionalCount,
+  hasMarketplaceFilterSearchParams,
   isMarketplaceCategoryIndexable,
   isMarketplaceFilteredSearch,
   isPublicMarketplaceProfessional,
@@ -38,6 +40,13 @@ function createProfessional(
     profilePhotoUrl: null,
     professionalTitle: "Nutrition Coach",
     bio: "Practical nutrition support for active adults.",
+    publicHeadline: null,
+    bestFitSummary: null,
+    goalTags: [],
+    experienceLevelsServed: [],
+    coachingStyle: null,
+    serviceBoundaries: null,
+    consultationExpectations: null,
     yearsExperience: 5,
     specialties: ["Sports nutrition"],
     languages: [],
@@ -54,6 +63,7 @@ function createProfessional(
     availabilitySummary: null,
     typicalAvailability: [],
     availabilityDetails: null,
+    availabilityConfirmedAt: null,
     clientAcceptanceStatus: "accepting",
     websiteUrl: null,
     socialLinks: {},
@@ -230,4 +240,26 @@ test("filtered marketplace queries remain non-canonical search views", () => {
   assert.equal(isMarketplaceFilteredSearch(""), false);
   assert.equal(isMarketplaceFilteredSearch("country=CA"), true);
   assert.equal(isMarketplaceFilteredSearch("country=CA&city=Toronto&category=nutrition"), true);
+  assert.equal(hasMarketplaceFilterSearchParams({}), false);
+  assert.equal(hasMarketplaceFilterSearchParams({ location: "Miami, FL", serviceMode: "in_person" }), true);
+  assert.equal(hasMarketplaceFilterSearchParams({ specialty: ["Strength Training", "Fat Loss"] }), true);
+});
+
+test("directory and category routes return server-side noindex metadata for filtered URLs", () => {
+  const directorySource = readFileSync(
+    new URL("../app/professionals/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const routeSource = readFileSync(
+    new URL("../app/professionals/[slug]/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const localizedSource = readFileSync(
+    new URL("../app/[locale]/[[...slug]]/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(directorySource, /robots: filtered \? \{ index: false, follow: true \}/);
+  assert.match(routeSource, /!isIndexable \|\| filteredSearch/);
+  assert.match(localizedSource, /filteredSearch[\s\S]*index: false, follow: true/);
 });

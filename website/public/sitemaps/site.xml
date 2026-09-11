@@ -34,6 +34,9 @@
     <loc>https://www.elevarefit.com/terms-of-service/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/trust-safety/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/es/</loc>
   </url>
   <url>
@@ -52,6 +55,9 @@
     <loc>https://www.elevarefit.com/es/stagelab/complete-stage-analysis/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/es/trust-safety/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/pt-br/</loc>
   </url>
   <url>
@@ -68,5 +74,8 @@
   </url>
   <url>
     <loc>https://www.elevarefit.com/pt-br/stagelab/complete-stage-analysis/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/trust-safety/</loc>
   </url>
 </urlset>

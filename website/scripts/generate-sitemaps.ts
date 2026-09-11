@@ -53,7 +53,6 @@ const publicDir = path.join(projectRoot, "public");
 const sitemapsDir = path.join(publicDir, "sitemaps");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
-const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
 
 const staticSiteRoutes = [
   "/",
@@ -67,6 +66,7 @@ const staticSiteRoutes = [
   "/elevare",
   "/privacy-policy/",
   "/terms-of-service/",
+  "/trust-safety/",
 ] as const;
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
@@ -186,6 +186,7 @@ function buildSiteEntries() {
       "/stagelab/quick-analysis/",
       "/stagelab/posing-analysis/",
       "/stagelab/complete-stage-analysis/",
+      "/trust-safety/",
     ].map((route) =>
       toSitemapEntry(localizePathname(route, locale), undefined, "priority_index"),
     ),
@@ -301,7 +302,7 @@ function buildBlogEntries() {
   ];
 }
 
-function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
+export function buildMarketplaceEntries(snapshot: MarketplaceSnapshot) {
   const categories =
     snapshot.categories.length > 0
        ? snapshot.categories
@@ -344,11 +345,6 @@ function main() {
   }));
 
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
-  const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
-    generatedAt: null,
-    categories: [],
-    professionals: [],
-  });
 
   const sitemapFiles: Array<{ name: string; entries: SitemapEntry[] }> = [
     { name: "site", entries: buildSiteEntries() },
@@ -357,7 +353,6 @@ function main() {
     { name: "workouts", entries: buildWorkoutEntries(trainingSnapshot.workoutTemplates) },
     { name: "nutrition", entries: buildNutritionEntries(nutritionProducts) },
     { name: "blog", entries: buildBlogEntries() },
-    { name: "professionals", entries: buildMarketplaceEntries(marketplaceSnapshot) },
   ];
 
   assertUniqueSitemapEntries(sitemapFiles);
@@ -368,7 +363,7 @@ function main() {
 
   writeFileSafely(
     path.join(publicDir, "sitemap.xml"),
-    buildSitemapIndex(sitemapFiles.map((sitemap) => sitemap.name)),
+    buildSitemapIndex([...sitemapFiles.map((sitemap) => sitemap.name), "professionals"]),
   );
 
   console.log(
@@ -378,4 +373,4 @@ function main() {
   );
 }
 
-main();
+if (process.argv[1]?.replaceAll("\\", "/").endsWith("scripts/generate-sitemaps.ts")) main();

@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -23,6 +23,10 @@ type InquiryFormProps = {
   professional: ProfessionalProfileRecord;
 };
 
+function isDatabaseUuid(value: string | null | undefined) {
+  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+}
+
 export function InquiryForm({ professional }: InquiryFormProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -41,16 +45,32 @@ export function InquiryForm({ professional }: InquiryFormProps) {
   const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
+  const requestKeyRef = useRef<string | null>(null);
+  const canRequest = professional.clientAcceptanceStatus === "accepting"
+    || professional.clientAcceptanceStatus === "waitlist";
+  const selectedServiceId = serviceInterest.startsWith("service:")
+    ? serviceInterest.slice("service:".length)
+    : null;
+  const selectedCategoryId = serviceInterest.startsWith("category:")
+    ? serviceInterest.slice("category:".length)
+    : null;
+  const selectedService = professional.services.find((service) => service.id === selectedServiceId) ?? null;
+  const selectedCategory = professional.categories.find((category) => category.id === selectedCategoryId) ?? null;
 
   const interestOptions = [
-    ...professional.services.map((service) => ({ value: service.name, label: service.name })),
+    ...professional.services.map((service) => ({ value: `service:${service.id}`, label: service.name })),
     ...professional.categories.map((category) => ({
-      value: category.label,
+      value: `category:${category.id}`,
       label: localizeMarketplaceCategory(category, locale).label,
     })),
   ];
 
   async function handleStart() {
+    if (!canRequest) {
+      setFeedback(t("This professional is not accepting consultation requests right now."));
+      setFeedbackType("error");
+      return;
+    }
     if (!isConfigured) {
       setFeedback(t("Marketplace auth is not configured yet."));
       setFeedbackType("error");
@@ -65,8 +85,8 @@ export function InquiryForm({ professional }: InquiryFormProps) {
     setIsOpen(true);
     setFeedback(null);
     trackEvent("consultation_started", {
-      professional_slug: professional.profileSlug,
-      professional_name: professional.displayName,
+      source_page: "professional_profile",
+      accepting_status: professional.clientAcceptanceStatus,
     });
 
     if (hasLoadedPreferences) return;
@@ -130,6 +150,11 @@ export function InquiryForm({ professional }: InquiryFormProps) {
       setFeedbackType("error");
       return;
     }
+    if (selectedService?.consultationType === "not_offered") {
+      setFeedback(t("This service does not currently offer a consultation request."));
+      setFeedbackType("error");
+      return;
+    }
 
     setIsSubmitting(true);
     setFeedback(null);
@@ -173,18 +198,17 @@ export function InquiryForm({ professional }: InquiryFormProps) {
         clientProfileId = existingClientProfileResult.data?.id ?? null;
       }
 
-      const matchedCategory =
-        professional.categories.find((category) => category.label === serviceInterest)
-        ?? professional.categories.find((category) => category.slug === serviceInterest)
-        ?? null;
+      requestKeyRef.current ??= crypto.randomUUID();
 
-      const { error } = await supabase.from("trainer_profile_inquiries").insert({
+      const { data: insertedInquiry, error } = await supabase.from("trainer_profile_inquiries").insert({
         trainer_profile_id: professional.id,
         client_user_id: appUser.id,
         client_profile_id: clientProfileId,
-        service_category_id: matchedCategory?.id ?? null,
+        service_category_id: isDatabaseUuid(selectedCategory?.id) ? selectedCategory?.id : null,
+        service_offering_id: isDatabaseUuid(selectedService?.id) ? selectedService?.id : null,
+        request_key: requestKeyRef.current,
         client_first_name: clientFirstName.trim(),
-        service_interest: serviceInterest.trim() || null,
+        service_interest: selectedService?.name ?? selectedCategory?.label ?? null,
         goal: goal.trim(),
         preferred_service_mode: preferredServiceMode || null,
         start_timeline: startTimeline || null,
@@ -192,13 +216,19 @@ export function InquiryForm({ professional }: InquiryFormProps) {
         metadata: {
           source: "website_marketplace",
           pathname,
-          professional_slug: professional.profileSlug,
           start_timeline: startTimeline || null,
         },
-      });
+      }).select("id").maybeSingle();
 
-      if (error) {
+      if (error && error.code !== "23505") {
         throw error;
+      }
+
+      if (!error && insertedInquiry?.id) {
+        // Notification delivery is best-effort; the saved request remains successful if email is unavailable.
+        await supabase.functions.invoke("professional-inquiry-email", {
+          body: { inquiry_id: insertedInquiry.id },
+        }).catch(() => null);
       }
 
       setFeedback(t("Request sent. They can review it in their Elevare account."));
@@ -208,9 +238,11 @@ export function InquiryForm({ professional }: InquiryFormProps) {
       setServiceInterest("");
       setPreferredServiceMode("");
       setStartTimeline("");
+      requestKeyRef.current = null;
       trackEvent("professional_inquiry_submitted", {
-        professional_slug: professional.profileSlug,
-        professional_name: professional.displayName,
+        source_page: "professional_profile",
+        accepting_status: professional.clientAcceptanceStatus,
+        service_selected: Boolean(selectedService),
       });
     } catch {
       setFeedback(t("We could not send your request right now."));
@@ -222,8 +254,8 @@ export function InquiryForm({ professional }: InquiryFormProps) {
 
   return (
     <div className="marketplace-action-stack">
-      <button type="button" className="button button-primary" onClick={handleStart}>
-        {t("Request consultation")}
+      <button type="button" className="button button-primary" onClick={handleStart} disabled={!canRequest}>
+        {t(professional.clientAcceptanceStatus === "waitlist" ? "Join consultation waitlist" : canRequest ? "Request consultation" : "Consultations unavailable")}
       </button>
 
       {isOpen ? (
@@ -251,6 +283,13 @@ export function InquiryForm({ professional }: InquiryFormProps) {
                   </option>
                 ))}
               </select>
+              {selectedService ? <span className="field-help">{t(selectedService.consultationType === "free"
+                ? "This professional lists an initial consultation as free. Confirm details directly before proceeding."
+                : selectedService.consultationType === "paid"
+                  ? "This professional lists the consultation as paid. Elevare does not collect this payment; confirm price and terms directly."
+                  : selectedService.consultationType === "not_offered"
+                    ? "This service does not currently offer a consultation request."
+                    : "Consultation pricing is not specified. Ask the professional for details.")}</span> : null}
             </label>
 
             <label className="field field-full">
@@ -297,7 +336,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
               />
             </label>
             <div className="form-note field-full">
-              {t("Share only the information needed for this request. Do not include medical records, account passwords, payment card details, or other highly sensitive information. Your request will be shared with the independent professional you contact. Sending a request does not create a booking, paid contract, or guaranteed appointment.")}
+              {t("This sends your name, selected service, goal, service mode, timeline, and message to the independent professional. They can review it in their Elevare account. Sending a request does not create a booking, paid contract, or guaranteed appointment. Share only what is needed and do not include medical records, passwords, payment card details, or other highly sensitive information.")}
             </div>
           </div>
 
@@ -305,12 +344,12 @@ export function InquiryForm({ professional }: InquiryFormProps) {
             <button type="submit" className="button button-primary" disabled={isSubmitting}>
               {isSubmitting ? t("Sending...") : t("Send request")}
             </button>
-            {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
+            {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status" aria-live="polite">{feedback}</div> : null}
           </div>
         </form>
       ) : null}
 
-      {!isOpen && feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
+      {!isOpen && feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status" aria-live="polite">{feedback}</div> : null}
     </div>
   );
 }

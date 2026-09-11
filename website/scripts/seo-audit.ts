@@ -45,7 +45,7 @@ const publicDir = path.join(projectRoot, "public");
 const sitemapIndexPath = path.join(publicDir, "sitemap.xml");
 const trainingDataPath = path.join(projectRoot, ".generated", "training-data.json");
 const nutritionDataPath = path.join(projectRoot, ".generated", "nutrition-data.json");
-const marketplaceDataPath = path.join(projectRoot, ".generated", "marketplace-data.json");
+const runtimeHtml = new Map<string, string>();
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
   try {
@@ -89,11 +89,12 @@ function publicRouteFile(sitePath: string) {
 
 function fileExistsForUrl(url: string) {
   const sitePath = toSitePathFromUrl(url);
-  return fs.existsSync(toOutputFile(sitePath)) || fs.existsSync(publicRouteFile(sitePath));
+  return runtimeHtml.has(sitePath) || fs.existsSync(toOutputFile(sitePath)) || fs.existsSync(publicRouteFile(sitePath));
 }
 
 function readHtmlForUrl(url: string) {
   const sitePath = toSitePathFromUrl(url);
+  if (runtimeHtml.has(sitePath)) return runtimeHtml.get(sitePath)!;
   const outputFile = fs.existsSync(toOutputFile(sitePath)) ? toOutputFile(sitePath) : publicRouteFile(sitePath);
 
   if (!fs.existsSync(outputFile)) {
@@ -209,7 +210,7 @@ function findLegacyLegalLinks() {
   return matches;
 }
 
-function main() {
+async function main() {
   if (!fs.existsSync(outDir)) {
     throw new Error("Static export output is missing. Run `npm run build` before running the SEO audit.");
   }
@@ -222,11 +223,21 @@ function main() {
     workoutRedirects: [],
   }));
   const nutritionProducts = readJsonFile<NutritionProduct[]>(nutritionDataPath, []);
-  const marketplaceSnapshot = readJsonFile<MarketplaceSnapshot>(marketplaceDataPath, {
-    generatedAt: null,
-    categories: [],
-    professionals: [],
-  });
+  const runtimeOrigin = process.env.SEO_RUNTIME_ORIGIN;
+  if (!runtimeOrigin) throw new Error("Start the production server and set SEO_RUNTIME_ORIGIN to audit mutable professional routes.");
+  const snapshotResponse = await fetch(new URL("/marketplace-data.json", runtimeOrigin));
+  if (!snapshotResponse.ok) throw new Error("Runtime marketplace snapshot could not be audited.");
+  const marketplaceSnapshot = await snapshotResponse.json() as MarketplaceSnapshot;
+  const professionalSitemapResponse = await fetch(new URL("/sitemaps/professionals.xml", runtimeOrigin));
+  if (!professionalSitemapResponse.ok) throw new Error("Runtime professional sitemap is unavailable.");
+  const professionalSitemap = await professionalSitemapResponse.text();
+  const runtimePaths = ["/", "/professionals/", ...marketplaceSnapshot.categories.map((category) => `/professionals/${category.slug}/`),
+    ...marketplaceSnapshot.professionals.map((professional) => `/professionals/${professional.profileSlug}/`)];
+  for (const pathname of runtimePaths) {
+    const response = await fetch(new URL(pathname, runtimeOrigin));
+    if (!response.ok) throw new Error(`Runtime SEO route failed: ${pathname}`);
+    runtimeHtml.set(normalizeSitePath(pathname), await response.text());
+  }
   const posts = getAllPosts();
   const restaurants = buildRestaurantSummaries(nutritionProducts);
   const restaurantLookup = getRestaurantSlugMap(nutritionProducts);
@@ -235,6 +246,7 @@ function main() {
   const sitemapUrls = parseLocs(sitemapIndexXml);
   const sitemapFilePaths = sitemapUrls.map((url) => toOutputFile(toSitePathFromUrl(url)));
   const childSitemapUrls = sitemapFilePaths.flatMap((filePath) => {
+    if (filePath.endsWith(path.join("sitemaps", "professionals.xml"))) return parseLocs(professionalSitemap);
     if (!fs.existsSync(filePath)) {
       return [];
     }
@@ -243,6 +255,13 @@ function main() {
   });
 
   const canonicalPageUrls = [...new Set(childSitemapUrls)];
+  // Other established server routes (for example /shop/) also have no static
+  // HTML artifact. Verify their HTTP output instead of treating absence as 404.
+  for (const url of canonicalPageUrls.filter((candidate) => !fileExistsForUrl(candidate))) {
+    const pathname = toSitePathFromUrl(url);
+    const response = await fetch(new URL(pathname, runtimeOrigin));
+    if (response.status === 200) runtimeHtml.set(pathname, await response.text());
+  }
   const duplicateSitemapEntries = slugDuplicates(childSitemapUrls).map(
     ([url, count]) => `${url} appears ${count} times`,
   );
@@ -615,15 +634,23 @@ function main() {
       return [];
     }
 
-    return [
-      "approvalStatus",
+    const normalizedHtml = html.replaceAll('\\"', '"').replaceAll("&quot;", '"');
+    const issues = [
       "identityVerificationStatus",
       "lastSubmittedAt",
       "reviewFeedbackPublic",
       "userId",
+      "credential_number",
+      "document_url",
+      "internal_notes",
+      "auth_id",
     ]
       .filter((field) => html.includes(field))
       .map((field) => `${professional.profileSlug}: serialized private field ${field}`);
+    // The public contract contains the constant eligibility flag "approved".
+    // Other moderation states must never enter public HTML.
+    if (/"approvalStatus"\s*:\s*"(?!approved")/.test(normalizedHtml)) issues.push(`${professional.profileSlug}: nonpublic approval state serialized`);
+    return issues;
   });
   const marketplaceDirectoryHtml = readHtmlForUrl(absoluteUrl("/professionals/"));
   const marketplaceDirectoryRenderingIssues = [
@@ -694,7 +721,8 @@ function main() {
   console.log(`Total exported HTML pages: ${totalHtmlFiles}`);
   console.log(`Sitemap files discovered: ${sitemapUrls.length}`);
   console.log(`Sitemap URLs discovered: ${canonicalPageUrls.length}`);
-  console.log(`URLs returning non-200 in static export: ${non200Urls.length}`);
+  console.log(`URLs missing static output or a successful runtime response: ${non200Urls.length}`);
+  printSection("Unresolved sitemap routes", non200Urls);
   console.log(`Eligible public marketplace profiles: ${publicMarketplaceProfessionals.length}`);
 
   printSection("Duplicate slugs", duplicateSlugs);
@@ -801,4 +829,4 @@ function walkSourceFiles(directory: string): string[] {
   return files;
 }
 
-main();
+await main();

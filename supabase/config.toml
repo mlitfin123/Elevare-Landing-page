@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.professional-approval-email]
 verify_jwt = true
+
+[functions.professional-inquiry-email]
+verify_jwt = true
+
+[functions.professional-publication-delivery]
+verify_jwt = true

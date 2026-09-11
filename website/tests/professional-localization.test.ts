@@ -41,7 +41,10 @@ test("professional locale routes preserve the canonical profile slug", () => {
   assert.equal(localizeProfessionalPath(canonicalPath, "pt-BR"), "/pt-br/professionals/jordan-smith/");
 
   const localizedRouteSource = readProjectFile("app/[locale]/[[...slug]]/page.tsx");
-  assert.match(localizedRouteSource, /professionals\.map\(\(professional\)[\s\S]*professional\.profileSlug/);
+  // Slugs now resolve from published data at request time, including profiles
+  // approved after the build. Localized URLs still use the canonical slug.
+  assert.match(localizedRouteSource, /dynamicParams = true/);
+  assert.match(localizedRouteSource, /LocalizedProfessionalRoutePage slug=\{resolved\.catalogSlug\}/);
   assert.match(localizedRouteSource, /getMarketplaceProfessionals\(\)/);
   assert.doesNotMatch(localizedRouteSource, /insert\s+into\s+.*trainer_profiles/i);
 });
@@ -77,7 +80,7 @@ test("structured profile availability is localized", () => {
 
 test("professional languages flow through the approved public profile and remain locale-aware", () => {
   const migration = readProjectFile("../supabase/migrations/20260909120000_public_professional_languages.sql");
-  const generator = readProjectFile("scripts/generate-marketplace-data.ts");
+  const generator = readProjectFile("lib/marketplace-public-mapper.ts");
   const profileSource = readProjectFile("app/professionals/[slug]/page.tsx");
   const helpers = readProjectFile("lib/marketplace-helpers.ts");
 
@@ -97,6 +100,12 @@ test("generated category services are localized while professional-authored serv
     professionalProfileId: "professional-id",
     name: "Personal Training",
     description: "English category description.",
+    intendedFor: null,
+    includedItems: [],
+    deliveryCadence: null,
+    minimumCommitment: null,
+    consultationType: "unspecified",
+    additionalCostsNote: null,
     serviceMode: null,
     durationMinutes: null,
     price: null,

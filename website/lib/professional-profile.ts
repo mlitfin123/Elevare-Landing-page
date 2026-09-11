@@ -48,7 +48,33 @@ export const PROFESSIONAL_LANGUAGE_SUGGESTIONS = [
   "Other",
 ] as const;
 
-export type ProfessionalSectionId = "about" | "offer" | "work" | "pricing" | "credentials" | "links";
+export const PROFESSIONAL_GOAL_OPTIONS = [
+  { value: "general_fitness", label: "General fitness" },
+  { value: "fat_loss", label: "Fat loss" },
+  { value: "muscle_gain", label: "Muscle gain" },
+  { value: "strength", label: "Strength" },
+  { value: "athletic_performance", label: "Athletic performance" },
+  { value: "competition_prep", label: "Competition prep" },
+  { value: "endurance", label: "Endurance" },
+  { value: "mobility", label: "Mobility" },
+  { value: "healthy_habits", label: "Healthy habits" },
+  { value: "recovery_support", label: "Recovery support" },
+] as const;
+
+export const PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS = [
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+] as const;
+
+export const CONSULTATION_TYPE_OPTIONS = [
+  { value: "unspecified", label: "Ask for details" },
+  { value: "free", label: "Free consultation" },
+  { value: "paid", label: "Paid consultation" },
+  { value: "not_offered", label: "No consultation offered" },
+] as const;
+
+export type ProfessionalSectionId = "about" | "fit" | "offer" | "work" | "pricing" | "credentials" | "links";
 
 export type ProfileCompletenessItem = {
   id: string;
@@ -62,13 +88,26 @@ export type ProfileCompletenessInput = {
   professionalTitle: string;
   profilePhotoUrl: string;
   bio: string;
+  publicHeadline: string;
+  bestFitSummary: string;
+  goalTags: string[];
+  experienceLevelsServed: string[];
+  yearsExperience: string;
+  consultationExpectations: string;
   primaryCategory: string;
   specialties: string[];
   serviceModes: string[];
   countryCode: string;
   city: string;
   state: string;
-  services: Array<{ name: string }>;
+  services: Array<{
+    name: string;
+    priceFrom?: string;
+    contactForPricing?: boolean;
+    isActive?: boolean;
+  }>;
+  profilePriceFrom?: string;
+  profileContactForPricing?: boolean;
   availability: string[];
   acceptanceStatus: string;
 };
@@ -156,6 +195,18 @@ export function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
 
+const PROHIBITED_PUBLIC_CONTENT_PATTERNS = [
+  { pattern: /\bguarantee(?:d|s)?\b|\bguaranteed results?\b/i, message: "Avoid guaranteed-result claims." },
+  { pattern: /(?:\b(?:best|number\s*one|top[- ]rated)\b|#\s*1\b)/i, message: "Avoid unsupported ranking or superlative claims." },
+  { pattern: /(?:https?:\/\/|www\.|\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b|\+?\d[\d\s().-]{7,}\d)/i, message: "Keep links and contact details in the dedicated links section." },
+] as const;
+
+export function validatePublicProfessionalContent(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return null;
+  return PROHIBITED_PUBLIC_CONTENT_PATTERNS.find(({ pattern }) => pattern.test(normalized))?.message ?? null;
+}
+
 export function deriveLegacySpecialties(primaryCategory: string, specialties: string[]) {
   const normalizedSpecialties = specialties.map((entry) => entry.toLowerCase());
   let primary = "general_fitness";
@@ -195,6 +246,11 @@ export function calculateProfileCompleteness(input: ProfileCompletenessInput) {
     { id: "professionalTitle", label: "Add a professional title", section: "about", complete: Boolean(input.professionalTitle.trim()) },
     { id: "photo", label: "Add a profile photo", section: "about", complete: Boolean(input.profilePhotoUrl.trim()) },
     { id: "bio", label: "Write your bio", section: "about", complete: Boolean(input.bio.trim()) },
+    { id: "publicHeadline", label: "Add a profile headline", section: "fit", complete: Boolean(input.publicHeadline.trim()) },
+    { id: "bestFitSummary", label: "Describe who you work best with", section: "fit", complete: Boolean(input.bestFitSummary.trim()) },
+    { id: "goals", label: "Choose client goals", section: "fit", complete: input.goalTags.length > 0 },
+    { id: "experienceLevels", label: "Choose experience levels served", section: "fit", complete: input.experienceLevelsServed.length > 0 },
+    { id: "yearsExperience", label: "Add years of relevant experience", section: "about", complete: Boolean(input.yearsExperience.trim()) },
     { id: "primaryCategory", label: "Choose a primary category", section: "offer", complete: Boolean(input.primaryCategory) },
     { id: "specialties", label: "Choose at least one specialty", section: "offer", complete: input.specialties.length > 0 },
     { id: "serviceModes", label: "Choose how you work", section: "work", complete: input.serviceModes.length > 0 },
@@ -206,9 +262,18 @@ export function calculateProfileCompleteness(input: ProfileCompletenessInput) {
         ? Boolean(input.city.trim() && (!isRegionRequired(input.countryCode) || input.state.trim()))
         : input.serviceModes.includes("online"),
     },
-    { id: "services", label: "Add at least one service", section: "offer", complete: input.services.some((service) => service.name.trim()) },
+    { id: "services", label: "Add at least one service", section: "offer", complete: input.services.some((service) => service.isActive !== false && service.name.trim()) },
+    {
+      id: "pricing",
+      label: "Add pricing context",
+      section: "offer",
+      complete: Boolean(input.profileContactForPricing || input.profilePriceFrom?.trim())
+        || input.services.some((service) => service.isActive !== false
+          && Boolean(service.contactForPricing || service.priceFrom?.trim())),
+    },
     { id: "availability", label: "Add typical availability", section: "work", complete: input.availability.length > 0 },
     { id: "acceptance", label: "Set your new-client status", section: "work", complete: Boolean(input.acceptanceStatus) },
+    { id: "consultationExpectations", label: "Explain what happens after a consultation request", section: "work", complete: Boolean(input.consultationExpectations.trim()) },
   ];
 
   const completed = checks.filter((check) => check.complete).length;

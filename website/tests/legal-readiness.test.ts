@@ -176,7 +176,7 @@ test("database boundary protects regulated titles and records immutable age evid
 
 test("public marketplace output excludes auth identifiers and reporting resolves a public profile id", () => {
   const types = readFileSync(`${projectRoot}lib/marketplace-types.ts`, "utf8");
-  const generator = readFileSync(`${projectRoot}scripts/generate-marketplace-data.ts`, "utf8");
+  const generator = readFileSync(`${projectRoot}lib/marketplace.ts`, "utf8");
   const reportForm = readFileSync(`${projectRoot}components/marketplace/ReportProfileForm.tsx`, "utf8");
   const migration = readFileSync(
     `${repositoryRoot}supabase/migrations/20260820210000_legal_security_entity_separation.sql`,
@@ -189,7 +189,7 @@ test("public marketplace output excludes auth identifiers and reporting resolves
   assert.doesNotMatch(publicProfileType, /userId/);
   assert.doesNotMatch(publicView, /auth_id|user_id,/);
   assert.doesNotMatch(publicView, /split_part\s*\(.*email/i);
-  assert.match(generator, /marketplace_public_trainer_profiles_v2/);
+  assert.match(generator, /marketplace_public_professionals_v3/);
   assert.match(reportForm, /target_profile_id: professional\.id/);
   assert.match(migration, /submit_professional_profile_report/);
 });

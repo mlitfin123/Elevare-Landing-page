@@ -4,24 +4,24 @@ import type {
   ProfessionalCredentialRecord,
   ProfessionalProfileRecord,
   ProfessionalServiceRecord,
-} from "@/lib/marketplace-types";
+} from "./marketplace-types.ts";
 import {
   buildMarketplaceCategoryFaqs,
   getMarketplaceTaxonomyCategoryByPublicSlug,
   MARKETPLACE_CATEGORY_RELATED_PUBLIC_SLUGS,
-} from "@/lib/marketplace-taxonomy";
+} from "./marketplace-taxonomy.ts";
 import {
   getMarketplaceCategoryProfessionalCount,
   isOnlineOnlyMarketplaceProfessional,
   isPublicMarketplaceProfessional,
-} from "@/lib/marketplace-seo";
+} from "./marketplace-seo.ts";
 import {
   formatMarketplaceLocation,
   formatPublicLocation,
   getCountryDisplayName,
   getRegionDisplayName,
   normalizeCountryCode,
-} from "@/lib/marketplace-location";
+} from "./marketplace-location.ts";
 
 export type ProfessionalDirectoryFilters = {
   category: string;
@@ -46,6 +46,19 @@ export type ProfessionalFallbackGroup = {
   title: string;
   description: string;
   professionals: ProfessionalProfileRecord[];
+};
+
+export type MarketplaceResultCountBand =
+  | "zero"
+  | "one"
+  | "two_to_three"
+  | "four_to_ten"
+  | "more_than_ten";
+
+export type MarketplaceCategorySupply = {
+  category: ProfessionalCategoryRecord;
+  acceptingCount: number;
+  listedCount: number;
 };
 
 type BuildProfessionalFallbackGroupsOptions = {
@@ -323,21 +336,15 @@ export function getCredentialPublicStatus(credential: ProfessionalCredentialReco
         label: "Credential verified",
         tone: "success" as const,
       };
-    case "rejected":
-      return {
-        label: "Credential not verified",
-        tone: "neutral" as const,
-      };
-    case "pending":
-      return {
-        label: "Credential under review",
-        tone: "neutral" as const,
-      };
     case "expired":
       return {
         label: "Credential expired",
         tone: "warning" as const,
       };
+    // Internal review states are not public allegations. Until a specific
+    // credential passes review, the public claim remains simply "claimed."
+    case "pending":
+    case "rejected":
     case "unverified":
     default:
       return {
@@ -349,16 +356,25 @@ export function getCredentialPublicStatus(credential: ProfessionalCredentialReco
 
 export function getProfessionalPublicBadges(professional: ProfessionalProfileRecord) {
   const badges: string[] = [];
+  const trust = professional.trustSummary;
 
-  if (professional.identityVerificationStatus === "verified") {
+  if (trust?.profileReviewed === true) {
+    badges.push("Profile reviewed");
+  }
+
+  if (trust?.identityVerified === true) {
     badges.push("Identity verified");
   }
 
-  if (hasVerifiedCredential(professional.credentials)) {
-    badges.push("Credential verified");
+  if (trust?.backgroundCheckCompleted === true) {
+    badges.push("Background check completed");
   }
 
-  return badges;
+  if (trust?.insuranceConfirmed === true) {
+    badges.push("Insurance confirmed");
+  }
+
+  return badges.slice(0, 2);
 }
 
 export function getPrimaryCategory(professional: ProfessionalProfileRecord) {
@@ -373,6 +389,8 @@ export function buildProfessionalSearchText(professional: ProfessionalProfileRec
   return [
     professional.displayName,
     professional.professionalTitle,
+    professional.publicHeadline,
+    professional.bestFitSummary,
     professional.bio,
     professional.city,
     professional.state,
@@ -381,8 +399,16 @@ export function buildProfessionalSearchText(professional: ProfessionalProfileRec
     getCountryDisplayName(professional.countryCode),
     professional.serviceArea,
     professional.specialties.join(" "),
+    professional.goalTags.join(" "),
+    professional.experienceLevelsServed.join(" "),
+    professional.coachingStyle,
     professional.categories.map((category) => category.label).join(" "),
-    professional.services.map((service) => service.name).join(" "),
+    professional.services.map((service) => [
+      service.name,
+      service.intendedFor,
+      service.deliveryCadence,
+      service.includedItems.join(" "),
+    ].filter(Boolean).join(" ")).join(" "),
   ]
     .filter(Boolean)
     .join(" ")
@@ -513,7 +539,11 @@ function professionalMatchesBroaderLocation(
   return false;
 }
 
-function getProfessionalCompletenessScore(professional: ProfessionalProfileRecord) {
+export function getProfessionalCompletenessScore(professional: ProfessionalProfileRecord) {
+  if (Number.isFinite(professional.directoryCompletenessScore)) {
+    return professional.directoryCompletenessScore ?? 0;
+  }
+
   let score = 0;
 
   if (professional.profilePhotoUrl) {
@@ -555,6 +585,43 @@ function getProfessionalCompletenessScore(professional: ProfessionalProfileRecor
   return score;
 }
 
+function getProfessionalAcceptanceScore(professional: ProfessionalProfileRecord) {
+  switch (professional.clientAcceptanceStatus) {
+    case "accepting":
+      return 100;
+    case "waitlist":
+      return 30;
+    case "not_accepting":
+      return 0;
+    default:
+      return 10;
+  }
+}
+
+function getProfessionalAvailabilityScore(professional: ProfessionalProfileRecord) {
+  const confirmedAt = Date.parse(professional.availabilityConfirmedAt ?? "");
+
+  if (!Number.isFinite(confirmedAt)) {
+    return 0;
+  }
+
+  // A monotonic timestamp signal keeps server and client ordering identical.
+  return Math.min(8, confirmedAt / 1_000_000_000_000 * 4);
+}
+
+function getProfessionalTrustScore(professional: ProfessionalProfileRecord) {
+  const trust = professional.trustSummary;
+  if (!trust) return 0;
+
+  return Math.min(6, [
+    trust.profileReviewed,
+    trust.identityVerified,
+    trust.backgroundCheckCompleted,
+    trust.insuranceConfirmed,
+    trust.accountInGoodStanding,
+  ].filter(Boolean).length * 1.5);
+}
+
 function getProfessionalTimestamp(professional: ProfessionalProfileRecord) {
   const timestamp = Date.parse(professional.updatedAt ?? professional.createdAt ?? "");
   return Number.isFinite(timestamp) ? timestamp : 0;
@@ -564,7 +631,10 @@ function getProfessionalRankingScore(
   professional: ProfessionalProfileRecord,
   options: ProfessionalSortOptions = {},
 ) {
-  let score = getProfessionalCompletenessScore(professional) * 4;
+  let score = getProfessionalAcceptanceScore(professional)
+    + getProfessionalCompletenessScore(professional) * 4
+    + getProfessionalAvailabilityScore(professional)
+    + getProfessionalTrustScore(professional);
 
   if (options.preferredCategorySlug && professionalMatchesCategory(professional, options.preferredCategorySlug)) {
     score += 32;
@@ -592,49 +662,11 @@ function getProfessionalRankingScore(
   ) {
     score += 8;
   }
-
-  score += Math.min(professional.yearsExperience ?? 0, 20) / 2;
 
   const lastUpdated = getProfessionalTimestamp(professional);
 
   if (lastUpdated > 0) {
-    score += Math.min(lastUpdated / 1000_000_000_000, 4);
-  }
-
-  return score;
-}
-
-function getProfessionalMatchScore(
-  professional: ProfessionalProfileRecord,
-  options: ProfessionalSortOptions = {},
-) {
-  let score = 0;
-
-  if (options.preferredCategorySlug && professionalMatchesCategory(professional, options.preferredCategorySlug)) {
-    score += 32;
-  }
-
-  if (options.preferredLocation) {
-    if (professionalMatchesLocation(professional, options.preferredLocation)) {
-      score += 20;
-    } else if (professionalMatchesBroaderLocation(professional, options.preferredLocation)) {
-      score += 12;
-    }
-  }
-
-  if (options.preferredServiceMode && professionalSupportsServiceMode(professional, options.preferredServiceMode)) {
-    score += 14;
-  }
-
-  if (options.preferOnline && professionalSupportsServiceMode(professional, "online")) {
-    score += 10;
-  }
-
-  if (
-    options.referenceSearchText
-    && buildProfessionalSearchText(professional).includes(options.referenceSearchText.trim().toLowerCase())
-  ) {
-    score += 8;
+    score += Math.min(4, lastUpdated / 1_000_000_000_000 * 2);
   }
 
   return score;
@@ -745,8 +777,10 @@ export function sortProfessionalsWithRandomizedTies(
   return [...professionals]
     .map((professional, index) => ({
       professional,
-      matchScore: getProfessionalMatchScore(professional, options),
-      randomWeight: hashMarketplaceSeed(`${seed}:${professional.id}:${professional.profileSlug}:${index}`),
+      // Half-point tiers preserve meaningful relevance differences while
+      // allowing fair rotation when freshness timestamps differ only slightly.
+      matchScore: Math.round(getProfessionalRankingScore(professional, options) * 2) / 2,
+      randomWeight: hashMarketplaceSeed(`${professional.profileSlug}:${seed}`),
       index,
     }))
     .sort((left, right) => {
@@ -816,44 +850,30 @@ export function buildProfessionalFallbackGroups({
     groupProfessionals.forEach((professional) => excludedProfessionalIds.add(professional.id));
   };
 
-  if (location && location.toLowerCase() !== "online") {
+  const hasExplicitLocalLocation = Boolean(
+    location && location.toLowerCase() !== "all" && location.toLowerCase() !== "online",
+  );
+  const requiresInPerson = serviceMode === "in_person";
+
+  if (!requiresInPerson && !hasExplicitLocalLocation) {
     addGroup(
-      "nearby",
-      "Nearby",
-      "These are the closest local alternatives we have right now while keeping the service fit as close as possible.",
+      "online",
+      "Available Online",
+      "These published profiles can work with you online, so location becomes less restrictive.",
       sortProfessionals(
         professionals.filter((professional) =>
           professionalMatchesCategory(professional, categorySlug)
-          && professionalMatchesBroaderLocation(professional, location)
-          && (!serviceMode || serviceMode === "online" || professionalSupportsServiceMode(professional, serviceMode))
+          && professionalSupportsServiceMode(professional, "online")
         ),
         {
           preferredCategorySlug: categorySlug,
-          preferredLocation: location,
-          preferredServiceMode: serviceMode,
+          preferredServiceMode: "online",
+          preferOnline: true,
           referenceSearchText: specialty?.toLowerCase() ?? query,
         },
       ).slice(0, limit),
     );
   }
-
-  addGroup(
-    "online",
-    "Available Online",
-    "These published profiles can work with you online, so location becomes less restrictive.",
-    sortProfessionals(
-      professionals.filter((professional) =>
-        professionalMatchesCategory(professional, categorySlug)
-        && professionalSupportsServiceMode(professional, "online")
-      ),
-      {
-        preferredCategorySlug: categorySlug,
-        preferredServiceMode: "online",
-        preferOnline: true,
-        referenceSearchText: specialty?.toLowerCase() ?? query,
-      },
-    ).slice(0, limit),
-  );
 
   const relatedCategorySlugs = getRelatedMarketplaceCategorySlugs(categorySlug);
 
@@ -869,7 +889,13 @@ export function buildProfessionalFallbackGroups({
         const matchesRequestedSpecialty = specialty ? professionalMatchesSpecialty(professional, specialty) : false;
         const matchesRequestedQuery = query ? buildProfessionalSearchText(professional).includes(query) : false;
 
-        return matchesRelatedCategory || matchesRequestedSpecialty || matchesRequestedQuery;
+        const matchesRelatedNeed = matchesRelatedCategory || matchesRequestedSpecialty || matchesRequestedQuery;
+        const matchesRequiredMode = !serviceMode || serviceMode === "all"
+          || professionalSupportsServiceMode(professional, serviceMode);
+        const matchesRequiredLocation = !hasExplicitLocalLocation
+          || professionalMatchesLocation(professional, location);
+
+        return matchesRelatedNeed && matchesRequiredMode && matchesRequiredLocation;
       }),
       {
         preferredServiceMode: serviceMode,
@@ -989,22 +1015,65 @@ export function countEligibleMarketplaceProfiles(professionals: ProfessionalProf
   return professionals.filter(isPublicMarketplaceProfessional).length;
 }
 
+export function getMarketplaceResultCountBand(count: number): MarketplaceResultCountBand {
+  if (count <= 0) return "zero";
+  if (count === 1) return "one";
+  if (count <= 3) return "two_to_three";
+  if (count <= 10) return "four_to_ten";
+  return "more_than_ten";
+}
+
+export function getMarketplaceCategorySupply(
+  categories: ProfessionalCategoryRecord[],
+  professionals: ProfessionalProfileRecord[],
+) {
+  return categories.map((category): MarketplaceCategorySupply => {
+    const listed = professionals.filter((professional) =>
+      professional.categories.some((candidate) => candidate.slug === category.slug),
+    );
+
+    return {
+      category,
+      listedCount: listed.length,
+      acceptingCount: listed.filter((professional) => professional.clientAcceptanceStatus === "accepting").length,
+    };
+  });
+}
+
+export function toProfessionalDirectoryRecord(
+  professional: ProfessionalProfileRecord,
+): ProfessionalProfileRecord {
+  return {
+    ...professional,
+    id: professional.profileSlug,
+    directoryCompletenessScore: getProfessionalCompletenessScore(professional),
+    bio: "",
+    postalCode: null,
+    serviceRadiusMeters: null,
+    serviceBoundaries: null,
+    consultationExpectations: null,
+    availabilityDetails: null,
+    websiteUrl: null,
+    socialLinks: {},
+    ...(professional.reviewFeedbackPublic !== undefined ? { reviewFeedbackPublic: null } : {}),
+    credentials: [],
+    services: [],
+  };
+}
+
+export function toProfessionalDirectoryRecords(professionals: ProfessionalProfileRecord[]) {
+  return professionals.filter(isPublicMarketplaceProfessional).map(toProfessionalDirectoryRecord);
+}
+
+export function getMarketplaceRotationSeed(scope: string, date = new Date()) {
+  return `${scope}:${date.toISOString().slice(0, 10)}`;
+}
+
 function getEligibleCategoryProfessionalCount(
   category: ProfessionalCategoryRecord,
   professionals: ProfessionalProfileRecord[],
 ) {
   return getMarketplaceCategoryProfessionalCount(category, professionals);
-}
-
-function shuffleMarketplaceCategories(categories: ProfessionalCategoryRecord[]) {
-  const shuffled = [...categories];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-
-  return shuffled;
 }
 
 export function formatMarketplaceSocialProofCount(eligibleProfileCount: number) {
@@ -1026,7 +1095,6 @@ export function selectMarketplaceCategoryCards(
   categories: ProfessionalCategoryRecord[],
   professionals: ProfessionalProfileRecord[],
   limit = 8,
-  guaranteedTopCount = 2,
 ) {
   const safeLimit = Math.max(0, limit);
 
@@ -1034,26 +1102,15 @@ export function selectMarketplaceCategoryCards(
     return [];
   }
 
-  const rankedCategories = [...categories]
-    .map((category) => ({
-      category,
-      count: getEligibleCategoryProfessionalCount(category, professionals),
-    }))
-    .sort((left, right) => right.count - left.count || left.category.sortOrder - right.category.sortOrder);
-
-  const guaranteedCategories = rankedCategories
-    .slice(0, Math.min(safeLimit, Math.max(0, guaranteedTopCount)))
+  return getMarketplaceCategorySupply(categories, professionals)
+    .filter((entry) => entry.listedCount > 0)
+    .sort((left, right) =>
+      right.acceptingCount - left.acceptingCount
+      || right.listedCount - left.listedCount
+      || left.category.sortOrder - right.category.sortOrder,
+    )
+    .slice(0, safeLimit)
     .map((entry) => entry.category);
-  const guaranteedSlugs = new Set(guaranteedCategories.map((category) => category.slug));
-  const randomPool = shuffleMarketplaceCategories(
-    categories.filter((category) => !guaranteedSlugs.has(category.slug)),
-  );
-  const selectedCategories = [
-    ...guaranteedCategories,
-    ...randomPool.slice(0, Math.max(0, safeLimit - guaranteedCategories.length)),
-  ];
-
-  return shuffleMarketplaceCategories(selectedCategories);
 }
 
 export function findTopCategories(
@@ -1066,6 +1123,7 @@ export function findTopCategories(
       category,
       count: getEligibleCategoryProfessionalCount(category, professionals),
     }))
+    .filter((entry) => entry.count > 0)
     .sort((left, right) => right.count - left.count || left.category.sortOrder - right.category.sortOrder)
     .slice(0, limit)
     .map((entry) => entry.category);
@@ -1089,7 +1147,6 @@ export function buildProfessionalSchema(professional: ProfessionalProfileRecord,
         addressLocality: professional.city ?? undefined,
         addressRegion: getRegionDisplayName(countryCode, professional.state) || undefined,
         addressCountry: countryCode || undefined,
-        postalCode: professional.postalCode ?? undefined,
       }
     : undefined;
   const offers = professional.services
@@ -1117,11 +1174,11 @@ export function buildProfessionalSchema(professional: ProfessionalProfileRecord,
     "@type": "Person",
     name: professional.displayName,
     jobTitle: professional.professionalTitle,
-    description: professional.bio,
+    description: professional.publicHeadline ?? professional.bestFitSummary ?? professional.bio,
     image: professional.profilePhotoUrl ?? undefined,
     url: `${siteUrl}/professionals/${professional.profileSlug}/`,
     areaServed,
-    knowsAbout: professional.specialties,
+    knowsAbout: [...new Set([...professional.specialties, ...professional.goalTags])],
     ...((professional.languages ?? []).length > 0 ? { knowsLanguage: professional.languages } : {}),
     address,
     ...(offers.length > 0 ? { makesOffer: offers } : {}),

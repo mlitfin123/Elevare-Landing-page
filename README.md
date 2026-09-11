@@ -1,6 +1,6 @@
 # ElevareFit website
 
-The active production website is the Next.js static-export project in `website/`. Vercel is the authoritative host for `www.elevarefit.com`; `.github/workflows/deploy.yml` validates builds and does not publish GitHub Pages. The `.org` domains remain attached as permanent, path-preserving redirect domains.
+The active production website is the Next.js App Router project in `website/`. Vercel is the authoritative host for `www.elevarefit.com`; `.github/workflows/deploy.yml` validates builds and does not publish GitHub Pages. The `.org` domains remain attached as permanent, path-preserving redirect domains. Professional content uses runtime Supabase reads with versioned server caches and targeted invalidation; ordinary content updates do not require a deployment. See `website/docs/professional-runtime-operations.md` for setup and tests.
 
 ## Local validation
 

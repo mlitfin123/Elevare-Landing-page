@@ -12,6 +12,8 @@ import {
   buildProfessionalFallbackGroups,
   filterProfessionals,
   getCategoryBySlug,
+  getMarketplaceCategorySupply,
+  getMarketplaceResultCountBand,
   getUniqueLocations,
   hasMeaningfulMarketplaceSearch,
   normalizeMarketplaceText,
@@ -48,6 +50,7 @@ type MarketplaceDirectoryProps = {
   showMobileAppSection?: boolean;
   categorySectionTitle?: string;
   categorySectionDescription?: string;
+  rotationSeed?: string;
 };
 
 type MarketplaceDirectoryStateProps = MarketplaceDirectoryProps & {
@@ -116,7 +119,9 @@ function buildResultsSeed(filters: ProfessionalDirectoryFilters, currentCategory
 
 function scrollToResults() {
   window.setTimeout(() => {
-    document.getElementById(RESULTS_SECTION_ID)?.scrollIntoView({
+    const results = document.getElementById(RESULTS_SECTION_ID);
+    results?.focus({ preventScroll: true });
+    results?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
@@ -152,7 +157,7 @@ export function MarketplaceDirectory(props: MarketplaceDirectoryProps) {
     trackEvent("professional_directory_viewed", {
       source_page: props.sourcePage,
       fixed_category: props.fixedCategorySlug ?? "all",
-      professional_count: props.professionals.length,
+      result_count_band: getMarketplaceResultCountBand(props.professionals.length),
     });
     hasTrackedView.current = true;
   }, [props.fixedCategorySlug, props.professionals.length, props.sourcePage]);
@@ -211,6 +216,7 @@ function MarketplaceDirectoryState({
   showMobileAppSection = false,
   categorySectionTitle = "Start with the kind of support you want.",
   categorySectionDescription = "Browse by category first, then narrow by location, service mode, or specialty if you need to.",
+  rotationSeed = "marketplace",
   initialFilters,
   pathname,
   onSearchUrlChange,
@@ -223,48 +229,25 @@ function MarketplaceDirectoryState({
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(
     initialFilters.serviceMode !== "all" || initialFilters.specialty !== "all",
   );
-  const [rotatedCategoryCards, setRotatedCategoryCards] = useState<ProfessionalCategoryRecord[] | null>(null);
   const [visibleProfileCount, setVisibleProfileCount] = useState(INITIAL_VISIBLE_PROFILE_COUNT);
-  const [hasStartedSearch, setHasStartedSearch] = useState(
-    Boolean(fixedCategorySlug) || hasMeaningfulMarketplaceSearch(initialFilters, fixedCategorySlug),
+  const hasTrackedInitialResults = useRef(false);
+
+  const categorySupply = useMemo(
+    () => getMarketplaceCategorySupply(categories, professionals),
+    [categories, professionals],
   );
-
-  const defaultCategoryCards = useMemo(
-    () => (topCategories && topCategories.length > 0 ? topCategories : categories.slice(0, 8)),
-    [categories, topCategories],
-  );
-  const shouldRotateCategoryCards = showCategoryCards && !fixedCategorySlug && defaultCategoryCards.length >= 8;
-
-  useEffect(() => {
-    if (!shouldRotateCategoryCards) {
-      return;
-    }
-
-    let isCancelled = false;
-    const frame = window.requestAnimationFrame(() => {
-      if (isCancelled) {
-        return;
-      }
-
-      setRotatedCategoryCards(selectMarketplaceCategoryCards(categories, professionals, defaultCategoryCards.length, 2));
-    });
-
-    return () => {
-      isCancelled = true;
-      window.cancelAnimationFrame(frame);
-    };
-  }, [categories, defaultCategoryCards.length, professionals, shouldRotateCategoryCards]);
   const categoryCards = useMemo(() => {
     if (!showCategoryCards) {
       return [];
     }
 
-    if (shouldRotateCategoryCards) {
-      return rotatedCategoryCards ?? defaultCategoryCards;
-    }
-
-    return defaultCategoryCards;
-  }, [defaultCategoryCards, rotatedCategoryCards, shouldRotateCategoryCards, showCategoryCards]);
+    const requestedLimit = topCategories?.length || 8;
+    return selectMarketplaceCategoryCards(categories, professionals, requestedLimit);
+  }, [categories, professionals, showCategoryCards, topCategories?.length]);
+  const emptyCategoryCards = useMemo(
+    () => categorySupply.filter((entry) => entry.listedCount === 0).map((entry) => entry.category),
+    [categorySupply],
+  );
 
   const currentCategorySlug = fixedCategorySlug ?? (appliedFilters.category !== "all" ? appliedFilters.category : null);
   const currentCategory = useMemo(
@@ -285,12 +268,11 @@ function MarketplaceDirectoryState({
             ?? normalizeMarketplaceText(appliedFilters.specialty)?.toLowerCase()
             ?? null,
         },
-        buildResultsSeed(appliedFilters, currentCategorySlug),
+        `${rotationSeed}:${buildResultsSeed(appliedFilters, currentCategorySlug)}`,
       ),
-    [appliedFilters, currentCategorySlug, professionals],
+    [appliedFilters, currentCategorySlug, professionals, rotationSeed],
   );
   const hasMeaningfulSearch = hasMeaningfulMarketplaceSearch(appliedFilters, fixedCategorySlug);
-  const shouldShowResults = Boolean(fixedCategorySlug) || hasMeaningfulSearch || hasStartedSearch;
   const fallbackGroups = useMemo(
     () =>
       exactResults.length === 0 && hasMeaningfulSearch
@@ -320,22 +302,33 @@ function MarketplaceDirectoryState({
   );
   const remainingExactResults = Math.max(0, exactResults.length - visibleExactResults.length);
   const advancedFiltersActive = draftFilters.serviceMode !== "all" || draftFilters.specialty !== "all";
-  const resultsHeading = !shouldShowResults
-    ? t("Find the right support")
-    : hasMeaningfulSearch
-      ? exactResults.length > 0
-        ? t("Results")
-        : t("No exact matches yet")
-      : localizedCurrentCategory?.label ?? t("Explore Elevare");
-  const resultsDescription = !shouldShowResults
-    ? t("Use the filters above to browse published professional profiles by category, location, specialty, service mode, or keyword.")
-    : hasMeaningfulSearch
-      ? exactResults.length > 0
-        ? t("These published profiles match your current search filters.")
-        : t("We couldn't find someone matching every filter, so here are some other options.")
-      : currentCategory
-        ? t("Published profiles in this category appear here by default so you can start comparing fit right away.")
-        : t("Search the marketplace to view professional profiles.");
+  const acceptingResultCount = exactResults.filter((professional) => professional.clientAcceptanceStatus === "accepting").length;
+  const allExactResultsAccepting = exactResults.length > 0 && acceptingResultCount === exactResults.length;
+  const resultsHeading = hasMeaningfulSearch
+    ? exactResults.length > 0
+      ? t("Results")
+      : t("No exact matches yet")
+    : localizedCurrentCategory?.label
+      ?? t(allExactResultsAccepting ? "Professionals accepting clients" : "Explore professionals");
+  const resultsDescription = hasMeaningfulSearch
+    ? exactResults.length > 0
+      ? t("These published profiles match your current search filters.")
+      : t("No available professionals currently match all selected preferences. Adjust a filter or ask Elevare to help look for the right fit.")
+    : currentCategory
+      ? t("Published profiles in this category appear here by default so you can start comparing fit right away.")
+      : allExactResultsAccepting
+        ? t("Start with professionals who are currently accepting clients, then refine by category, location, service mode, or specialty.")
+        : t("Browse published professional profiles, then refine the list when you know what support you want.");
+
+  useEffect(() => {
+    if (hasTrackedInitialResults.current) return;
+    trackEvent("professional_initial_results_displayed", {
+      source_page: sourcePage,
+      result_count_band: getMarketplaceResultCountBand(exactResults.length),
+      accepting_result_count_band: getMarketplaceResultCountBand(acceptingResultCount),
+    });
+    hasTrackedInitialResults.current = true;
+  }, [acceptingResultCount, exactResults.length, sourcePage]);
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -366,38 +359,36 @@ function MarketplaceDirectoryState({
           })
         : [];
     const nextFallbackCount = nextFallbackGroups.reduce((total, group) => total + group.professionals.length, 0);
-
     trackEvent("professional_search_performed", {
       source_page: sourcePage,
       category: nextCategorySlug ?? "all",
-      has_location: Boolean(nextFilters.location.trim()),
+      has_location: Boolean(nextFilters.location.trim()) && nextFilters.location !== "all",
       service_mode: nextFilters.serviceMode,
-      specialty: nextFilters.specialty,
+      has_specialty: nextFilters.specialty !== "all",
       query_length: nextFilters.query.length,
-      exact_result_count: nextExactResults.length,
+      result_count_band: getMarketplaceResultCountBand(nextExactResults.length),
     });
 
     if (nextExactResults.length === 0) {
       trackEvent("professional_search_zero_results", {
         source_page: sourcePage,
         category: nextCategorySlug ?? "all",
-        has_location: Boolean(nextFilters.location.trim()),
+        has_location: Boolean(nextFilters.location.trim()) && nextFilters.location !== "all",
         service_mode: nextFilters.serviceMode,
-        specialty: nextFilters.specialty,
-        fallback_result_count: nextFallbackCount,
+        has_specialty: nextFilters.specialty !== "all",
+        fallback_result_count_band: getMarketplaceResultCountBand(nextFallbackCount),
       });
     }
 
     if (nextFallbackCount > 0) {
       trackEvent("fallback_results_shown", {
         source_page: sourcePage,
-        nearby_count: nextFallbackGroups.find((group) => group.key === "nearby")?.professionals.length ?? 0,
-        online_count: nextFallbackGroups.find((group) => group.key === "online")?.professionals.length ?? 0,
-        similar_count: nextFallbackGroups.find((group) => group.key === "similar")?.professionals.length ?? 0,
+        nearby_result_count_band: getMarketplaceResultCountBand(nextFallbackGroups.find((group) => group.key === "nearby")?.professionals.length ?? 0),
+        online_result_count_band: getMarketplaceResultCountBand(nextFallbackGroups.find((group) => group.key === "online")?.professionals.length ?? 0),
+        similar_result_count_band: getMarketplaceResultCountBand(nextFallbackGroups.find((group) => group.key === "similar")?.professionals.length ?? 0),
       });
     }
 
-    setHasStartedSearch(true);
     setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
     setAppliedFilters(nextFilters);
     const nextUrl = buildSearchUrl(pathname, nextFilters, fixedCategorySlug);
@@ -413,8 +404,8 @@ function MarketplaceDirectoryState({
     trackEvent("professional_results_expanded", {
       source_page: sourcePage,
       category: currentCategorySlug ?? "all",
-      total_results: exactResults.length,
-      visible_results: nextVisibleCount,
+      result_count_band: getMarketplaceResultCountBand(exactResults.length),
+      visible_result_count_band: getMarketplaceResultCountBand(nextVisibleCount),
     });
   }
 
@@ -422,13 +413,62 @@ function MarketplaceDirectoryState({
     const nextFilters = buildInitialFilters(new URLSearchParams(), fixedCategorySlug);
     setDraftFilters(nextFilters);
     setAppliedFilters(nextFilters);
-    setHasStartedSearch(Boolean(fixedCategorySlug));
     setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
     setShowAdvancedFilters(false);
     const nextUrl = buildSearchUrl(pathname, nextFilters, fixedCategorySlug);
     router.replace(nextUrl, { scroll: false });
     onSearchUrlChange(nextUrl);
+    trackEvent("marketplace_filters_reset", {
+      source_page: sourcePage,
+      fixed_category: fixedCategorySlug ?? "all",
+    });
+    scrollToResults();
   }
+
+  function applyFilterRelaxation(nextFilters: ProfessionalDirectoryFilters, relaxation: string) {
+    setDraftFilters(nextFilters);
+    setAppliedFilters(nextFilters);
+    setVisibleProfileCount(INITIAL_VISIBLE_PROFILE_COUNT);
+    const nextUrl = buildSearchUrl(pathname, nextFilters, fixedCategorySlug);
+    router.replace(nextUrl, { scroll: false });
+    onSearchUrlChange(nextUrl);
+    trackEvent("marketplace_filter_relaxed", {
+      source_page: sourcePage,
+      relaxation,
+    });
+    scrollToResults();
+  }
+
+  function handleRemoveFilter(filter: keyof ProfessionalDirectoryFilters) {
+    const nextFilters: ProfessionalDirectoryFilters = {
+      ...appliedFilters,
+      [filter]: filter === "query" ? "" : "all",
+    };
+    applyFilterRelaxation(nextFilters, `remove_${filter}`);
+  }
+
+  function handleIncludeOnline() {
+    const nextFilters: ProfessionalDirectoryFilters = {
+      ...appliedFilters,
+      location: "all",
+      serviceMode: "online",
+    };
+    applyFilterRelaxation(nextFilters, "include_online");
+    trackEvent("marketplace_online_option_selected", { source_page: sourcePage });
+  }
+
+  const selectedCategory = appliedFilters.category !== "all"
+    ? getCategoryBySlug(categories, appliedFilters.category)
+    : null;
+  const activeFilterChips = [
+    appliedFilters.category !== "all" && !fixedCategorySlug
+      ? { key: "category" as const, label: selectedCategory ? localizeMarketplaceCategory(selectedCategory, locale).label : appliedFilters.category }
+      : null,
+    appliedFilters.location !== "all" ? { key: "location" as const, label: appliedFilters.location } : null,
+    appliedFilters.serviceMode !== "all" ? { key: "serviceMode" as const, label: t(appliedFilters.serviceMode === "in_person" ? "In person" : appliedFilters.serviceMode === "online" ? "Online" : "Hybrid") } : null,
+    appliedFilters.specialty !== "all" ? { key: "specialty" as const, label: localizeMarketplaceSpecialty(appliedFilters.specialty, locale) } : null,
+    appliedFilters.query ? { key: "query" as const, label: t("Keyword search") } : null,
+  ].filter((chip): chip is { key: keyof ProfessionalDirectoryFilters; label: string } => Boolean(chip));
 
   return (
     <>
@@ -567,6 +607,14 @@ function MarketplaceDirectoryState({
               <span>
                 {t("Professionals are independent providers, not employees or agents of Elevare Fit LLC. Review is not an endorsement or verification of every claim; credentials are verified only when specifically marked.")}
               </span>
+              <TrackedLink
+                className="marketplace-trust-link"
+                href={localizePathname("/trust-safety/", locale)}
+                eventName="trust_explanation_opened"
+                eventParams={{ source_page: sourcePage }}
+              >
+                {t("Learn how Elevare trust checks work")}
+              </TrackedLink>
             </div>
 
             <div className="marketplace-search-footer">
@@ -605,6 +653,29 @@ function MarketplaceDirectoryState({
         </article>
       </section>
 
+      {activeFilterChips.length > 0 ? (
+        <section className="section section-compact marketplace-active-filters" aria-label={t("Active filters")}>
+          <span className="stat-label">{t("Active filters")}</span>
+          <div className="marketplace-filter-chips">
+            {activeFilterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                className="marketplace-filter-chip"
+                onClick={() => handleRemoveFilter(chip.key)}
+                aria-label={`${t("Remove filter")}: ${chip.label}`}
+              >
+                <span>{chip.label}</span>
+                <span aria-hidden="true">×</span>
+              </button>
+            ))}
+            <button type="button" className="marketplace-filter-clear" onClick={handleResetFilters}>
+              {t("Clear all")}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       {showCategoryCards && categoryCards.length > 0 ? (
         <section className="section section-compact">
           <div className="section-head section-head-compact">
@@ -616,6 +687,10 @@ function MarketplaceDirectoryState({
           <div className="professional-category-grid">
             {categoryCards.map((category) => {
               const localizedCategory = localizeMarketplaceCategory(category, locale);
+              const supply = categorySupply.find((entry) => entry.category.slug === category.slug);
+              const supplyLabel = supply && supply.acceptingCount > 0
+                ? t("Accepting clients")
+                : t("Profiles available to browse");
               return (
               <TrackedLink
                 key={category.slug}
@@ -630,36 +705,50 @@ function MarketplaceDirectoryState({
                 <span className="proof-label">{localizedCategory.label}</span>
                 <div className="proof-value">{localizedCategory.headline}</div>
                 <p className="proof-copy">{localizedCategory.shortDescription ?? t("Browse profiles in this category.")}</p>
+                <span className="marketplace-category-availability">{supplyLabel}</span>
                 <span className="proof-action">{t("Browse category")}</span>
               </TrackedLink>
               );
             })}
           </div>
+
+          {emptyCategoryCards.length > 0 ? (
+            <details className="marketplace-more-categories">
+              <summary>{t("More types of support")}</summary>
+              <p>{t("These categories do not have a published profile yet. You can still tell Elevare what support you need.")}</p>
+              <div className="marketplace-more-category-links">
+                {emptyCategoryCards.map((category) => (
+                  <TrackedLink
+                    key={category.slug}
+                    href={localizeProfessionalPath(`/professionals/${category.slug}`, locale)}
+                    eventName="category_card_clicked"
+                    eventParams={{ source_page: `${sourcePage}_more_support`, category: category.slug }}
+                  >
+                    {localizeMarketplaceCategory(category, locale).label}
+                  </TrackedLink>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </section>
       ) : null}
 
-      <section id={RESULTS_SECTION_ID} className="section section-compact">
+      <section id={RESULTS_SECTION_ID} className="section section-compact marketplace-results-section" aria-live="polite" aria-busy="false" tabIndex={-1}>
         <div className="section-head section-head-compact">
           <div className="eyebrow">{t(hasMeaningfulSearch ? "Search results" : "Explore")}</div>
           <h2 className="section-title section-title-compact">{resultsHeading}</h2>
           <p className="section-copy">{resultsDescription}</p>
         </div>
 
-        {!shouldShowResults ? (
-          <article className="callout marketplace-empty-callout">
-            <span className="meta-pill">{t("Browse professional profiles")}</span>
-            <h2>{t("Start by refining your search.")}</h2>
-            <p>
-              {t("Matching profiles will appear here once you choose a category, location, specialty, service mode, or keyword.")}
-            </p>
-          </article>
-        ) : exactResults.length > 0 ? (
+        {exactResults.length > 0 ? (
           <>
             <div className="training-results-head marketplace-results-head">
               <strong>
-                {remainingExactResults > 0
-                  ? `${t("Showing")} ${visibleExactResults.length.toLocaleString(locale)} ${t("of")} ${exactResults.length.toLocaleString(locale)} ${t("profiles")}`
-                  : `${exactResults.length.toLocaleString(locale)} ${t("profiles")}`}
+                {!hasMeaningfulSearch
+                  ? t(allExactResultsAccepting ? "Available professionals" : "Published professionals")
+                  : remainingExactResults > 0
+                    ? `${t("Showing")} ${visibleExactResults.length.toLocaleString(locale)} ${t("of")} ${exactResults.length.toLocaleString(locale)} ${t("profiles")}`
+                    : `${exactResults.length.toLocaleString(locale)} ${t("profiles")}`}
               </strong>
               <span>
                 {remainingExactResults > 0
@@ -686,6 +775,21 @@ function MarketplaceDirectoryState({
                 </button>
               </div>
             ) : null}
+
+            {!hasMeaningfulSearch && exactResults.length <= 3 ? (
+              <details id="guided-matching" className="marketplace-guided-help">
+                <summary>{t("Want help finding the right professional?")}</summary>
+                <p>{t("Tell Elevare what support you want. We will review the request, but a suitable match is not guaranteed.")}</p>
+                <MarketplaceDemandForm
+                  categories={categories}
+                  filters={appliedFilters}
+                  fixedCategorySlug={fixedCategorySlug}
+                  sourcePage={`${sourcePage}_low_supply`}
+                  exactResultCount={exactResults.length}
+                  fallbackResultCount={fallbackResultCount}
+                />
+              </details>
+            ) : null}
           </>
         ) : (
           <>
@@ -697,13 +801,25 @@ function MarketplaceDirectoryState({
                     ? t("Nothing live in this view yet")
                     : t("Marketplace inventory is growing")}
               </span>
-              <h2>{t(hasMeaningfulSearch ? "No exact matches yet" : "Nothing live in this view yet.")}</h2>
-              <p>
+               <h2>{t(hasMeaningfulSearch ? "No exact matches yet" : hasInventory ? "Nothing live in this view yet." : "Elevare is building its professional network")}</h2>
+               <p>
                 {hasMeaningfulSearch
                   ? t("We couldn't find someone matching every filter, so here are some other options.")
                   : t("There are not any published profiles visible in this view yet, so the best next step is to widen the search or tell us what you need.")}
-              </p>
-            </article>
+               </p>
+               <div className="button-row marketplace-empty-actions">
+                 {hasMeaningfulSearch ? (
+                   <button type="button" className="button button-secondary" onClick={handleResetFilters}>
+                     {t("Browse all available professionals")}
+                   </button>
+                 ) : null}
+                 {(appliedFilters.location !== "all" || appliedFilters.serviceMode === "in_person") ? (
+                   <button type="button" className="button button-secondary" onClick={handleIncludeOnline}>
+                     {t("Include online professionals")}
+                   </button>
+                 ) : null}
+               </div>
+             </article>
 
             {fallbackGroups.length > 0 ? (
               <div className="marketplace-fallback-stack">
@@ -734,24 +850,36 @@ function MarketplaceDirectoryState({
                   </section>
                 ))}
               </div>
-            ) : (
-              <article className="callout marketplace-demand-callout">
-                <span className="meta-pill">{t("Can't find what you're looking for?")}</span>
-                <h2>{t("Tell us what you need.")}</h2>
-                <p>
-                  {t("We'll save this search demand so we know where the marketplace needs better coverage.")}
-                </p>
-                <MarketplaceDemandForm
-                  key={`${sourcePage}:${fixedCategorySlug ?? "all"}:${appliedFilters.category}:${appliedFilters.location}:${appliedFilters.serviceMode}:${appliedFilters.specialty}:${appliedFilters.query}`}
-                  categories={categories}
-                  filters={appliedFilters}
-                  fixedCategorySlug={fixedCategorySlug}
-                  sourcePage={sourcePage}
-                  exactResultCount={exactResults.length}
-                  fallbackResultCount={fallbackResultCount}
-                />
-              </article>
-            )}
+            ) : null}
+
+             <article id="guided-matching" className="callout marketplace-demand-callout">
+              <span className="meta-pill">{t(hasInventory ? "Help me find the right professional" : "Elevare is building its professional network")}</span>
+              <h2>{t("Tell us what you need.")}</h2>
+              <p>
+                {t(hasInventory
+                  ? "Elevare will review your preferences and let you know whether we can identify a suitable professional. A match is not guaranteed."
+                  : "Tell us what support you are looking for, and we will let you know whether we can identify a suitable professional. A match is not guaranteed.")}
+              </p>
+              <MarketplaceDemandForm
+                key={`${sourcePage}:${fixedCategorySlug ?? "all"}:${appliedFilters.category}:${appliedFilters.location}:${appliedFilters.serviceMode}:${appliedFilters.specialty}:${appliedFilters.query}`}
+                categories={categories}
+                filters={appliedFilters}
+                fixedCategorySlug={fixedCategorySlug}
+                sourcePage={sourcePage}
+                exactResultCount={exactResults.length}
+                fallbackResultCount={fallbackResultCount}
+              />
+              {!hasInventory ? (
+                <div className="button-row marketplace-empty-network-actions">
+                  <TrackedLink className="button button-secondary" href={localizePathname("/calculators/", locale)} eventName="cta_click" eventParams={{ cta_name: "Browse calculators", cta_context: `${sourcePage}_empty` }}>
+                    {t("Browse free tools")}
+                  </TrackedLink>
+                  <TrackedLink className="button button-secondary" href={localizeProfessionalPath("/account/professional-profile/", locale)} eventName="cta_click" eventParams={{ cta_name: "Join as a Pro", cta_context: `${sourcePage}_empty` }}>
+                    {t("Join as a Pro")}
+                  </TrackedLink>
+                </div>
+              ) : null}
+            </article>
           </>
         )}
       </section>

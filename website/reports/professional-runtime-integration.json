@@ -1,0 +1,23 @@
+{
+  "mode": "next start",
+  "database": "isolated Supabase Postgres + PostgREST, contract fixture",
+  "buildId": "dMAqcDJOx1M1Kf7Sg1XEU",
+  "results": [
+    "restricted view denies anon and authenticated direct access",
+    "production public profile is server rendered from approved Supabase data",
+    "endpoint rejects missing secret, unknown event, and arbitrary purge arguments",
+    "real availability mutation updates profile and collections without rebuilding",
+    "duplicate and out-of-order delivery never restores old data or loses a new event",
+    "private notes do not invalidate public data, but an admin edit makes the owner version stale",
+    "category and location changes invalidate old and new collections",
+    "clock-driven trust expiration is visible even without a worker or row update",
+    "soft deletion and account deactivation disappear without a delivery worker",
+    "invalid service changes roll back the whole transaction and its event",
+    "stale full-editor saves return a prompt conflict without retrying a transaction",
+    "database success survives revalidation failure; retry does not write the profile again",
+    "external delivery outage retains the event and the actual worker later acknowledges it",
+    "unapproved biography through atomic editor RPC is absent from HTML, metadata and sitemap",
+    "external admin publish, slug change, suspension and removal propagate",
+    "BUILD_ID and its timestamp unchanged across every mutation; no build/deploy command exists in this test"
+  ]
+}

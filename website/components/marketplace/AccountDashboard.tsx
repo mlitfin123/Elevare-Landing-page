@@ -4,17 +4,12 @@ import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AccountDeletionRequest } from "@/components/marketplace/AccountDeletionRequest";
+import { ProfessionalRetentionDashboard } from "@/components/marketplace/ProfessionalRetentionDashboard";
 import { useMarketplaceAccountState } from "@/components/marketplace/MarketplaceAccountShell";
-import {
-  getDashboardActionOrder,
-  getDashboardSectionOrder,
-  getProfessionalDashboardPresentation,
-  type DashboardActionId,
-} from "@/lib/dashboard-state";
+import { getDashboardActionOrder, getDashboardSectionOrder, type DashboardActionId } from "@/lib/dashboard-state";
 import {
   buildProfessionalPath,
   formatLocationLabel,
-  getProfessionalStatusMessage,
 } from "@/lib/marketplace-helpers";
 import {
   EMPTY_MARKETPLACE_SNAPSHOT,
@@ -38,7 +33,7 @@ type RequestActivityRecord = {
   client_first_name?: string | null;
   service_interest: string | null;
   goal: string;
-  status: "new" | "viewed" | "contacted" | "closed";
+  status: "new" | "viewed" | "accepted" | "declined" | "contacted" | "closed";
   created_at: string;
 };
 
@@ -64,6 +59,10 @@ function formatRequestStatus(status: RequestActivityRecord["status"], locale: Lo
       return marketplaceText(locale, "Viewed");
     case "contacted":
       return marketplaceText(locale, "Contacted");
+    case "accepted":
+      return marketplaceText(locale, "Accepted");
+    case "declined":
+      return marketplaceText(locale, "Declined");
     case "closed":
       return marketplaceText(locale, "Closed");
     default:
@@ -282,17 +281,6 @@ export function AccountDashboard() {
   }
 
   const welcomeName = appUser?.first_name?.trim() || null;
-  const professionalStatusMessage = professionalProfile
-    ? professionalProfile.statusMessage
-      ?? getProfessionalStatusMessage(professionalProfile.status, professionalProfile.reviewFeedbackPublic)
-    : null;
-
-  const professionalPresentation = professionalProfile
-    ? getProfessionalDashboardPresentation({
-        status: professionalProfile.status,
-        isPubliclyListed: professionalProfile.isPubliclyListed,
-      })
-    : null;
   const hasRecentSaved = recentlySaved.length > 0;
   const hasRecentOutgoingRequests = visibleSentRequests.length > 0;
   const hasClientActivity = hasRecentSaved || hasRecentOutgoingRequests;
@@ -463,40 +451,7 @@ export function AccountDashboard() {
     </section>
   );
 
-  const proSection = professionalProfile && professionalPresentation ? (
-    <section className="section account-overview-section" aria-labelledby="pro-overview-heading">
-      <div className="section-head section-head-compact">
-        <div className="eyebrow">{t("Pro activity")}</div>
-        <h2 id="pro-overview-heading" className="section-title section-title-compact">
-          {t("Your services on Elevare.")}
-        </h2>
-      </div>
-
-      <div className="account-summary-grid is-single">
-        <article className="panel account-summary-card">
-          <div className="account-summary-head">
-            <div>
-              <span className="stat-label">{t("Professional account")}</span>
-              <h3>{t("Your Pro Profile")}</h3>
-            </div>
-            <span className="meta-pill">{t(professionalPresentation.statusLabel)}</span>
-          </div>
-          <p>{professionalStatusMessage ? t(professionalStatusMessage) : null}</p>
-          <div className="button-row">
-            <Link className="button button-secondary" href={localizePathname("/account/professional-profile/", locale)}>
-              {t(professionalPresentation.editorActionLabel)}
-            </Link>
-            {professionalProfile.isPubliclyListed && professionalProfile.publicSlug ? (
-              <Link className="button button-primary" href={localizePathname(buildProfessionalPath(professionalProfile.publicSlug), locale)}>
-                {t("View Public Profile")}
-              </Link>
-            ) : null}
-          </div>
-        </article>
-
-      </div>
-    </section>
-  ) : null;
+  const proSection = professionalProfile ? <ProfessionalRetentionDashboard /> : null;
 
   const clientRequestsSection = showClientRequestsSection && professionalProfile ? (
     <section className="section account-overview-section" aria-labelledby="client-requests-overview-heading">

@@ -99,6 +99,22 @@ export function isMarketplaceFilteredSearch(value: string | URLSearchParams) {
   return params.toString().length > 0;
 }
 
+export function hasMarketplaceFilterSearchParams(
+  value: Record<string, string | string[] | undefined>,
+) {
+  const params = new URLSearchParams();
+
+  for (const [key, entry] of Object.entries(value)) {
+    if (Array.isArray(entry)) {
+      entry.forEach((item) => params.append(key, item));
+    } else if (entry !== undefined) {
+      params.set(key, entry);
+    }
+  }
+
+  return isMarketplaceFilteredSearch(params);
+}
+
 export function getMarketplaceCategoryProfessionalCount(
   category: ProfessionalCategoryRecord,
   professionals: ProfessionalProfileRecord[],

@@ -69,6 +69,7 @@ export type HomeMessages = {
     professionalTitle: string;
     professionalBody: string;
     browseCta: string;
+    guidedCta: string;
     joinCta: string;
     snapshotLabel: string;
     snapshotTitle: string;

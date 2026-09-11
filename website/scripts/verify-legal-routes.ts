@@ -13,6 +13,9 @@ const publicRoot = path.join(projectRoot, "public");
 const outputRoot = path.join(projectRoot, ".next", "server", "app");
 const recognizedSiteOrigins = new Set([siteConfig.url, ...LEGACY_SITE_ORIGINS]);
 const verifyOutput = process.argv.includes("--output");
+const appPaths: Record<string, string> = verifyOutput
+  ? JSON.parse(await fs.readFile(path.join(projectRoot, ".next", "server", "app-paths-manifest.json"), "utf8"))
+  : {};
 
 type ArchiveRecord = {
   documentKey: string;
@@ -54,6 +57,13 @@ async function pathExists(candidate: string) {
 }
 
 async function productionRouteExists(route: string) {
+  if (verifyOutput) {
+    // Runtime routes have a compiled server entry instead of an exported HTML
+    // file. Verify the exact route manifest entry and its actual output file.
+    const routeKey = `${route.replace(/\/+$/, "")}/page`;
+    const serverEntry = appPaths[routeKey];
+    if (serverEntry && await pathExists(path.join(projectRoot, ".next", "server", serverEntry))) return true;
+  }
   if (route === "/") {
     return verifyOutput
       ? pathExists(path.join(outputRoot, "index.html"))
@@ -161,4 +171,4 @@ async function verifyArchives() {
 
 await Promise.all(ACTIVE_LEGAL_ROUTES.map(verifyActiveDocument));
 const archiveCount = await verifyArchives();
-console.log(`Verified ${ACTIVE_LEGAL_ROUTES.length} active legal routes and ${archiveCount} archive routes${verifyOutput ? " in static output" : ""}.`);
+console.log(`Verified ${ACTIVE_LEGAL_ROUTES.length} active legal routes and ${archiveCount} archive routes${verifyOutput ? " in production output" : ""}.`);

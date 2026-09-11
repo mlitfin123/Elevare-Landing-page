@@ -37,11 +37,13 @@ const clientLinks = [
   { href: "/account/profile/", label: "Preferences" },
   { href: "/account/saved/", label: "Saved" },
   { href: "/account/inquiries/", label: "My Requests" },
+  { href: "/account/matches/", label: "Concierge Matches" },
 ];
 
 const professionalLinks = [
   { href: "/account/professional-profile/", label: "Pro Profile" },
   { href: "/account/client-requests/", label: "Client Requests" },
+  { href: "/account/opportunities/", label: "Match Opportunities" },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -208,7 +210,13 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
       <nav className="account-nav" aria-label={t("Account")}>
         {accountLinks.map((link) => {
           const isActive = isActivePath(canonicalPathname, link.href);
-          const canLocalize = link.href === "/account/" || link.href === "/professionals/" || link.href === "/account/professional-profile/";
+          const canLocalize = link.href === "/account/"
+            || link.href === "/professionals/"
+            || link.href === "/account/professional-profile/"
+            || link.href === "/account/inquiries/"
+            || link.href === "/account/client-requests/"
+            || link.href === "/account/matches/"
+            || link.href === "/account/opportunities/";
 
           return (
             <Link

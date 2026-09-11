@@ -11,6 +11,7 @@ import {
   isValidOptionalUrl,
   normalizeStateValue,
   retainAvailableSpecialties,
+  validatePublicProfessionalContent,
 } from "../lib/professional-profile.ts";
 import { getMarketplaceTaxonomySelections } from "../lib/marketplace-taxonomy.ts";
 
@@ -33,6 +34,12 @@ test("profile completeness requires meaningful public profile inputs", () => {
     professionalTitle: "Personal Trainer",
     profilePhotoUrl: "",
     bio: "",
+    publicHeadline: "",
+    bestFitSummary: "",
+    goalTags: [],
+    experienceLevelsServed: [],
+    yearsExperience: "",
+    consultationExpectations: "",
     primaryCategory: "personal_training",
     specialties: [],
     serviceModes: ["online"],
@@ -40,6 +47,8 @@ test("profile completeness requires meaningful public profile inputs", () => {
     city: "",
     state: "",
     services: [],
+    profilePriceFrom: "",
+    profileContactForPricing: false,
     availability: [],
     acceptanceStatus: "accepting",
   });
@@ -47,6 +56,7 @@ test("profile completeness requires meaningful public profile inputs", () => {
   assert.ok(incomplete.percent < 100);
   assert.ok(incomplete.missing.includes("Add a profile photo"));
   assert.ok(incomplete.missing.includes("Add at least one service"));
+  assert.ok(incomplete.missing.includes("Add pricing context"));
   assert.equal(incomplete.items.find((item) => item.id === "services")?.section, "offer");
 });
 
@@ -56,13 +66,19 @@ test("profile completeness does not require duplicate profile-level pricing", ()
     professionalTitle: "Personal Trainer",
     profilePhotoUrl: "https://example.com/jane.jpg",
     bio: "I help clients train consistently.",
+    publicHeadline: "Practical strength coaching for busy adults",
+    bestFitSummary: "Adults who want structured, sustainable strength training.",
+    goalTags: ["strength"],
+    experienceLevelsServed: ["beginner", "intermediate"],
+    yearsExperience: "5",
+    consultationExpectations: "We will discuss your goals, schedule, and preferred training format.",
     primaryCategory: "personal_training",
     specialties: ["General Fitness"],
     serviceModes: ["online"],
     countryCode: "US",
     city: "",
     state: "",
-    services: [{ name: "Online coaching" }],
+    services: [{ name: "Online coaching", priceFrom: "125", contactForPricing: false }],
     availability: ["evenings"],
     acceptanceStatus: "accepting",
   });
@@ -71,17 +87,62 @@ test("profile completeness does not require duplicate profile-level pricing", ()
   assert.deepEqual(complete.missing, []);
 });
 
+test("profile completeness only credits public pricing context", () => {
+  const base = {
+    name: "Jane Smith",
+    professionalTitle: "Personal Trainer",
+    profilePhotoUrl: "https://example.com/jane.jpg",
+    bio: "I help clients train consistently.",
+    publicHeadline: "Practical strength coaching for busy adults",
+    bestFitSummary: "Adults who want structured, sustainable strength training.",
+    goalTags: ["strength"],
+    experienceLevelsServed: ["beginner"],
+    yearsExperience: "5",
+    consultationExpectations: "I review requests and reply with next steps.",
+    primaryCategory: "personal_training",
+    specialties: ["General Fitness"],
+    serviceModes: ["online"],
+    countryCode: "US",
+    city: "",
+    state: "",
+    availability: ["evenings"],
+    acceptanceStatus: "accepting",
+  };
+
+  const inactiveOnly = calculateProfileCompleteness({
+    ...base,
+    services: [{ name: "Archived coaching", priceFrom: "125", contactForPricing: false, isActive: false }],
+    profilePriceFrom: "",
+    profileContactForPricing: false,
+  });
+  const legacyPricing = calculateProfileCompleteness({
+    ...base,
+    services: [{ name: "Coaching", priceFrom: "", contactForPricing: false, isActive: true }],
+    profilePriceFrom: "125",
+    profileContactForPricing: false,
+  });
+
+  assert.ok(inactiveOnly.missing.includes("Add pricing context"));
+  assert.equal(legacyPricing.missing.includes("Add pricing context"), false);
+});
+
 test("in-person profile completeness follows country-specific region rules", () => {
   const base = {
     name: "Jane Smith",
     professionalTitle: "Personal Trainer",
     profilePhotoUrl: "https://example.com/jane.jpg",
     bio: "I help clients train consistently.",
+    publicHeadline: "Practical strength coaching for busy adults",
+    bestFitSummary: "Adults who want structured, sustainable strength training.",
+    goalTags: ["strength"],
+    experienceLevelsServed: ["beginner", "intermediate"],
+    yearsExperience: "5",
+    consultationExpectations: "We will discuss your goals, schedule, and preferred training format.",
     primaryCategory: "personal_training",
     specialties: ["General Fitness"],
     serviceModes: ["in_person"],
     city: "London",
-    services: [{ name: "Personal training" }],
+    services: [{ name: "Personal training", priceFrom: "90", contactForPricing: false }],
     availability: ["evenings"],
     acceptanceStatus: "accepting",
   };
@@ -154,4 +215,14 @@ test("optional public links require web URLs when provided", () => {
 test("website links use optional professional text or fall back to the URL", () => {
   assert.equal(formatWebsiteLinkLabel("https://example.com", "Visit my coaching site"), "Visit my coaching site");
   assert.equal(formatWebsiteLinkLabel("https://example.com", "  "), "https://example.com");
+});
+
+test("public profile content validation flags unsupported claims and misplaced contact details", () => {
+  assert.equal(validatePublicProfessionalContent("Evidence-informed coaching for beginner lifters."), null);
+  assert.equal(validatePublicProfessionalContent("Guaranteed results in six weeks."), "Avoid guaranteed-result claims.");
+  assert.equal(validatePublicProfessionalContent("The #1 coach in Miami."), "Avoid unsupported ranking or superlative claims.");
+  assert.equal(
+    validatePublicProfessionalContent("Email coach@example.com for details."),
+    "Keep links and contact details in the dedicated links section.",
+  );
 });

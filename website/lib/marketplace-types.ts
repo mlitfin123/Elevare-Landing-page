@@ -24,6 +24,22 @@ export type ProfessionalCredentialRecord = {
   jurisdiction: string | null;
 };
 
+export type ProfessionalTrustSummary = {
+  profileReviewed: boolean;
+  profileReviewedAt: string | null;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  identityVerified: boolean;
+  identityVerifiedAt: string | null;
+  backgroundCheckCompleted: boolean;
+  backgroundCheckCompletedAt: string | null;
+  backgroundCheckProduct: string | null;
+  insuranceConfirmed: boolean;
+  insuranceConfirmedThrough: string | null;
+  profileInformationConfirmedAt: string | null;
+  accountInGoodStanding: boolean;
+};
+
 export type ProfessionalServiceRecord = {
   id: string;
   professionalProfileId: string;
@@ -38,6 +54,12 @@ export type ProfessionalServiceRecord = {
   sortOrder: number;
   isActive: boolean;
   currencyCode: string;
+  intendedFor: string | null;
+  includedItems: string[];
+  deliveryCadence: string | null;
+  minimumCommitment: string | null;
+  consultationType: string;
+  additionalCostsNote: string | null;
 };
 
 export type ProfessionalProfileRecord = {
@@ -46,9 +68,16 @@ export type ProfessionalProfileRecord = {
   profileSlug: string;
   profilePhotoUrl: string | null;
   professionalTitle: string;
+  publicHeadline: string | null;
+  bestFitSummary: string | null;
   bio: string;
   yearsExperience: number | null;
   specialties: string[];
+  goalTags: string[];
+  experienceLevelsServed: string[];
+  coachingStyle: string | null;
+  serviceBoundaries: string | null;
+  consultationExpectations: string | null;
   languages: string[];
   countryCode: string;
   city: string | null;
@@ -66,20 +95,23 @@ export type ProfessionalProfileRecord = {
   availabilitySummary: string | null;
   typicalAvailability: string[];
   availabilityDetails: string | null;
+  availabilityConfirmedAt: string | null;
   clientAcceptanceStatus: string;
   websiteUrl: string | null;
   socialLinks: Record<string, string>;
   approvalStatus: string;
   isActive: boolean;
   isPublic: boolean;
-  identityVerificationStatus: string;
-  reviewFeedbackPublic: string | null;
-  lastSubmittedAt: string | null;
+  identityVerificationStatus?: string;
+  trustSummary?: ProfessionalTrustSummary;
+  reviewFeedbackPublic?: string | null;
+  lastSubmittedAt?: string | null;
   categories: ProfessionalCategoryRecord[];
   credentials: ProfessionalCredentialRecord[];
   services: ProfessionalServiceRecord[];
   createdAt: string | null;
   updatedAt: string | null;
+  directoryCompletenessScore?: number;
 };
 
 export type ClientProfileRecord = {

@@ -18,7 +18,11 @@ const nextStepHrefs = ["/calculators/", "/logbook/", "/stagelab/", "/professiona
 const toolHrefs = ["/calculators/", "/exercises/", "/workouts/", "/nutrition/"] as const;
 
 function hrefForLocale(href: string, locale: Locale) {
-  return href === "/logbook/" || href === "/stagelab/" || href === "/"
+  return href === "/logbook/"
+    || href === "/stagelab/"
+    || href === "/"
+    || href.startsWith("/professionals/")
+    || href.startsWith("/account/professional-profile/")
     ? localizePathname(href, locale)
     : href;
 }
@@ -42,8 +46,9 @@ export async function LocalizedHomePage({
     getMarketplaceProfessionals(),
   ]);
   const topCategories = findTopCategories(categories, professionals, 4);
+  const eligibleProfessionalCount = countEligibleMarketplaceProfiles(professionals);
   const marketplaceSocialProof = formatMarketplaceSocialProofCount(
-    countEligibleMarketplaceProfiles(professionals),
+    eligibleProfessionalCount,
   );
 
   return (
@@ -59,7 +64,7 @@ export async function LocalizedHomePage({
           <TrackedLink className="button button-secondary" href={localizePathname("/logbook/", locale)} eventName="cta_click" eventParams={{ cta_name: "Download Logbook", cta_context: "home_hero", product: "Logbook" }}>
             {messages.hero.logbookCta}
           </TrackedLink>
-          <TrackedLink className="hero-text-link" href="/professionals/" hrefLang={hrefLanguage("/professionals/", locale)} eventName="cta_click" eventParams={{ cta_name: "Find your match", cta_context: "home_hero", product: "Elevare" }}>
+          <TrackedLink className="hero-text-link" href={hrefForLocale("/professionals/", locale)} hrefLang={hrefLanguage("/professionals/", locale)} eventName="cta_click" eventParams={{ cta_name: "Find your match", cta_context: "home_hero", product: "Elevare" }}>
             {messages.hero.marketplaceCta}
           </TrackedLink>
         </div>
@@ -206,8 +211,11 @@ export async function LocalizedHomePage({
               <article className="proof-card"><span className="proof-label">{messages.marketplace.professionalLabel}</span><div className="proof-value">{messages.marketplace.professionalTitle}</div><p className="proof-copy">{messages.marketplace.professionalBody}</p></article>
             </div>
             <div className="hero-actions">
-              <TrackedLink className="btn btn-primary" href="/professionals/" hrefLang={hrefLanguage("/professionals/", locale)} eventName="cta_click" eventParams={{ cta_name: "Find your match", cta_context: "home_marketplace_section", product: "Elevare" }}>{messages.marketplace.browseCta}</TrackedLink>
-              <TrackedLink className="button button-secondary" href="/account/professional-profile/" hrefLang={hrefLanguage("/account/professional-profile/", locale)} eventName="cta_click" eventParams={{ cta_name: "Join as a Pro", cta_context: "home_marketplace_section", product: "Elevare" }}>{messages.marketplace.joinCta}</TrackedLink>
+              <TrackedLink className="btn btn-primary" href={hrefForLocale("/professionals/", locale)} hrefLang={hrefLanguage("/professionals/", locale)} eventName="cta_click" eventParams={{ cta_name: "Find your match", cta_context: "home_marketplace_section", product: "Elevare" }}>{messages.marketplace.browseCta}</TrackedLink>
+              {eligibleProfessionalCount <= 3 ? (
+                <TrackedLink className="button button-secondary" href={`${hrefForLocale("/professionals/", locale)}#guided-matching`} hrefLang={hrefLanguage("/professionals/", locale)} eventName="guided_matching_selected" eventParams={{ source_page: "home_marketplace" }}>{messages.marketplace.guidedCta}</TrackedLink>
+              ) : null}
+              <TrackedLink className="button button-secondary" href={hrefForLocale("/account/professional-profile/", locale)} hrefLang={hrefLanguage("/account/professional-profile/", locale)} eventName="cta_click" eventParams={{ cta_name: "Join as a Pro", cta_context: "home_marketplace_section", product: "Elevare" }}>{messages.marketplace.joinCta}</TrackedLink>
             </div>
           </div>
           <aside className="waitlist-card marketplace-side-card">
@@ -218,7 +226,7 @@ export async function LocalizedHomePage({
               {topCategories.map((category) => {
                 const translated = categoryTranslations[category.slug];
                 return (
-                  <TrackedLink key={category.slug} className="proof-card proof-card-link compact-category-card" href={`/professionals/${category.slug}/`} hrefLang={hrefLanguage(`/professionals/${category.slug}/`, locale)} eventName="professional_category_selected" eventParams={{ source_page: "home_marketplace", category: category.slug }}>
+                  <TrackedLink key={category.slug} className="proof-card proof-card-link compact-category-card" href={hrefForLocale(`/professionals/${category.slug}/`, locale)} hrefLang={hrefLanguage(`/professionals/${category.slug}/`, locale)} eventName="professional_category_selected" eventParams={{ source_page: "home_marketplace", category: category.slug }}>
                     <span className="proof-label">{translated?.label ?? category.label}</span>
                     <p className="proof-copy">{translated?.description ?? category.shortDescription}</p>
                     <span className="proof-action">{messages.marketplace.categoryAction}</span>

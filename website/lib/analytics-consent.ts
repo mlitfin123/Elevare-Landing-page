@@ -1,4 +1,5 @@
 export const ANALYTICS_CONSENT_STORAGE_KEY = "elevare_analytics_consent_v1";
+export const ANALYTICS_CONSENT_CHANGE_EVENT = "elevare:analytics-consent-change";
 export type AnalyticsConsentChoice = "accepted" | "declined";
 
 export function readAnalyticsConsentChoice(): AnalyticsConsentChoice | null {
@@ -18,6 +19,8 @@ export function storeAnalyticsConsentChoice(choice: AnalyticsConsentChoice) {
   } catch {
     // Keep the in-memory choice for this visit when browser storage is unavailable.
   }
+
+  window.dispatchEvent(new CustomEvent(ANALYTICS_CONSENT_CHANGE_EVENT, { detail: choice }));
 }
 
 export function hasAnalyticsConsent() {

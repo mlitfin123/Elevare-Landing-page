@@ -17,6 +17,10 @@ import { MarketplaceDirectory } from "@/components/marketplace/MarketplaceDirect
 import { MarketplaceAccountShell } from "@/components/marketplace/MarketplaceAccountShell";
 import { AccountDashboard } from "@/components/marketplace/AccountDashboard";
 import { ProfessionalProfileEditor } from "@/components/marketplace/ProfessionalProfileEditor";
+import { ProfessionalInquiriesPanel } from "@/components/marketplace/ProfessionalInquiriesPanel";
+import { ConciergeCasesPanel } from "@/components/marketplace/ConciergeCasesPanel";
+import { ProfessionalOpportunitiesPanel } from "@/components/marketplace/ProfessionalOpportunitiesPanel";
+import { TrustSafetyPageContent } from "@/components/marketplace/TrustSafetyPageContent";
 import { StructuredData } from "@/components/StructuredData";
 import {
   LocalizedProfessionalRoutePage,
@@ -46,7 +50,8 @@ import { getAllExercises, getAllWorkoutTemplates, getExerciseBySlug, getWorkoutT
 import { EXERCISE_EQUIPMENT_CATEGORIES, EXERCISE_MUSCLE_CATEGORIES, getExerciseCategoryInfo, getWorkoutGoalInfo, WORKOUT_GOALS } from "@/lib/training-data";
 import { getTool, tools } from "@/lib/tools";
 import { getMarketplaceCategories, getMarketplaceProfessionals } from "@/lib/marketplace";
-import { findTopCategories } from "@/lib/marketplace-helpers";
+import { findTopCategories, getMarketplaceRotationSeed, toProfessionalDirectoryRecords } from "@/lib/marketplace-helpers";
+import { hasMarketplaceFilterSearchParams } from "@/lib/marketplace-seo";
 import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type LocalizedPageParams = {
@@ -54,13 +59,13 @@ type LocalizedPageParams = {
   slug?: string[];
 };
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const baseParams = getLocalizedRouteParams();
   if (!baseParams.length) return [];
 
-  const [exercises, workoutTemplates, restaurants, marketplaceCategories, professionals] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants(), getMarketplaceCategories(), getMarketplaceProfessionals()]);
+  const [exercises, workoutTemplates, restaurants, marketplaceCategories] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants(), getMarketplaceCategories()]);
   const categorySlugs = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) => category.slug);
   const locales = ["es-419", "pt-BR"] as const;
   const catalogParams = locales.flatMap((locale) => {
@@ -83,7 +88,6 @@ export async function generateStaticParams() {
       ]),
       { locale: localeSegment, slug: ["professionals"] },
       ...marketplaceCategories.map((category) => ({ locale: localeSegment, slug: ["professionals", category.slug] })),
-      ...professionals.map((professional) => ({ locale: localeSegment, slug: ["professionals", professional.profileSlug] })),
     ];
   });
 
@@ -128,6 +132,9 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 2 && slug[0] === "tools" && slug[1] === "workout-generator") {
     return { locale, page: "workout-generator" as const, pathname: "/tools/workout-generator/" };
   }
+  if (slug.length === 1 && slug[0] === "trust-safety") {
+    return { locale, page: "trust-safety" as const, pathname: "/trust-safety/" };
+  }
   if (slug[0] === "nutrition" && slug.length <= 3) {
     return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
   }
@@ -140,16 +147,35 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 2 && slug[0] === "account" && slug[1] === "professional-profile") {
     return { locale, page: "professional-account" as const, pathname: "/account/professional-profile/" };
   }
+  if (slug.length === 2 && slug[0] === "account" && slug[1] === "inquiries") {
+    return { locale, page: "account-inquiries" as const, pathname: "/account/inquiries/" };
+  }
+  if (slug.length === 2 && slug[0] === "account" && slug[1] === "client-requests") {
+    return { locale, page: "professional-inquiries" as const, pathname: "/account/client-requests/" };
+  }
+  if (slug.length === 2 && slug[0] === "account" && slug[1] === "matches") {
+    return { locale, page: "concierge-matches" as const, pathname: "/account/matches/" };
+  }
+  if (slug.length === 2 && slug[0] === "account" && slug[1] === "opportunities") {
+    return { locale, page: "concierge-opportunities" as const, pathname: "/account/opportunities/" };
+  }
   return null;
 }
 
-export async function generateMetadata({ params }: { params: Promise<LocalizedPageParams> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<LocalizedPageParams>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
   const resolved = resolvePage(await params);
   if (!resolved || !areLocalizedRoutesEnabled()) return {};
 
   const indexingEnabled = isLocalizedIndexingEnabled();
   if (resolved.page === "professionals") {
-    if (resolved.catalogSlug) return buildProfessionalRouteMetadata(resolved.catalogSlug, resolved.locale);
+    const filteredSearch = hasMarketplaceFilterSearchParams(await searchParams);
+    if (resolved.catalogSlug) return buildProfessionalRouteMetadata(resolved.catalogSlug, resolved.locale, filteredSearch);
     const t = (value: string) => marketplaceText(resolved.locale, value);
     return buildMetadata({
       title: t("Find Trainers, Coaches & Wellness Experts | Elevare"),
@@ -157,13 +183,48 @@ export async function generateMetadata({ params }: { params: Promise<LocalizedPa
       pathname: localizePathname("/professionals/", resolved.locale),
       locale: resolved.locale,
       localizedAlternates: true,
+      robots: filteredSearch
+        ? { index: false, follow: true }
+        : indexingEnabled
+          ? undefined
+          : { index: false, follow: false },
+    });
+  }
+
+  if (resolved.page === "trust-safety") {
+    return buildMetadata({
+      title: marketplaceText(resolved.locale, "Trust and Safety | Elevare Professional Marketplace"),
+      description: marketplaceText(resolved.locale, "Learn what Elevare reviews, what marketplace trust statuses mean, and how to evaluate and report concerns about independent professionals."),
+      pathname: localizePathname("/trust-safety/", resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
       robots: indexingEnabled ? undefined : { index: false, follow: false },
     });
   }
 
-  if (resolved.page === "account" || resolved.page === "professional-account") {
+  if (
+    resolved.page === "account"
+    || resolved.page === "professional-account"
+    || resolved.page === "account-inquiries"
+    || resolved.page === "professional-inquiries"
+    || resolved.page === "concierge-matches"
+    || resolved.page === "concierge-opportunities"
+  ) {
     return buildMetadata({
-      title: marketplaceText(resolved.locale, resolved.page === "account" ? "Your Elevare account" : "Your Pro Profile"),
+      title: marketplaceText(
+        resolved.locale,
+        resolved.page === "account"
+          ? "Your Elevare account"
+          : resolved.page === "account-inquiries"
+            ? "My Requests"
+            : resolved.page === "professional-inquiries"
+              ? "Client Requests"
+              : resolved.page === "concierge-matches"
+                ? "Concierge Matches"
+                : resolved.page === "concierge-opportunities"
+                  ? "Match Opportunities"
+              : "Your Pro Profile",
+      ),
       description: marketplaceText(resolved.locale, "Manage your Elevare account and professional profile."),
       pathname: localizePathname(resolved.pathname, resolved.locale),
       locale: resolved.locale,
@@ -360,7 +421,8 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
 
     const [categories, professionals] = await Promise.all([getMarketplaceCategories(), getMarketplaceProfessionals()]);
     const topCategories = findTopCategories(categories, professionals, 8);
-    const localizedCategories = categories.map((category) => localizeMarketplaceCategory(category, resolved.locale));
+    const directoryProfessionals = toProfessionalDirectoryRecords(professionals);
+    const localizedCategories = topCategories.map((category) => localizeMarketplaceCategory(category, resolved.locale));
     const directoryPath = localizePathname("/professionals/", resolved.locale);
     const structuredData = {
       "@context": "https://schema.org",
@@ -382,17 +444,33 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
       <div className="container">
         <StructuredData data={structuredData} />
         <Suspense fallback={null}>
-          <MarketplaceDirectory categories={categories} professionals={professionals} sourcePage={`professionals_index_${resolved.locale}`} topCategories={topCategories} showMobileAppSection />
+          <MarketplaceDirectory categories={categories} professionals={directoryProfessionals} sourcePage={`professionals_index_${resolved.locale}`} topCategories={topCategories} rotationSeed={getMarketplaceRotationSeed(`professionals-index-${resolved.locale}`)} showMobileAppSection />
         </Suspense>
       </div>
     );
   }
 
-  if (resolved.page === "account" || resolved.page === "professional-account") {
+  if (resolved.page === "trust-safety") {
+    return <TrustSafetyPageContent locale={resolved.locale} />;
+  }
+
+  if (
+    resolved.page === "account"
+    || resolved.page === "professional-account"
+    || resolved.page === "account-inquiries"
+    || resolved.page === "professional-inquiries"
+    || resolved.page === "concierge-matches"
+    || resolved.page === "concierge-opportunities"
+  ) {
     return (
       <div className="container">
         <MarketplaceAccountShell>
-          {resolved.page === "account" ? <AccountDashboard /> : <ProfessionalProfileEditor />}
+          {resolved.page === "account" ? <AccountDashboard /> : null}
+          {resolved.page === "professional-account" ? <ProfessionalProfileEditor /> : null}
+          {resolved.page === "account-inquiries" ? <ProfessionalInquiriesPanel /> : null}
+          {resolved.page === "professional-inquiries" ? <ProfessionalInquiriesPanel mode="received" /> : null}
+          {resolved.page === "concierge-matches" ? <ConciergeCasesPanel /> : null}
+          {resolved.page === "concierge-opportunities" ? <ProfessionalOpportunitiesPanel /> : null}
         </MarketplaceAccountShell>
       </div>
     );

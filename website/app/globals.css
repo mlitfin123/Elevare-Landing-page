@@ -1092,6 +1092,140 @@ select {
   font-size: 14px;
 }
 
+.marketplace-trust-link {
+  width: fit-content;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.professional-trust-section {
+  display: grid;
+  gap: 20px;
+}
+
+.professional-trust-list {
+  display: grid;
+  gap: 12px;
+}
+
+.professional-trust-item {
+  overflow: clip;
+  border: 1px solid rgba(116, 200, 214, 0.18);
+  border-radius: 18px;
+  background: rgba(13, 16, 27, 0.78);
+}
+
+.professional-trust-item summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+  list-style: none;
+}
+
+.professional-trust-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.professional-trust-item summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.professional-trust-marker {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgba(116, 200, 214, 0.34);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.professional-trust-more {
+  color: var(--accent);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.professional-trust-item > p {
+  margin: 0;
+  padding: 0 16px 16px 54px;
+  color: var(--muted);
+}
+
+.professional-trust-note {
+  margin: 0;
+}
+
+.professional-trust-owner {
+  display: grid;
+  gap: 20px;
+}
+
+.professional-trust-owner-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.professional-trust-owner-grid > div,
+.professional-trust-owner-credential {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(116, 200, 214, 0.14);
+  border-radius: 14px;
+  background: rgba(8, 8, 17, 0.58);
+}
+
+.professional-trust-owner-grid span,
+.professional-trust-owner-credential small {
+  color: var(--muted);
+}
+
+.professional-trust-owner-credentials {
+  display: grid;
+  gap: 12px;
+}
+
+.professional-trust-owner-credentials h3,
+.professional-trust-owner-credential p {
+  margin: 0;
+}
+
+.professional-trust-owner-submit {
+  padding: 16px;
+  border: 1px solid rgba(116, 200, 214, 0.18);
+  border-radius: 16px;
+  background: rgba(8, 8, 17, 0.58);
+}
+
+.professional-trust-owner-submit summary {
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.professional-trust-owner-submit summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.professional-trust-owner-submit form {
+  margin-top: 16px;
+}
+
 .marketplace-search-footer {
   display: flex;
   align-items: center;
@@ -1108,10 +1242,104 @@ select {
   margin-bottom: 18px;
 }
 
+.marketplace-results-section:focus {
+  outline: none;
+}
+
 .marketplace-results-actions {
   margin-top: 18px;
   display: flex;
   justify-content: flex-start;
+}
+
+.marketplace-active-filters {
+  display: grid;
+  gap: 10px;
+}
+
+.marketplace-filter-chips,
+.marketplace-more-category-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.marketplace-filter-chip,
+.marketplace-filter-clear,
+.marketplace-more-category-links a {
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid rgba(116, 200, 214, 0.24);
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(79, 153, 168, 0.09);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.marketplace-filter-chip {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.marketplace-filter-clear {
+  color: var(--accent);
+  background: transparent;
+}
+
+.marketplace-filter-chip:hover,
+.marketplace-filter-chip:focus-visible,
+.marketplace-filter-clear:hover,
+.marketplace-filter-clear:focus-visible,
+.marketplace-more-category-links a:hover,
+.marketplace-more-category-links a:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.marketplace-category-availability {
+  color: var(--brand-bright);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.marketplace-more-categories,
+.marketplace-guided-help {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(116, 200, 214, 0.16);
+  border-radius: 16px;
+  background: rgba(8, 8, 17, 0.55);
+}
+
+.marketplace-more-categories summary,
+.marketplace-guided-help summary {
+  min-height: 28px;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.marketplace-more-categories p,
+.marketplace-guided-help > p {
+  color: var(--muted);
+}
+
+.marketplace-more-category-links {
+  margin-top: 12px;
+}
+
+.marketplace-guided-help .marketplace-demand-form {
+  margin-top: 16px;
+}
+
+.marketplace-empty-actions,
+.marketplace-empty-network-actions {
+  margin-top: 4px;
 }
 
 .marketplace-empty-callout,
@@ -1156,6 +1384,242 @@ select {
   border-radius: 18px;
 }
 
+.concierge-entry {
+  align-items: start;
+}
+
+.concierge-form {
+  width: 100%;
+}
+
+.concierge-progress {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.concierge-progress span {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 200, 214, 0.16);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.concierge-progress span.is-active,
+.concierge-progress span.is-complete {
+  border-color: rgba(116, 200, 214, 0.42);
+  color: var(--text);
+  background: rgba(79, 153, 168, 0.14);
+}
+
+.concierge-choice-group,
+.concierge-sharing-notice,
+.concierge-signin-note,
+.concierge-contact,
+.concierge-client-note,
+.concierge-notice {
+  padding: 16px;
+  border: 1px solid rgba(116, 200, 214, 0.17);
+  border-radius: 16px;
+  background: rgba(13, 16, 27, 0.72);
+}
+
+.concierge-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.concierge-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 200, 214, 0.14);
+  border-radius: 12px;
+  color: var(--muted-strong);
+  cursor: pointer;
+}
+
+.concierge-check input {
+  flex: 0 0 auto;
+  width: auto;
+  margin-top: 3px;
+}
+
+.concierge-requirement {
+  margin-top: 12px;
+}
+
+.concierge-sharing-notice,
+.concierge-signin-note,
+.concierge-contact,
+.concierge-client-note,
+.concierge-notice {
+  display: grid;
+  gap: 8px;
+}
+
+.concierge-sharing-notice p,
+.concierge-signin-note p,
+.concierge-contact p,
+.concierge-client-note p,
+.concierge-notice p {
+  margin: 0;
+}
+
+.concierge-confirmation {
+  display: grid;
+  gap: 14px;
+}
+
+.concierge-confirmation .button {
+  width: fit-content;
+}
+
+.concierge-account-section,
+.concierge-case-list,
+.concierge-shortlist,
+.concierge-response-actions {
+  display: grid;
+  gap: 18px;
+}
+
+.concierge-case-card {
+  display: grid;
+  gap: 20px;
+}
+
+.concierge-preference-editor {
+  padding: 16px;
+  border: 1px solid rgba(116, 200, 214, 0.17);
+  border-radius: 16px;
+  background: rgba(13, 16, 27, 0.55);
+}
+
+.concierge-preference-editor > summary {
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.concierge-preference-editor > summary::-webkit-details-marker {
+  display: none;
+}
+
+.concierge-preference-editor .concierge-form-grid {
+  margin-top: 16px;
+}
+
+.concierge-card-head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.concierge-card-head h3,
+.concierge-shortlist h4,
+.concierge-recommendation-card h5 {
+  margin: 8px 0 4px;
+}
+
+.concierge-card-head p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.concierge-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.concierge-summary-grid div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.concierge-summary-grid dt {
+  color: var(--muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.concierge-summary-grid dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.concierge-recommendation-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(116, 200, 214, 0.19);
+  border-radius: 18px;
+  background: rgba(8, 8, 17, 0.72);
+}
+
+.concierge-outcome-menu {
+  position: relative;
+}
+
+.concierge-outcome-menu summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.concierge-outcome-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.concierge-outcome-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(116, 200, 214, 0.2);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.concierge-outcome-options button {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  text-align: left;
+}
+
+.concierge-outcome-options button:hover,
+.concierge-outcome-options button:focus-visible {
+  color: var(--accent);
+  background: rgba(116, 200, 214, 0.1);
+}
+
+.concierge-disclaimer {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 .marketplace-report-form {
   margin-top: 0;
 }
@@ -1185,7 +1649,8 @@ select {
 }
 
 .professional-grid {
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 420px));
+  justify-content: start;
 }
 
 .professional-card {
@@ -1716,6 +2181,182 @@ select {
 
 .account-activity-error {
   align-content: start;
+}
+
+.professional-retention {
+  display: grid;
+  gap: 20px;
+}
+
+.retention-loading {
+  min-height: 150px;
+  align-content: center;
+  color: var(--muted);
+}
+
+.retention-priority-grid,
+.retention-metrics,
+.retention-detail-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.retention-priority-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.retention-priority-card,
+.retention-metrics .panel,
+.retention-detail-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.retention-priority-card h3,
+.retention-priority-card p,
+.retention-metrics p,
+.retention-detail-card h3,
+.retention-detail-card p {
+  margin: 0;
+}
+
+.retention-priority-card p,
+.retention-metrics p,
+.retention-detail-card p {
+  color: var(--muted);
+}
+
+.retention-priority-card.is-attention {
+  border-color: rgba(116, 200, 214, 0.42);
+  background:
+    linear-gradient(145deg, rgba(49, 116, 129, 0.18), rgba(12, 12, 22, 0.94));
+}
+
+.retention-priority-card .field {
+  margin: 0;
+}
+
+.retention-priority-card .button-row {
+  align-self: end;
+  margin-top: auto;
+}
+
+.retention-priority-value {
+  color: var(--text);
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.retention-range {
+  display: inline-flex;
+  justify-self: start;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(42, 42, 62, 0.88);
+  border-radius: 999px;
+  background: rgba(10, 10, 18, 0.82);
+}
+
+.retention-range button {
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.retention-range button:hover,
+.retention-range button[aria-pressed="true"] {
+  color: var(--text);
+  background: rgba(79, 153, 168, 0.16);
+  border-color: rgba(116, 200, 214, 0.3);
+}
+
+.retention-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.retention-metrics strong {
+  color: var(--text);
+  font-size: clamp(25px, 4vw, 34px);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.retention-metrics p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.retention-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.retention-checklist,
+.professional-request-context {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.retention-checklist a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--muted-strong);
+  background: rgba(7, 7, 14, 0.54);
+  border: 1px solid rgba(42, 42, 62, 0.7);
+  border-radius: 12px;
+}
+
+.retention-checklist a:hover {
+  color: var(--text);
+  border-color: rgba(116, 200, 214, 0.3);
+}
+
+.professional-request-card {
+  display: grid;
+  gap: 16px;
+}
+
+.professional-request-details {
+  display: grid;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(42, 42, 62, 0.78);
+}
+
+.professional-request-context li {
+  min-width: 0;
+  color: var(--muted-strong);
+  overflow-wrap: anywhere;
+}
+
+.professional-request-context strong {
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .retention-priority-grid,
+  .retention-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .retention-priority-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .retention-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .subnav {
@@ -4824,6 +5465,22 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .professional-trust-owner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .professional-trust-item summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .professional-trust-more {
+    grid-column: 2;
+  }
+
+  .professional-trust-item > p {
+    padding-left: 16px;
+  }
+
   .professional-card-media {
     justify-content: flex-start;
   }
@@ -4990,6 +5647,39 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .concierge-progress,
+  .concierge-choice-grid,
+  .concierge-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .concierge-card-head {
+    display: grid;
+  }
+
+  .concierge-confirmation .button,
+  .concierge-case-actions .button,
+  .concierge-response-actions .button {
+    width: 100%;
+  }
+
+  .retention-priority-grid,
+  .retention-metrics,
+  .retention-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .retention-range {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .retention-range button {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
   .account-grid.is-condensed {
     grid-template-columns: 1fr;
   }
@@ -5015,6 +5705,12 @@ select {
   .account-pro-cta {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .professional-request-card .account-summary-head .button,
+  .retention-priority-card .button-row,
+  .retention-priority-card .button {
+    width: 100%;
   }
 
   .account-pro-cta .button-row,

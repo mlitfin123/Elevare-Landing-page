@@ -24,8 +24,9 @@ export default async function HomePage() {
     getMarketplaceProfessionals(),
   ]);
   const topCategories = findTopCategories(categories, professionals, 4);
+  const eligibleProfessionalCount = countEligibleMarketplaceProfiles(professionals);
   const marketplaceSocialProof = formatMarketplaceSocialProofCount(
-    countEligibleMarketplaceProfiles(professionals),
+    eligibleProfessionalCount,
   );
 
   return (
@@ -476,6 +477,16 @@ export default async function HomePage() {
               >
                 Find your match
               </TrackedLink>
+              {eligibleProfessionalCount <= 3 ? (
+                <TrackedLink
+                  className="button button-secondary"
+                  href="/professionals/#guided-matching"
+                  eventName="guided_matching_selected"
+                  eventParams={{ source_page: "home_marketplace" }}
+                >
+                  Help me find the right professional
+                </TrackedLink>
+              ) : null}
               <TrackedLink
                 className="button button-secondary"
                 href="/account/professional-profile/"

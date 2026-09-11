@@ -6,6 +6,7 @@ import { AuthNavigationLink } from "@/components/AuthNavigationLink";
 import { TranslationFeedback } from "@/components/localization/TranslationFeedback";
 import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { siteConfig } from "@/lib/site";
 
 export function Footer() {
@@ -32,6 +33,7 @@ export function Footer() {
           <Link href="/shop/" hrefLang={englishOnlyHrefLang}>{messages.navigation.shop}</Link>
           <Link href="/blog/" hrefLang={englishOnlyHrefLang}>{messages.navigation.blog}</Link>
           <Link href={localizePathname("/professionals/", locale)}>{messages.navigation.findSupport}</Link>
+          <Link href={localizePathname("/trust-safety/", locale)}>{marketplaceText(locale, "Trust and Safety")}</Link>
           <AuthNavigationLink
             signedInLabel={messages.authentication.signedIn}
             signInLabel={messages.authentication.signIn}

@@ -18,8 +18,13 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/complete-stage-analysis/",
   "/stagelab/complete-stage-analysis/result/",
   "/tools/workout-generator/",
+  "/trust-safety/",
   "/account/",
   "/account/professional-profile/",
+  "/account/inquiries/",
+  "/account/client-requests/",
+  "/account/matches/",
+  "/account/opportunities/",
 ] as const;
 
 export const LOCALIZED_CATALOG_PATH_PREFIXES = [
@@ -204,8 +209,13 @@ export function getLocalizedRouteParams() {
       { locale: localeSegment, slug: ["stagelab", "complete-stage-analysis"] },
       { locale: localeSegment, slug: ["stagelab", "complete-stage-analysis", "result"] },
       { locale: localeSegment, slug: ["tools", "workout-generator"] },
+      { locale: localeSegment, slug: ["trust-safety"] },
       { locale: localeSegment, slug: ["account"] },
       { locale: localeSegment, slug: ["account", "professional-profile"] },
+      { locale: localeSegment, slug: ["account", "inquiries"] },
+      { locale: localeSegment, slug: ["account", "client-requests"] },
+      { locale: localeSegment, slug: ["account", "matches"] },
+      { locale: localeSegment, slug: ["account", "opportunities"] },
     ];
   });
 }

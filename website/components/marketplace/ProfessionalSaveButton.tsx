@@ -11,14 +11,10 @@ import { marketplaceText } from "@/lib/i18n/marketplace-content";
 
 type ProfessionalSaveButtonProps = {
   professionalId: string;
-  professionalSlug: string;
-  professionalName: string;
 };
 
 export function ProfessionalSaveButton({
   professionalId,
-  professionalSlug,
-  professionalName,
 }: ProfessionalSaveButtonProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -125,10 +121,7 @@ export function ProfessionalSaveButton({
         setIsSaved(false);
         setFeedback(t("Removed from saved profiles."));
         setFeedbackType("success");
-        trackEvent("professional_unsaved", {
-          professional_slug: professionalSlug,
-          professional_name: professionalName,
-        });
+        trackEvent("professional_unsaved", { source_page: "professional_profile" });
         return;
       }
 
@@ -144,10 +137,7 @@ export function ProfessionalSaveButton({
       setIsSaved(true);
       setFeedback(t("Saved to your account."));
       setFeedbackType("success");
-      trackEvent("professional_saved", {
-        professional_slug: professionalSlug,
-        professional_name: professionalName,
-      });
+      trackEvent("professional_saved", { source_page: "professional_profile" });
     } catch {
       setFeedback(t("We could not update your saved profiles."));
       setFeedbackType("error");

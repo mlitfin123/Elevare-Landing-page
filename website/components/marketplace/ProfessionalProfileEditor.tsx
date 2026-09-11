@@ -2,6 +2,8 @@
 
 /* eslint-disable @next/next/no-html-link-for-pages */
 import Link from "next/link";
+import { saveProfessionalSection } from "@/lib/professional-publication-client";
+import { getProfessionalPublicationMessages } from "@/lib/i18n/professional-publication-messages";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
@@ -50,16 +52,22 @@ import {
   formatServicePricingSummary,
   isValidOptionalUrl,
   PRICING_BASIS_OPTIONS,
+  PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS,
+  PROFESSIONAL_GOAL_OPTIONS,
   PROFESSIONAL_LANGUAGE_SUGGESTIONS,
+  CONSULTATION_TYPE_OPTIONS,
   type ProfessionalSectionId,
   retainAvailableSpecialties,
   SERVICE_MODE_OPTIONS,
+  validatePublicProfessionalContent,
 } from "@/lib/professional-profile";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   hasCompatibleVerifiedCredential,
   REGULATED_TITLE_REVIEW_MESSAGE,
 } from "@/lib/regulated-professional-titles";
+import { TRUST_EVIDENCE_EXTENSIONS, validateTrustEvidenceFile } from "@/lib/trust-evidence";
+import { ProfessionalTrustStatus } from "@/components/marketplace/ProfessionalTrustStatus";
 
 type CredentialDraft = {
   id: string;
@@ -74,6 +82,8 @@ type CredentialDraft = {
   verificationStatus: string;
   countryCode: string;
   jurisdiction: string;
+  publicDisplay: boolean;
+  reviewFeedbackPublic: string;
 };
 
 type CredentialUploadFeedback = {
@@ -93,15 +103,28 @@ type ServiceDraft = {
   contactForPricing: boolean;
   isActive: boolean;
   currencyCode: string;
+  intendedFor: string;
+  includedItems: string;
+  deliveryCadence: string;
+  minimumCommitment: string;
+  consultationType: string;
+  additionalCostsNote: string;
 };
 
 type ProfessionalFormState = {
   displayName: string;
   profilePhotoUrl: string;
   professionalTitle: string;
+  publicHeadline: string;
+  bestFitSummary: string;
   bio: string;
   yearsExperience: string;
   selectedSpecialties: string[];
+  goalTags: string[];
+  experienceLevelsServed: string[];
+  coachingStyle: string;
+  serviceBoundaries: string;
+  consultationExpectations: string;
   countryCode: string;
   city: string;
   state: string;
@@ -138,6 +161,7 @@ type TrainerProfileStatusRow = {
 };
 
 type TrainerProfileRow = {
+  updated_at: string;
   id: string;
   bio: string | null;
   years_experience: number | null;
@@ -148,6 +172,13 @@ type TrainerProfileRow = {
   primary_specialty: string | null;
   secondary_specialties: string[] | null;
   marketplace_specialties: string[] | null;
+  marketplace_goal_tags: string[] | null;
+  experience_levels_served: string[] | null;
+  public_headline: string | null;
+  best_fit_summary: string | null;
+  coaching_style: string | null;
+  service_boundaries: string | null;
+  consultation_expectations: string | null;
   modality: string | null;
   verification_status: string | null;
   profile_live: boolean | null;
@@ -172,6 +203,7 @@ type TrainerProfileRow = {
 type MatchingProfileRow = {
   delivery_modes: unknown;
   goal_tags: unknown;
+  experience_tags: unknown;
   price_min_cents: number | null;
   price_max_cents: number | null;
   availability_summary: unknown;
@@ -212,6 +244,8 @@ type CertificationRow = {
   verification_status: string | null;
   credential_country_code: string | null;
   credential_jurisdiction: string | null;
+  public_display: boolean | null;
+  review_feedback_public: string | null;
 };
 type ServiceOfferingRow = {
   id: string;
@@ -225,26 +259,34 @@ type ServiceOfferingRow = {
   contact_for_pricing: boolean | null;
   is_active: boolean | null;
   currency_code: string | null;
+  intended_for: string | null;
+  included_items: string[] | null;
+  delivery_cadence: string | null;
+  minimum_commitment: string | null;
+  consultation_type: string | null;
+  additional_costs_note: string | null;
 };
 type UploadedProfilePhoto = { publicUrl: string; storagePath: string };
 type FieldErrors = Record<string, string>;
 
 const CREDENTIAL_DOCUMENT_BUCKET = "credential-documents";
 const CREDENTIAL_DOCUMENT_MAX_BYTES = 8 * 1024 * 1024;
-const CREDENTIAL_DOCUMENT_EXTENSIONS: Record<string, string> = {
-  "application/pdf": "pdf",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+const CREDENTIAL_DOCUMENT_EXTENSIONS = TRUST_EVIDENCE_EXTENSIONS;
 
 const initialFormState: ProfessionalFormState = {
   displayName: "",
   profilePhotoUrl: "",
   professionalTitle: "",
+  publicHeadline: "",
+  bestFitSummary: "",
   bio: "",
   yearsExperience: "",
   selectedSpecialties: [],
+  goalTags: [],
+  experienceLevelsServed: [],
+  coachingStyle: "",
+  serviceBoundaries: "",
+  consultationExpectations: "",
   countryCode: "US",
   city: "",
   state: "",
@@ -286,11 +328,13 @@ function createEmptyCredentialDraft(): CredentialDraft {
     id: crypto.randomUUID(), organizationName: "", credentialName: "", credentialType: "",
     credentialNumber: "", issueDate: "", expirationDate: "", supportingDocumentUrl: "",
     supportingReferenceUrl: "", verificationStatus: "unverified", countryCode: "US", jurisdiction: "",
+    publicDisplay: true, reviewFeedbackPublic: "",
   };
 }
 
 const defaultExpandedSections: Record<ProfessionalSectionId, boolean> = {
   about: true,
+  fit: true,
   offer: true,
   work: true,
   pricing: true,
@@ -303,6 +347,12 @@ function createEmptyServiceDraft(): ServiceDraft {
     id: crypto.randomUUID(), name: "", description: "", serviceMode: "", durationMinutes: "",
     priceFrom: "", priceTo: "", pricingBasis: "session", contactForPricing: false, isActive: true,
     currencyCode: "USD",
+    intendedFor: "",
+    includedItems: "",
+    deliveryCadence: "",
+    minimumCommitment: "",
+    consultationType: "unspecified",
+    additionalCostsNote: "",
   };
 }
 
@@ -401,10 +451,16 @@ export function ProfessionalProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const pathname = usePathname();
   const locale = localeFromPathname(pathname);
+  const publicationCopy = getProfessionalPublicationMessages(locale);
   const t = (value: string) => marketplaceText(locale, value);
   const marketplaceCountryOptions = getCountryOptions(locale);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const credentialInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [profileVersion, setProfileVersion] = useState<string | null>(null);
+  const [propagationDelayed, setPropagationDelayed] = useState(false);
+  const [saveConflict, setSaveConflict] = useState(false);
+  const [reloadVersion, setReloadVersion] = useState(0);
+  const [isDirty, setIsDirty] = useState(false);
   const [form, setForm] = useState<ProfessionalFormState>(initialFormState);
   const [credentials, setCredentials] = useState<CredentialDraft[]>([createEmptyCredentialDraft()]);
   const [services, setServices] = useState<ServiceDraft[]>([createEmptyServiceDraft()]);
@@ -432,6 +488,20 @@ export function ProfessionalProfileEditor() {
   const [languageDraft, setLanguageDraft] = useState("");
   const [selectedCredentialFiles, setSelectedCredentialFiles] = useState<Record<string, File>>({});
   const [credentialUploadFeedback, setCredentialUploadFeedback] = useState<Record<string, CredentialUploadFeedback>>({});
+  const savedFormSnapshot = useRef("");
+  const resetSavedFormSnapshot = useRef(true);
+
+  useEffect(() => {
+    const snapshot = JSON.stringify({ form, credentials, services, removeCurrentPhoto,
+      photo: selectedPhotoFile ? [selectedPhotoFile.name, selectedPhotoFile.size, selectedPhotoFile.lastModified] : null,
+      documents: Object.entries(selectedCredentialFiles).map(([id, file]) => [id, file.name, file.size, file.lastModified]),
+    });
+    if (resetSavedFormSnapshot.current) {
+      savedFormSnapshot.current = snapshot;
+      resetSavedFormSnapshot.current = false;
+      setIsDirty(false);
+    } else setIsDirty(snapshot !== savedFormSnapshot.current);
+  }, [form, credentials, services, removeCurrentPhoto, selectedPhotoFile, selectedCredentialFiles]);
 
   const selectedCategoryStableIds = useMemo(
     () => buildDistinctValues([form.primaryCategoryStableId, ...form.additionalCategoryStableIds]),
@@ -464,8 +534,14 @@ export function ProfessionalProfileEditor() {
   const completeness = useMemo(() => calculateProfileCompleteness({
     name: form.displayName,
     professionalTitle: form.professionalTitle,
+    publicHeadline: form.publicHeadline,
+    bestFitSummary: form.bestFitSummary,
     profilePhotoUrl: removeCurrentPhoto ? "" : photoPreviewUrl || form.profilePhotoUrl,
     bio: form.bio,
+    goalTags: form.goalTags,
+    experienceLevelsServed: form.experienceLevelsServed,
+    yearsExperience: form.yearsExperience,
+    consultationExpectations: form.consultationExpectations,
     primaryCategory: form.primaryCategoryStableId,
     specialties: form.selectedSpecialties,
     serviceModes: form.serviceModes,
@@ -473,6 +549,8 @@ export function ProfessionalProfileEditor() {
     city: form.city,
     state: form.state,
     services,
+    profilePriceFrom: form.priceFrom,
+    profileContactForPricing: form.contactForPricing,
     availability: form.availabilityWindows,
     acceptanceStatus: form.acceptanceStatus,
   }), [form, photoPreviewUrl, removeCurrentPhoto, services]);
@@ -486,6 +564,7 @@ export function ProfessionalProfileEditor() {
     let isMounted = true;
 
     async function loadProfile() {
+      resetSavedFormSnapshot.current = true;
       const appUser = await getMarketplaceAppUserByAuthId(marketplaceClient, currentUser.id);
       if (!appUser || !isMounted) return;
 
@@ -494,7 +573,7 @@ export function ProfessionalProfileEditor() {
           .select("marketplace_status,status_message,is_publicly_listed,review_feedback_public,public_slug")
           .eq("user_id", appUser.id).maybeSingle(),
         marketplaceClient.from("trainer_profiles")
-          .select("id,bio,years_experience,location_city,location_state,country_code,postal_code,primary_specialty,secondary_specialties,marketplace_specialties,modality,verification_status,profile_live,accepting_clients,client_acceptance_status,typical_availability,availability_details,marketplace_price_min_cents,marketplace_price_max_cents,marketplace_pricing_basis,marketplace_currency_code,contact_for_pricing,website_url,social_links,public_slug,public_display_name,professional_title,review_feedback_public,languages")
+          .select("id,updated_at,bio,years_experience,location_city,location_state,country_code,postal_code,primary_specialty,secondary_specialties,marketplace_specialties,marketplace_goal_tags,experience_levels_served,public_headline,best_fit_summary,coaching_style,service_boundaries,consultation_expectations,modality,verification_status,profile_live,accepting_clients,client_acceptance_status,typical_availability,availability_details,marketplace_price_min_cents,marketplace_price_max_cents,marketplace_pricing_basis,marketplace_currency_code,contact_for_pricing,website_url,social_links,public_slug,public_display_name,professional_title,review_feedback_public,languages")
           .eq("user_id", appUser.id).maybeSingle(),
       ]);
       if (statusResult.error) throw statusResult.error;
@@ -517,6 +596,8 @@ export function ProfessionalProfileEditor() {
         return;
       }
 
+      setProfileVersion(profile.updated_at);
+      setIsDirty(false);
       setPublicProfileId(profile.id);
       setProfileSlug(statusData?.public_slug ?? profile.public_slug ?? "");
 
@@ -532,19 +613,19 @@ export function ProfessionalProfileEditor() {
 
       const [matchingResult, categoryResult, credentialResult, locationResult, offeringResult] = await Promise.all([
         marketplaceClient.from("provider_matching_profiles")
-          .select("delivery_modes,goal_tags,price_min_cents,price_max_cents,availability_summary,currency_code")
+          .select("delivery_modes,goal_tags,experience_tags,price_min_cents,price_max_cents,availability_summary,currency_code")
           .eq("trainer_profile_id", profile.id).maybeSingle(),
         marketplaceClient.from("trainer_services")
           .select("service_category_id,is_primary,service_categories(public_slug,slug)")
           .eq("trainer_profile_id", profile.id).order("is_primary", { ascending: false }),
         marketplaceClient.from("certifications")
-          .select("id,cert_name,issuing_body,cert_org,cert_id,credential_number,credential_type,issue_date,expiration_date,expiry_date,document_url,supporting_reference_url,verification_status,credential_country_code,credential_jurisdiction")
+          .select("id,cert_name,issuing_body,cert_org,cert_id,credential_number,credential_type,issue_date,expiration_date,expiry_date,document_url,supporting_reference_url,verification_status,credential_country_code,credential_jurisdiction,public_display,review_feedback_public")
           .eq("trainer_profile_id", profile.id).eq("is_active", true).order("created_at", { ascending: true }),
         marketplaceClient.from("trainer_locations")
           .select("id,location_name,location_city,location_state,country_code,postal_code,service_radius_miles,service_radius_meters,is_primary")
           .eq("trainer_profile_id", profile.id).order("is_primary", { ascending: false }),
         marketplaceClient.from("trainer_service_offerings")
-          .select("id,name,description,service_mode,duration_minutes,price_min_cents,price_max_cents,pricing_basis,currency_code,contact_for_pricing,is_active")
+          .select("id,name,description,service_mode,duration_minutes,price_min_cents,price_max_cents,pricing_basis,currency_code,contact_for_pricing,is_active,intended_for,included_items,delivery_cadence,minimum_commitment,consultation_type,additional_costs_note")
           .eq("trainer_profile_id", profile.id).order("sort_order", { ascending: true }),
       ]);
       for (const result of [matchingResult, categoryResult, credentialResult, locationResult, offeringResult]) {
@@ -566,7 +647,13 @@ export function ProfessionalProfileEditor() {
       const modernSpecialties = parseStringArray(profile.marketplace_specialties);
       const loadedSpecialties = modernSpecialties.length > 0
         ? modernSpecialties
-        : buildDistinctValues([...parseStringArray(matching?.goal_tags), ...impliedSpecialties]);
+        : impliedSpecialties;
+      const loadedGoals = parseStringArray(profile.marketplace_goal_tags).length > 0
+        ? parseStringArray(profile.marketplace_goal_tags)
+        : parseStringArray(matching?.goal_tags);
+      const loadedExperienceLevels = parseStringArray(profile.experience_levels_served).length > 0
+        ? parseStringArray(profile.experience_levels_served)
+        : parseStringArray(matching?.experience_tags);
       const countryCode = normalizeCountryCode(location?.country_code ?? profile.country_code);
       const distanceUnit = getDistanceUnit(countryCode);
       const radius = location?.service_radius_meters != null
@@ -584,9 +671,16 @@ export function ProfessionalProfileEditor() {
         displayName: profile.public_display_name ?? "",
         profilePhotoUrl: appUser.profile_photo_url ?? "",
         professionalTitle: profile.professional_title ?? "",
+        publicHeadline: profile.public_headline ?? "",
+        bestFitSummary: profile.best_fit_summary ?? "",
         bio: profile.bio ?? "",
         yearsExperience: profile.years_experience == null ? "" : String(profile.years_experience),
         selectedSpecialties: loadedSpecialties,
+        goalTags: loadedGoals,
+        experienceLevelsServed: loadedExperienceLevels,
+        coachingStyle: profile.coaching_style ?? "",
+        serviceBoundaries: profile.service_boundaries ?? "",
+        consultationExpectations: profile.consultation_expectations ?? "",
         countryCode,
         city: location?.location_city ?? profile.location_city ?? "",
         state: normalizeRegionValue(countryCode, location?.location_state ?? profile.location_state),
@@ -635,6 +729,8 @@ export function ProfessionalProfileEditor() {
           verificationStatus: credential.verification_status ?? "unverified",
           countryCode: normalizeCountryCode(credential.credential_country_code ?? countryCode),
           jurisdiction: credential.credential_jurisdiction ?? "",
+          publicDisplay: credential.public_display !== false,
+          reviewFeedbackPublic: credential.review_feedback_public ?? "",
         })));
       } else {
         setCredentials([]);
@@ -654,6 +750,12 @@ export function ProfessionalProfileEditor() {
           contactForPricing: Boolean(offering.contact_for_pricing),
           isActive: offering.is_active !== false,
           currencyCode: normalizeCurrencyCode(offering.currency_code, currencyCode),
+          intendedFor: offering.intended_for ?? "",
+          includedItems: parseStringArray(offering.included_items).join("\n"),
+          deliveryCadence: offering.delivery_cadence ?? "",
+          minimumCommitment: offering.minimum_commitment ?? "",
+          consultationType: offering.consultation_type ?? "unspecified",
+          additionalCostsNote: offering.additional_costs_note ?? "",
         })));
       } else {
         setServices([]);
@@ -666,6 +768,12 @@ export function ProfessionalProfileEditor() {
           && appUser.profile_photo_url,
       );
       const hasOffer = Boolean(categoryStableIds[0] && loadedSpecialties.length > 0 && loadedOfferings.length > 0);
+      const hasFit = Boolean(
+        profile.public_headline?.trim()
+          && profile.best_fit_summary?.trim()
+          && loadedGoals.length > 0
+          && loadedExperienceLevels.length > 0,
+      );
       const hasWork = Boolean(
         loadedModes.length > 0
           && profile.client_acceptance_status
@@ -673,6 +781,7 @@ export function ProfessionalProfileEditor() {
       );
       setExpandedSections({
         about: !hasAbout,
+        fit: !hasFit,
         offer: !hasOffer,
         work: !hasWork,
         pricing: false,
@@ -689,9 +798,12 @@ export function ProfessionalProfileEditor() {
       }
     });
     return () => { isMounted = false; };
-  }, [user]);
+  }, [user, reloadVersion]);
 
-  function toggleArrayField(field: "serviceModes" | "availabilityWindows", value: string) {
+  function toggleArrayField(
+    field: "serviceModes" | "availabilityWindows" | "goalTags" | "experienceLevelsServed",
+    value: string,
+  ) {
     setForm((current) => ({
       ...current,
       [field]: current[field].includes(value)
@@ -736,6 +848,18 @@ export function ProfessionalProfileEditor() {
 
   function updateService(id: string, updates: Partial<ServiceDraft>) {
     setServices((current) => current.map((service) => service.id === id ? { ...service, ...updates } : service));
+  }
+
+  function moveService(id: string, direction: -1 | 1) {
+    setServices((current) => {
+      const currentIndex = current.findIndex((service) => service.id === id);
+      const nextIndex = currentIndex + direction;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+
+      const reordered = [...current];
+      [reordered[currentIndex], reordered[nextIndex]] = [reordered[nextIndex], reordered[currentIndex]];
+      return reordered;
+    });
   }
 
   function updateCredential(id: string, updates: Partial<CredentialDraft>) {
@@ -808,19 +932,13 @@ export function ProfessionalProfileEditor() {
     setFieldErrors((current) => ({ ...current, photo: "" }));
   }
 
-  function chooseCredentialDocument(credentialId: string, file: File | null) {
+  async function chooseCredentialDocument(credentialId: string, file: File | null) {
     if (!file) return;
-    if (!CREDENTIAL_DOCUMENT_EXTENSIONS[file.type]) {
+    const validation = await validateTrustEvidenceFile(file);
+    if (!validation.valid) {
       setCredentialUploadFeedback((current) => ({
         ...current,
-        [credentialId]: { kind: "error", message: "Choose a PDF, JPG, PNG, or WebP file." },
-      }));
-      return;
-    }
-    if (file.size > CREDENTIAL_DOCUMENT_MAX_BYTES) {
-      setCredentialUploadFeedback((current) => ({
-        ...current,
-        [credentialId]: { kind: "error", message: "Choose a file smaller than 8 MB." },
+        [credentialId]: { kind: "error", message: validation.error },
       }));
       return;
     }
@@ -829,6 +947,7 @@ export function ProfessionalProfileEditor() {
       ...current,
         [credentialId]: { kind: "info", message: "Selected file is ready for private upload when you save." },
     }));
+    trackEvent("credential_submission_started", { evidence_type: "document" });
   }
 
   async function uploadCredentialDocument(credential: CredentialDraft, file: File) {
@@ -892,6 +1011,24 @@ export function ProfessionalProfileEditor() {
     if (form.websiteLinkText.trim().length > 80) {
       errors.websiteLinkText = "Keep website link text to 80 characters or fewer.";
     }
+    if (form.publicHeadline.trim() && form.publicHeadline.trim().length < 10) errors.publicHeadline = "Use at least 10 characters for your headline.";
+    if (form.publicHeadline.trim().length > 180) errors.publicHeadline = "Keep your headline to 180 characters or fewer.";
+    if (form.bestFitSummary.trim().length > 700) errors.bestFitSummary = "Keep your best-fit summary to 700 characters or fewer.";
+    if (form.serviceBoundaries.trim().length > 700) errors.serviceBoundaries = "Keep service boundaries to 700 characters or fewer.";
+    if (form.consultationExpectations.trim().length > 1000) errors.consultationExpectations = "Keep consultation expectations to 1,000 characters or fewer.";
+    const publicTextFields: Array<[string, string]> = [
+      ["professionalTitle", form.professionalTitle],
+      ["publicHeadline", form.publicHeadline],
+      ["bestFitSummary", form.bestFitSummary],
+      ["bio", form.bio],
+      ["coachingStyle", form.coachingStyle],
+      ["serviceBoundaries", form.serviceBoundaries],
+      ["consultationExpectations", form.consultationExpectations],
+    ];
+    for (const [field, value] of publicTextFields) {
+      const contentError = validatePublicProfessionalContent(value);
+      if (contentError && !errors[field]) errors[field] = contentError;
+    }
     if (credentials.some((credential) => !isValidOptionalUrl(credential.supportingReferenceUrl))) {
       errors.credentials = "Enter a complete http:// or https:// credential reference URL.";
     }
@@ -910,6 +1047,18 @@ export function ProfessionalProfileEditor() {
       if (service.priceFrom && dollarsToCents(service.priceFrom) == null) errors.services = "Enter valid service pricing.";
       if (service.priceTo && service.priceFrom && Number(service.priceTo) < Number(service.priceFrom)) errors.services = "A service maximum price cannot be lower than its starting price.";
       if (service.durationMinutes && (!Number.isFinite(Number(service.durationMinutes)) || Number(service.durationMinutes) < 5)) errors.services = "Service duration must be at least 5 minutes.";
+      if (service.intendedFor.trim().length > 500) errors.services = "Keep each intended-client description to 500 characters or fewer.";
+      if (service.deliveryCadence.trim().length > 240 || service.minimumCommitment.trim().length > 240) errors.services = "Keep service cadence and commitment details to 240 characters or fewer.";
+      if (service.additionalCostsNote.trim().length > 400) errors.services = "Keep additional cost notes to 400 characters or fewer.";
+      const serviceTextError = [
+        service.name,
+        service.description,
+        service.intendedFor,
+        service.deliveryCadence,
+        service.minimumCommitment,
+        service.additionalCostsNote,
+      ].map(validatePublicProfessionalContent).find(Boolean);
+      if (serviceTextError) errors.services = serviceTextError;
     }
 
     if (isSubmission) {
@@ -917,6 +1066,10 @@ export function ProfessionalProfileEditor() {
       if (!form.professionalTitle.trim()) errors.professionalTitle = "Add your professional title.";
       if (!(photoPreviewUrl || (form.profilePhotoUrl && !removeCurrentPhoto))) errors.photo = "Add a profile photo.";
       if (!form.bio.trim()) errors.bio = "Add a bio that helps clients understand your work.";
+      if (!form.publicHeadline.trim()) errors.publicHeadline = "Add a short profile headline.";
+      if (!form.bestFitSummary.trim()) errors.bestFitSummary = "Describe who you work best with.";
+      if (form.goalTags.length === 0) errors.goals = "Choose at least one client goal.";
+      if (form.experienceLevelsServed.length === 0) errors.experienceLevels = "Choose at least one experience level you serve.";
       if (!form.primaryCategoryStableId) errors.primaryCategory = "Choose a primary category.";
       if (form.selectedSpecialties.length === 0) errors.specialties = "Choose at least one specialty.";
       if (form.serviceModes.length === 0) errors.serviceModes = "Choose at least one service mode.";
@@ -926,8 +1079,12 @@ export function ProfessionalProfileEditor() {
         errors.location = `Add a ${regionLabel.toLowerCase()} for in-person services.`;
       }
       if (activeServices.length === 0) errors.services = "Add at least one service.";
+      const hasPricingContext = Boolean(form.contactForPricing || form.priceFrom.trim())
+        || activeServices.some((service) => Boolean(service.contactForPricing || service.priceFrom.trim()));
+      if (!hasPricingContext) errors.services = "Add a starting price or choose Contact for pricing.";
       if (form.availabilityWindows.length === 0) errors.availability = "Choose at least one typical availability window.";
       if (!form.acceptanceStatus) errors.acceptance = "Choose your new-client status.";
+      if (!form.consultationExpectations.trim()) errors.consultationExpectations = "Explain what a client can expect after requesting a consultation.";
       if (!hasAcceptedProfessionalTerms) errors.terms = "Confirm the professional marketplace terms before submitting.";
     }
     return errors;
@@ -944,6 +1101,12 @@ export function ProfessionalProfileEditor() {
       photo: "about",
       bio: "about",
       yearsExperience: "about",
+      publicHeadline: "fit",
+      bestFitSummary: "fit",
+      goals: "fit",
+      experienceLevels: "fit",
+      coachingStyle: "fit",
+      serviceBoundaries: "fit",
       primaryCategory: "offer",
       specialties: "offer",
       services: "offer",
@@ -951,6 +1114,7 @@ export function ProfessionalProfileEditor() {
       location: "work",
       acceptance: "work",
       availability: "work",
+      consultationExpectations: "work",
       pricing: "pricing",
       website: "links",
       websiteLinkText: "links",
@@ -977,6 +1141,19 @@ export function ProfessionalProfileEditor() {
     if (uploadResult.error) throw uploadResult.error;
     const { data } = supabase.storage.from("profile-photos").getPublicUrl(filePath);
     return { publicUrl: data.publicUrl, storagePath: filePath };
+  }
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
+
+  async function retryPropagation() {
+    const result = await saveProfessionalSection({ action: "retry" });
+    setPropagationDelayed(result.propagation !== "current");
+    setFeedback(result.propagation === "current" ? publicationCopy.propagated : publicationCopy.delayed);
   }
 
   async function handleSave(nextStatus: "draft" | "pending_review") {
@@ -1019,6 +1196,8 @@ export function ProfessionalProfileEditor() {
     let previousPhotoStoragePath: string | null = null;
     const newlyUploadedCredentialPaths: string[] = [];
     let credentialRecordsSaved = false;
+    let committed = false;
+    let mutationMayHaveCommitted = false;
     try {
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
       if (!appUser) throw new Error("We could not find your marketplace account.");
@@ -1028,13 +1207,9 @@ export function ProfessionalProfileEditor() {
       const profilePhotoUrl = photoUpload?.publicUrl ?? (removeCurrentPhoto ? null : form.profilePhotoUrl || null);
       const profilePhotoStoragePath = photoUpload?.storagePath ?? (removeCurrentPhoto ? null : appUser.profile_photo_storage_path);
 
-      if (photoUpload || removeCurrentPhoto) {
-        const userUpdate = await supabase.from("users").update({
-          profile_photo_url: profilePhotoUrl,
-          profile_photo_storage_path: profilePhotoStoragePath,
-        }).eq("id", appUser.id);
-        if (userUpdate.error) throw userUpdate.error;
-      }
+      const photoPayload = photoUpload || removeCurrentPhoto ? {
+        profile_photo_url: profilePhotoUrl, profile_photo_storage_path: profilePhotoStoragePath,
+      } : null;
 
       const orderedCategoryStableIds = buildDistinctValues([
         form.primaryCategoryStableId,
@@ -1055,11 +1230,17 @@ export function ProfessionalProfileEditor() {
       const countryCode = normalizeCountryCode(form.countryCode);
       const currencyCode = normalizeCurrencyCode(form.currencyCode, getDefaultCurrencyCode(countryCode));
       const profilePayload = {
-        user_id: appUser.id,
         public_display_name: form.displayName.trim() || null,
         professional_title: form.professionalTitle.trim() || null,
+        public_headline: form.publicHeadline.trim() || null,
+        best_fit_summary: form.bestFitSummary.trim() || null,
         bio: form.bio.trim() || null,
         years_experience: form.yearsExperience ? Number(form.yearsExperience) : null,
+        marketplace_goal_tags: form.goalTags,
+        experience_levels_served: form.experienceLevelsServed,
+        coaching_style: form.coachingStyle.trim() || null,
+        service_boundaries: form.serviceBoundaries.trim() || null,
+        consultation_expectations: form.consultationExpectations.trim() || null,
         location_city: form.city.trim() || null,
         location_state: form.state || null,
         country_code: countryCode,
@@ -1088,37 +1269,15 @@ export function ProfessionalProfileEditor() {
         },
         languages: form.languages,
       };
-      const profileResult = await supabase.from("trainer_profiles")
-        .upsert(profilePayload, { onConflict: "user_id" })
-        .select("id,public_slug,review_feedback_public,profile_live").single();
-      if (profileResult.error) throw profileResult.error;
-
-      const profileId = profileResult.data.id as string;
-      const savedSlug = typeof profileResult.data.public_slug === "string" ? profileResult.data.public_slug : profileSlug;
-      setPublicProfileId(profileId);
-      setProfileSlug(savedSlug);
-      setReviewFeedbackPublic(profileResult.data.review_feedback_public ?? null);
-      setForm((current) => ({ ...current, profilePhotoUrl: profilePhotoUrl ?? "" }));
-
-      const resetCategories = await supabase.from("trainer_services").delete().eq("trainer_profile_id", profileId);
-      if (resetCategories.error) throw resetCategories.error;
-      if (selectedCategories.length > 0) {
-        const insertCategories = await supabase.from("trainer_services").insert(selectedCategories.map((category, index) => ({
-          trainer_profile_id: profileId,
-          service_category_id: category.id,
-          is_primary: index === 0,
-        })));
-        if (insertCategories.error) throw insertCategories.error;
-      }
-
+      const categoryPayload = selectedCategories.map((category, index) => ({ service_category_id: category.id, is_primary: index === 0 }));
+      let locationPayload: Record<string, unknown> | null = null;
       const hasLocation = offersInPerson || Boolean(form.city.trim() || form.state || form.serviceArea.trim() || form.postalCode.trim());
       if (hasLocation) {
         const serviceRadiusMeters = offersInPerson && form.serviceRadius
           ? distanceToMeters(Number(form.serviceRadius), getDistanceUnit(countryCode))
           : null;
-        const locationPayload = {
+        locationPayload = {
           ...(primaryLocationId ? { id: primaryLocationId } : {}),
-          trainer_profile_id: profileId,
           location_name: form.serviceArea.trim() || null,
           location_city: form.city.trim() || null,
           location_state: form.state || null,
@@ -1128,16 +1287,11 @@ export function ProfessionalProfileEditor() {
           service_radius_miles: serviceRadiusMeters == null ? null : Math.round(metersToMiles(serviceRadiusMeters)),
           is_primary: true,
         };
-        const locationResult = await supabase.from("trainer_locations").upsert(locationPayload, { onConflict: "id" }).select("id").single();
-        if (locationResult.error) throw locationResult.error;
-        setPrimaryLocationId(locationResult.data.id as string);
       }
 
       const activeServices = services.filter((service) => service.name.trim());
-      if (activeServices.length > 0) {
-        const offeringResult = await supabase.from("trainer_service_offerings").upsert(activeServices.map((service, index) => ({
+      const servicePayload = activeServices.map((service, index) => ({
           id: service.id,
-          trainer_profile_id: profileId,
           name: service.name.trim(),
           description: service.description.trim() || null,
           service_mode: service.serviceMode || null,
@@ -1149,20 +1303,18 @@ export function ProfessionalProfileEditor() {
           contact_for_pricing: service.contactForPricing,
           is_active: service.isActive,
           sort_order: index,
-        })), { onConflict: "id" });
-        if (offeringResult.error) throw offeringResult.error;
-      }
-      const activeServiceIds = activeServices.map((service) => service.id);
-      let deactivateServices = supabase.from("trainer_service_offerings").update({ is_active: false }).eq("trainer_profile_id", profileId);
-      if (activeServiceIds.length > 0) deactivateServices = deactivateServices.not("id", "in", `(${activeServiceIds.join(",")})`);
-      const deactivateServicesResult = await deactivateServices;
-      if (deactivateServicesResult.error) throw deactivateServicesResult.error;
-
+          intended_for: service.intendedFor.trim() || null,
+          included_items: buildDistinctValues(service.includedItems.split(/\r?\n/)),
+          delivery_cadence: service.deliveryCadence.trim() || null,
+          minimum_commitment: service.minimumCommitment.trim() || null,
+          consultation_type: service.consultationType,
+          additional_costs_note: service.additionalCostsNote.trim() || null,
+        }));
       const activeCredentials = credentials.filter((credential) => credential.organizationName.trim() && credential.credentialName.trim());
       const savedCredentialDocumentPaths = new Map<string, string>();
       const replacedCredentialDocumentPaths: string[] = [];
+      const credentialRows: Array<Record<string, unknown>> = [];
       if (activeCredentials.length > 0) {
-        const credentialRows = [];
         for (const credential of activeCredentials) {
           let documentReference = credential.supportingDocumentUrl.trim();
           const selectedFile = selectedCredentialFiles[credential.id];
@@ -1189,7 +1341,6 @@ export function ProfessionalProfileEditor() {
 
           credentialRows.push({
             id: credential.id,
-            trainer_profile_id: profileId,
             cert_name: credential.credentialName.trim(),
             issuing_body: credential.organizationName.trim(),
             cert_org: credential.organizationName.trim(),
@@ -1203,60 +1354,79 @@ export function ProfessionalProfileEditor() {
             supporting_reference_url: credential.supportingReferenceUrl.trim() || null,
             credential_country_code: normalizeCountryCode(credential.countryCode, countryCode),
             credential_jurisdiction: credential.jurisdiction.trim() || null,
+            public_display: credential.publicDisplay,
             is_active: true,
           });
         }
 
-        const credentialResult = await supabase.from("certifications").upsert(credentialRows, { onConflict: "id" });
-        if (credentialResult.error) throw credentialResult.error;
-        credentialRecordsSaved = true;
-        if (savedCredentialDocumentPaths.size > 0) {
-          setCredentials((current) => current.map((credential) => {
-            const uploadedPath = savedCredentialDocumentPaths.get(credential.id);
-            return uploadedPath ? { ...credential, supportingDocumentUrl: uploadedPath } : credential;
-          }));
-          setSelectedCredentialFiles((current) => {
-            const next = { ...current };
-            savedCredentialDocumentPaths.forEach((_, credentialId) => { delete next[credentialId]; });
-            return next;
-          });
-          setCredentialUploadFeedback((current) => {
-            const next = { ...current };
-            savedCredentialDocumentPaths.forEach((_, credentialId) => {
-              next[credentialId] = { kind: "success", message: "Supporting document stored privately." };
-            });
-            return next;
-          });
-        }
       }
-      const activeCredentialIds = activeCredentials.map((credential) => credential.id);
-      let deactivateCredentials = supabase.from("certifications").update({ is_active: false }).eq("trainer_profile_id", profileId);
-      if (activeCredentialIds.length > 0) deactivateCredentials = deactivateCredentials.not("id", "in", `(${activeCredentialIds.join(",")})`);
-      const deactivateCredentialsResult = await deactivateCredentials;
-      if (deactivateCredentialsResult.error) throw deactivateCredentialsResult.error;
-      if (replacedCredentialDocumentPaths.length > 0) {
-        const cleanupResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).remove(replacedCredentialDocumentPaths);
-        if (cleanupResult.error) console.warn("The credential was saved, but its replaced private file could not be removed.");
-      }
-
       if (nextStatus === "pending_review") {
-        const localeUpdate = await supabase.auth.updateUser({
-          data: { professional_signup_locale: locale },
-        });
+        const localeUpdate = await supabase.auth.updateUser({ data: { professional_signup_locale: locale } });
         if (localeUpdate.error) throw localeUpdate.error;
-
-        const submissionResult = await supabase.rpc("submit_current_trainer_profile_for_review_attested", {
-          requested_email: appUser.email,
-          request_notes: null,
-          attestation_version: PROFESSIONAL_ATTESTATION_VERSION,
-          country_at_acceptance: countryCode || null,
-        });
-        if (submissionResult.error) throw submissionResult.error;
       }
-
-      const statusResult = await supabase.from("marketplace_trainer_profile_status_v1")
-        .select("marketplace_status,status_message,is_publicly_listed,review_feedback_public,public_slug")
-        .eq("trainer_profile_id", profileId).maybeSingle();
+      mutationMayHaveCommitted = true;
+      const result = await saveProfessionalSection({
+        action: "profile", version: profileVersion,
+        profile: { profile: profilePayload, photo: photoPayload, categories: categoryPayload,
+          location: locationPayload, services: servicePayload, credentials: credentialRows,
+          submit: nextStatus === "pending_review", attestationVersion: PROFESSIONAL_ATTESTATION_VERSION, country: countryCode },
+      });
+      if (result.error) {
+        mutationMayHaveCommitted = !["conflict", "save_failed", "unauthorized", "invalid_request"].includes(result.error.code);
+        if (result.error.code === "conflict" || result.error.code === "network") setSaveConflict(true);
+        throw new Error(result.error.code);
+      }
+      committed = true;
+      resetSavedFormSnapshot.current = true;
+      credentialRecordsSaved = true;
+      const saved = result.data as { profile: TrainerProfileRow; status: TrainerProfileStatusRow; locationId: string | null; credentials: CertificationRow[] };
+      const profileId = saved.profile.id;
+      const savedSlug = saved.profile.public_slug ?? profileSlug;
+      setProfileVersion(saved.profile.updated_at);
+      setPublicProfileId(profileId);
+      setProfileSlug(savedSlug);
+      setPrimaryLocationId(saved.locationId);
+      setForm((current) => ({ ...current, profilePhotoUrl: profilePhotoUrl ?? "",
+        bio: saved.profile.bio ?? "", publicHeadline: saved.profile.public_headline ?? "",
+        bestFitSummary: saved.profile.best_fit_summary ?? "",
+        acceptanceStatus: saved.profile.client_acceptance_status ?? "accepting",
+        displayName: saved.profile.public_display_name ?? "", professionalTitle: saved.profile.professional_title ?? "",
+        yearsExperience: saved.profile.years_experience == null ? "" : String(saved.profile.years_experience),
+        selectedSpecialties: parseStringArray(saved.profile.marketplace_specialties),
+        goalTags: parseStringArray(saved.profile.marketplace_goal_tags),
+        experienceLevelsServed: parseStringArray(saved.profile.experience_levels_served),
+        coachingStyle: saved.profile.coaching_style ?? "",
+        serviceBoundaries: saved.profile.service_boundaries ?? "",
+        consultationExpectations: saved.profile.consultation_expectations ?? "",
+        countryCode: saved.profile.country_code ?? countryCode,
+        city: saved.profile.location_city ?? "", state: saved.profile.location_state ?? "",
+        postalCode: saved.profile.postal_code ?? "",
+        availabilityWindows: parseStringArray(saved.profile.typical_availability),
+        availabilityDetails: saved.profile.availability_details ?? "",
+        priceFrom: saved.profile.marketplace_price_min_cents == null ? "" : String(saved.profile.marketplace_price_min_cents / 100),
+        priceTo: saved.profile.marketplace_price_max_cents == null ? "" : String(saved.profile.marketplace_price_max_cents / 100),
+        pricingBasis: saved.profile.marketplace_pricing_basis ?? "",
+        contactForPricing: Boolean(saved.profile.contact_for_pricing),
+        currencyCode: saved.profile.marketplace_currency_code ?? currencyCode,
+        websiteUrl: saved.profile.website_url ?? "",
+        websiteLinkText: getJsonString(saved.profile.social_links, "website_label"),
+        instagramUrl: getJsonString(saved.profile.social_links, "instagram"),
+        facebookUrl: getJsonString(saved.profile.social_links, "facebook"),
+        tiktokUrl: getJsonString(saved.profile.social_links, "tiktok"),
+        youtubeUrl: getJsonString(saved.profile.social_links, "youtube"),
+        linkedinUrl: getJsonString(saved.profile.social_links, "linkedin"),
+        languages: parseStringArray(saved.profile.languages),
+      }));
+      setCredentials((current) => current.map((credential) => {
+        const confirmed = saved.credentials.find((row) => row.id === credential.id);
+        return confirmed ? { ...credential, verificationStatus: confirmed.verification_status ?? "pending",
+          supportingDocumentUrl: savedCredentialDocumentPaths.get(credential.id) ?? credential.supportingDocumentUrl } : credential;
+      }));
+      setSelectedCredentialFiles({});
+      setSaveConflict(false);
+      setIsDirty(false);
+      setPropagationDelayed(result.propagation === "delayed");
+      const statusResult = { data: saved.status };
       if (statusResult.data) {
         const status = statusResult.data as TrainerProfileStatusRow;
         setApprovalStatus(status.marketplace_status);
@@ -1275,10 +1445,14 @@ export function ProfessionalProfileEditor() {
       setEditingCredentialId(null);
       setFeedback(nextStatus === "pending_review"
         ? "Profile submitted. Your profile is under review and will not appear in Elevare search until it is approved."
-        : "Draft saved.");
+        : publicationCopy.pending);
+      if (result.propagation === "delayed") setFeedback(publicationCopy.delayed);
       setFeedbackType("success");
-      trackEvent(nextStatus === "pending_review" ? "professional_profile_submitted" : "professional_profile_draft_saved", { profile_slug: savedSlug });
-      if (!publicProfileId) trackEvent("professional_profile_created", { profile_slug: savedSlug });
+      trackEvent(nextStatus === "pending_review" ? "professional_profile_submitted" : "professional_profile_draft_saved", {
+        has_services: activeServices.length > 0,
+        accepting_status: form.acceptanceStatus,
+      });
+      if (!publicProfileId) trackEvent("professional_profile_created", { source_page: "professional_profile_editor" });
 
       if (
         previousPhotoStoragePath
@@ -1292,12 +1466,16 @@ export function ProfessionalProfileEditor() {
         }
       }
     } catch (error) {
-      if (!credentialRecordsSaved && newlyUploadedCredentialPaths.length > 0) {
+      if (!committed && !mutationMayHaveCommitted && uploadedPhoto?.storagePath) {
+        await supabase.storage.from("profile-photos").remove([uploadedPhoto.storagePath]);
+      }
+      if (!committed && !mutationMayHaveCommitted && !credentialRecordsSaved && newlyUploadedCredentialPaths.length > 0) {
         const cleanupResult = await supabase.storage.from(CREDENTIAL_DOCUMENT_BUCKET).remove(newlyUploadedCredentialPaths);
         if (cleanupResult.error) console.warn("An incomplete credential upload could not be cleaned up.");
       }
-      console.warn("Professional profile save failed.", error);
-      setFeedback("We could not save your profile.");
+      console.warn("Professional profile save failed.", { category: "save_or_conflict" });
+      setFeedback(committed ? publicationCopy.delayed : error instanceof Error && error.message === "conflict" ? publicationCopy.conflict
+        : error instanceof Error && error.message === "network" ? publicationCopy.uncertain : publicationCopy.failed);
       setFeedbackType("error");
     } finally {
       setIsSaving(false);
@@ -1333,7 +1511,8 @@ export function ProfessionalProfileEditor() {
     .filter((value) => value.trim()).length;
 
   return (
-    <section className="section professional-profile-builder">
+    <section className="section professional-profile-builder" onChangeCapture={() => setIsDirty(true)}>
+      <fieldset disabled={isSaving} style={{ display: "contents" }} aria-label={t("Professional profile")}>
       <article className="panel professional-builder-intro">
         <div className="section-head tool-form-head">
           <div className="eyebrow">{t("Pro Profile")}</div>
@@ -1380,6 +1559,31 @@ export function ProfessionalProfileEditor() {
         ) : null}
       </article>
 
+      <article className="panel profile-form-section" aria-labelledby="fit-heading">
+        <ProfessionalSectionHeader
+          id="fit-heading"
+          eyebrow={t("Client fit")}
+          title={t("Help clients decide whether you fit their goals.")}
+          summary={form.publicHeadline || t("Add a clear headline and client fit details")}
+          complete={sectionIsComplete("fit")}
+          expanded={expandedSections.fit}
+          onToggle={() => toggleSection("fit")}
+          translate={t}
+        />
+        {expandedSections.fit ? <div className="professional-section-body">
+          <div className="tool-form-grid marketplace-editor-grid">
+            <label id="profile-field-publicHeadline" className="field field-full"><span className="field-label">{t("Profile headline")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Summarize the outcome or support you provide without making guarantees.")}</span><input maxLength={180} value={form.publicHeadline} onChange={(event) => setForm((current) => ({ ...current, publicHeadline: event.target.value }))} placeholder={t("Strength coaching for busy adults who want a clear, sustainable plan")} /><FieldError name="publicHeadline" errors={fieldErrors} translate={t} /></label>
+            <label id="profile-field-bestFitSummary" className="field field-full"><span className="field-label">{t("Who I work best with")} <span aria-hidden="true">*</span></span><textarea maxLength={700} rows={4} value={form.bestFitSummary} onChange={(event) => setForm((current) => ({ ...current, bestFitSummary: event.target.value }))} placeholder={t("Describe the clients, goals, and working relationship that are the best fit for your services.")} /><FieldError name="bestFitSummary" errors={fieldErrors} translate={t} /></label>
+          </div>
+          <div id="profile-field-goals" className="profile-subsection"><span className="field-label">{t("Client goals")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Choose the goals your services are designed to support.")}</span><div className="toggle-row">{PROFESSIONAL_GOAL_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.goalTags.includes(option.value)} className={`toggle-chip${form.goalTags.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("goalTags", option.value)}>{t(option.label)}</button>)}</div><FieldError name="goals" errors={fieldErrors} translate={t} /></div>
+          <div id="profile-field-experienceLevels" className="profile-subsection"><span className="field-label">{t("Experience levels served")} <span aria-hidden="true">*</span></span><div className="toggle-row">{PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.experienceLevelsServed.includes(option.value)} className={`toggle-chip${form.experienceLevelsServed.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("experienceLevelsServed", option.value)}>{t(option.label)}</button>)}</div><FieldError name="experienceLevels" errors={fieldErrors} translate={t} /></div>
+          <div className="tool-form-grid marketplace-editor-grid">
+            <label id="profile-field-coachingStyle" className="field field-full"><span className="field-label">{t("Approach and coaching style")} <span className="field-optional">{t("Optional")}</span></span><textarea rows={4} value={form.coachingStyle} onChange={(event) => setForm((current) => ({ ...current, coachingStyle: event.target.value }))} placeholder={t("Explain how you communicate, structure accountability, and adapt your work to the client.")} /><FieldError name="coachingStyle" errors={fieldErrors} translate={t} /></label>
+            <label id="profile-field-serviceBoundaries" className="field field-full"><span className="field-label">{t("Service boundaries")} <span className="field-optional">{t("Optional")}</span></span><span className="field-help">{t("Clarify what you do not provide, such as medical care or services outside your qualifications.")}</span><textarea maxLength={700} rows={3} value={form.serviceBoundaries} onChange={(event) => setForm((current) => ({ ...current, serviceBoundaries: event.target.value }))} /><FieldError name="serviceBoundaries" errors={fieldErrors} translate={t} /></label>
+          </div>
+        </div> : null}
+      </article>
+
       <article className="panel profile-form-section" aria-labelledby="offer-heading">
         <ProfessionalSectionHeader
           id="offer-heading"
@@ -1408,15 +1612,21 @@ export function ProfessionalProfileEditor() {
                   <label className="field"><span className="field-label">{t("Service name")}</span><input value={service.name} onChange={(event) => updateService(service.id, { name: event.target.value })} placeholder={t("60-Minute Personal Training")} /></label>
                   <label className="field"><span className="field-label">{t("Service mode")}</span><select value={service.serviceMode} onChange={(event) => updateService(service.id, { serviceMode: event.target.value })}><option value="">{t("Flexible")}</option>{SERVICE_MODE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{localizeServiceMode(option.value, locale)}</option>)}</select></label>
                   <label className="field field-full"><span className="field-label">{t("Description")}</span><textarea rows={3} value={service.description} onChange={(event) => updateService(service.id, { description: event.target.value })} placeholder={t("What is included and who is this service best for?")} /></label>
+                  <label className="field field-full"><span className="field-label">{t("Intended for")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={500} rows={3} value={service.intendedFor} onChange={(event) => updateService(service.id, { intendedFor: event.target.value })} placeholder={t("Who is most likely to benefit from this specific service?")} /></label>
+                  <label className="field field-full"><span className="field-label">{t("What is included")} <span className="field-optional">{t("Optional")}</span></span><span className="field-help">{t("Add one item per line, up to 12 items.")}</span><textarea rows={4} value={service.includedItems} onChange={(event) => updateService(service.id, { includedItems: event.target.value })} placeholder={t("Initial assessment\nPersonalized plan\nWeekly check-in")} /></label>
                   <label className="field"><span className="field-label">{t("Duration in minutes")} <span className="field-optional">{t("Optional")}</span></span><input type="number" min="5" value={service.durationMinutes} onChange={(event) => updateService(service.id, { durationMinutes: event.target.value })} placeholder="60" /></label>
+                  <label className="field"><span className="field-label">{t("Delivery cadence")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.deliveryCadence} onChange={(event) => updateService(service.id, { deliveryCadence: event.target.value })} placeholder={t("Weekly check-in with messaging support")} /></label>
+                  <label className="field"><span className="field-label">{t("Minimum commitment")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.minimumCommitment} onChange={(event) => updateService(service.id, { minimumCommitment: event.target.value })} placeholder={t("Month to month or 12-week minimum")} /></label>
+                  <label className="field"><span className="field-label">{t("Consultation")}</span><select value={service.consultationType} onChange={(event) => updateService(service.id, { consultationType: event.target.value })}>{CONSULTATION_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
                   <label className="field"><span className="field-label">{t("Pricing basis")}</span><select value={service.pricingBasis} disabled={service.contactForPricing} onChange={(event) => updateService(service.id, { pricingBasis: event.target.value })}>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
                   <label className="field"><span className="field-label">{t("Starting price")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceFrom} onChange={(event) => updateService(service.id, { priceFrom: event.target.value })} placeholder="75" /></label>
                   <label className="field"><span className="field-label">{t("Optional maximum")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceTo} onChange={(event) => updateService(service.id, { priceTo: event.target.value })} placeholder="120" /></label>
+                  <label className="field field-full"><span className="field-label">{t("Additional costs or requirements")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={400} rows={2} value={service.additionalCostsNote} onChange={(event) => updateService(service.id, { additionalCostsNote: event.target.value })} placeholder={t("Note any separate facility fees, equipment needs, or other requirements.")} /></label>
                 </div>
                 <label className="checkbox-row"><input type="checkbox" checked={service.contactForPricing} onChange={(event) => updateService(service.id, { contactForPricing: event.target.checked })} /><span>{t("Contact for pricing")}</span></label>
                 <label className="checkbox-row"><input type="checkbox" checked={service.isActive} onChange={(event) => updateService(service.id, { isActive: event.target.checked })} /><span>{t("Show this service on my profile")}</span></label>
                 <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!service.name.trim()} onClick={() => setEditingServiceId(null)}>{t("Done")}</button></div>
-              </div> : <div key={service.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{service.name}</strong><span className={`professional-section-status${service.isActive ? " is-complete" : ""}`}>{t(service.isActive ? "Visible" : "Hidden")}</span></div><p>{modeLabel}{service.durationMinutes ? ` · ${service.durationMinutes} min` : ""} · {formatLocalizedServicePricingSummary(service, locale)}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingServiceId(service.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setServices((current) => current.filter((entry) => entry.id !== service.id))}>{t("Remove")}</button></div></div>;
+              </div> : <div key={service.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{service.name}</strong><span className={`professional-section-status${service.isActive ? " is-complete" : ""}`}>{t(service.isActive ? "Visible" : "Hidden")}</span></div><p>{modeLabel}{service.durationMinutes ? ` · ${service.durationMinutes} min` : ""} · {formatLocalizedServicePricingSummary(service, locale)}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => moveService(service.id, -1)} disabled={index === 0} aria-label={`${t("Move up")}: ${service.name}`}>{t("Move up")}</button><button type="button" className="button button-secondary" onClick={() => moveService(service.id, 1)} disabled={index === services.length - 1} aria-label={`${t("Move down")}: ${service.name}`}>{t("Move down")}</button><button type="button" className="button button-secondary" onClick={() => setEditingServiceId(service.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setServices((current) => current.filter((entry) => entry.id !== service.id))}>{t("Remove")}</button></div></div>;
             })}<button type="button" className="button button-secondary" onClick={addService}>{t("+ Add service")}</button></div>
             <FieldError name="services" errors={fieldErrors} translate={t} />
           </div>
@@ -1447,6 +1657,7 @@ export function ProfessionalProfileEditor() {
           <div id="profile-field-acceptance" className="profile-subsection"><span className="field-label">{t("Are you accepting new clients?")} <span aria-hidden="true">*</span></span><div className="toggle-row">{ACCEPTANCE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.acceptanceStatus === option.value} className={`toggle-chip${form.acceptanceStatus === option.value ? " is-active" : ""}`} onClick={() => setForm((current) => ({ ...current, acceptanceStatus: option.value }))}>{t(option.label)}</button>)}</div><FieldError name="acceptance" errors={fieldErrors} translate={t} /></div>
           <div id="profile-field-availability" className="profile-subsection"><span className="field-label">{t("Typical availability")} <span aria-hidden="true">*</span></span><div className="toggle-row">{AVAILABILITY_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.availabilityWindows.includes(option.value)} className={`toggle-chip${form.availabilityWindows.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("availabilityWindows", option.value)}>{t(option.label)}</button>)}</div><FieldError name="availability" errors={fieldErrors} translate={t} /></div>
           <label className="field field-full"><span className="field-label">{t("Additional availability details")} <span className="field-optional">{t("Optional")}</span></span><textarea rows={3} value={form.availabilityDetails} onChange={(event) => setForm((current) => ({ ...current, availabilityDetails: event.target.value }))} placeholder={t("Evenings after 5 PM, online check-ins on Sundays...")} /></label>
+          <label id="profile-field-consultationExpectations" className="field field-full"><span className="field-label">{t("What happens after a consultation request?")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Set a realistic response and next-step expectation. Elevare does not book or process payment for this service.")}</span><textarea maxLength={1000} rows={4} value={form.consultationExpectations} onChange={(event) => setForm((current) => ({ ...current, consultationExpectations: event.target.value }))} placeholder={t("For example: I review each request within two business days, then reply to confirm fit and discuss next steps.")} /><FieldError name="consultationExpectations" errors={fieldErrors} translate={t} /></label>
           <div className="profile-subsection"><span className="field-label">{t("Languages")} <span className="field-optional">{t("Optional")}</span></span><span className="field-help">{t("Add the languages you use when working with clients.")}</span>{form.languages.length > 0 ? <div className="professional-selection-tags">{form.languages.map((language) => <button key={language} type="button" className="selection-tag" onClick={() => setForm((current) => ({ ...current, languages: current.languages.filter((entry) => entry !== language) }))} aria-label={`${t("Remove")} ${t(language)}`}>{t(language)}<span aria-hidden="true">×</span></button>)}</div> : null}<div className="professional-inline-add"><input list="professional-language-options" value={languageDraft} onChange={(event) => setLanguageDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addLanguage(); } }} placeholder={t("English")} aria-label={t("Language")} /><datalist id="professional-language-options">{PROFESSIONAL_LANGUAGE_SUGGESTIONS.map((language) => <option key={language} value={language} label={t(language)} />)}</datalist><button type="button" className="button button-secondary" disabled={!languageDraft.trim()} onClick={addLanguage}>{t("+ Add language")}</button></div></div>
         </div> : null}
       </article>
@@ -1490,6 +1701,7 @@ export function ProfessionalProfileEditor() {
         />
         {expandedSections.credentials ? <div className="professional-section-body">
           <p className="section-copy section-copy-compact">{t("Optional. Elevare reviews credentials separately. Only Elevare can change verification status. Country and jurisdiction provide review context and do not imply that a credential is valid everywhere.")}</p>
+          <p className="form-note"><Link href={localizePathname("/trust-safety/", locale)}>{t("Learn how Elevare trust checks work")}</Link></p>
           <div className="editor-stack">{credentials.map((credential, index) => {
             const isEditing = editingCredentialId === credential.id || !credential.credentialName.trim() || !credential.organizationName.trim();
             const rawVerificationLabel = formatCredentialVerificationStatus(credential.verificationStatus, credential.expirationDate);
@@ -1516,7 +1728,7 @@ export function ProfessionalProfileEditor() {
                     className="sr-only"
                     type="file"
                     accept="application/pdf,image/jpeg,image/png,image/webp"
-                    onChange={(event) => chooseCredentialDocument(credential.id, event.target.files?.[0] ?? null)}
+                    onChange={(event) => void chooseCredentialDocument(credential.id, event.target.files?.[0] ?? null)}
                   />
                   <div className="button-row">
                     <button type="button" className="button button-secondary" onClick={() => credentialInputRefs.current[credential.id]?.click()}>
@@ -1535,12 +1747,23 @@ export function ProfessionalProfileEditor() {
                   {uploadFeedback ? <span className={uploadFeedback.kind === "error" ? "field-error" : "field-help"} role={uploadFeedback.kind === "error" ? "alert" : "status"}>{t(uploadFeedback.message)}</span> : null}
                 </div>
                 <label className="field field-full"><span className="field-label">{t("Supporting reference URL")}</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder={t("Optional public verification link")} /><span className="field-help">{t("This may help reviewers confirm the credential, but it does not make the credential verified.")}</span><FieldError name="credentials" errors={fieldErrors} translate={t} /></label>
+                <label className="check-row field-full">
+                  <input type="checkbox" checked={credential.publicDisplay} onChange={(event) => updateCredential(credential.id, { publicDisplay: event.target.checked })} />
+                  <span>{t("Show this credential on my public profile")}</span>
+                </label>
+                {credential.reviewFeedbackPublic ? (
+                  <div className="form-note field-full" role="status">
+                    <strong>{t("Review feedback")}:</strong> {credential.reviewFeedbackPublic}
+                  </div>
+                ) : null}
               </div>
               <div className="compact-card-actions"><button type="button" className="button button-secondary" disabled={!credential.credentialName.trim() || !credential.organizationName.trim()} onClick={() => setEditingCredentialId(null)}>{t("Done")}</button></div>
-            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${rawVerificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode, locale)}{credential.expirationDate ? ` · ${t("Expires")} ${credential.expirationDate}` : ""}{hasPrivateDocument ? ` · ${t("Private evidence on file")}` : hasLegacyDocument ? ` · ${t("External evidence retained")}` : ""}</p></div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>{t("Remove")}</button></div></div>;
+            </div> : <div key={credential.id} className="professional-compact-card"><div><div className="professional-compact-card-title"><strong>{credential.credentialName}</strong><span className={`professional-section-status${rawVerificationLabel === "Verified" ? " is-complete" : ""}`}>{verificationLabel}</span></div><p>{credential.organizationName} · {getCountryDisplayName(credential.countryCode, locale)}{credential.expirationDate ? ` · ${t("Expires")} ${credential.expirationDate}` : ""}{hasPrivateDocument ? ` · ${t("Private evidence on file")}` : hasLegacyDocument ? ` · ${t("External evidence retained")}` : ""}{!credential.publicDisplay ? ` · ${t("Hidden from public profile")}` : ""}</p>{credential.reviewFeedbackPublic ? <p className="form-note"><strong>{t("Review feedback")}:</strong> {credential.reviewFeedbackPublic}</p> : null}</div><div className="compact-card-actions"><button type="button" className="button button-secondary" onClick={() => setEditingCredentialId(credential.id)}>{t("Edit")}</button><button type="button" className="hero-text-link" onClick={() => setCredentials((current) => current.filter((entry) => entry.id !== credential.id))}>{t("Remove")}</button></div></div>;
           })}<button type="button" className="button button-secondary" onClick={addCredential}>{t("+ Add credential")}</button></div>
         </div> : null}
       </article>
+
+      {publicProfileId ? <ProfessionalTrustStatus /> : null}
 
       <article className="panel profile-form-section" aria-labelledby="links-heading">
         <ProfessionalSectionHeader
@@ -1609,8 +1832,12 @@ export function ProfessionalProfileEditor() {
         <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{t(isPreviewing ? "Hide profile preview" : "Preview public profile")}</button>
         {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">{t("Private preview")}</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt={t("Private profile preview")} /> : <div className="profile-photo-placeholder">{t("Photo preview")}</div>}<div><h3>{form.displayName || t("Your name")}</h3><p className="professional-title-copy">{form.professionalTitle || t("Your professional title")}</p><p>{form.bio || t("Your bio will appear here.")}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{localizeMarketplaceSpecialty(specialty, locale)}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || t("Service details")}</p></div>)}</div> : null}</div> : null}
         <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{t(PROFESSIONAL_ATTESTATION_TEXT)} {t("I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the")} <a href="/terms-of-service/">{t("Terms of Service")}</a> {t("and acknowledge the")} <a href="/privacy-policy/">{t("Privacy Policy")}</a>.</span></label><FieldError name="terms" errors={fieldErrors} translate={t} />
-        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}</div>
+        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>      <p role="status" aria-live="polite">{isSaving ? publicationCopy.saving : null}</p>
+      {propagationDelayed ? <button type="button" className="button button-secondary" onClick={() => void retryPropagation()}>{publicationCopy.retry}</button> : null}
+      {saveConflict ? <button type="button" className="button button-secondary" onClick={() => { setSaveConflict(false); setReloadVersion((value) => value + 1); }}>{publicationCopy.reload}</button> : null}
+{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}</div>
       </article>
+      </fieldset>
     </section>
   );
 }

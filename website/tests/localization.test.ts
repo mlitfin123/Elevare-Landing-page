@@ -90,8 +90,13 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/stagelab/complete-stage-analysis/",
     "/stagelab/complete-stage-analysis/result/",
     "/tools/workout-generator/",
+    "/trust-safety/",
     "/account/",
     "/account/professional-profile/",
+    "/account/inquiries/",
+    "/account/client-requests/",
+    "/account/matches/",
+    "/account/opportunities/",
   ]);
   assert.equal(localizePathname("/logbook/", "en"), "/logbook/");
   assert.equal(localizePathname("/logbook/", "es-419"), "/es/logbook/");
@@ -100,6 +105,8 @@ test("localized marketing routes preserve English URLs and equivalent product pa
   assert.equal(getLocaleSwitchHref("/es/stagelab/quick-analysis/", "pt-BR"), "/pt-br/stagelab/quick-analysis/");
   assert.equal(localizePathname("/account/", "es-419"), "/es/account/");
   assert.equal(localizePathname("/account/professional-profile/", "pt-BR"), "/pt-br/account/professional-profile/");
+  assert.equal(localizePathname("/account/inquiries/", "es-419"), "/es/account/inquiries/");
+  assert.equal(localizePathname("/account/client-requests/", "pt-BR"), "/pt-br/account/client-requests/");
 });
 
 test("localized routes and indexing require separate opt-in flags", () => {
