@@ -133,7 +133,7 @@ test("legal documents identify current versions and avoid unsupported compliance
   assert.match(terms, /Elevare is operated by Elevare Fit LLC/i);
   assert.match(terms, /Disputes resolved via binding arbitration \(except where prohibited\)/i);
   assert.doesNotMatch(terms, /class action or class arbitration/i);
-  assert.match(privacy, /Last updated August 21, 2026/);
+  assert.match(privacy, /Last updated September 11, 2026/);
   assert.match(privacy, /Supabase for marketplace authentication/i);
   assert.match(privacy, /Google Analytics/i);
   assert.match(privacy, /Resend for waitlist/i);

@@ -122,7 +122,7 @@ export function buildMonthlyProfessionalSummary(
       subject: "Tu resumen mensual de Elevare",
       heading: "Así funcionó tu perfil este mes",
       lines: [
-        `${number.format(input.views)} vistas del perfil`,
+        input.views === 0 ? "Aún no hay visitas registradas" : `${number.format(input.views)} visitas registradas a la página del perfil`,
         `${number.format(input.currentSaves)} guardados actuales`,
         `${number.format(input.consultationRequests)} solicitudes de consulta`,
         `Tasa de respuesta: ${responseRate}`,
@@ -137,7 +137,7 @@ export function buildMonthlyProfessionalSummary(
       subject: "Seu resumo mensal da Elevare",
       heading: "Veja como seu perfil se saiu neste mês",
       lines: [
-        `${number.format(input.views)} visualizações do perfil`,
+        input.views === 0 ? "Ainda não há visitas registradas" : `${number.format(input.views)} visitas registradas à página do perfil`,
         `${number.format(input.currentSaves)} salvamentos atuais`,
         `${number.format(input.consultationRequests)} solicitações de consulta`,
         `Taxa de resposta: ${responseRate}`,
@@ -151,7 +151,7 @@ export function buildMonthlyProfessionalSummary(
     subject: "Your monthly Elevare summary",
     heading: "How your profile performed this month",
     lines: [
-      `${number.format(input.views)} profile views`,
+      input.views === 0 ? "No recorded views yet" : `${number.format(input.views)} recorded profile page views`,
       `${number.format(input.currentSaves)} current saves`,
       `${number.format(input.consultationRequests)} consultation requests`,
       `Response rate: ${responseRate}`,

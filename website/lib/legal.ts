@@ -1,5 +1,5 @@
 export const TERMS_VERSION = "2026-09-07";
-export const PRIVACY_VERSION = "2026-09-07";
+export const PRIVACY_VERSION = "2026-09-11";
 export const AGE_ATTESTATION_VERSION = "2026-08-20";
 export const PROFESSIONAL_ATTESTATION_VERSION = "2026-08-20";
 
@@ -15,7 +15,7 @@ export const LEGAL_DOCUMENTS = {
   privacy: {
     key: "privacy_policy",
     version: PRIVACY_VERSION,
-    effectiveDate: "2026-09-07",
+    effectiveDate: "2026-09-11",
     activePath: "/privacy-policy/",
     archiveFilePath: `/legal/archive/privacy/${PRIVACY_VERSION}.html`,
     archivePath: `/legal/archive/privacy/${PRIVACY_VERSION}/`,

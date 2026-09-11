@@ -476,7 +476,7 @@ export function ProfessionalProfileEditor() {
   const [approvalStatus, setApprovalStatus] = useState("draft");
   const [reviewFeedbackPublic, setReviewFeedbackPublic] = useState<string | null>(null);
   const [publicProfileId, setPublicProfileId] = useState<string | null>(null);
-  const [profileViewCount, setProfileViewCount] = useState(0);
+  const [profileViewCount, setProfileViewCount] = useState<number | null | undefined>(undefined);
   const [profileSlug, setProfileSlug] = useState("");
   const [isPubliclyListed, setIsPubliclyListed] = useState(false);
   const [statusMessageOverride, setStatusMessageOverride] = useState<string | null>(null);
@@ -606,9 +606,9 @@ export function ProfessionalProfileEditor() {
         .select("view_count")
         .eq("trainer_profile_id", profile.id)
         .maybeSingle();
-      if (!viewCountResult.error && isMounted) {
+      if (isMounted) {
         const count = Number(viewCountResult.data?.view_count ?? 0);
-        setProfileViewCount(Number.isSafeInteger(count) && count >= 0 ? count : 0);
+        setProfileViewCount(!viewCountResult.error && Number.isSafeInteger(count) && count >= 0 ? count : null);
       }
 
       const [matchingResult, categoryResult, credentialResult, locationResult, offeringResult] = await Promise.all([
@@ -1525,13 +1525,13 @@ export function ProfessionalProfileEditor() {
         </div>
         <div className="form-note">{t(statusMessage)}</div>
         {publicProfileId ? (
-          <div className="professional-profile-view-stat" aria-label={t("Profile views")}>
+          <div className="professional-profile-view-stat" aria-label={t("Recorded profile page views")}>
             <div>
-              <span className="stat-label">{t("Profile views")}</span>
-              <strong>{new Intl.NumberFormat(locale).format(profileViewCount)}</strong>
+              <span className="stat-label">{t("Recorded profile page views")}</span>
+              <strong className={!profileViewCount ? "profile-view-empty" : undefined}>{profileViewCount === undefined ? t("Loading views...") : profileViewCount === null ? t("Views unavailable") : profileViewCount === 0 ? t("No recorded views yet") : new Intl.NumberFormat(locale).format(profileViewCount)}</strong>
             </div>
             <p>{t(isPubliclyListed
-              ? "Public profile visits, counted once per browser session."
+              ? "Page visits, not unique people. Repeat visits may count. Some visits aren't included because of visitors' privacy choices."
               : "Views will begin counting once your profile is live.")}</p>
           </div>
         ) : null}

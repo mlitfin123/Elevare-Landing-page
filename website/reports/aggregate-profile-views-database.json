@@ -1,0 +1,15 @@
+{
+  "result": "PASS",
+  "database": "Disposable localhost Docker fixture",
+  "checks": [
+    "Historical daily and older all-time totals preserved; visitor event table removed",
+    "Only profile ID, UTC date and aggregate count stored in daily table",
+    "Anonymous/authenticated direct reads and writes denied",
+    "Owner summary and UTC 30-day boundaries correct; another user cannot read it",
+    "Inquiries and response counts unchanged",
+    "Migration reapplication does not reset or double-count history",
+    "Twelve concurrent requests increment both totals atomically",
+    "Legacy RPC compatibility ignores its visitor key; non-public profile rejected",
+    "New privacy archive version registered without editing old acceptances"
+  ]
+}

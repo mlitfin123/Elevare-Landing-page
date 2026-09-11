@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "mode": "Production build; three locales with and without JavaScript; external network blocked",
+  "checks": [
+    "en: server-rendered with JavaScript disabled, correct placement/semantics/SEO, six native disclosures toggle with Enter/Space and keyboard focus advances",
+    "en: cards and decision flow fit at 320px with readable type",
+    "en: cards and decision flow fit at 390px with readable type",
+    "en: cards and decision flow fit at 768px with readable type",
+    "en: cards and decision flow fit at 1440px with readable type",
+    "es-419: server-rendered with JavaScript disabled, correct placement/semantics/SEO, six native disclosures toggle with Enter/Space and keyboard focus advances",
+    "es-419: cards and decision flow fit at 320px with readable type",
+    "es-419: cards and decision flow fit at 390px with readable type",
+    "es-419: cards and decision flow fit at 768px with readable type",
+    "es-419: cards and decision flow fit at 1440px with readable type",
+    "pt-BR: server-rendered with JavaScript disabled, correct placement/semantics/SEO, six native disclosures toggle with Enter/Space and keyboard focus advances",
+    "pt-BR: cards and decision flow fit at 320px with readable type",
+    "pt-BR: cards and decision flow fit at 390px with readable type",
+    "pt-BR: cards and decision flow fit at 768px with readable type",
+    "pt-BR: cards and decision flow fit at 1440px with readable type",
+    "en: hydrated page retains functional disclosures and existing store CTAs",
+    "es-419: hydrated page retains functional disclosures and existing store CTAs",
+    "pt-BR: hydrated page retains functional disclosures and existing store CTAs",
+    "Shared localized renderer preserves the existing Logbook callout without adding StageLab methodology"
+  ],
+  "pageErrors": [],
+  "apiRequests": []
+}

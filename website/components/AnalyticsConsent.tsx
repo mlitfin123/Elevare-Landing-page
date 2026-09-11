@@ -10,6 +10,7 @@ import {
 } from "@/lib/analytics-consent";
 import { localeFromPathname } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
+import { clearLegacyProfileViewStorage, hasBrowserPrivacySignal, readProfileViewChoice, storeProfileViewChoice, type ProfileViewChoice } from "@/lib/profile-view-privacy";
 
 function clearAnalyticsCookies() {
   document.cookie.split(";").forEach((cookie) => {
@@ -36,17 +37,23 @@ export function AnalyticsConsent() {
   const messages = getShellMessages(locale);
   const consentMessages = messages.analyticsConsent;
   const [isChoosing, setIsChoosing] = useState(false);
+  const [profileStatisticsChoice, setProfileStatisticsChoice] = useState<ProfileViewChoice>(null);
+  const [browserPrivacySignal, setBrowserPrivacySignal] = useState(false);
 
   useEffect(() => {
+    clearLegacyProfileViewStorage();
     const nextChoice = readAnalyticsConsentChoice();
     const hydrationTask = window.setTimeout(() => {
       setIsChoosing(nextChoice === null);
+      setProfileStatisticsChoice(readProfileViewChoice());
+      setBrowserPrivacySignal(hasBrowserPrivacySignal());
     }, 0);
     return () => window.clearTimeout(hydrationTask);
   }, []);
 
   function saveChoice(nextChoice: AnalyticsConsentChoice) {
     storeAnalyticsConsentChoice(nextChoice);
+    setProfileStatisticsChoice(readProfileViewChoice());
     setIsChoosing(false);
     updateGoogleConsent(nextChoice);
 
@@ -63,6 +70,17 @@ export function AnalyticsConsent() {
               {consentMessages.body}{" "}
               <a href="/privacy-policy/" hrefLang="en">{messages.footer.privacyPolicyEnglish}</a>.
             </p>
+            <p>{browserPrivacySignal ? consentMessages.profileStatisticsSignal : consentMessages.profileStatisticsNotice}</p>
+            <details className="profile-statistics-choice">
+              <summary>{consentMessages.profileStatisticsLabel}</summary>
+              <p>{browserPrivacySignal ? consentMessages.profileStatisticsSignal : consentMessages.profileStatisticsBody}</p>
+              <div className="button-row">
+                <button type="button" className="button button-secondary" disabled={browserPrivacySignal} aria-pressed={profileStatisticsChoice === "accepted"}
+                  onClick={() => { storeProfileViewChoice("accepted"); setProfileStatisticsChoice(readProfileViewChoice()); }}>{consentMessages.profileStatisticsAllow}</button>
+                <button type="button" className="button button-secondary" aria-pressed={profileStatisticsChoice === "declined"}
+                  onClick={() => { storeProfileViewChoice("declined"); setProfileStatisticsChoice("declined"); }}>{consentMessages.profileStatisticsDecline}</button>
+              </div>
+            </details>
           </div>
           <div className="analytics-consent-actions">
             <button type="button" className="button button-primary" onClick={() => saveChoice("accepted")}>{consentMessages.accept}</button>

@@ -15,8 +15,10 @@ import { getShellMessages } from "@/lib/i18n/shell-messages";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function saveLocalePreference(locale: Locale) {
-  window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-  window.sessionStorage.setItem(LOCALE_DETECTION_KEY, "1");
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    window.sessionStorage.setItem(LOCALE_DETECTION_KEY, "1");
+  } catch { /* The requested URL and preference cookie still select the language. */ }
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }

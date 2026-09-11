@@ -160,9 +160,9 @@ const messages = {
     stagelab: {
       seo: {
         title: "StageLab: Bodybuilding & Physique Prep App",
-        description: "Track bodybuilding contest prep with weekly check-ins, physique photos, conditioning trends, and structured recommendations for athletes and coaches.",
+        description: "Explore AI-assisted bodybuilding competition prep, physique readiness, posing analysis, and the methodology behind StageLab's check-ins and plan decisions.",
       },
-      structuredDescription: "A bodybuilding and physique competition-prep tracking app for athletes and coaches.",
+      structuredDescription: "Bodybuilding contest prep tracking with AI-assisted physique assessment, separate posing analysis, and explained plan decisions for athletes and coaches.",
       hero: {
         eyebrow: "StageLab competition prep",
         title: "Bodybuilding contest prep, organized around the full picture.",

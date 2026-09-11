@@ -38,6 +38,12 @@ export type ShellMessages = {
     accept: string;
     decline: string;
     manage: string;
+    profileStatisticsLabel: string;
+    profileStatisticsNotice: string;
+    profileStatisticsBody: string;
+    profileStatisticsSignal: string;
+    profileStatisticsAllow: string;
+    profileStatisticsDecline: string;
   };
   translationFeedback: {
     link: string;
@@ -93,11 +99,17 @@ const messages: Record<Locale, ShellMessages> = {
     },
     analyticsConsent: {
       ariaLabel: "Analytics privacy choices",
-      title: "Optional Google Analytics",
+      title: "Privacy choices",
       body: "ElevareFit uses anonymous, cookie-free traffic measurement. With your permission, Google Analytics may use analytics cookies to provide additional usage insights. Read our",
       accept: "Accept Google Analytics",
       decline: "Decline Google Analytics",
       manage: "Privacy choices",
+      profileStatisticsLabel: "Basic profile-page statistics",
+      profileStatisticsNotice: "Where permitted, we also count profile-page visits without visitor IDs. Manage or turn off these statistics below.",
+      profileStatisticsAllow: "Allow profile statistics",
+      profileStatisticsDecline: "Turn off profile statistics",
+      profileStatisticsBody: "These counts help improve the professional directory and show professionals how often their pages are viewed. They use daily totals without visitor IDs. Where permitted, counting starts automatically; elsewhere it waits for consent. Turn this off to stop future counts in this browser.",
+      profileStatisticsSignal: "Your browser's privacy signal has turned off profile-page statistics.",
     },
     translationFeedback: {
       link: "Report a translation issue",
@@ -157,11 +169,17 @@ const messages: Record<Locale, ShellMessages> = {
     },
     analyticsConsent: {
       ariaLabel: "Opciones de privacidad de analítica",
-      title: "Google Analytics opcional",
+      title: "Opciones de privacidad",
       body: "ElevareFit utiliza una medición de tráfico anónima y sin cookies. Con tu permiso, Google Analytics puede usar cookies de analítica para proporcionar información adicional sobre el uso. Consulta nuestra",
       accept: "Aceptar Google Analytics",
       decline: "Rechazar Google Analytics",
       manage: "Opciones de privacidad",
+      profileStatisticsLabel: "Estadísticas básicas de páginas de profesionales",
+      profileStatisticsNotice: "Donde está permitido, también contamos visitas a perfiles sin identificar visitantes. Puedes administrar o desactivar estas estadísticas abajo.",
+      profileStatisticsAllow: "Permitir estadísticas de perfiles",
+      profileStatisticsDecline: "Desactivar estadísticas de perfiles",
+      profileStatisticsBody: "Estos recuentos ayudan a mejorar el directorio y muestran a los profesionales cuántas veces se ven sus páginas. Usan totales diarios sin identificar visitantes. Donde está permitido, comienzan automáticamente; en otros lugares esperan tu consentimiento. Desactiva esta opción para detener futuros recuentos en este navegador.",
+      profileStatisticsSignal: "La señal de privacidad de tu navegador ha desactivado las estadísticas de páginas de profesionales.",
     },
     translationFeedback: {
       link: "Informar un problema de traducción",
@@ -221,11 +239,17 @@ const messages: Record<Locale, ShellMessages> = {
     },
     analyticsConsent: {
       ariaLabel: "Opções de privacidade de análise",
-      title: "Google Analytics opcional",
+      title: "Opções de privacidade",
       body: "A ElevareFit usa medição de tráfego anônima e sem cookies. Com a sua permissão, o Google Analytics pode usar cookies de análise para fornecer informações adicionais sobre o uso. Consulte nossa",
       accept: "Aceitar Google Analytics",
       decline: "Recusar Google Analytics",
       manage: "Opções de privacidade",
+      profileStatisticsLabel: "Estatísticas básicas das páginas de profissionais",
+      profileStatisticsNotice: "Onde permitido, também contamos visitas a perfis sem identificar visitantes. Você pode gerenciar ou desativar essas estatísticas abaixo.",
+      profileStatisticsAllow: "Permitir estatísticas de perfis",
+      profileStatisticsDecline: "Desativar estatísticas de perfis",
+      profileStatisticsBody: "Essas contagens ajudam a melhorar o diretório e mostram aos profissionais quantas vezes suas páginas são vistas. Usam totais diários sem identificar visitantes. Onde permitido, começam automaticamente; nos demais locais, aguardam consentimento. Desative esta opção para interromper futuras contagens neste navegador.",
+      profileStatisticsSignal: "O sinal de privacidade do seu navegador desativou as estatísticas das páginas de profissionais.",
     },
     translationFeedback: {
       link: "Relatar um problema de tradução",

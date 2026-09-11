@@ -4,6 +4,7 @@
   "realAccountsCreated": 0,
   "realEmailsSent": 0,
   "results": [
+    "new profile-statistics privacy version records separately without changing earlier acceptances",
     "recovers only explicit versioned signup assertions and preserves historical acceptance",
     "coach signup atomically records both current documents with archive links, timestamps and audit history",
     "missing, unchecked, unknown and future consent evidence cannot produce a successful website signup",

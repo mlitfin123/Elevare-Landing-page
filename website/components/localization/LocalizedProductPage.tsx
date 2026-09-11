@@ -4,6 +4,7 @@ import { ProductCtaButtons } from "@/components/ProductCtaButtons";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
+import { StageLabMethodology, StageLabMethodologyTransition } from "@/components/stage-analysis/StageLabMethodology";
 import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { ProductPageMessages } from "@/lib/i18n/marketing-types";
@@ -121,13 +122,13 @@ export function LocalizedProductPage({ locale, product, messages }: { locale: Lo
       <section className="section"><div className="section-heading"><div><div className="eyebrow">{messages.features.eyebrow}</div><h2>{messages.features.title}</h2></div></div><div className="grid-3">{messages.features.cards.map((card) => <article className="panel" key={card.title}><h3>{card.title}</h3><p>{card.body}</p></article>)}</div></section>
       <section className="section"><div className="section-heading"><div><div className="eyebrow">{messages.steps.eyebrow}</div><h2>{messages.steps.title}</h2></div></div><div className="grid-3">{messages.steps.cards.map((card, index) => <article className="panel" key={card.title}><span className="stat-label">{String(index + 1).padStart(2, "0")}</span><h3>{card.title}</h3><p>{card.body}</p></article>)}</div></section>
 
-      <Callout title={messages.callout.title} label={messages.callout.label}>
+      {isLogbook ? <Callout title={messages.callout.title} label={messages.callout.label}>
         <p>{messages.callout.body}</p>
         {isLogbook && (messages.callout.firstCta || messages.callout.secondCta) ? <div className="hero-actions">{messages.callout.firstCta ? <TrackedLink className="button button-secondary" href="/exercises/" hrefLang={locale === "en" ? undefined : "en"} eventName="cta_click" eventParams={{ cta_name: "Browse exercises", cta_context: "logbook_callout", product: "Logbook" }}>{messages.callout.firstCta}</TrackedLink> : null}{messages.callout.secondCta ? <TrackedLink className="button button-secondary" href="/workouts/" hrefLang={locale === "en" ? undefined : "en"} eventName="cta_click" eventParams={{ cta_name: "Browse workout templates", cta_context: "logbook_callout", product: "Logbook" }}>{messages.callout.secondCta}</TrackedLink> : null}</div> : null}
-      </Callout>
+      </Callout> : <StageLabMethodology locale={locale} />}
 
       <section className="section" aria-labelledby={`${product}-faqs-${locale}`}><div className="section-heading"><div><div className="eyebrow">{messages.faq.eyebrow}</div><h2 id={`${product}-faqs-${locale}`}>{messages.faq.title}</h2></div></div><div className="tool-faq-grid">{messages.faq.items.map((faq) => <article className="tool-faq-card panel" key={faq.question}><h3>{faq.question}</h3><p>{faq.answer}</p></article>)}</div></section>
-      <section className="section final-card panel"><div><div className="eyebrow">{messages.final.eyebrow}</div><h2>{messages.final.title}</h2></div><ProductCtaButtons product={details.name} context={`${product}_final`} displayLabels={messages.storeButtons} /></section>
+      <section className="section final-card panel"><div><div className="eyebrow">{messages.final.eyebrow}</div><h2>{messages.final.title}</h2>{!isLogbook ? <StageLabMethodologyTransition locale={locale} /> : null}</div><ProductCtaButtons product={details.name} context={`${product}_final`} displayLabels={messages.storeButtons} /></section>
     </div>
   );
 }

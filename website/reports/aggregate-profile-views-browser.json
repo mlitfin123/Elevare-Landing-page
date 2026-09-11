@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "mode": "Local production build with simulated Vercel country headers; external services blocked",
+  "checks": [
+    "route applies regional defaults and declines without collecting visitor IDs",
+    "explicit profile consent permits a view in a restricted region even with Google declined",
+    "signed-in owner views are excluded through the local authenticated user fixture",
+    "a page counts once per mount, a repeat visit counts again, and the old visitor cookie expires",
+    "unknown-region visitors can explicitly opt in on the current page after an initial skipped request",
+    "existing declines, GPC and DNT prevent browser counter requests",
+    "blocked browser storage does not require a visitor identifier or prevent permitted aggregate counting",
+    "localized privacy controls fit small screens and keep all actions reachable",
+    "admin and professional dashboard read matching real daily and all-time totals"
+  ],
+  "pageErrors": []
+}

@@ -31,7 +31,8 @@ export function LocaleRuntime() {
 
     if (!localizedRoutesEnabled || activeLocale !== DEFAULT_LOCALE || !isLocalizedMarketingPath(pathname)) return;
 
-    const localPreference = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    let localPreference: string | null = null;
+    try { localPreference = window.localStorage.getItem(LOCALE_STORAGE_KEY); } catch { /* Use the URL/cookie when storage is blocked. */ }
     const cookiePreference = readCookiePreference();
     const savedPreference = localPreference ?? cookiePreference;
 
@@ -40,8 +41,10 @@ export function LocaleRuntime() {
       return;
     }
 
-    if (window.sessionStorage.getItem(LOCALE_DETECTION_KEY)) return;
-    window.sessionStorage.setItem(LOCALE_DETECTION_KEY, "1");
+    try {
+      if (window.sessionStorage.getItem(LOCALE_DETECTION_KEY)) return;
+      window.sessionStorage.setItem(LOCALE_DETECTION_KEY, "1");
+    } catch { return; /* Keep the requested language without a stored detection marker. */ }
 
     if (savedPreference) return;
 

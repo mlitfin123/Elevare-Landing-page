@@ -200,7 +200,7 @@ test("Spanish and Portuguese dashboard and request copy never falls back to Engl
     "Professional dashboard",
     "Profile performance and next steps",
     "Awaiting your response",
-    "Legitimate profile views",
+    "Recorded profile page views",
     "Current saves",
     "Response reliability",
     "Profile completeness",

@@ -66,6 +66,13 @@ try {
   const unchecked=signup({...metadata('2026-08-21'),legal_acceptance:false},'2026-08-25T12:00:00Z');
   assert.equal(recordCount(missed),0); assert.equal(recordCount(legacy),2);
   sql(newMigration);
+  sql(migration('20260911231000_register_profile_statistics_privacy.sql'));
+  check('new profile-statistics privacy version records separately without changing earlier acceptances', () => {
+    const updated = signup({ ...metadata(), privacy_version: '2026-09-11' });
+    assert.equal(recordCount(updated), 2);
+    assert.equal(sql(`select count(*) from public.user_legal_acceptance_history where auth_user_id='${updated}' and terms_version='2026-09-07' and privacy_version='2026-09-11';`), '1');
+    assert.equal(recordCount(legacy), 2);
+  });
   check('recovers only explicit versioned signup assertions and preserves historical acceptance',()=>{
     assert.equal(recordCount(missed),2); assert.equal(recordCount(unchecked),0); assert.equal(recordCount(legacy),2);
     assert.equal(sql(`select count(*) from public.user_legal_acceptances l join public.users u on u.id=l.user_id where u.auth_id='${missed}' and l.accepted_at='2026-08-25T12:00:00Z' and l.acceptance_method='signup_metadata_recovery' and l.document_version='2026-08-21';`),'2');

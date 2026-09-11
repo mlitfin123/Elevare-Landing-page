@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { getSecondarySupabaseServerConfig } from "@/lib/supabase-projects";
 import { siteConfig } from "@/lib/site";
+import { mayRecordAggregateProfileView, normalizeProfileViewChoice } from "@/lib/profile-view-privacy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,23 +18,17 @@ function isAllowedOrigin(request: Request) {
     && (origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000");
 }
 
-function cookieValue(request: Request, name: string) {
-  const prefix = `${name}=`;
-  return request.headers.get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix))
-    ?.slice(prefix.length) ?? null;
-}
-
 function bearerToken(request: Request) {
   return request.headers.get("authorization")?.match(/^Bearer\s+([^\s]+)$/i)?.[1] ?? null;
 }
 
-async function sha256(value: string) {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function completedView(recorded = false) {
+  return new Response(null, { status: 204, headers: {
+    "cache-control": "no-store",
+    "x-elevare-profile-view": recorded ? "recorded" : "skipped",
+    // Retire the old identifier without reading or reusing its value.
+    "set-cookie": `${VISITOR_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
+  } });
 }
 
 export async function POST(request: Request) {
@@ -41,15 +36,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "This request could not be verified." }, { status: 403 });
   }
 
-  if (request.headers.get("x-elevare-analytics-consent") !== "accepted") {
-    return Response.json({ error: "Analytics consent is required." }, { status: 403 });
-  }
+  if (!mayRecordAggregateProfileView({
+    profileChoice: normalizeProfileViewChoice(request.headers.get("x-elevare-profile-statistics")),
+    analyticsChoice: normalizeProfileViewChoice(request.headers.get("x-elevare-analytics-consent")),
+    privacySignal: request.headers.get("sec-gpc") === "1" || request.headers.get("dnt") === "1",
+    country: process.env.VERCEL === "1" ? request.headers.get("x-vercel-ip-country") : null,
+  })) return completedView();
   if (
     request.headers.get("purpose") === "prefetch"
     || request.headers.get("sec-purpose")?.includes("prefetch")
     || BOT_PATTERN.test(request.headers.get("user-agent") ?? "")
   ) {
-    return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+    return completedView();
   }
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -67,7 +65,8 @@ export async function POST(request: Request) {
   const professionalId = typeof payload === "object" && payload !== null
     ? (payload as { professionalId?: unknown }).professionalId
     : null;
-  if (typeof professionalId !== "string" || !UUID_PATTERN.test(professionalId)) {
+  if (typeof professionalId !== "string" || !UUID_PATTERN.test(professionalId)
+    || Object.keys(payload as object).some((key) => key !== "professionalId")) {
     return Response.json({ error: "The profile could not be identified." }, { status: 400 });
   }
 
@@ -92,7 +91,7 @@ export async function POST(request: Request) {
         .maybeSingle();
       const accountRole = typeof account?.role === "string" ? account.role.toLowerCase() : "";
       if (accountRole === "admin" || accountRole === "super_admin") {
-        return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+        return completedView();
       }
       if (account?.id) {
         const { data: ownerProfile } = await supabase
@@ -102,21 +101,14 @@ export async function POST(request: Request) {
           .eq("user_id", account.id)
           .maybeSingle();
         if (ownerProfile) {
-          return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+          return completedView();
         }
       }
     }
   }
 
-  const existingVisitorId = cookieValue(request, VISITOR_COOKIE);
-  const visitorId = existingVisitorId && UUID_PATTERN.test(existingVisitorId)
-    ? existingVisitorId
-    : crypto.randomUUID();
-  const day = new Date().toISOString().slice(0, 10);
-  const visitorKeyHash = await sha256(`${visitorId}:${professionalId}:${day}:${config.serviceRoleKey}`);
-  const { error } = await supabase.rpc("record_public_professional_profile_view", {
+  const { error } = await supabase.rpc("record_public_professional_profile_page_view", {
     p_trainer_profile_id: professionalId,
-    p_visitor_key_hash: visitorKeyHash,
   });
 
   if (error) {
@@ -124,16 +116,5 @@ export async function POST(request: Request) {
     return Response.json({ error: "Profile view tracking is unavailable." }, { status: 503 });
   }
 
-  const headers = new Headers({ "cache-control": "no-store" });
-  if (!existingVisitorId) {
-    headers.append(
-      "set-cookie",
-      `${VISITOR_COOKIE}=${visitorId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`,
-    );
-  }
-
-  return new Response(null, {
-    status: 204,
-    headers,
-  });
+  return completedView(true);
 }

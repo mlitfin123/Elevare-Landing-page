@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { ProductCtaButtons } from "@/components/ProductCtaButtons";
-import { Callout } from "@/components/Callout";
+import { StageLabMethodology, StageLabMethodologyTransition } from "@/components/stage-analysis/StageLabMethodology";
 import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
@@ -11,7 +11,7 @@ import { absoluteUrl, buildMetadata, productConfig } from "@/lib/site";
 export const metadata = buildMetadata({
   title: "StageLab: Bodybuilding & Physique Prep App",
   description:
-    "Track bodybuilding contest prep with weekly check-ins, physique photos, conditioning trends, and structured recommendations for athletes and coaches.",
+    "Explore AI-assisted bodybuilding competition prep, physique readiness, posing analysis, and the methodology behind StageLab's check-ins and plan decisions.",
   pathname: "/stagelab",
   localizedAlternates: true,
 });
@@ -48,7 +48,7 @@ function buildStageLabStructuredData() {
       "@type": "MobileApplication",
       "@id": `${absoluteUrl("/stagelab")}#app`,
       name: "StageLab",
-      description: "A bodybuilding and physique competition-prep tracking app for athletes and coaches.",
+      description: "Bodybuilding contest prep tracking with AI-assisted physique assessment, separate posing analysis, and explained plan decisions for athletes and coaches.",
       applicationCategory: "HealthApplication",
       operatingSystem: "iOS, Android",
       url: absoluteUrl("/stagelab"),
@@ -211,13 +211,7 @@ export default function StageLabPage() {
         </div>
       </section>
 
-      <Callout title="Prep trends, not guarantees">
-        <p>
-          StageLab uses AI-assisted analysis to organize check-in signals and produce informational recommendations.
-          Outputs may be inaccurate or incomplete and are not medical advice, licensed dietetic care, or a guarantee
-          of stage readiness, health outcomes, physique results, or competition placement.
-        </p>
-      </Callout>
+      <StageLabMethodology />
 
       <section className="section" aria-labelledby="stagelab-faqs">
         <div className="section-heading"><div><div className="eyebrow">Frequently asked questions</div><h2 id="stagelab-faqs">StageLab questions</h2></div></div>
@@ -227,7 +221,7 @@ export default function StageLabPage() {
       </section>
 
       <section className="section final-card panel">
-        <div><div className="eyebrow">Start your prep record</div><h2>Keep the active plan and weekly check-ins together.</h2></div>
+        <div><div className="eyebrow">Start your prep record</div><h2>Keep the active plan and weekly check-ins together.</h2><StageLabMethodologyTransition /></div>
         <ProductCtaButtons product="StageLab" context="stagelab_final" />
       </section>
     </div>
