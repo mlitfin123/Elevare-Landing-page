@@ -15,76 +15,14 @@ export type StoreButtonMessages = {
   android: string;
 };
 
-export type HomeProductMessages = {
-  title: string;
-  intro: string;
-  featureTitle: string;
-  featureBody: string;
-  explore: string;
-  previewLabel: string;
-  previewAlt: string;
-  previewTitle: string;
-  previewBody: string;
-  points: Array<{ title: string; body: string }>;
-};
-
 export type HomeMessages = {
   seo: SeoMessages;
-  hero: {
-    eyebrow: string;
-    title: string;
-    body: string;
-    toolsCta: string;
-    logbookCta: string;
-    marketplaceCta: string;
-    highlightsLabel: string;
-  };
-  overview: LinkCardMessages[];
-  nextStep: {
-    eyebrow: string;
-    title: string;
-    cards: LinkCardMessages[];
-  };
-  tools: {
-    eyebrow: string;
-    title: string;
-    body: string;
-    cards: LinkCardMessages[];
-  };
-  logbook: HomeProductMessages;
-  stagelab: HomeProductMessages & {
-    quickAnalysisCta: string;
-  };
-  storeButtons: StoreButtonMessages;
-  marketplace: {
-    eyebrow: string;
-    title: string;
-    body: string;
-    intro: string;
-    audienceLabel: string;
-    clientLabel: string;
-    clientTitle: string;
-    clientBody: string;
-    professionalLabel: string;
-    professionalTitle: string;
-    professionalBody: string;
-    browseCta: string;
-    guidedCta: string;
-    joinCta: string;
-    snapshotLabel: string;
-    snapshotTitle: string;
-    snapshotBody: string;
-    categoryAction: string;
-    socialProof: string;
-    socialProofFallback: string;
-  };
-  insights: {
-    eyebrow: string;
-    title: string;
-    body: string;
-    cta: string;
-    readArticle: string;
-  };
+  hero: { eyebrow: string; title: string; body: string; primary: string; secondary: string; browse: string };
+  support: { title: string; steps: Array<{title: string; body: string}>; expectations: string; trust: string; trustLink: string };
+  tools: { title: string; cards: Array<{title: string; body: string}> };
+  apps: { title: string; eyebrow: string; logbook: string; stagelab: string; logbookCta: string; stagelabCta: string; logbookAlt: string; logbookCaption: string; stageAlt: string; stageCaption: string };
+  professional: { title: string; body: string; cta: string };
+  insights: { title: string; cta: string; readArticle: string; english: string };
 };
 
 export type ProductPageMessages = {

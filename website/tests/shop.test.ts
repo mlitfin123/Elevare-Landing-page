@@ -28,8 +28,8 @@ test("the public shop launches with one Coming Soon Show Day Kit", () => {
 
   const page = fs.readFileSync(path.join(projectRoot, "app", "shop", "page.tsx"), "utf8");
   assert.match(page, /Coming Soon/);
-  assert.match(page, /Fitness essentials for training, prep, and performance/);
-  assert.match(page, /Featured Products/);
+  assert.match(page, /StageAnalysisProducts source="shop-digital"/);
+  assert.ok(page.indexOf('<StageAnalysisProducts') < page.indexOf('id="physical-products"'));
   assert.doesNotMatch(page, /Sales are not open yet/);
   assert.doesNotMatch(page, /Add to Cart|Preorder|Reserve/);
 });
@@ -155,7 +155,7 @@ test("Shop is linked and indexed while confirmation remains private", () => {
   const sitemap = fs.readFileSync(path.join(projectRoot, "scripts", "generate-sitemaps.ts"), "utf8");
   const confirmation = fs.readFileSync(path.join(projectRoot, "app", "shop", "order-confirmation", "page.tsx"), "utf8");
 
-  assert.match(header, /href: "\/shop\/"/);
+  assert.match(header, /href="\/shop\/"/);
   assert.match(footer, /href="\/shop\/"/);
   assert.match(sitemap, /"\/shop"/);
   assert.doesNotMatch(sitemap, /shop\/order-confirmation/);

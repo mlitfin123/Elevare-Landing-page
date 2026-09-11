@@ -1,3 +1,6 @@
+import { AnalysisExampleReport } from "@/components/stage-analysis/AnalysisExampleReport";
+import { analysisDiscoveryCopy } from "@/lib/stage-analysis-discovery";
+import { resolveQuickAnalysisGenerationLocale } from "@/lib/quick-analysis-locale";
 import { Suspense } from "react";
 import { QuickAnalysisCheckout } from "@/components/quick-analysis/QuickAnalysisCheckout";
 import { QuickAnalysisReturnLink } from "@/components/quick-analysis/QuickAnalysisReturnLink";
@@ -60,6 +63,9 @@ export function LocalizedQuickAnalysisPage({ locale, messages }: { locale: Local
           <iframe src="https://www.youtube-nocookie.com/embed/BbAHsUA-yH0" title={landing.demoIframeTitle} loading="lazy" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
         </div>
       </section>
+
+      <AnalysisExampleReport product="physique_analysis" locale={locale} />
+      {resolveQuickAnalysisGenerationLocale(locale) !== locale ? <p className="panel fine-print" role="status">{analysisDiscoveryCopy[locale].languageFallback}</p> : null}
 
       <section className="section quick-analysis-checkout-layout" id="start-analysis">
         <div className="quick-analysis-checkout-copy">

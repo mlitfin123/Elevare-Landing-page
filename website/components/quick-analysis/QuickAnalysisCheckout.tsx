@@ -295,9 +295,10 @@ export function QuickAnalysisCheckout({ locale, messages }: { locale: Locale; me
       </div>
 
       <div className="form-actions">
-        <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting}>
+        <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting || !stripePromise}>
           {submitting ? messages.loadingPayment : `${messages.purchaseButton} — ${formatQuickAnalysisPrice()}`}
         </button>
+        {!stripePromise ? <p className="fine-print" role="status">{messages.paymentUnavailable}</p> : null}
         <p className="fine-print">
           {messages.purchaseTermsBefore}<a href="/terms-of-service/" hrefLang="en">{messages.termsOfService}</a>.
         </p>

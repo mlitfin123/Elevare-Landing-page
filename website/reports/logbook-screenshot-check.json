@@ -1,0 +1,22 @@
+{
+  "result": "PASS",
+  "asset": "website/public/images/logbook/log-food-screen.jpg",
+  "bytes": 95352,
+  "sha256": "3796ca8fbb4f56f30078615fbd4324fdfcd5dd990cfbccffca4b8680d2b8a007",
+  "browser": "Chromium",
+  "mode": "local development preview",
+  "results": [
+    "en 320: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "en 390: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "en 768: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "en 1440: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "es-419 320: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "es-419 390: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "es-419 768: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "es-419 1440: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "pt-BR 320: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "pt-BR 390: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "pt-BR 768: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow",
+    "pt-BR 1440: newer screenshot loaded, original aspect ratio, localized caption/alt/link, no horizontal overflow"
+  ]
+}

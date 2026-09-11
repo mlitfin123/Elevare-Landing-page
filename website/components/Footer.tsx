@@ -21,7 +21,6 @@ export function Footer() {
       <div className="container footer-inner">
         <div className="footer-brand">
           <div className="footer-copy">&copy; {new Date().getFullYear()} Elevare Fit LLC. {messages.footer.rights}</div>
-          <div className="footer-meta">{messages.footer.mobileComingSoon}</div>
         </div>
 
         <nav className="footer-links" aria-label={messages.footerNavigationLabel}>

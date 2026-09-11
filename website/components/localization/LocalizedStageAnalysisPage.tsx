@@ -1,3 +1,6 @@
+import { AnalysisExampleReport } from "@/components/stage-analysis/AnalysisExampleReport";
+import { analysisDiscoveryCopy } from "@/lib/stage-analysis-discovery";
+import { resolveQuickAnalysisGenerationLocale } from "@/lib/quick-analysis-locale";
 import { Suspense } from "react";
 import { StageAnalysisCheckout } from "@/components/stage-analysis/StageAnalysisCheckout";
 import { StageAnalysisViewTracker } from "@/components/stage-analysis/StageAnalysisViewTracker";
@@ -65,7 +68,7 @@ export function LocalizedStageAnalysisPage({
           <h1>{landing.title}</h1>
           <p>{landing.body}</p>
           <div className="quick-analysis-badges">
-            <span>{price}</span>
+            <span>{price} · {analysisDiscoveryCopy[locale].oneTime}</span>
             <span>{messages.result.privacyTitle}</span>
           </div>
         </div>
@@ -74,6 +77,9 @@ export function LocalizedStageAnalysisPage({
           <ul>{landing.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
         </div>
       </section>
+
+      <AnalysisExampleReport product={product} locale={locale} />
+      {resolveQuickAnalysisGenerationLocale(locale) !== locale ? <p className="panel fine-print" role="status">{analysisDiscoveryCopy[locale].languageFallback}</p> : null}
 
       <section className="section quick-analysis-checkout-layout" id="start-analysis">
         <div className="quick-analysis-checkout-copy">

@@ -1,5 +1,7 @@
 "use client";
 
+import { ContextualAnalysisCTA } from "@/components/stage-analysis/ContextualAnalysisCTA";
+
 import { useState } from "react";
 import {
   CalculatorLocaleProvider,
@@ -1171,14 +1173,7 @@ function ContestPrepCountdownCalculator({ toolSlug }: { toolSlug: ToolSlug }) {
             <ResultMetric label="Weeks out" value={`${result.weeksOut}`} />
             <ResultMetric label="Current phase" value={result.phase} />
           </ResultGrid>
-          <QuickAnalysisCTA
-            source="contest-prep-countdown"
-            heading="How does your current physique compare with stage condition?"
-            description="Get a one-time StageLab visual assessment from 3-5 current photos. It adds physique context without changing your free countdown result."
-            buttonText="Analyze My Physique"
-            variant="compact"
-            headingLevel={4}
-          />
+          <ContextualAnalysisCTA source="contest-prep-countdown" product="complete_stage_analysis" />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -1260,14 +1255,7 @@ function CompetitionTimelineGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
               </div>
             ))}
           </div>
-          <QuickAnalysisCTA
-            source="competition-timeline"
-            heading="Add a visual checkpoint."
-            description="Your timeline maps the dates. StageLab Quick Analysis gives you a one-time visual read of where your physique currently stands without claiming an exact prep timeline."
-            buttonText="Get My Quick Analysis"
-            variant="compact"
-            headingLevel={4}
-          />
+          <ContextualAnalysisCTA source="competition-timeline" product="complete_stage_analysis" />
         </ResultCard>
       ) : null}
     </ToolFormCard>
@@ -1331,14 +1319,7 @@ function ShowDayChecklistGenerator({ toolSlug }: { toolSlug: ToolSlug }) {
               </div>
             ))}
           </div>
-          <QuickAnalysisCTA
-            source="show-day-checklist"
-            heading="Add a current physique checkpoint."
-            description="Alongside your show-day planning, get a one-time StageLab visual assessment of conditioning, muscularity, symmetry, and presentation from 3-5 current photos."
-            buttonText="Analyze My Physique"
-            variant="compact"
-            headingLevel={4}
-          />
+          <ContextualAnalysisCTA source="show-day-checklist" product="complete_stage_analysis" />
         </ResultCard>
       ) : null}
     </ToolFormCard>

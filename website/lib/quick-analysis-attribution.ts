@@ -1,6 +1,9 @@
 export const QUICK_ANALYSIS_SOURCES = [
   "homepage",
   "stagelab",
+  "home-analyses",
+  "shop-digital",
+  "navigation",
   "body-fat-calculator",
   "body-fat-caliper-calculator",
   "contest-prep-countdown",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { trackEvent } from "@/lib/analytics";
 import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
@@ -71,6 +71,20 @@ export function MarketplaceDemandForm({ categories, filters, fixedCategorySlug, 
   const initialLocation = filters.location !== "all" ? filters.location : "";
   const initialMode = filters.serviceMode !== "all" ? filters.serviceMode : "";
   const [isOpen, setIsOpen] = useState(false);
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash !== "#guided-matching") return;
+      setIsOpen(true);
+      if (!openedFromLink.current) {
+        openedFromLink.current = true;
+        trackEvent("concierge_flow_started", { source_page: sourcePage });
+      }
+    };
+    const frame = requestAnimationFrame(reveal);
+    window.addEventListener("hashchange", reveal);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("hashchange", reveal); };
+  }, [sourcePage]);
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<ConciergeDraft>(() => blankDraft(initialCategory, initialSpecialty, initialLocation, initialMode, filters.query.trim()));
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);

@@ -2,107 +2,83 @@ import type { MarketingMessages } from "@/lib/i18n/marketing-types";
 
 const messages = {
   home: {
-    seo: {
-      title: "Elevare | Find Trainers, Coaches & Wellness Support",
-      description: "Discover personal trainers, nutrition coaches, bodybuilding coaches, life coaches, wellness specialists, and more on Elevare.",
-    },
-    hero: {
-      eyebrow: "ElevareFit",
-      title: "Find the right support for your goals.",
-      body: "Discover trainers, coaches, nutrition and wellness professionals, plus free fitness tools and tracking apps that help make progress easier to follow.",
-      toolsCta: "Explore free tools",
-      logbookCta: "Download Logbook",
-      marketplaceCta: "Find your match",
-      highlightsLabel: "Platform highlights",
-    },
-    overview: [
-      { label: "Free tools", title: "Calculators, workouts, and guides", body: "Open the tools hub for calculators, workouts, exercise guides, and nutrition resources.", action: "Explore free tools" },
-      { label: "Logbook", title: "Track the basics daily", body: "See the daily-use app for workouts, nutrition, body weight, and progress tracking.", action: "View Logbook" },
-      { label: "StageLab", title: "Prep support for physique goals", body: "Review competition timelines, weekly check-ins, progress photos, and plan recommendations.", action: "View StageLab" },
-    ],
-    nextStep: {
-      eyebrow: "Choose your next step",
-      title: "Choose your next step.",
-      cards: [
-        { label: "Free tools", title: "I want free fitness tools", body: "Go straight to calculators, workout templates, exercise guides, and nutrition resources.", action: "Open the tools hub" },
-        { label: "Logbook", title: "I want to track my progress", body: "Start with the app built for workouts, nutrition, body weight, and day-to-day consistency.", action: "See Logbook" },
-        { label: "StageLab", title: "I am preparing for a physique competition", body: "Use StageLab for show timelines, weekly check-ins, progress photos, and prep recommendations.", action: "See StageLab" },
-        { label: "Elevare", title: "I want to find or become a coach", body: "Browse profiles now, or create your public profile if you want to join the marketplace.", action: "Open the marketplace" },
-      ],
-    },
-    tools: {
-      eyebrow: "Free fitness tools",
-      title: "Start with tools you can use right now.",
-      body: "Open calculators, exercise guides, workout templates, and restaurant nutrition resources that support everyday progress.",
-      cards: [
-        { label: "Calculators", title: "Nutrition and training math made simpler.", body: "Estimate calories, protein, macros, body composition, training zones, and more with practical tools.", action: "Browse calculators" },
-        { label: "Exercise library", title: "Learn movements with better context.", body: "Browse exercise pages by muscle group and equipment so it is easier to choose the right movement.", action: "Browse exercises" },
-        { label: "Workout templates", title: "Start with a plan that matches your week.", body: "Use workout templates and the workout finder to get a structure you can actually follow.", action: "Browse workouts" },
-        { label: "Restaurant nutrition", title: "Find options when you are not cooking at home.", body: "Search restaurant menus and compare calories, protein, carbohydrates, fat, and serving sizes.", action: "Browse nutrition resources" },
-      ],
-    },
-    logbook: {
-      title: "Log workouts, food, body weight, and progress.",
-      intro: "Logbook records daily training, food, macros, body weight, and progress without unnecessary setup.",
-      featureTitle: "Keep a daily record you can review.",
-      featureBody: "Record workouts, meals, macros, body weight, and progress. Review the same history before your next session or nutrition adjustment.",
-      explore: "Explore Logbook",
-      previewLabel: "Product preview",
-      previewAlt: "Logbook product visual showing calorie tracking and daily targets",
-      previewTitle: "Live on iOS and Android",
-      previewBody: "Record food, training, and bodyweight, then review the history from the same app.",
-      points: [
-        { title: "Record each day", body: "Log exercises, sets, reps, food, macros, and body weight while the details are current." },
-        { title: "Compare progress over time", body: "Review training performance, nutrition, and bodyweight history before changing your targets." },
-      ],
-    },
-    stagelab: {
-      title: "Prep tools for physique-focused athletes and coaches.",
-      intro: "StageLab gives competitors and coaches a place to review prep timelines, weekly check-ins, photos, plan execution, recovery, and recommendations.",
-      featureTitle: "Review the full week before changing the plan.",
-      featureBody: "Upload check-in photos, record prep data, compare changes over time, and see whether StageLab recommends holding or adjusting the active plan.",
-      explore: "Explore StageLab",
-      quickAnalysisCta: "Try Quick Analysis — {price} one time",
-      previewLabel: "Product preview",
-      previewAlt: "StageLab product visual showing a cardio increase recommendation screen",
-      previewTitle: "Live on iOS and Android",
-      previewBody: "See the active plan, recommendation, confidence, and reasons for each weekly check-in.",
-      points: [
-        { title: "Review weekly check-ins", body: "Compare progress photos with bodyweight, nutrition, cardio, training, and recovery data." },
-        { title: "Plan around the timeline", body: "Keep the division, show date, weeks out, and current prep plan visible during each review." },
-      ],
-    },
-    storeButtons: { ios: "Download on the App Store", android: "Get it on Google Play" },
-    marketplace: {
-      eyebrow: "Elevare marketplace",
-      title: "Find support or join as a pro.",
-      body: "Compare published professional profiles, save options, and send consultation requests. Professionals can create a profile and submit it for review.",
-      intro: "Clients can browse publicly and create an account only when they want to save a profile or send a request. Pros can create a profile, add services and credentials, and submit it for approval.",
-      audienceLabel: "Who Elevare is for",
-      clientLabel: "Clients",
-      clientTitle: "Compare professionals",
-      clientBody: "Review specialty, location, service mode, pricing, credentials, and professional category.",
-      professionalLabel: "For pros",
-      professionalTitle: "Publish the details clients need",
-      professionalBody: "List categories, specialties, credentials, service modes, location, and price details.",
-      browseCta: "Find your match",
-      guidedCta: "Help me find the right professional",
-      joinCta: "Join as a Pro",
-      snapshotLabel: "Marketplace snapshot",
-      snapshotTitle: "Browse by category.",
-      snapshotBody: "Start with the kind of support you want, then narrow by location, service mode, and specialty.",
-      categoryAction: "Browse",
-      socialProof: "{count} are currently available in the public directory.",
-      socialProofFallback: "Browse by category, location, and specialty to narrow the right fit.",
-    },
-    insights: {
-      eyebrow: "Latest insights",
-      title: "Keep learning between workouts.",
-      body: "Read practical articles on training, nutrition, tracking, prep, and the small decisions that make consistency easier.",
-      cta: "Browse the blog",
-      readArticle: "Read article",
-    },
+  "seo": {
+    "title": "Elevare | Fitness Support, Free Resources & Apps",
+    "description": "Find professional support, explore free fitness resources, and discover Logbook, StageLab AI analyses, and the Elevare Shop."
   },
+  "hero": {
+    "eyebrow": "ElevareFit",
+    "title": "Find the right support for your goals.",
+    "body": "Explore fitness professionals, free training resources, and apps that help you take the next step.",
+    "primary": "Help me find a professional",
+    "secondary": "Explore free tools",
+    "browse": "Browse professionals"
+  },
+  "support": {
+    "title": "A little direction. A clear next step.",
+    "steps": [
+      {
+        "title": "Tell us what you need",
+        "body": "Browse professionals or tell Elevare what kind of support you want."
+      },
+      {
+        "title": "Explore your options",
+        "body": "Review suitable options when available, or request help finding someone."
+      },
+      {
+        "title": "Start a conversation",
+        "body": "Send a consultation request to connect with a professional."
+      }
+    ],
+    "expectations": "Availability varies and a match is not guaranteed. A consultation request is not a confirmed booking.",
+    "trust": "Profile review and credential verification are different. Check each profile’s specific trust information.",
+    "trustLink": "Trust and Safety"
+  },
+  "tools": {
+    "title": "Free resources for your next step.",
+    "cards": [
+      {
+        "title": "Calculators",
+        "body": "Plan calories, macros, and training targets."
+      },
+      {
+        "title": "Workout plans & templates",
+        "body": "Find a structure that fits your week."
+      },
+      {
+        "title": "Exercise guides",
+        "body": "Explore movements by muscle and equipment."
+      },
+      {
+        "title": "Restaurant nutrition",
+        "body": "Compare menu nutrition when eating out."
+      }
+    ]
+  },
+  "apps": {
+    "title": "Keep your progress in view.",
+    "eyebrow": "Elevare apps",
+    "logbook": "Log workouts, food, body weight, and progress in one place.",
+    "stagelab": "Organize competition planning, weekly check-ins, and progress reviews.",
+    "logbookCta": "Explore Logbook",
+    "stagelabCta": "Explore StageLab",
+    "logbookAlt": "Logbook food logging screen with food search, saved meals, and barcode scanning",
+    "logbookCaption": "Logbook app screen · English",
+    "stageAlt": "Existing StageLab app screen showing a weekly plan recommendation",
+    "stageCaption": "StageLab app screen · English"
+  },
+  "professional": {
+    "title": "Offer your services through Elevare.",
+    "body": "Create a profile, add your services, and submit it for review so clients can discover your work and send consultation requests.",
+    "cta": "Create your professional profile"
+  },
+  "insights": {
+    "title": "Keep learning between workouts.",
+    "cta": "Browse the blog",
+    "readArticle": "Read article",
+    "english": "Articles in English"
+  }
+},
   products: {
     logbook: {
       seo: {

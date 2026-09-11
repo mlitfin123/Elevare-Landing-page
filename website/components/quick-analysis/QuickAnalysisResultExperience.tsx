@@ -142,7 +142,7 @@ export function QuickAnalysisResultExperience({
   }, [state?.analysisStatus]);
 
   useEffect(() => {
-    if (!trackPurchase || searchParams.get("purchase") !== "confirmed" || !state) return;
+    if (!trackPurchase || searchParams.get("purchase") !== "confirmed" || state?.paymentStatus !== "paid") return;
     const key = "stagelab_quick_analysis_purchase_tracked";
     if (sessionStorage.getItem(key)) return;
     trackEvent("quick_analysis_purchase", {

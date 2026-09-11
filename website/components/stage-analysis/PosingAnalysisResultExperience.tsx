@@ -79,7 +79,7 @@ export function PosingAnalysisResultExperience({
   }, [state?.posing.status]);
 
   useEffect(() => {
-    if (searchParams.get("purchase") !== "confirmed" || !state) return;
+    if (searchParams.get("purchase") !== "confirmed" || state?.paymentStatus !== "paid") return;
     const key = `${product}_purchase_tracked`;
     if (sessionStorage.getItem(key)) return;
     trackEvent(product === "posing_analysis" ? "posing_purchase_completed" : "complete_stage_purchase_completed", { product, currency: "USD", value: product === "posing_analysis" ? 0.99 : 1.49, source: source.current });

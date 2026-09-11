@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
+import { analysisDiscoveryCopy } from "@/lib/stage-analysis-discovery";
 import { trackEvent } from "@/lib/analytics";
 import type { Locale } from "@/lib/i18n/config";
 import type { StageAnalysisMessages } from "@/lib/i18n/stage-analysis-messages";
@@ -129,7 +130,7 @@ export function StageAnalysisCheckout({
   const paymentNotice = searchParams.has("payment") ? messages.cancelled : null;
   return (
     <form className="quick-analysis-form panel" onSubmit={handleSubmit} noValidate>
-      <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.details}</div><h2>{STAGE_ANALYSIS_PRODUCT_CONFIG[product].label}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong></div></div>
+      <div className="quick-analysis-form-head"><div><div className="eyebrow">{messages.details}</div><h2>{analysisDiscoveryCopy[locale].products[product].title}</h2></div><div className="quick-analysis-price"><strong>{formatStageAnalysisPrice(product)}</strong></div></div>
       {paymentNotice ? <p className="form-feedback is-error" role="status">{paymentNotice}</p> : null}
       <div className="field-grid">
         <label className="field"><span className="field-label">{messages.division}</span><select value={division} onChange={(event) => setDivision(event.target.value as PosingDivision)} required><option value="">{messages.selectDivision}</option>{POSING_DIVISIONS.map((item) => <option key={item} value={item}>{divisionLabels[locale][item] ?? item}</option>)}</select></label>
@@ -142,7 +143,8 @@ export function StageAnalysisCheckout({
         <label className="quick-analysis-check"><input type="checkbox" checked={aiConsentConfirmed} onChange={(event) => setAiConsentConfirmed(event.target.checked)} /><span>{messages.ai}</span></label>
       </div>
       <div className="form-actions">
-        <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting}>{submitting ? messages.loading : `${messages.purchase} — ${formatStageAnalysisPrice(product)}`}</button>
+        <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting || !stripePromise}>{submitting ? messages.loading : `${messages.purchase} — ${formatStageAnalysisPrice(product)}`}</button>
+        {!stripePromise ? <p className="fine-print" role="status">{messages.unavailable}</p> : null}
         <p className="fine-print">{messages.termsBefore} <Link href="/terms-of-service/">{messages.terms}</Link>.</p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>

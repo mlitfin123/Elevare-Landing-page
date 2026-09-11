@@ -481,7 +481,7 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
   const stageAnalysisMessages = getStageAnalysisMessages(resolved.locale);
 
   if (resolved.page === "home") {
-    return <LocalizedHomePage locale={resolved.locale} messages={messages.home} categoryTranslations={messages.marketplaceCategories} />;
+    return <LocalizedHomePage locale={resolved.locale} messages={messages.home} />;
   }
 
   if (resolved.page === "quick-analysis") {

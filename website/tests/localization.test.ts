@@ -282,11 +282,11 @@ test("localized pages preserve supported routes and identify deferred destinatio
   const header = fs.readFileSync(path.join(projectRoot, "components/Header.tsx"), "utf8");
   const footer = fs.readFileSync(path.join(projectRoot, "components/Footer.tsx"), "utf8");
 
-  assert.match(home, /localizePathname\(getQuickAnalysisEntryHref\("homepage"\), locale\)/);
+  assert.match(home, /StageAnalysisProducts locale=\{locale\} source="home-analyses"/);
   assert.match(product, /localizePathname\(getQuickAnalysisEntryHref\("stagelab"\), locale\)/);
-  assert.match(home, /hrefLang=\{hrefLanguage/);
-  assert.match(header, /item\.label === "findSupport"/);
-  assert.match(header, /signedInHref=\{localizePathname\("\/account\/", locale\)\}/);
+  assert.match(home, /hrefLang=\{locale === "en" \? undefined : "en"\}/);
+  assert.match(header, /href=\{href\("\/professionals\/"\)\}/);
+  assert.match(header, /signedInHref=\{href\("\/account\/"\)\}/);
   assert.match(footer, /hrefLang="en"/);
   assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/calculators/", "/exercises/", "/workouts/", "/nutrition/", "/professionals/"]);
   assert.equal(localizePathname("/calculators/protein-calculator/", "es-419"), "/es/calculators/protein-calculator/");

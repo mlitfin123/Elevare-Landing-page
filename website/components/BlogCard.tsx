@@ -6,16 +6,18 @@ type BlogCardProps = {
   sourcePage?: string;
   locale?: string;
   readLabel?: string;
+  headingLevel?: 2 | 3;
 };
 
-export function BlogCard({ post, sourcePage = "blog_index", locale = "en-US", readLabel = "Read article" }: BlogCardProps) {
+export function BlogCard({ post, sourcePage = "blog_index", locale = "en-US", readLabel = "Read article", headingLevel = 2 }: BlogCardProps) {
+  const Heading = headingLevel === 3 ? "h3" : "h2";
   return (
     <article className="blog-card">
       <div className="blog-card-top">
         <span className="meta-pill">{post.category}</span>
         <span className="meta-pill">{post.product}</span>
       </div>
-      <h2>{post.title}</h2>
+      <Heading>{post.title}</Heading>
       <p>{post.description}</p>
       <div className="blog-card-footer">
         <span className="footer-copy">{formatDate(post.date, locale)}</span>

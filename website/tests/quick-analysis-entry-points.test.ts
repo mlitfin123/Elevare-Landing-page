@@ -92,20 +92,20 @@ test("the calculator hub and relevant prep articles receive one focused entry po
   assert.match(directory, /group\.slug === "bodybuilding-contest-prep"/);
   assert.equal(directory.match(/source="calculators-hub"/g)?.length, 1);
   assert.match(blogPage, /post\.category === "prep-files"/);
-  assert.match(blogPage, /source="prep-files"/);
-  assert.match(blogPage, /post\.category === "prep"/);
-  assert.match(blogPage, /source="prep-blog"/);
+  assert.match(blogPage, /articleAnalysisProducts\[post.slug\]/);
+  assert.match(blogPage, /ContextualAnalysisCTA product=\{analysisProduct\}/);
+  assert.match(blogPage, /"prep-blog"/);
   assert.doesNotMatch(blogPage, /post\.category === "nutrition"[\s\S]*QuickAnalysisCTA/);
   assert.match(seoAudit, /href\.split\(\/\[\?#\]\//);
 });
 
 test("existing Homepage and StageLab placements remain direct, priced, and attributed", () => {
-  const homepage = read("app", "page.tsx");
+  const homepage = read("components", "localization", "LocalizedHomePage.tsx");
   const stageLab = read("app", "stagelab", "page.tsx");
 
-  assert.match(homepage, /getQuickAnalysisEntryHref\("homepage"\)/);
+  assert.match(homepage, /StageAnalysisProducts locale=\{locale\} source="home-analyses"/);
   assert.match(stageLab, /getQuickAnalysisEntryHref\("stagelab"\)/);
-  assert.match(homepage, /QUICK_ANALYSIS_PRICE_DISPLAY/);
+  assert.match(read("components", "stage-analysis", "StageAnalysisCard.tsx"), /formatStageAnalysisPrice\(product\)/);
   assert.match(stageLab, /QUICK_ANALYSIS_PRICE_DISPLAY/);
   assert.doesNotMatch(`${homepage}\n${stageLab}`, /elevarefit\.org\/stagelab\/quick-analysis/i);
 });

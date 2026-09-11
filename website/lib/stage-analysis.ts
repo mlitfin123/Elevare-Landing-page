@@ -1,5 +1,8 @@
 import type { Locale } from "./i18n/config.ts";
 import type { QuickAnalysisResult, QuickAnalysisStatus } from "./quick-analysis.ts";
+import { QUICK_ANALYSIS_PRICE_CENTS, QUICK_ANALYSIS_CURRENCY } from "./quick-analysis.ts";
+
+export const STAGE_ANALYSIS_CURRENCY = QUICK_ANALYSIS_CURRENCY;
 
 export const STAGE_ANALYSIS_PRODUCTS = [
   "physique_analysis",
@@ -11,7 +14,7 @@ export type StageAnalysisProduct = (typeof STAGE_ANALYSIS_PRODUCTS)[number];
 export type PaidStageAnalysisProduct = Exclude<StageAnalysisProduct, "physique_analysis">;
 
 export const STAGE_ANALYSIS_PRODUCT_CONFIG = {
-  physique_analysis: { priceCents: 99, label: "AI Physique Analysis" },
+  physique_analysis: { priceCents: QUICK_ANALYSIS_PRICE_CENTS, label: "AI Physique Analysis" },
   posing_analysis: { priceCents: 99, label: "Bodybuilding Posing Analysis" },
   complete_stage_analysis: { priceCents: 149, label: "Complete Stage Analysis" },
 } as const satisfies Record<StageAnalysisProduct, { priceCents: number; label: string }>;

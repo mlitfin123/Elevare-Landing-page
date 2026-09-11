@@ -130,6 +130,17 @@ function scrollToResults() {
 
 export function MarketplaceDirectory(props: MarketplaceDirectoryProps) {
   const pathname = usePathname();
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash !== "#guided-matching") return;
+      const target = document.getElementById("guided-matching");
+      if (target instanceof HTMLDetailsElement) target.open = true;
+      target?.scrollIntoView({ block: "start" });
+    };
+    const frame = requestAnimationFrame(reveal);
+    window.addEventListener("hashchange", reveal);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("hashchange", reveal); };
+  }, [pathname]);
   const [searchParamsKey, setSearchParamsKey] = useState("");
   const initialFilters = useMemo(
     () => buildInitialFilters(new URLSearchParams(searchParamsKey), props.fixedCategorySlug),
@@ -776,7 +787,7 @@ function MarketplaceDirectoryState({
               </div>
             ) : null}
 
-            {!hasMeaningfulSearch && exactResults.length <= 3 ? (
+            {(
               <details id="guided-matching" className="marketplace-guided-help">
                 <summary>{t("Want help finding the right professional?")}</summary>
                 <p>{t("Tell Elevare what support you want. We will review the request, but a suitable match is not guaranteed.")}</p>
@@ -784,12 +795,12 @@ function MarketplaceDirectoryState({
                   categories={categories}
                   filters={appliedFilters}
                   fixedCategorySlug={fixedCategorySlug}
-                  sourcePage={`${sourcePage}_low_supply`}
+                  sourcePage={`${sourcePage}_guided`}
                   exactResultCount={exactResults.length}
                   fallbackResultCount={fallbackResultCount}
                 />
               </details>
-            ) : null}
+            )}
           </>
         ) : (
           <>

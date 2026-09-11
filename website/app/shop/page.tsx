@@ -1,3 +1,4 @@
+import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
 import Image from "next/image";
 import { ShopCheckout } from "@/components/shop/ShopCheckout";
 import { getShopInventorySnapshot } from "@/lib/shop-inventory";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Shop",
-  description: "Shop ElevareFit products. The Show Day Kit is coming soon.",
+  description: "Explore one-time StageLab AI analyses and ElevareFit physical products. The Show Day Kit is coming soon.",
   pathname: "/shop",
 });
 
@@ -40,30 +41,28 @@ export default async function ShopPage() {
       <section className="hero shop-hero">
         <div className="eyebrow">Shop</div>
         <h1>ElevareFit Shop</h1>
-        <p>Fitness essentials for training, prep, and performance.</p>
+        <p>Digital analyses for your next checkpoint. Physical essentials for show day.</p>
       </section>
 
-      <section className="section" aria-labelledby="shop-products-title">
+      <StageAnalysisProducts source="shop-digital" />
+
+      <section className="section" id="physical-products" aria-labelledby="shop-products-title">
         <div className="section-head">
-          <div className="eyebrow">Products</div>
-          <h2 id="shop-products-title">Featured Products</h2>
+          <div className="eyebrow">Physical products</div>
+          <h2 id="shop-products-title">Show-day essentials</h2>
         </div>
 
         <div className="shop-product-grid">
           {productCards.map(({ product, availability }) => (
-            <article className="panel shop-product-card" key={product.id}>
-              <div className="shop-product-media">
-                {product.image ? (
+            <article className={`panel shop-product-card${product.image ? "" : " shop-product-text-only"}`} key={product.id}>
+              {product.image ? <div className="shop-product-media">
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
                     sizes="(max-width: 720px) 100vw, 42vw"
                   />
-                ) : (
-                  <span>Product image coming soon</span>
-                )}
-              </div>
+              </div> : null}
               <div className="shop-product-copy">
                 <span className="stat-label">
                   {availability === "coming_soon"

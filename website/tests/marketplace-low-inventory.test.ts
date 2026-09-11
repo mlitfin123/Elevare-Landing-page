@@ -293,9 +293,9 @@ test("localized homepage keeps marketplace navigation on localized routes", () =
     "utf8",
   );
 
-  assert.match(source, /href\.startsWith\(\"\/professionals\/\"\)/);
-  assert.match(source, /href=\{hrefForLocale\(\"\/professionals\/\", locale\)\}/);
-  assert.match(source, /href=\{hrefForLocale\(`\/professionals\/\$\{category\.slug\}\/`, locale\)\}/);
+  assert.match(source, /localizePathname\(path, locale\)/);
+  assert.match(source, /href=\{href\("\/professionals\/"\)\}/);
+  assert.doesNotMatch(source, /getMarketplaceProfessionals|category\.slug|ProfessionalCard/);
   assert.match(source, /guided_matching_selected/);
-  assert.match(source, /messages\.marketplace\.guidedCta/);
+  assert.match(source, /href\("\/professionals\/#guided-matching"\)/);
 });
