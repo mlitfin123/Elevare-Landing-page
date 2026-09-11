@@ -39,3 +39,5 @@ Then return to the repository root and run the helper with `-VerifyOnly`. If any
 The detailed current classification is in `docs/migration-ledger-reconciliation.md`.
 
 The September 11 notification release has a dedicated forward-only helper, `supabase/scripts/apply-notification-migration.ps1`, for migration `20260911120000`. It verifies the committed target, rehearses that exact file in a rolled-back transaction, and applies/records only that version with `-Apply`. This permits the reviewed additive notification delta without replaying or claiming reconciliation of historical migrations. See `website/docs/marketplace-notification-delivery.md` for its rollout and schema-backup requirements.
+
+The signup consent repair follows the same restriction using `supabase/scripts/apply-signup-legal-migration.ps1` for version `20260911190000`. Its rehearsal also checks the actual Auth signup trigger chain and rolls back the synthetic record. See `website/docs/signup-legal-acceptance.md`.

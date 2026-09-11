@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "database": "disposable PostgreSQL trigger fixture",
+  "realAccountsCreated": 0,
+  "realEmailsSent": 0,
+  "results": [
+    "recovers only explicit versioned signup assertions and preserves historical acceptance",
+    "coach signup atomically records both current documents with archive links, timestamps and audit history",
+    "missing, unchecked, unknown and future consent evidence cannot produce a successful website signup",
+    "retries do not duplicate or rewrite acceptance and later metadata edits do not manufacture consent",
+    "unrelated signup flows are unchanged and public users cannot invoke the recovery helper"
+  ]
+}
