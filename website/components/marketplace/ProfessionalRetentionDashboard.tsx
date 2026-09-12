@@ -13,6 +13,7 @@ import { buildProfessionalPath } from "@/lib/marketplace-helpers";
 import { calculateProfileCompleteness } from "@/lib/professional-profile";
 import { getProfessionalProfileFreshness } from "@/lib/professional-retention";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ProfessionalProfileSharing } from "@/components/marketplace/ProfessionalProfileSharing";
 
 type Summary = {
   range_days: number;
@@ -238,27 +239,6 @@ export function ProfessionalRetentionDashboard() {
     setIsSaving(false);
   }
 
-  async function shareProfile() {
-    if (!publicPath) return;
-    const url = new URL(publicPath, window.location.origin).toString();
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: profile?.public_display_name ?? "Elevare", url });
-        trackEvent("professional_profile_share_selected", { share_method: "native" });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setFeedback(t("Profile link copied."));
-      trackEvent("professional_profile_share_selected", { share_method: "copy" });
-    } catch {
-      setFeedback(t("We could not copy your profile link. Open your public profile and copy the address from your browser."));
-    }
-  }
-
   if (!professionalProfile) return null;
 
   return (
@@ -280,7 +260,6 @@ export function ProfessionalRetentionDashboard() {
               <div className="button-row">
                 <Link className="button button-secondary" href={localizePathname("/account/professional-profile/", locale)}>{t("Edit profile")}</Link>
                 {publicPath ? <Link className="button button-secondary" href={publicPath}>{t("View public profile")}</Link> : null}
-                {publicPath ? <button type="button" className="button button-secondary" onClick={shareProfile}>{t("Share my profile")}</button> : null}
               </div>
             </article>
 
@@ -303,6 +282,18 @@ export function ProfessionalRetentionDashboard() {
               <Link className="button button-primary" href={localizePathname("/account/client-requests/", locale)}>{t("Review client requests")}</Link>
             </article>
           </div>
+
+          {publicPath && professionalProfile.isPubliclyListed && summary.is_live ? (
+            <ProfessionalProfileSharing
+              key={JSON.stringify([publicPath, locale, profile.public_display_name, profile.professional_title, profile.marketplace_specialties, appUser?.profile_photo_url])}
+              publicPath={publicPath}
+              name={profile.public_display_name || [appUser?.first_name, appUser?.last_name].filter(Boolean).join(" ") || "Elevare"}
+              title={profile.professional_title || ""}
+              specialties={parseStringArray(profile.marketplace_specialties)}
+              photoUrl={appUser?.profile_photo_url ?? null}
+              locale={locale}
+            />
+          ) : null}
 
           <div className="retention-range" aria-label={t("Dashboard date range")}>
             <button type="button" aria-pressed={rangeDays === 30} onClick={() => setRangeDays(30)}>{t("Last 30 days")}</button>

@@ -2202,6 +2202,23 @@ select {
   color: var(--muted);
 }
 
+.professional-sharing { display: grid; gap: 18px; min-width: 0; }
+.professional-sharing h3, .professional-sharing p { margin: 0; }
+.professional-sharing p { color: var(--muted); }
+.professional-sharing h3 + p { margin-top: 8px; }
+.professional-sharing-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.professional-sharing-actions .button { white-space: normal; text-align: center; }
+.professional-sharing-link { min-width: 0; margin: 0; }
+.professional-sharing-link input { width: 100%; min-width: 0; }
+.professional-sharing-card { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 24px; align-items: center; }
+.professional-sharing-card > img { width: 100%; height: auto; border-radius: 18px; }
+.professional-sharing-card-actions { display: grid; gap: 16px; justify-items: start; min-width: 0; }
+@media (max-width: 640px) {
+  .professional-sharing-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .professional-sharing-card { grid-template-columns: minmax(0, 1fr); }
+  .professional-sharing-card > img { max-width: 240px; justify-self: center; }
+}
+
 .retention-priority-grid,
 .retention-metrics,
 .retention-detail-grid {

@@ -23,6 +23,7 @@ const read = (relativePath: string) => readFileSync(new URL(relativePath, import
 const migration = read("../../supabase/migrations/20260909300000_professional_retention_dashboard.sql");
 const availabilityMigration = read("../../supabase/migrations/20260909200000_decision_ready_professional_profiles.sql");
 const dashboard = read("../components/marketplace/ProfessionalRetentionDashboard.tsx");
+const sharing = read("../components/marketplace/ProfessionalProfileSharing.tsx");
 const inquiries = read("../components/marketplace/ProfessionalInquiriesPanel.tsx");
 const inquiryForm = read("../components/marketplace/InquiryForm.tsx");
 const inquiryFunction = read("../../supabase/functions/professional-inquiry-email/index.ts");
@@ -101,9 +102,9 @@ test("professional share links use stable localized public slugs", () => {
   assert.equal(buildProfessionalShareUrl("https://www.elevarefit.com/", "alex-rivera", "en"), "https://www.elevarefit.com/professionals/alex-rivera/");
   assert.equal(buildProfessionalShareUrl("https://www.elevarefit.com", "alex-rivera", "es-419"), "https://www.elevarefit.com/es/professionals/alex-rivera/");
   assert.equal(buildProfessionalShareUrl("https://www.elevarefit.com", "alex-rivera", "pt-BR"), "https://www.elevarefit.com/pt-br/professionals/alex-rivera/");
-  assert.match(dashboard, /navigator\.share/);
-  assert.match(dashboard, /navigator\.clipboard\.writeText/);
-  assert.match(dashboard, /professional_profile_share_selected/);
+  assert.match(sharing, /navigator\.share/);
+  assert.match(sharing, /navigator\.clipboard\.writeText/);
+  assert.match(sharing, /professional_profile_share_selected/);
   assert.doesNotMatch(dashboard, /professionalProfile\.id[^\n]*Share|share[^\n]*professionalProfile\.id/i);
 });
 
@@ -175,13 +176,13 @@ test("new professional dashboard analytics contain only approved non-sensitive p
     "professional_profile_improvement_selected",
     "professional_profile_confirmation_completed",
     "professional_profile_share_selected",
-  ]) assert.match(dashboard, new RegExp(event));
+  ]) assert.match(`${dashboard}\n${sharing}`, new RegExp(event));
   for (const event of [
     "consultation_request_opened",
     "consultation_request_accepted",
     "consultation_request_declined",
   ]) assert.match(inquiries, new RegExp(event));
-  assert.doesNotMatch(`${dashboard}\n${inquiries}`, /trackEvent\([^\n]+(client_first_name|message|goal|email|professionalProfile\.id|inquiry\.id)/);
+  assert.doesNotMatch(`${dashboard}\n${sharing}\n${inquiries}`, /trackEvent\([^\n]+(client_first_name|message|goal|email|professionalProfile\.id|inquiry\.id)/);
 });
 
 test("dashboard and request controls remain accessible and mobile-safe", () => {

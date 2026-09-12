@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "mode": "Local production build; synthetic profile fields; real local account queries; social destinations intercepted",
+  "checks": [
+    "Facebook opens only on selection; all shares use the public production URL",
+    "native sharing succeeds, cancellation stays quiet, and other failures fall back to copying",
+    "blocked clipboard selects a visible read-only link for manual copying",
+    "card resources load on demand and the downloaded PNG has the right dimensions and public content",
+    "failed photos fall back to initials and long names stay inside the card",
+    "unavailable canvas fails visibly and retries without disrupting other sharing",
+    "localized controls and preview fit narrow screens and work with a keyboard",
+    "unpublished profiles have no share controls and sharing makes no database mutations"
+  ],
+  "pageErrors": [],
+  "databaseMutations": []
+}
