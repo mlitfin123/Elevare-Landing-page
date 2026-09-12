@@ -11,7 +11,7 @@ export function StageAnalysisViewTracker({ product }: { product: PaidStageAnalys
     if (viewed.current) return;
     viewed.current = true;
     const source = normalizeQuickAnalysisSource(new URLSearchParams(window.location.search).get("source"));
-    trackEvent(product === "posing_analysis" ? "posing_analysis_view" : "complete_stage_view", { product, source });
+    try { trackEvent(product === "posing_analysis" ? "posing_analysis_view" : "complete_stage_view", { product, source }); } catch { /* Optional analytics must not hide the purchase flow. */ }
   }, [product]);
   return null;
 }

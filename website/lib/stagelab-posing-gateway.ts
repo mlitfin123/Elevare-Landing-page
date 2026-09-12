@@ -4,10 +4,9 @@ import { createHash, createHmac, randomUUID } from "node:crypto";
 import { getRequiredServerEnv, QuickAnalysisServerError } from "./quick-analysis-server.ts";
 import type {
   PaidStageAnalysisProduct,
-  PosingAnalysisResult,
   PosingDivisionKey,
 } from "./stage-analysis.ts";
-import { parsePosingAnalysisResult } from "./stage-analysis-schema.ts";
+import { POSING_RUNTIME } from "./posing-runtime.ts";
 import type { Locale } from "./i18n/config.ts";
 
 const API_VERSION = "elevare_posing_api_v1" as const;
@@ -61,7 +60,7 @@ function signGatewayRequest(url: string, body: string) {
 async function postGateway<T>(
   functionName: "authorize-elevare-analysis-order" | "elevare-posing-analysis",
   payload: object,
-  timeoutMs = 25_000,
+  timeoutMs = POSING_RUNTIME.gatewayTimeoutMs,
 ): Promise<T> {
   const url = getGatewayUrl(functionName);
   const body = JSON.stringify(payload);
@@ -229,19 +228,22 @@ export async function initializeStageLabPosingUpload(input: {
 
 export type StageLabPosingStatusResponse = {
   api_version: typeof API_VERSION;
-  analysis_id: string;
-  status: "uploaded" | "validating" | "analyzing" | "complete" | "invalid" | "failed";
-  result: PosingAnalysisResult | null;
+  analysis_id: string | null;
+  status: "uploaded" | "validating" | "analyzing" | "complete" | "invalid" | "failed" | "awaiting_start";
+  result: unknown;
   error: { code: string; message: string; retryable: boolean } | null;
   completed_at: string | null;
   reused?: boolean;
 };
 
-function validateGatewayResult(response: StageLabPosingStatusResponse) {
-  return {
-    ...response,
-    result: response.result ? parsePosingAnalysisResult(response.result) : null,
-  };
+function validateGatewayIdentity(response: StageLabPosingStatusResponse) {
+  // Persist this identity before parsing coaching. A display incompatibility is
+  // never permission to reserve another paid analysis.
+  const validId = response && typeof response.analysis_id === "string" && response.analysis_id.length > 0 && response.analysis_id.length <= 200 && !/[\r\n]|https?:|data:/i.test(response.analysis_id);
+  if (!response || !["uploaded", "validating", "analyzing", "complete", "invalid", "failed", "awaiting_start"].includes(response.status) || (!validId && !["awaiting_start", "failed"].includes(response.status))) {
+    throw new StageLabGatewayError("stagelab_invalid_response", "Invalid StageLab job response.", 502, true);
+  }
+  return response;
 }
 
 export async function startStageLabPosingAnalysis(input: {
@@ -255,19 +257,24 @@ export async function startStageLabPosingAnalysis(input: {
     external_order_id: input.externalOrderId,
     upload_session_id: input.uploadSessionId,
     idempotency_key: input.idempotencyKey,
-  }, 55_000);
-  return validateGatewayResult(response);
+    background: true,
+  });
+  return validateGatewayIdentity(response);
 }
 
 export async function getStageLabPosingStatus(input: {
   externalOrderId: string;
-  analysisId: string;
+  analysisId?: string;
+  uploadSessionId?: string;
+  idempotencyKey?: string;
 }) {
   const response = await postGateway<StageLabPosingStatusResponse>("elevare-posing-analysis", {
     api_version: API_VERSION,
     operation: "get_status",
     external_order_id: input.externalOrderId,
     analysis_id: input.analysisId,
+    upload_session_id: input.uploadSessionId,
+    idempotency_key: input.idempotencyKey,
   });
-  return validateGatewayResult(response);
+  return validateGatewayIdentity(response);
 }

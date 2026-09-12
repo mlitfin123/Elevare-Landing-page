@@ -1,3 +1,5 @@
+import { resolvePosingGenerationLocale } from "@/lib/posing-locale";
+import { posingErrorResponse } from "@/lib/posing-server-errors";
 import { NextResponse } from "next/server";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { parseQuickAnalysisLocale, resolveQuickAnalysisGenerationLocale, getStripeCheckoutLocale } from "@/lib/quick-analysis-locale";
@@ -16,7 +18,6 @@ import {
   getQuickAnalysisReturnOrigin,
   getQuickAnalysisSupabase,
   hashQuickAnalysisToken,
-  quickAnalysisErrorResponse,
 } from "@/lib/quick-analysis-server";
 import { stageAnalysisCheckoutSchema } from "@/lib/stage-analysis-schema";
 import { STAGE_ANALYSIS_PRODUCT_CONFIG } from "@/lib/stage-analysis";
@@ -53,8 +54,7 @@ export async function POST(request: Request) {
     const supabase = getQuickAnalysisSupabase();
     await enforceQuickAnalysisRateLimit(request, "checkout", supabase);
     const payload = await request.json() as Record<string, unknown>;
-    const requestedLocale = parseQuickAnalysisLocale(payload.locale);
-    if (!requestedLocale) throw new QuickAnalysisServerError("INVALID_LOCALE", "The selected language is not supported.");
+    const requestedLocale = parseQuickAnalysisLocale(payload.locale) ?? "en";
     const source = normalizeQuickAnalysisSource(typeof payload.source === "string" ? payload.source : null);
     const parsed = stageAnalysisCheckoutSchema.parse({
       product: payload.product,
@@ -65,7 +65,10 @@ export async function POST(request: Request) {
       ageConfirmed: payload.ageConfirmed,
       aiConsentConfirmed: payload.aiConsentConfirmed,
     });
-    const generationLocale = resolveQuickAnalysisGenerationLocale(requestedLocale);
+    let posingGenerationLocale;
+    try { posingGenerationLocale = resolvePosingGenerationLocale(requestedLocale); }
+    catch { throw new QuickAnalysisServerError("POSING_LOCALE_UNAVAILABLE", "Posing generation is unavailable for this locale.", 503); }
+    const generationLocale = parsed.product === "posing_analysis" ? posingGenerationLocale : resolveQuickAnalysisGenerationLocale(requestedLocale);
     const stripe = getQuickAnalysisStripe();
     const priceId = await verifyConfiguredStageAnalysisPrice(parsed.product, stripe);
     const checkoutNonce = generateQuickAnalysisToken();
@@ -85,6 +88,7 @@ export async function POST(request: Request) {
       { hash: hashQuickAnalysisToken(checkoutNonce), expiresAt: checkoutNonceExpiresAt.toISOString() },
       generationLocale,
       parsed.product,
+      posingGenerationLocale,
     );
 
     const origin = getQuickAnalysisReturnOrigin(request);
@@ -104,6 +108,7 @@ export async function POST(request: Request) {
           analysis_product: parsed.product,
           quick_analysis_id: analysisId,
           generation_locale: generationLocale,
+          posing_generation_locale: posingGenerationLocale,
         },
         payment_intent_data: {
           metadata: {
@@ -146,6 +151,6 @@ export async function POST(request: Request) {
         // The unpaid record contains no media and can expire operationally.
       }
     }
-    return quickAnalysisErrorResponse(error);
+    return posingErrorResponse(error, request);
   }
 }

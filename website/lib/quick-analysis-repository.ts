@@ -22,6 +22,7 @@ import {
 } from "./stage-analysis.ts";
 import type { Locale } from "./i18n/config.ts";
 import { normalizeStoredQuickAnalysisLocale } from "./quick-analysis-locale.ts";
+import { POSING_RUNTIME } from "./posing-runtime.ts";
 import {
   QuickAnalysisServerError,
   deriveQuickAnalysisToken,
@@ -42,6 +43,7 @@ export type QuickAnalysisRow = {
   analysis_product: StageAnalysisProduct | null;
   analysis_mode: QuickAnalysisMode | null;
   generation_locale: Locale | null;
+  posing_generation_locale?: Locale | null;
   division: string;
   competition_status: "preparing" | "assessing";
   weeks_out: number | null;
@@ -81,6 +83,7 @@ export async function createQuickAnalysisCheckoutRecord(
   checkoutNonce: { hash: string; expiresAt: string },
   generationLocale: Locale = "en",
   product: StageAnalysisProduct = "physique_analysis",
+  posingGenerationLocale?: Locale,
 ) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -89,6 +92,7 @@ export async function createQuickAnalysisCheckoutRecord(
       analysis_product: product,
       analysis_mode: context.analysisMode,
       generation_locale: generationLocale,
+      ...(includesPosingAnalysis(product) ? { posing_generation_locale: posingGenerationLocale ?? generationLocale } : {}),
       division: context.division,
       competition_status: context.competitionStatus,
       weeks_out: context.weeksOut,
@@ -148,9 +152,18 @@ export async function activatePaidQuickAnalysis(
     throw new QuickAnalysisServerError("INVALID_CHECKOUT_SESSION", "This purchase is invalid.", 400);
   }
   const product = existingRow.analysis_product ?? "physique_analysis";
+  if (includesPosingAnalysis(product)) {
+    if (existingRow.payment_status === "refunded" || existingRow.payment_status === "failed") {
+      throw new QuickAnalysisServerError("PAYMENT_REVOKED", "This posing purchase is no longer active.", 402);
+    }
+    if (existingRow.payment_status === "paid") {
+      if (existingRow.stripe_payment_intent_id !== input.paymentIntentId) throw new QuickAnalysisServerError("PAYMENT_NOT_VERIFIED", "Payment identity does not match this purchase.", 402);
+      return existingRow;
+    }
+  }
   const paidAt = new Date();
   const expiresAt = new Date(paidAt.getTime() + QUICK_ANALYSIS_RESULT_HOURS * 60 * 60 * 1_000);
-  const { data, error } = await supabase
+  const activation = supabase
     .from("quick_analyses")
     .update({
       stripe_payment_intent_id: input.paymentIntentId,
@@ -167,8 +180,9 @@ export async function activatePaidQuickAnalysis(
     })
     .eq("id", input.analysisId)
     .eq("stripe_checkout_session_id", input.checkoutSessionId)
-    .in("analysis_status", ["checkout_created", "paid", "failed_retryable", "completed"])
-    .select("*")
+    .in("analysis_status", ["checkout_created", "paid", "failed_retryable", "completed"]);
+  if (includesPosingAnalysis(product)) activation.eq("payment_status", "unpaid");
+  const { data, error } = await activation.select("*")
     .maybeSingle();
 
   if (error || !data) {
@@ -422,12 +436,12 @@ export function toStageAnalysisPublicState(row: QuickAnalysisRow): StageAnalysis
   const division = POSING_DIVISIONS.includes(row.division as PosingDivision)
     ? row.division as PosingDivision
     : "Men's Physique";
-  const posingStatus = row.posing_status ?? (includesPosingAnalysis(product) ? "awaiting_authorization" : "not_included");
   const expired = row.expires_at ? new Date(row.expires_at).getTime() <= Date.now() : false;
+  const posingStatus = expired && includesPosingAnalysis(product) ? "expired" : row.posing_status ?? (includesPosingAnalysis(product) ? "awaiting_authorization" : "not_included");
   return {
     product,
     division,
-    generationLocale: normalizeStoredQuickAnalysisLocale(row.generation_locale),
+    generationLocale: normalizeStoredQuickAnalysisLocale(row.posing_generation_locale ?? row.generation_locale),
     paymentStatus: row.payment_status,
     expiresAt: row.expires_at,
     physique: {
@@ -461,6 +475,8 @@ export function toStageAnalysisPublicState(row: QuickAnalysisRow): StageAnalysis
       maxRetries: 4,
       result: posingStatus === "completed" ? row.posing_result_json : null,
       errorCode: row.posing_error_code,
+      analysisId: row.posing_analysis_id,
+      startedAt: row.posing_processing_started_at,
     },
   };
 }
@@ -469,7 +485,7 @@ async function recoverStalePosingUpload(supabase: SupabaseClient, row: QuickAnal
   if (
     row.posing_status !== "uploading" ||
     !row.posing_upload_started_at ||
-    Date.now() - new Date(row.posing_upload_started_at).getTime() <= 2 * 60 * 60 * 1_000
+    Date.now() - new Date(row.posing_upload_started_at).getTime() <= POSING_RUNTIME.staleUploadMs
   ) {
     return row;
   }
@@ -510,18 +526,22 @@ export async function markStageLabOrderAuthorized(
   const { data, error } = await supabase
     .from("quick_analyses")
     .update({
-      posing_status: posingStatus,
       stagelab_authorized_at: new Date().toISOString(),
       stagelab_authorization_expires_at: input.authorizationExpiresAt,
       stagelab_authorization_event_id: input.stripeEventId,
-      posing_error_code: null,
     })
     .eq("id", input.analysisId)
     .eq("payment_status", "paid")
     .select("*")
     .maybeSingle();
   if (error || !data) throwDatabaseError("We could not activate the StageLab analysis.", error);
-  return data as QuickAnalysisRow;
+  // Replayed authorization must not reset an upload, reserved job or saved report.
+  const initial = await supabase.from("quick_analyses").update({ posing_status: posingStatus, posing_error_code: null })
+    .eq("id", input.analysisId).eq("payment_status", "paid")
+    .in("posing_status", ["not_included", "checkout_created", "awaiting_authorization", "paid"])
+    .select("*").maybeSingle();
+  if (initial.error) throwDatabaseError("We could not activate the StageLab analysis.", initial.error);
+  return (initial.data ?? data) as QuickAnalysisRow;
 }
 
 export async function markPosingUploadInitialized(
@@ -538,6 +558,7 @@ export async function markPosingUploadInitialized(
     .from("quick_analyses")
     .update({
       posing_status: "uploading",
+      posing_analysis_id: null,
       posing_upload_session_id: input.uploadSessionId,
       posing_idempotency_key: input.idempotencyKey,
       posing_retry_count: nextRetryCount,
@@ -562,19 +583,45 @@ export async function markPosingAnalysisStarted(
   const { data, error } = await supabase
     .from("quick_analyses")
     .update({
-      posing_status: "processing",
+      posing_status: row.posing_status === "completed" ? "completed" : "processing",
       posing_analysis_id: analysisId,
-      posing_processing_started_at: new Date().toISOString(),
+      posing_processing_started_at: row.posing_processing_started_at ?? new Date().toISOString(),
       posing_error_code: null,
-      posing_upload_session_id: null,
-      posing_upload_started_at: null,
     })
     .eq("id", row.id)
-    .eq("posing_status", "uploading")
+    .eq("payment_status", "paid")
+    .eq("posing_status", row.posing_status)
+    .eq("posing_retry_count", row.posing_retry_count ?? 0)
     .select("*")
     .maybeSingle();
-  if (error || !data) throwDatabaseError("We could not start your posing analysis.", error);
+  if (error) throwDatabaseError("We could not start your posing analysis.", error);
+  if (!data) {
+    const current = await supabase.from("quick_analyses").select("*").eq("id", row.id).single();
+    if (current.error || !current.data) throwDatabaseError("We could not retrieve your posing analysis.", current.error);
+    return current.data as QuickAnalysisRow;
+  }
   return data as QuickAnalysisRow;
+}
+
+/** Durable intent/session survives a lost start response; no AI work happens here. */
+export async function markPosingStartRequested(supabase: SupabaseClient, row: QuickAnalysisRow) {
+  if (row.posing_status === "processing") return row;
+  const { data, error } = await supabase.from("quick_analyses").update({
+    posing_status: "processing", posing_processing_started_at: new Date().toISOString(), posing_error_code: null,
+  }).eq("id", row.id).eq("payment_status", "paid").eq("posing_status", "uploading")
+    .eq("posing_upload_session_id", row.posing_upload_session_id).select("*").maybeSingle();
+  if (error) throwDatabaseError("We could not preserve your analysis request.", error);
+  if (data) return data as QuickAnalysisRow;
+  const current = await supabase.from("quick_analyses").select("*").eq("id", row.id).single();
+  if (current.error || !current.data) throwDatabaseError("We could not recover your analysis request.", current.error);
+  return current.data as QuickAnalysisRow;
+}
+
+export async function markPosingReportUnavailable(supabase: SupabaseClient, row: QuickAnalysisRow) {
+  const { error } = await supabase.from("quick_analyses").update({ posing_error_code: "RESULT_FORMAT_UNAVAILABLE" })
+    .eq("id", row.id).eq("payment_status", "paid").eq("posing_analysis_id", row.posing_analysis_id);
+  if (error) throwDatabaseError("We could not update report recovery.", error);
+  return { ...row, posing_error_code: "RESULT_FORMAT_UNAVAILABLE" };
 }
 
 export async function completePosingAnalysis(
@@ -598,6 +645,7 @@ export async function completePosingAnalysis(
     })
     .eq("id", row.id)
     .eq("payment_status", "paid")
+    .eq("posing_analysis_id", result.analysis_id)
     .select("*")
     .maybeSingle();
   if (error || !data) throwDatabaseError("We could not save your posing analysis.", error);
@@ -621,9 +669,16 @@ export async function failPosingAnalysis(
     })
     .eq("id", row.id)
     .eq("payment_status", "paid")
+    .eq("posing_status", row.posing_status)
+    .eq("posing_retry_count", row.posing_retry_count ?? 0)
     .select("*")
     .maybeSingle();
-  if (error || !data) throwDatabaseError("We could not update your posing analysis.", error);
+  if (error) throwDatabaseError("We could not update your posing analysis.", error);
+  if (!data) {
+    const current = await supabase.from("quick_analyses").select("*").eq("id", row.id).single();
+    if (current.error || !current.data) throwDatabaseError("We could not recover your posing analysis.", current.error);
+    return current.data as QuickAnalysisRow;
+  }
   return data as QuickAnalysisRow;
 }
 

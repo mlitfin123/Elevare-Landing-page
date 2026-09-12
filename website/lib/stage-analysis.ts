@@ -1,3 +1,4 @@
+import type { CanonicalPosingComponent, CanonicalPosingPose, CanonicalPosingResult } from "./posing-contract.ts";
 import type { Locale } from "./i18n/config.ts";
 import type { QuickAnalysisResult, QuickAnalysisStatus } from "./quick-analysis.ts";
 import { QUICK_ANALYSIS_PRICE_CENTS, QUICK_ANALYSIS_CURRENCY } from "./quick-analysis.ts";
@@ -71,49 +72,9 @@ export type PosingStatus =
   | "completed"
   | "expired";
 
-export type PosingAnalysisComponent = {
-  label: string;
-  score: number | null;
-  note: string;
-};
-
-export type PosingAnalysisPose = {
-  pose_name: string;
-  segment_start_ms: number | null;
-  segment_end_ms: number | null;
-  representative_frame_timestamps_ms: number[];
-  confidence: "low" | "medium" | "high";
-  pose_score: number | null;
-  component_scores: PosingAnalysisComponent[];
-  strongest_aspect: string;
-  biggest_issue: string;
-  corrections: string[];
-  coaching_cue: string;
-};
-
-export type PosingAnalysisResult = {
-  schema_version: "posing_analysis_v1";
-  analysis_id: string;
-  division: PosingDivision;
-  video_usability_status: "usable" | "limited" | "unusable";
-  video_usability_reason: string;
-  analysis_quality: "low" | "medium" | "high" | "unusable";
-  overall_stage_lab_posing_score: number | null;
-  score_explanation: string;
-  biggest_opportunity: string;
-  overall_strengths: string[];
-  highest_priority_corrections: Array<{
-    title: string;
-    visible_evidence: string;
-    try_this: string;
-  }>;
-  poses_detected: PosingAnalysisPose[];
-  transition_observations: string[];
-  consistency_observations: string[];
-  quality_flags: string[];
-  athlete_next_focus: string[];
-  disclaimer: string;
-};
+export type PosingAnalysisComponent = CanonicalPosingComponent;
+export type PosingAnalysisPose = CanonicalPosingPose;
+export type PosingAnalysisResult = CanonicalPosingResult;
 
 export type StageAnalysisPublicState = {
   product: StageAnalysisProduct;
@@ -137,6 +98,9 @@ export type StageAnalysisPublicState = {
     maxRetries: number;
     result: PosingAnalysisResult | null;
     errorCode: string | null;
+    analysisId?: string | null;
+    startedAt?: string | null;
+    phase?: "reserved" | "validating" | "analyzing" | "awaiting_start";
   };
 };
 

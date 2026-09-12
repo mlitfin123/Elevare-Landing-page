@@ -28,7 +28,11 @@
     "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts",
     "legal:routes": "node --experimental-strip-types ./scripts/verify-legal-routes.ts",
     "test:runtime": "node --conditions=react-server --experimental-strip-types tests/integration/professional-runtime.mts",
-    "test:notifications": "node --experimental-strip-types tests/integration/marketplace-notifications.mts"
+    "test:notifications": "node --experimental-strip-types tests/integration/marketplace-notifications.mts",
+    "test:posing": "node --conditions=react-server --test --experimental-strip-types tests/stage-analysis.test.ts tests/posing-hardening.test.ts tests/posing-recovery.test.ts tests/posing-server-errors.test.ts tests/posing-payment-replay.test.ts",
+    "verify:posing-contract": "node --experimental-strip-types scripts/verify-posing-contract.mjs",
+    "test:posing:browser": "node --experimental-strip-types tests/integration/posing-browser.mjs",
+    "test:posing:database": "node tests/integration/posing-database.mjs"
   },
   "keywords": [
     "nextjs",

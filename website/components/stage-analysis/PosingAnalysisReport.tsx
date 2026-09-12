@@ -3,61 +3,66 @@ import { TrackedLink } from "@/components/TrackedLink";
 import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { StageAnalysisMessages } from "@/lib/i18n/stage-analysis-messages";
+import { getPosingMessages } from "@/lib/i18n/posing-messages";
+import { buildPosingPresentation } from "@/lib/posing-result-presentation";
 import type { PaidStageAnalysisProduct, PosingAnalysisResult } from "@/lib/stage-analysis";
 
-const qualityLabels: Record<Locale, Record<PosingAnalysisResult["analysis_quality"], string>> = {
-  en: { low: "Low", medium: "Medium", high: "High", unusable: "Unusable" },
-  "es-419": { low: "Baja", medium: "Media", high: "Alta", unusable: "No utilizable" },
-  "pt-BR": { low: "Baixa", medium: "Média", high: "Alta", unusable: "Inutilizável" },
-};
-
-const usabilityLabels: Record<Locale, Record<PosingAnalysisResult["video_usability_status"], string>> = {
-  en: { usable: "Usable", limited: "Limited", unusable: "Unusable" },
-  "es-419": { usable: "Utilizable", limited: "Limitada", unusable: "No utilizable" },
-  "pt-BR": { usable: "Utilizável", limited: "Limitada", unusable: "Inutilizável" },
-};
-
-function Items({ items, empty }: { items: string[]; empty: string }) {
-  return items.length ? <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{empty}</p>;
+function Items({ items }: { items: string[] }) {
+  return <ul>{items.map((item, index) => <li key={index}>{item}</li>)}</ul>;
 }
 
-export function PosingAnalysisReport({
-  result,
-  product,
-  locale,
-  messages,
-}: {
-  result: PosingAnalysisResult;
-  product: PaidStageAnalysisProduct;
-  locale: Locale;
-  messages: StageAnalysisMessages["result"];
+export function PosingAnalysisReport({ result, product, locale, messages }: {
+  result: PosingAnalysisResult; product: PaidStageAnalysisProduct; locale: Locale; messages: StageAnalysisMessages["result"];
 }) {
+  const m = getPosingMessages(locale);
+  const view = buildPosingPresentation(result, locale);
+  const transitionPoses = view.poses.filter((pose) => pose.transition);
   return (
     <section className="quick-analysis-report posing-analysis-report">
-      <article className="quick-analysis-report-hero panel">
-        <div><div className="eyebrow">{messages.poweredBy}</div><h1>{messages.reportTitle}</h1><p>{result.score_explanation}</p></div>
-        <div className="quick-analysis-condition-score"><span>{messages.score}</span><strong>{result.overall_stage_lab_posing_score == null ? messages.notScored : `${result.overall_stage_lab_posing_score}/100`}</strong><small>{qualityLabels[locale][result.analysis_quality]}</small></div>
-      </article>
-
-      <div className="quick-analysis-snapshot-grid">
-        <article className="panel"><span className="stat-label">{messages.quality}</span><strong className="quick-analysis-snapshot-value">{qualityLabels[locale][result.analysis_quality]}</strong></article>
-        <article className="panel"><span className="stat-label">{messages.usability}</span><strong className="quick-analysis-snapshot-value">{usabilityLabels[locale][result.video_usability_status]}</strong><small>{result.video_usability_reason}</small></article>
+      <div className="posing-summary-grid">
+        <article className="panel posing-summary">
+          <div className="eyebrow">{messages.poweredBy}</div>
+          <h1 id="posing-report-heading" tabIndex={-1}>{messages.reportTitle}</h1>
+          <div className="posing-overall-score"><span>{messages.score}</span><strong>{result.overall_stage_lab_posing_score == null ? messages.notScored : `${result.overall_stage_lab_posing_score}/100`}</strong></div>
+          <p>{view.summary}</p>
+          <small className="posing-confidence">{m.confidence[result.analysis_quality]}</small>
+        </article>
+        {view.opportunity ? <article className="panel posing-opportunity"><h2>{messages.biggestOpportunity}</h2><p>{view.opportunity}</p></article> : null}
       </div>
-
-      <article className="panel quick-analysis-judge-panel"><div className="eyebrow">{messages.biggestOpportunity}</div><h2>{result.biggest_opportunity}</h2></article>
-      <div className="grid-3">
-        <article className="panel"><h2>{messages.strengths}</h2><Items items={result.overall_strengths} empty={messages.notScored} /></article>
-        <article className="panel"><h2>{messages.transitions}</h2><Items items={result.transition_observations} empty={messages.notScored} /></article>
-        <article className="panel"><h2>{messages.consistency}</h2><Items items={result.consistency_observations} empty={messages.notScored} /></article>
+      {view.priority.length ? <section className="posing-priority" aria-labelledby="posing-corrections-heading">
+        <h2 id="posing-corrections-heading">{m.topCorrections}</h2>
+        <div className="posing-correction-grid">{view.priority.map((item, index) => <article className="panel" key={index}>
+          <h3>{item.title || `${messages.corrections} ${index + 1}`}</h3>
+          {item.evidence ? <p>{item.evidence}</p> : null}
+          {item.action ? <p><strong>{messages.tryThis}:</strong> {item.action}</p> : null}
+          {item.evidenceDetail !== item.evidence || item.actionDetail !== item.action ? <details><summary>{m.moreContext}</summary><p>{item.evidenceDetail}</p><p>{item.actionDetail}</p></details> : null}
+        </article>)}</div>
+      </section> : null}
+      {view.poses.some((pose) => !pose.transition) ? <section className="posing-breakdown">
+        <h2>{m.poseBreakdown}</h2>
+        <div className="posing-analysis-pose-grid">{view.poses.filter((pose) => !pose.transition).map((pose, index) => <details className="panel posing-analysis-pose" key={index}>
+          <summary><span className="posing-analysis-pose-head"><strong>{pose.name}</strong><span aria-label={`${messages.score}: ${pose.score == null ? messages.notScored : `${pose.score}/100`}`}>{pose.score == null ? messages.notScored : `${pose.score}/100`}</span></span><span className="posing-pose-observation">{pose.observation}</span><span className="posing-detail-label">{m.details}</span></summary>
+          <div className="posing-expanded">
+            <p className="posing-confidence">{pose.confidence}</p>
+            {!pose.unknown && pose.strength ? <p><strong>{messages.strongestAspect}:</strong> {pose.strength}</p> : null}
+            {!pose.unknown && pose.issue ? <p><strong>{messages.biggestIssue}:</strong> {pose.issue}</p> : null}
+            {pose.corrections.length ? <div><strong>{messages.tryThis}</strong><Items items={pose.corrections} /></div> : null}
+            {pose.cue ? <p><strong>{messages.coachingCue}:</strong> {pose.cue}</p> : null}
+            {pose.components.length ? <details><summary>{m.componentDetails}</summary><ul className="posing-analysis-components">{pose.components.map((component, i) => <li key={i}><span>{component.label}</span><strong aria-label={`${messages.score}: ${component.score == null ? messages.notScored : `${component.score}/100`}`}>{component.score == null ? messages.notScored : `${component.score}/100`}</strong>{component.note ? <small>{component.note}</small> : null}</li>)}</ul></details> : null}
+          </div>
+        </details>)}</div>
+      </section> : null}
+      <div className="posing-summary-grid">
+        {view.strengths.length ? <article className="panel"><h2>{messages.strengths}</h2><Items items={view.strengths} /></article> : null}
+        {view.nextFocus.length ? <article className="panel"><h2>{messages.nextFocus}</h2><Items items={view.nextFocus} /></article> : null}
       </div>
-
-      {result.highest_priority_corrections.length ? <section><div className="section-heading"><div><div className="eyebrow">StageLab</div><h2>{messages.corrections}</h2></div></div><div className="grid-3">{result.highest_priority_corrections.map((item) => <article className="panel" key={`${item.title}-${item.visible_evidence}`}><h3>{item.title}</h3><p><strong>{messages.visibleEvidence}:</strong> {item.visible_evidence}</p><p><strong>{messages.tryThis}:</strong> {item.try_this}</p></article>)}</div></section> : null}
-
-      {result.poses_detected.length ? <section><div className="section-heading"><div><div className="eyebrow">{messages.poweredBy}</div><h2>{messages.detectedPoses}</h2></div></div><div className="posing-analysis-pose-grid">{result.poses_detected.map((pose, index) => <article className="panel posing-analysis-pose" key={`${pose.pose_name}-${index}`}><div className="posing-analysis-pose-head"><h3>{pose.pose_name}</h3><strong>{pose.pose_score == null ? messages.notScored : `${pose.pose_score}/100`}</strong></div><p><strong>{messages.strongestAspect}:</strong> {pose.strongest_aspect}</p><p><strong>{messages.biggestIssue}:</strong> {pose.biggest_issue}</p><p><strong>{messages.coachingCue}:</strong> {pose.coaching_cue}</p>{pose.component_scores.length ? <div><span className="stat-label">{messages.components}</span><ul className="posing-analysis-components">{pose.component_scores.map((component) => <li key={component.label}><span>{component.label}</span><strong>{component.score == null ? messages.notScored : `${component.score}/100`}</strong><small>{component.note}</small></li>)}</ul></div> : null}</article>)}</div></section> : null}
-
-      <article className="panel"><h2>{messages.nextFocus}</h2><Items items={result.athlete_next_focus} empty={messages.notScored} /></article>
-      <article className="quick-analysis-limitations panel"><div><div className="eyebrow">{messages.limitations}</div><p>{result.disclaimer}</p>{result.quality_flags.length ? <Items items={result.quality_flags} empty={messages.notScored} /> : null}</div></article>
-      <article className="quick-analysis-result-cta panel"><div className="quick-analysis-result-cta-copy"><div className="eyebrow">StageLab</div><h2>{messages.ctaTitle[product]}</h2><p>{messages.ctaBody[product]}</p></div><ProductCtaButtons product="StageLab" context={`${product}_result`} eventName="stage_analysis_stagelab_cta_clicked" eventParams={{ analysis_product: product }} /><TrackedLink className="proof-action" href={localizePathname("/stagelab/", locale)} eventName="stage_analysis_stagelab_cta_clicked" eventParams={{ analysis_product: product, cta_name: messages.learnMore }}>{messages.learnMore}</TrackedLink></article>
+      <div className="posing-secondary">
+        {view.consistency.length ? <details className="panel"><summary>{messages.consistency}</summary><Items items={view.consistency} /></details> : null}
+        {view.transitions.length || transitionPoses.length ? <details className="panel posing-transitions"><summary>{messages.transitions}<small>{m.frameCoverage}</small></summary><p>{m.sampling}</p><Items items={view.transitions} />{transitionPoses.map((pose, index) => <div key={index}><strong>{m.transition}</strong><p>{pose.observation}</p>{pose.cue ? <p>{pose.cue}</p> : null}</div>)}</details> : null}
+        <details className="panel posing-video-quality"><summary>{m.videoQuality}: {m.quality[result.video_usability_status]}<small>{m.qualitySummary}</small></summary><p>{m.sampling}</p><Items items={view.quality} />{view.disclaimer ? <p>{view.disclaimer}</p> : null}</details>
+        {view.additionalCorrections.length ? <details className="panel"><summary>{m.moreCorrections}</summary>{view.additionalCorrections.map((item, index) => <div key={index}><h3>{item.title}</h3><p>{item.evidenceDetail}</p><p>{item.actionDetail}</p></div>)}</details> : null}
+      </div>
+      <article className="quick-analysis-result-cta panel"><div className="quick-analysis-result-cta-copy"><div className="eyebrow">StageLab</div><h2>{messages.ctaTitle[product]}</h2><p>{messages.ctaBody[product]}</p></div><ProductCtaButtons product="StageLab" context={`${product}_result`} eventName="stage_analysis_stagelab_cta_clicked" eventParams={{ analysis_product: product }} displayLabels={{ ios: m.ios, android: m.android, primary: m.openApp }} /><TrackedLink className="proof-action" href={localizePathname("/stagelab/", locale)} eventName="stage_analysis_stagelab_cta_clicked" eventParams={{ analysis_product: product, cta_name: messages.learnMore }}>{messages.learnMore}</TrackedLink></article>
     </section>
   );
 }

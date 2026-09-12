@@ -1,0 +1,145 @@
+{
+  "schema_version": "posing_analysis_v1",
+  "analysis_id": "saved-prompt-0.4",
+  "division": "Men's Physique",
+  "video_usability_status": "usable",
+  "video_usability_reason": "Full-body views are usable; no exact transition timing was measured.",
+  "analysis_quality": "high",
+  "overall_stage_lab_posing_score": 76,
+  "score_explanation": "Your front and back poses show a clear silhouette and a stable stance. The back pose presents your width best. Tension in the hands and raised shoulders narrow the front presentation, especially when returning from the back pose. A quieter arm position and a deliberate shoulder setup would make the sequence more consistent.",
+  "biggest_opportunity": "Create more lat width while keeping the shoulders and arms relaxed.",
+  "overall_strengths": [
+    "A stable stance supports both front poses.",
+    "The back pose shows a clear lat silhouette."
+  ],
+  "highest_priority_corrections": [
+    {
+      "title": "Relax your arms and hands",
+      "visible_evidence": "Both front poses show excessive arm tension.",
+      "try_this": "Keep a soft elbow bend and lightly cup the hands."
+    },
+    {
+      "title": "Set your shoulders before opening your lats",
+      "visible_evidence": "The shoulders rise as you return to the front.",
+      "try_this": "Set the shoulders down, then open the lats."
+    },
+    {
+      "title": "Lower the back-pose elbows slightly",
+      "visible_evidence": "High elbows narrow the visible back silhouette.",
+      "try_this": "Lower the elbows a little while keeping the torso tall."
+    }
+  ],
+  "poses_detected": [
+    {
+      "pose_name": "Front Pose",
+      "segment_start_ms": 1000,
+      "segment_end_ms": 6500,
+      "representative_frame_timestamps_ms": [
+        1000,
+        6500
+      ],
+      "confidence": "high",
+      "pose_score": 76,
+      "component_scores": [
+        {
+          "label": "shoulder positioning",
+          "score": 73,
+          "note": "The shoulders are slightly raised."
+        }
+      ],
+      "strongest_aspect": "Your stance is stable.",
+      "biggest_issue": "The hands and arms look tense.",
+      "corrections": [
+        "Keep a soft elbow bend."
+      ],
+      "coaching_cue": "Wide lats, quiet hands."
+    },
+    {
+      "pose_name": "Back Pose",
+      "segment_start_ms": 9250,
+      "segment_end_ms": 14750,
+      "representative_frame_timestamps_ms": [
+        9250,
+        14750
+      ],
+      "confidence": "medium",
+      "pose_score": 71,
+      "component_scores": [
+        {
+          "label": "shoulder positioning",
+          "score": 73,
+          "note": "The shoulders are slightly raised."
+        }
+      ],
+      "strongest_aspect": "Your stance is stable.",
+      "biggest_issue": "The elbows sit high.",
+      "corrections": [
+        "Lower your elbows slightly."
+      ],
+      "coaching_cue": "Tall torso, wide back."
+    },
+    {
+      "pose_name": "Front Pose",
+      "segment_start_ms": 17500,
+      "segment_end_ms": 20250,
+      "representative_frame_timestamps_ms": [
+        17500,
+        20250
+      ],
+      "confidence": "high",
+      "pose_score": 77,
+      "component_scores": [
+        {
+          "label": "shoulder positioning",
+          "score": 73,
+          "note": "The shoulders are slightly raised."
+        }
+      ],
+      "strongest_aspect": "Your stance is stable.",
+      "biggest_issue": "The hands and arms look tense.",
+      "corrections": [
+        "Keep a soft elbow bend."
+      ],
+      "coaching_cue": "Wide lats, quiet hands."
+    },
+    {
+      "pose_name": "Transition",
+      "segment_start_ms": 14750,
+      "segment_end_ms": 17500,
+      "representative_frame_timestamps_ms": [
+        1000,
+        6500
+      ],
+      "confidence": "high",
+      "pose_score": null,
+      "component_scores": [
+        {
+          "label": "shoulder positioning",
+          "score": null,
+          "note": "The shoulders are slightly raised."
+        }
+      ],
+      "strongest_aspect": "Your stance is stable.",
+      "biggest_issue": "An arm reset is visible before the final front pose.",
+      "corrections": [
+        "Keep a soft elbow bend."
+      ],
+      "coaching_cue": "Wide lats, quiet hands."
+    }
+  ],
+  "transition_observations": [
+    "The return to front includes a visible arm reset."
+  ],
+  "consistency_observations": [
+    "The final front pose has more shoulder tension than the first."
+  ],
+  "quality_flags": [
+    "Full-body poses were visible.",
+    "Still frames limit transition assessment."
+  ],
+  "athlete_next_focus": [
+    "Rehearse the front pose with quiet hands.",
+    "Practice a front → back → front round."
+  ],
+  "disclaimer": "The StageLab Posing Score measures pose execution and presentation consistency. It is not an official judging score."
+}

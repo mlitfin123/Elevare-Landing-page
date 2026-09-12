@@ -1,0 +1,96 @@
+{
+  "schema_version": "posing_analysis_v1",
+  "analysis_id": "saved-prompt-0.2",
+  "division": "Bikini",
+  "video_usability_status": "usable",
+  "video_usability_reason": "The athlete remains fully visible with stable lighting across the sampled frames.",
+  "analysis_quality": "high",
+  "overall_stage_lab_posing_score": 82,
+  "score_explanation": "The front and back positions are controlled, with the largest opportunity in transition consistency.",
+  "biggest_opportunity": "Keep the shoulders relaxed while settling the hips before each hold.",
+  "overall_strengths": [
+    "Consistent full-body presentation",
+    "Balanced stance in the back pose"
+  ],
+  "highest_priority_corrections": [
+    {
+      "title": "Settle before the hold",
+      "visible_evidence": "The hips continue moving through two transition frames before the front pose stabilizes.",
+      "try_this": "Finish the foot placement first, then settle the hips and hold for two counts."
+    }
+  ],
+  "poses_detected": [
+    {
+      "pose_name": "Front Pose",
+      "segment_start_ms": 1000,
+      "segment_end_ms": 6500,
+      "representative_frame_timestamps_ms": [
+        1000,
+        3750,
+        6500
+      ],
+      "confidence": "high",
+      "pose_score": 84,
+      "component_scores": [
+        {
+          "label": "posture",
+          "score": 86,
+          "note": "The torso remains tall and controlled."
+        },
+        {
+          "label": "hip positioning",
+          "score": 81,
+          "note": "The final hip position is effective after a slightly long setup."
+        }
+      ],
+      "strongest_aspect": "Tall posture and relaxed upper-body presentation.",
+      "biggest_issue": "The hip position takes too long to settle.",
+      "corrections": [
+        "Complete foot placement before rotating the hips."
+      ],
+      "coaching_cue": "Feet, hips, hold."
+    },
+    {
+      "pose_name": "Transition",
+      "segment_start_ms": 1000,
+      "segment_end_ms": 6500,
+      "representative_frame_timestamps_ms": [
+        1000,
+        3750,
+        6500
+      ],
+      "confidence": "high",
+      "pose_score": 83,
+      "component_scores": [
+        {
+          "label": "posture",
+          "score": 86,
+          "note": "The torso remains tall and controlled."
+        },
+        {
+          "label": "hip positioning",
+          "score": 81,
+          "note": "The final hip position is effective after a slightly long setup."
+        }
+      ],
+      "strongest_aspect": "Tall posture and relaxed upper-body presentation.",
+      "biggest_issue": "During 6710–12421ms, the return to front includes an arm reset.",
+      "corrections": [
+        "Complete foot placement before rotating the hips."
+      ],
+      "coaching_cue": "Feet, hips, hold."
+    }
+  ],
+  "transition_observations": [
+    "The transition is smooth but would read more confidently with a clearer finish."
+  ],
+  "consistency_observations": [
+    "Posture remains consistent across the sampled sequence."
+  ],
+  "quality_flags": [],
+  "athlete_next_focus": [
+    "Practice a two-count hold after every transition.",
+    "Keep the shoulders relaxed while the hips settle."
+  ],
+  "disclaimer": "The StageLab Posing Score measures pose execution and presentation consistency. It is not an official judging score."
+}
