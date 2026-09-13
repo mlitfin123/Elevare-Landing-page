@@ -1,12 +1,11 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { trackEvent } from "@/lib/analytics";
-import type { Locale } from "@/lib/i18n/config";
+import { localizePathname, type Locale } from "@/lib/i18n/config";
 import type { QuickAnalysisMessages } from "@/lib/i18n/quick-analysis-types";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
 import { markQuickAnalysisRecoveryCandidate } from "@/lib/quick-analysis-recovery-marker";
@@ -288,7 +287,7 @@ export function QuickAnalysisCheckout({ locale, messages }: { locale: Locale; me
         <label className="quick-analysis-check" data-quick-analysis-field="aiConsentConfirmed">
           <input type="checkbox" checked={aiConsentConfirmed} onChange={(event) => { setAiConsentConfirmed(event.target.checked); setFieldErrors((current) => ({ ...current, aiConsentConfirmed: undefined })); }} aria-invalid={Boolean(fieldErrors.aiConsentConfirmed)} aria-describedby={fieldErrors.aiConsentConfirmed ? "quick-analysis-ai-error" : undefined} />
           <span>
-            {messages.aiConsentBefore}<a href="/privacy-policy/" hrefLang="en">{messages.privacyPolicy}</a>{messages.aiConsentAfter}
+            {messages.aiConsentBefore}<a href={localizePathname("/privacy-policy/", locale)} hrefLang={locale}>{messages.privacyPolicy}</a>{messages.aiConsentAfter}
           </span>
         </label>
         {fieldErrors.aiConsentConfirmed ? <p className="field-error" id="quick-analysis-ai-error">{fieldErrors.aiConsentConfirmed}</p> : null}
@@ -300,7 +299,7 @@ export function QuickAnalysisCheckout({ locale, messages }: { locale: Locale; me
         </button>
         {!stripePromise ? <p className="fine-print" role="status">{messages.paymentUnavailable}</p> : null}
         <p className="fine-print">
-          {messages.purchaseTermsBefore}<a href="/terms-of-service/" hrefLang="en">{messages.termsOfService}</a>.
+          {messages.purchaseTermsBefore}<a href={localizePathname("/terms-of-service/", locale)} hrefLang={locale}>{messages.termsOfService}</a>.
         </p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>

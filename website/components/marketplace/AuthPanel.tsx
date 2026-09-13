@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { type FormEvent, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
@@ -9,6 +8,7 @@ import {
   LOCALE_COOKIE_NAME,
   LOCALE_STORAGE_KEY,
   localeFromPathname,
+  localizePathname,
   resolvePreferredLocale,
 } from "@/lib/i18n/config";
 import { absoluteUrl } from "@/lib/site";
@@ -19,6 +19,7 @@ export function AuthPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = useMemo(() => getSafeAuthRedirect(searchParams.get("redirect")), [searchParams]);
+  const legalLocale = localeFromPathname(redirectPath);
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -213,8 +214,8 @@ export function AuthPanel() {
                   onChange={(event) => setHasAcceptedLegalTerms(event.target.checked)}
                 />
                 <span>
-                  I agree to the <a href="/terms-of-service/">Terms of Service</a> and acknowledge the{" "}
-                  <a href="/privacy-policy/">Privacy Policy</a>.
+                  I agree to the <a href={localizePathname("/terms-of-service/", legalLocale)} hrefLang={legalLocale}>Terms of Service</a> and acknowledge the{" "}
+                  <a href={localizePathname("/privacy-policy/", legalLocale)} hrefLang={legalLocale}>Privacy Policy</a>.
                 </span>
               </label>
               <label className="checkbox-row professional-attestation field-full">

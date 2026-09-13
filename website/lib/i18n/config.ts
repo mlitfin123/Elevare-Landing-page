@@ -1,3 +1,4 @@
+import { LOCALIZED_LEGAL_PATHS } from "../legal-localization-routes.ts";
 export const SUPPORTED_LOCALES = ["en", "es-419", "pt-BR"] as const;
 
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -169,6 +170,7 @@ export function isLocalizedMarketingPath(pathname: string) {
   const { path } = splitPath(stripLocalePrefix(pathname));
   const normalizedPath = normalizePathOnly(path);
   return LOCALIZED_MARKETING_PATHS.includes(normalizedPath as (typeof LOCALIZED_MARKETING_PATHS)[number])
+    || LOCALIZED_LEGAL_PATHS.includes(normalizedPath as (typeof LOCALIZED_LEGAL_PATHS)[number])
     || LOCALIZED_CATALOG_PATH_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
 }
 

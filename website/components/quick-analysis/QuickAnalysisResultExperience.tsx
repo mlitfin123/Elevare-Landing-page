@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages */
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -325,7 +324,7 @@ export function QuickAnalysisResultExperience({
 
         <label className="quick-analysis-check">
           <input id="quick-analysis-upload-consent" type="checkbox" checked={aiConsent} onChange={(event) => { setAiConsent(event.target.checked); setConsentError(false); }} disabled={Boolean(processingStage)} aria-invalid={consentError} aria-describedby={consentError ? "quick-analysis-upload-consent-error" : undefined} />
-          <span>{messages.uploadConsentBefore}<a href="/privacy-policy/" hrefLang="en">{messages.privacyPolicy}</a>{messages.uploadConsentAfter}</span>
+          <span>{messages.uploadConsentBefore}<a href={localizePathname("/privacy-policy/", locale)} hrefLang={locale}>{messages.privacyPolicy}</a>{messages.uploadConsentAfter}</span>
         </label>
         {consentError ? <p className="field-error" id="quick-analysis-upload-consent-error">{messages.confirmAiProcessing}</p> : null}
 

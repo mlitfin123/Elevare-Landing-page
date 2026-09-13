@@ -4,7 +4,7 @@ import { PosingRequestError } from "@/lib/posing-request-error";
 
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import Link from "next/link";
+import { localizePathname } from "@/lib/i18n/config";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { analysisDiscoveryCopy } from "@/lib/stage-analysis-discovery";
@@ -148,7 +148,7 @@ export function StageAnalysisCheckout({
       <div className="form-actions">
         <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting || !stripePromise}>{submitting ? messages.loading : `${messages.purchase} — ${formatStageAnalysisPrice(product)}`}</button>
         {!stripePromise ? <p className="fine-print" role="status">{messages.unavailable}</p> : null}
-        <p className="fine-print">{messages.termsBefore} <Link href="/terms-of-service/">{messages.terms}</Link>.</p>
+        <p className="fine-print">{messages.termsBefore} <a href={localizePathname("/terms-of-service/", locale)} hrefLang={locale}>{messages.terms}</a>.</p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>
     </form>

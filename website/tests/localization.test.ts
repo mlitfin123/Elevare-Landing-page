@@ -268,8 +268,8 @@ test("SEO rollout excludes localized routes until indexing review is enabled", (
   assert.match(routeSource, /localizedAlternates: true/);
 });
 
-test("deferred private and legal flows stay outside the localized route allowlist", () => {
-  for (const pathName of ["/sign-in/", "/shop/", "/privacy-policy/", "/terms-of-service/"]) {
+test("deferred private flows stay outside the localized route allowlist", () => {
+  for (const pathName of ["/sign-in/", "/shop/"]) {
     assert.equal(LOCALIZED_MARKETING_PATHS.includes(pathName as never), false);
   }
   assert.equal(LOCALIZED_MARKETING_PATHS.includes("/stagelab/quick-analysis/"), true);
@@ -287,7 +287,8 @@ test("localized pages preserve supported routes and identify deferred destinatio
   assert.match(home, /hrefLang=\{locale === "en" \? undefined : "en"\}/);
   assert.match(header, /href=\{href\("\/professionals\/"\)\}/);
   assert.match(header, /signedInHref=\{href\("\/account\/"\)\}/);
-  assert.match(footer, /hrefLang="en"/);
+  assert.match(footer, /hrefLang=\{englishOnlyHrefLang\}/);
+  assert.match(footer, /localizePathname\("\/privacy-policy\/", locale\)/);
   assert.deepEqual(LOCALIZED_CATALOG_PATH_PREFIXES, ["/calculators/", "/exercises/", "/workouts/", "/nutrition/", "/professionals/"]);
   assert.equal(localizePathname("/calculators/protein-calculator/", "es-419"), "/es/calculators/protein-calculator/");
   assert.equal(localizePathname("/exercises/dumbbell-bench-press/", "es-419"), "/es/exercises/dumbbell-bench-press/");
@@ -312,7 +313,8 @@ test("shared analytics consent follows the active localized route", () => {
   const shellSource = fs.readFileSync(path.join(projectRoot, "lib/i18n/shell-messages.ts"), "utf8");
   assert.match(consentSource, /localeFromPathname\(pathname\)/);
   assert.match(consentSource, /consentMessages\.accept/);
-  assert.match(consentSource, /hrefLang="en"/);
+  assert.match(consentSource, /localizePathname\("\/privacy-policy\/", locale\)/);
+  assert.match(consentSource, /hrefLang=\{locale\}/);
   assert.match(shellSource, /Aceptar Google Analytics/);
   assert.match(shellSource, /Aceitar Google Analytics/);
 });

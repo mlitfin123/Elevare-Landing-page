@@ -28,10 +28,16 @@
     <loc>https://www.elevarefit.com/elevare/</loc>
   </url>
   <url>
-    <loc>https://www.elevarefit.com/privacy-policy/</loc>
+    <loc>https://www.elevarefit.com/stagelab-legal/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/stagelab-privacy-policy/</loc>
   </url>
   <url>
     <loc>https://www.elevarefit.com/terms-of-service/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/privacy-policy/</loc>
   </url>
   <url>
     <loc>https://www.elevarefit.com/trust-safety/</loc>
@@ -58,6 +64,18 @@
     <loc>https://www.elevarefit.com/es/trust-safety/</loc>
   </url>
   <url>
+    <loc>https://www.elevarefit.com/es/stagelab-legal/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/es/stagelab-privacy-policy/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/es/terms-of-service/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/es/privacy-policy/</loc>
+  </url>
+  <url>
     <loc>https://www.elevarefit.com/pt-br/</loc>
   </url>
   <url>
@@ -77,5 +95,17 @@
   </url>
   <url>
     <loc>https://www.elevarefit.com/pt-br/trust-safety/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/stagelab-legal/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/stagelab-privacy-policy/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/terms-of-service/</loc>
+  </url>
+  <url>
+    <loc>https://www.elevarefit.com/pt-br/privacy-policy/</loc>
   </url>
 </urlset>

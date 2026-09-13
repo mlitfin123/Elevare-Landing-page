@@ -163,8 +163,8 @@ const messages: Record<Locale, ShellMessages> = {
     footer: {
       rights: "Todos los derechos reservados.",
       mobileComingSoon: "Elevare para iOS y Android - Próximamente",
-      privacyPolicyEnglish: "Política de privacidad (en inglés)",
-      termsEnglish: "Términos de servicio (en inglés)",
+      privacyPolicyEnglish: "Política de privacidad",
+      termsEnglish: "Términos de servicio",
       contact: "Contacto",
     },
     analyticsConsent: {
@@ -233,8 +233,8 @@ const messages: Record<Locale, ShellMessages> = {
     footer: {
       rights: "Todos os direitos reservados.",
       mobileComingSoon: "Elevare para iOS e Android - Em breve",
-      privacyPolicyEnglish: "Política de Privacidade (em inglês)",
-      termsEnglish: "Termos de Serviço (em inglês)",
+      privacyPolicyEnglish: "Política de Privacidade",
+      termsEnglish: "Termos de Serviço",
       contact: "Contato",
     },
     analyticsConsent: {
