@@ -1,8 +1,10 @@
 "use client";
 
+import { PosingRequestError } from "@/lib/posing-request-error";
+
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import Link from "next/link";
+import { localizePathname } from "@/lib/i18n/config";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { analysisDiscoveryCopy } from "@/lib/stage-analysis-discovery";
@@ -33,6 +35,7 @@ type CheckoutResponse = {
   checkoutSessionId?: string;
   generationLocale?: Locale;
   error?: string;
+  code?: string;
 };
 
 export function StageAnalysisCheckout({
@@ -82,16 +85,16 @@ export function StageAnalysisCheckout({
       return;
     }
     setSubmitting(true);
-    trackEvent(isComplete ? "complete_stage_checkout_started" : "posing_checkout_started", {
+    try { trackEvent(isComplete ? "complete_stage_checkout_started" : "posing_checkout_started", {
       product,
       value: STAGE_ANALYSIS_PRODUCT_CONFIG[product].priceCents / 100,
       currency: "USD",
       source,
-    });
+    }); } catch { /* Optional analytics must not prevent checkout. */ }
     try {
       const response = await fetch("/api/stage-analysis/checkout/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-StageLab-Locale": locale },
         body: JSON.stringify({
           product,
           division,
@@ -106,12 +109,12 @@ export function StageAnalysisCheckout({
       });
       const payload = await response.json().catch(() => ({})) as CheckoutResponse;
       if (!response.ok || !payload.clientSecret || !payload.checkoutSessionId) {
-        throw new Error(payload.error || messages.failed);
+        throw new PosingRequestError(payload.code, locale);
       }
       setClientSecret(payload.clientSecret);
       setCheckoutSessionId(payload.checkoutSessionId);
     } catch (checkoutError) {
-      setError(checkoutError instanceof Error ? checkoutError.message : messages.failed);
+      setError(checkoutError instanceof PosingRequestError ? checkoutError.message : messages.failed);
     } finally {
       setSubmitting(false);
     }
@@ -145,7 +148,7 @@ export function StageAnalysisCheckout({
       <div className="form-actions">
         <button className="button button-primary quick-analysis-pay-button" type="submit" disabled={submitting || !stripePromise}>{submitting ? messages.loading : `${messages.purchase} — ${formatStageAnalysisPrice(product)}`}</button>
         {!stripePromise ? <p className="fine-print" role="status">{messages.unavailable}</p> : null}
-        <p className="fine-print">{messages.termsBefore} <Link href="/terms-of-service/">{messages.terms}</Link>.</p>
+        <p className="fine-print">{messages.termsBefore} <a href={localizePathname("/terms-of-service/", locale)} hrefLang={locale}>{messages.terms}</a>.</p>
         {error ? <p className="form-feedback is-error" role="alert">{error}</p> : null}
       </div>
     </form>

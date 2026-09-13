@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -8,7 +7,7 @@ import {
   storeAnalyticsConsentChoice,
   type AnalyticsConsentChoice,
 } from "@/lib/analytics-consent";
-import { localeFromPathname } from "@/lib/i18n/config";
+import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
 import { clearLegacyProfileViewStorage, hasBrowserPrivacySignal, readProfileViewChoice, storeProfileViewChoice, type ProfileViewChoice } from "@/lib/profile-view-privacy";
 
@@ -68,7 +67,7 @@ export function AnalyticsConsent() {
             <strong>{consentMessages.title}</strong>
             <p>
               {consentMessages.body}{" "}
-              <a href="/privacy-policy/" hrefLang="en">{messages.footer.privacyPolicyEnglish}</a>.
+              <a href={localizePathname("/privacy-policy/", locale)} hrefLang={locale}>{messages.footer.privacyPolicyEnglish}</a>.
             </p>
             <p>{browserPrivacySignal ? consentMessages.profileStatisticsSignal : consentMessages.profileStatisticsNotice}</p>
             <details className="profile-statistics-choice">

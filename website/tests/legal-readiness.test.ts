@@ -41,8 +41,8 @@ test("professional attestation covers authorizations, accuracy, and lawful scope
 test("signup links current legal documents and records version metadata", () => {
   const authPanel = readFileSync(`${projectRoot}components/marketplace/AuthPanel.tsx`, "utf8");
 
-  assert.match(authPanel, /href="\/terms-of-service\/"/);
-  assert.match(authPanel, /href="\/privacy-policy\/"/);
+  assert.match(authPanel, /localizePathname\("\/terms-of-service\/", legalLocale\)/);
+  assert.match(authPanel, /localizePathname\("\/privacy-policy\/", legalLocale\)/);
   assert.match(authPanel, /terms_version: TERMS_VERSION/);
   assert.match(authPanel, /privacy_version: PRIVACY_VERSION/);
   assert.match(authPanel, /age_18_plus: true/);
@@ -89,8 +89,8 @@ test("static legal documents use browser navigation instead of App Router prefet
   const activeCode = files.map((file) => readFileSync(`${projectRoot}${file}`, "utf8")).join("\n");
 
   assert.doesNotMatch(activeCode, /<Link[^>]+href="\/(?:privacy-policy|terms-of-service)\//);
-  assert.match(activeCode, /<a href="\/privacy-policy\/">/);
-  assert.match(activeCode, /<a href="\/terms-of-service\/">/);
+  assert.match(activeCode, /<a href=\{localizePathname\("\/privacy-policy\/", locale\)\}/);
+  assert.match(activeCode, /<a href=\{localizePathname\("\/terms-of-service\/", locale\)\}/);
 });
 
 test("current legal versions and professional attestation are recorded through the protected migration", () => {

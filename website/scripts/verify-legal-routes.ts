@@ -61,7 +61,7 @@ async function productionRouteExists(route: string) {
     // Runtime routes have a compiled server entry instead of an exported HTML
     // file. Verify the exact route manifest entry and its actual output file.
     const routeKey = `${route.replace(/\/+$/, "")}/page`;
-    const serverEntry = appPaths[routeKey];
+    const serverEntry = appPaths[routeKey] ?? appPaths[routeKey.replace(/\/page$/, "/route")];
     if (serverEntry && await pathExists(path.join(projectRoot, ".next", "server", serverEntry))) return true;
   }
   if (route === "/") {
@@ -87,6 +87,7 @@ async function productionRouteExists(route: string) {
       path.join(publicRoot, cleanPath, "index.html"),
       path.join(publicRoot, `${cleanPath}.html`),
       path.join(projectRoot, "app", cleanPath, "page.tsx"),
+      path.join(projectRoot, "app", cleanPath, "route.ts"),
     ];
   return (await Promise.all(candidates.map(pathExists))).some(Boolean);
 }

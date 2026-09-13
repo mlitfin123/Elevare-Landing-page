@@ -1,3 +1,4 @@
+import { posingErrorResponse } from "@/lib/posing-server-errors";
 import { NextResponse } from "next/server";
 import { startPosingAnalysisForToken } from "@/lib/stage-analysis-service";
 import {
@@ -5,11 +6,11 @@ import {
   enforceQuickAnalysisRateLimit,
   getQuickAnalysisAccessToken,
   getQuickAnalysisSupabase,
-  quickAnalysisErrorResponse,
 } from "@/lib/quick-analysis-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Next requires a static literal; verified against POSING_RUNTIME.routeMaxSeconds.
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
@@ -21,6 +22,6 @@ export async function POST(request: Request) {
       headers: { "Cache-Control": "no-store", Pragma: "no-cache", "Referrer-Policy": "no-referrer" },
     });
   } catch (error) {
-    return quickAnalysisErrorResponse(error);
+    return posingErrorResponse(error, request);
   }
 }

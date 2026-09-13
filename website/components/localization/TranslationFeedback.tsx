@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackEvent } from "@/lib/analytics";
-import type { Locale } from "@/lib/i18n/config";
+import { localizePathname, type Locale } from "@/lib/i18n/config";
 import type { ShellMessages } from "@/lib/i18n/shell-messages";
 import {
   isTranslationFeedbackAvailable,
@@ -212,8 +212,7 @@ export function TranslationFeedback({ locale, pathname, messages }: TranslationF
             <p className="fine-print">
               {messages.privacyUse}{" "}
               {/* Static legal documents intentionally use full browser navigation. */}
-              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-              <a href="/privacy-policy/" hrefLang="en">Privacy Policy (English)</a>.
+              <a href={localizePathname("/privacy-policy/", locale)} hrefLang={locale}>{locale === "es-419" ? "Política de privacidad" : locale === "pt-BR" ? "Política de Privacidade" : "Privacy Policy"}</a>.
             </p>
 
             {status === "error" ? (

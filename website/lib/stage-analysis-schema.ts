@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseCanonicalPosingResult } from "./posing-contract.ts";
 import {
   POSING_DIVISIONS,
   POSING_DIVISION_KEYS,
@@ -10,10 +11,6 @@ import {
   type PosingAnalysisResult,
 } from "./stage-analysis.ts";
 
-const safeText = z.string().trim().min(1).max(2_000).refine(
-  (value) => !/(?:data:image\b|https?:\/\/\S+|base64\s*[,;])/i.test(value),
-  "Result text cannot contain media or external-resource data.",
-);
 
 export const stageAnalysisCheckoutSchema = z.object({
   product: z.enum(["posing_analysis", "complete_stage_analysis"]),
@@ -58,53 +55,20 @@ export const posingUploadManifestSchema = z.object({
   retry: z.boolean().optional().default(false),
 }).strict().superRefine((value, context) => {
   const indexes = value.frames.map((frame) => frame.index);
+  if (value.frames.some((frame, index) => frame.index !== index || frame.timestamp_ms >= value.video.duration_seconds * 1000 || (index > 0 && frame.timestamp_ms <= value.frames[index - 1]!.timestamp_ms))) {
+    context.addIssue({ code: "custom", path: ["frames"], message: "Frames must be ordered within the actual video duration." });
+  }
   if (new Set(indexes).size !== indexes.length) {
     context.addIssue({ code: "custom", path: ["frames"], message: "Frame indexes must be unique." });
   }
 });
 
-const score = z.number().int().min(0).max(100).nullable();
-const list = z.array(safeText.max(500)).max(20);
-
-export const posingAnalysisResultSchema = z.object({
-  schema_version: z.literal("posing_analysis_v1"),
-  analysis_id: z.string().trim().min(1).max(200),
-  division: z.enum(POSING_DIVISIONS),
-  video_usability_status: z.enum(["usable", "limited", "unusable"]),
-  video_usability_reason: safeText,
-  analysis_quality: z.enum(["low", "medium", "high", "unusable"]),
-  overall_stage_lab_posing_score: score,
-  score_explanation: safeText,
-  biggest_opportunity: safeText,
-  overall_strengths: list,
-  highest_priority_corrections: z.array(z.object({
-    title: safeText.max(300),
-    visible_evidence: safeText.max(800),
-    try_this: safeText.max(800),
-  }).strict()).max(12),
-  poses_detected: z.array(z.object({
-    pose_name: safeText.max(200),
-    segment_start_ms: z.number().int().nonnegative().nullable(),
-    segment_end_ms: z.number().int().nonnegative().nullable(),
-    representative_frame_timestamps_ms: z.array(z.number().int().nonnegative()).max(16),
-    confidence: z.enum(["low", "medium", "high"]),
-    pose_score: score,
-    component_scores: z.array(z.object({
-      label: safeText.max(200),
-      score,
-      note: safeText.max(800),
-    }).strict()).max(40),
-    strongest_aspect: safeText,
-    biggest_issue: safeText,
-    corrections: list,
-    coaching_cue: safeText,
-  }).strict()).max(20),
-  transition_observations: list,
-  consistency_observations: list,
-  quality_flags: list,
-  athlete_next_focus: list,
-  disclaimer: safeText,
-}).strict();
+export const posingAnalysisResultSchema = z.unknown().transform((value, context) => {
+  try { return parseCanonicalPosingResult(value); } catch {
+    context.addIssue({ code: "custom", message: "Unsupported posing result contract." });
+    return z.NEVER;
+  }
+});
 
 export function parsePosingAnalysisResult(value: unknown): PosingAnalysisResult {
   return posingAnalysisResultSchema.parse(value);

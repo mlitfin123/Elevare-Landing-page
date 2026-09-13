@@ -1,0 +1,8 @@
+.legal-languages { display:flex; flex-wrap:wrap; align-items:center; gap:8px; max-width:980px; margin:20px auto 0; padding:0 20px; font-family:inherit; color:#e8e8f4; }
+.legal-languages > span { color:#a7adc0; font-size:14px; margin-right:4px; }
+.legal-languages a { display:inline-flex; align-items:center; min-height:44px; padding:8px 13px; border:1px solid #42495c; border-radius:10px; font-size:14px; text-decoration:none; }
+.legal-languages a[aria-current="page"] { background:#173d49; border-color:#74c8d6; }
+.legal-languages a:focus-visible { outline:3px solid #74c8d6; outline-offset:3px; }
+.legal-language-note { font-size:.85em; opacity:.85; }
+.content-card, .hero-card, .legal-languages { overflow-wrap:anywhere; }
+@media(max-width:380px) { .legal-languages { padding:0 16px; gap:6px; } .legal-languages > span { flex-basis:100%; } }

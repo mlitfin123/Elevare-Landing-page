@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Next.js content hub for ElevareFit tools, apps, workouts, exercises, and nutrition resources.",
   "scripts": {
-    "prebuild": "npm run routes:verify && npm run legal:verify && npm run legal:routes && node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/canonicalize-training-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
-    "postbuild": "npm run localization:html && npm run legal:routes -- --output && npm run content:audit && npm run seo:artifact",
+    "prebuild": "npm run routes:verify && npm run legal:verify && npm run legal:translations && npm run legal:routes && node ./scripts/generate-nutrition-data.mjs && node ./scripts/generate-training-data.mjs && node --experimental-strip-types ./scripts/canonicalize-training-data.ts && node --experimental-strip-types ./scripts/generate-sitemaps.ts",
+    "postbuild": "npm run localization:html && npm run legal:routes -- --output && npm run legal:translations -- --output && npm run content:audit && npm run seo:artifact",
     "dev": "next dev",
     "build": "next build",
     "check:static": "next build",
@@ -27,8 +27,13 @@
     "legal:archive": "node --experimental-strip-types ./scripts/generate-legal-archive.ts --initialize",
     "legal:verify": "node --experimental-strip-types ./scripts/generate-legal-archive.ts",
     "legal:routes": "node --experimental-strip-types ./scripts/verify-legal-routes.ts",
+    "legal:translations": "node --experimental-strip-types ./scripts/verify-legal-localization.ts",
     "test:runtime": "node --conditions=react-server --experimental-strip-types tests/integration/professional-runtime.mts",
-    "test:notifications": "node --experimental-strip-types tests/integration/marketplace-notifications.mts"
+    "test:notifications": "node --experimental-strip-types tests/integration/marketplace-notifications.mts",
+    "test:posing": "node --conditions=react-server --test --experimental-strip-types tests/stage-analysis.test.ts tests/posing-hardening.test.ts tests/posing-recovery.test.ts tests/posing-server-errors.test.ts tests/posing-payment-replay.test.ts",
+    "verify:posing-contract": "node --experimental-strip-types scripts/verify-posing-contract.mjs",
+    "test:posing:browser": "node --experimental-strip-types tests/integration/posing-browser.mjs",
+    "test:posing:database": "node tests/integration/posing-database.mjs"
   },
   "keywords": [
     "nextjs",

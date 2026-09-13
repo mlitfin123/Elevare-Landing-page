@@ -1,3 +1,4 @@
+import { LOCALIZED_LEGAL_PATHS } from "./lib/legal-localization-routes";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -5,6 +6,11 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+  },
+  async redirects() {
+    return ["", "/es", "/pt-br"].flatMap((prefix) => LOCALIZED_LEGAL_PATHS.map((route) => ({
+      source: `${prefix}${route.slice(0, -1)}.html`, destination: `${prefix}${route}`, permanent: true,
+    })));
   },
   async headers() {
     return [

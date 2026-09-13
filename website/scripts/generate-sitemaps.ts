@@ -1,3 +1,4 @@
+import { LOCALIZED_LEGAL_PATHS } from "../lib/legal-localization-routes.ts";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -64,8 +65,7 @@ const staticSiteRoutes = [
   "/stagelab/posing-analysis",
   "/stagelab/complete-stage-analysis",
   "/elevare",
-  "/privacy-policy/",
-  "/terms-of-service/",
+  ...LOCALIZED_LEGAL_PATHS,
   "/trust-safety/",
 ] as const;
 
@@ -187,6 +187,7 @@ function buildSiteEntries() {
       "/stagelab/posing-analysis/",
       "/stagelab/complete-stage-analysis/",
       "/trust-safety/",
+      ...LOCALIZED_LEGAL_PATHS,
     ].map((route) =>
       toSitemapEntry(localizePathname(route, locale), undefined, "priority_index"),
     ),

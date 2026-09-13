@@ -41,10 +41,8 @@ export function Footer() {
             hrefLang={undefined}
           />
           {/* Static legal documents intentionally use full browser navigation. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/privacy-policy/" hrefLang="en">{messages.footer.privacyPolicyEnglish}</a>
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/terms-of-service/" hrefLang="en">{messages.footer.termsEnglish}</a>
+          <a href={localizePathname("/privacy-policy/", locale)} hrefLang={locale}>{messages.footer.privacyPolicyEnglish}</a>
+          <a href={localizePathname("/terms-of-service/", locale)} hrefLang={locale}>{messages.footer.termsEnglish}</a>
           <a href={`mailto:${siteConfig.contacts.support}`}>{messages.footer.contact}</a>
           <TranslationFeedback
             locale={locale}

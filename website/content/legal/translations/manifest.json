@@ -1,0 +1,18 @@
+{
+  "support": {
+    "sourceSha256": "895b3775f4b450c812600f26265c874d9382cb6acf626cf28b7101b7b8b9532d",
+    "segments": 53
+  },
+  "stagePrivacy": {
+    "sourceSha256": "0f9582caf84ddf86bdc6a4dd812500318407b458f1202c8a2020a90d058871da",
+    "segments": 92
+  },
+  "terms": {
+    "sourceSha256": "ad792377892d9b7c7118011caa91c04de73c8a1f7834ee14cc0065b0a71fad4b",
+    "segments": 122
+  },
+  "privacy": {
+    "sourceSha256": "213092cd05f461e9551bfb32608479fd717782db73dcc2a26ef18a13c22f8104",
+    "segments": 113
+  }
+}

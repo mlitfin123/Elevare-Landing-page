@@ -1,3 +1,4 @@
+import { getPosingFrameTimestamps, POSING_RUNTIME } from "./posing-runtime.ts";
 import {
   POSING_VIDEO_MAX_BYTES,
   POSING_VIDEO_MAX_SECONDS,
@@ -33,21 +34,7 @@ export class PosingVideoValidationError extends Error {
   }
 }
 
-function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-export function getCanonicalPosingFrameTimestamps(durationSeconds: number) {
-  const safeDuration = clamp(Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 30, 6, 45);
-  const frameCount = clamp(Math.round(safeDuration * 0.55), 4, 16);
-  const edgeSeconds = Math.min(1, safeDuration * 0.08);
-  const startMs = Math.round(edgeSeconds * 1_000);
-  const endMs = Math.round((safeDuration - edgeSeconds) * 1_000);
-  if (frameCount === 1) return [startMs];
-  return Array.from({ length: frameCount }, (_, index) =>
-    Math.round(startMs + ((endMs - startMs) * index) / (frameCount - 1)),
-  );
-}
+export const getCanonicalPosingFrameTimestamps = getPosingFrameTimestamps;
 
 function getVideoMimeType(file: File): (typeof POSING_VIDEO_MIME_TYPES)[number] | null {
   if (POSING_VIDEO_MIME_TYPES.includes(file.type as (typeof POSING_VIDEO_MIME_TYPES)[number])) {
@@ -68,11 +55,13 @@ function getVideoMimeType(file: File): (typeof POSING_VIDEO_MIME_TYPES)[number] 
 function waitForVideoEvent(video: HTMLVideoElement, eventName: "loadedmetadata" | "seeked") {
   return new Promise<void>((resolve, reject) => {
     const cleanup = () => {
+      clearTimeout(timeout);
       video.removeEventListener(eventName, handleEvent);
       video.removeEventListener("error", handleError);
     };
     const handleEvent = () => { cleanup(); resolve(); };
     const handleError = () => { cleanup(); reject(new PosingVideoValidationError("decode", "This video could not be read in your browser.")); };
+    const timeout = setTimeout(() => { cleanup(); reject(new PosingVideoValidationError("decode", "Video preparation timed out.")); }, POSING_RUNTIME.frameDecodeTimeoutMs);
     video.addEventListener(eventName, handleEvent, { once: true });
     video.addEventListener("error", handleError, { once: true });
   });

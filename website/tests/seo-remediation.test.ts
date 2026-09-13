@@ -125,6 +125,8 @@ test("active application source does not link to legacy html legal URLs", () => 
   for (const directory of activeDirectories) {
     for (const filePath of walkFiles(path.join(projectRoot, directory))) {
       if (!/\.(?:ts|tsx|md|mdx|html)$/.test(filePath)) continue;
+      // These are filesystem inputs for translated documents, not navigation URLs.
+      if (filePath === path.join(projectRoot, "lib", "legal-localization-routes.ts")) continue;
       const source = fs.readFileSync(filePath, "utf8");
       if (/\/(?:privacy-policy|terms-of-service)\.html\b/.test(source)) {
         occurrences.push(path.relative(projectRoot, filePath));
