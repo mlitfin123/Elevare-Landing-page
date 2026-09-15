@@ -5257,6 +5257,33 @@ select {
   gap: 4px;
 }
 
+.footer-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 8px;
+}
+
+.footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.footer-socials a:hover,
+.footer-socials a:focus-visible {
+  color: var(--text);
+}
+
+.footer-socials a:focus-visible {
+  outline: 2px solid var(--brand-bright);
+  outline-offset: 4px;
+}
+
 .footer-meta {
   font-size: 13px;
 }
