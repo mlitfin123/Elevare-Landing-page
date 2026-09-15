@@ -1,0 +1,163 @@
+diff --git a/supabase/functions/analyze-posing-video/index.ts b/supabase/functions/analyze-posing-video/index.ts
+index 4794575..f868643 100644
+--- a/supabase/functions/analyze-posing-video/index.ts
++++ b/supabase/functions/analyze-posing-video/index.ts
+@@ -865,6 +865,7 @@ async function cleanupAbandonedUploads() {
+     .select("id")
+     .in("status", ["uploaded", "validating", "analyzing", "cleanup_pending"])
+     .lt("created_at", cutoff)
++    .lt("updated_at", cutoff)
+     .order("created_at", { ascending: true })
+     .limit(CLEANUP_ROW_LIMIT);
+
+@@ -881,19 +882,24 @@ async function cleanupAbandonedUploads() {
+         error_code: "cleanup_expired",
+         error_message: null,
+       })
+-      .in("id", staleRowIds);
++      .in("id", staleRowIds)
++      .in("status", ["uploaded", "validating", "analyzing", "cleanup_pending"])
++      .lt("updated_at", cutoff);
+
+     if (staleRowError) {
+       throw staleRowError;
+     }
+   }
+
++  // Upload expiry is an admission deadline. A reservation near that deadline
++  // gets a full stale window from its last activity before cleanup can expire it.
+   const { data: staleWebsiteSessions, error: staleWebsiteSessionError } =
+     await admin
+       .from("elevare_posing_upload_sessions")
+       .select("id")
+       .in("status", ["initialized", "analyzing"])
+       .lt("expires_at", new Date().toISOString())
++      .lt("updated_at", cutoff)
+       .order("expires_at", { ascending: true })
+       .limit(CLEANUP_ROW_LIMIT);
+
+@@ -915,7 +921,10 @@ async function cleanupAbandonedUploads() {
+         error_code: "cleanup_expired",
+         error_message: null,
+       })
+-      .in("id", staleWebsiteSessionIds);
++      .in("id", staleWebsiteSessionIds)
++      .in("status", ["initialized", "analyzing"])
++      .lt("expires_at", new Date().toISOString())
++      .lt("updated_at", cutoff);
+
+     if (expireWebsiteSessionError) {
+       throw expireWebsiteSessionError;
+@@ -929,7 +938,9 @@ async function cleanupAbandonedUploads() {
+         .from("posing_analyses")
+         .select("id")
+         .is("cleanup_completed_at", null)
++        .in("status", ["complete", "invalid", "failed"])
+         .lt("created_at", cutoff)
++        .lt("updated_at", cutoff)
+         .order("created_at", { ascending: true })
+         .limit(CLEANUP_ROW_LIMIT);
+
+@@ -942,7 +953,9 @@ async function cleanupAbandonedUploads() {
+       const { error: completionError } = await admin
+         .from("posing_analyses")
+         .update({ cleanup_completed_at: new Date().toISOString() })
+-        .in("id", markerRowIds);
++        .in("id", markerRowIds)
++        .in("status", ["complete", "invalid", "failed"])
++        .lt("updated_at", cutoff);
+
+       if (completionError) {
+         throw completionError;
+diff --git a/supabase/migrations/202609141300_protect_active_posing_cleanup.sql b/supabase/migrations/202609141300_protect_active_posing_cleanup.sql
+new file mode 100644
+--- /dev/null
++++ b/supabase/migrations/202609141300_protect_active_posing_cleanup.sql
+@@ -0,0 +1,30 @@
++-- StageLab project, not Elevare-Prod. Preserve jobs reserved near upload expiry.
++begin;
++create or replace function public.list_stale_posing_analysis_temp_objects(
++  p_cutoff timestamptz, p_limit integer default 1000
++)
++returns table(object_name text) language sql stable security definer
++set search_path = pg_catalog, public, storage as $$
++  select object.name from storage.objects object
++  where object.bucket_id = 'posing-analysis-temp' and object.created_at < p_cutoff
++    and not exists (
++      select 1 from public.elevare_posing_upload_sessions session
++      where session.status in ('initialized','analyzing')
++        and (session.expires_at > now() or session.updated_at >= p_cutoff)
++        and (session.object_paths->>'video_path' = object.name
++          or coalesce(session.object_paths->'frames','[]'::jsonb) @> jsonb_build_array(jsonb_build_object('path',object.name)))
++    )
++    and not exists (
++      select 1 from public.posing_analyses analysis
++      where analysis.status in ('uploaded','validating','analyzing','cleanup_pending')
++        and analysis.updated_at >= p_cutoff
++        and analysis.user_id is not null and analysis.client_request_id is not null
++        and starts_with(object.name, analysis.user_id::text || '/' || analysis.client_request_id || '/')
++    )
++  order by object.created_at asc
++  limit least(greatest(coalesce(p_limit,1000),1),1000);
++$$;
++revoke all on function public.list_stale_posing_analysis_temp_objects(timestamptz,integer) from public, anon, authenticated;
++grant execute on function public.list_stale_posing_analysis_temp_objects(timestamptz,integer) to service_role;
++notify pgrst, 'reload schema';
++commit;
+diff --git a/scripts/posing-cleanup-database.mjs b/scripts/posing-cleanup-database.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/posing-cleanup-database.mjs
+@@ -0,0 +1,52 @@
++// Disposable local PostgreSQL test; no provider calls or production access.
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import { execFileSync } from 'node:child_process';
++const container='elevare-runtime-test-db', database=`posing_cleanup_${Date.now()}`;
++const docker=args=>execFileSync('docker',args,{encoding:'utf8',windowsHide:true,stdio:'pipe'});
++assert.equal(docker(['inspect','--format','{{.Config.Image}}',container]).trim(),'public.ecr.aws/supabase/postgres:17.6.1.127');
++const sql=s=>docker(['exec',container,'psql','-U','supabase_admin','-d',database,'-v','ON_ERROR_STOP=1','-At','-c',s]).trim();
++docker(['exec',container,'psql','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1','-c',`create database ${database}`]);
++try {
++ const user=crypto.randomUUID();
++ sql(`create schema storage;
++ create table storage.objects(bucket_id text,name text,created_at timestamptz);
++ create table public.elevare_posing_upload_sessions(status text,expires_at timestamptz,updated_at timestamptz,object_paths jsonb);
++ create table public.posing_analyses(status text,updated_at timestamptz,user_id uuid,client_request_id text);
++ insert into storage.objects values
++ ('posing-analysis-temp','web/active/video.mp4',now()-interval '121 minutes'),
++ ('posing-analysis-temp','web/active/frame.jpg',now()-interval '121 minutes'),
++ ('posing-analysis-temp','web/stuck/video.mp4',now()-interval '5 hours'),
++ ('posing-analysis-temp','web/abandoned/video.mp4',now()-interval '3 hours'),
++ ('posing-analysis-temp','web/initializing/video.mp4',now()-interval '121 minutes'),
++ ('posing-analysis-temp','web/failed/video.mp4',now()-interval '3 hours'),
++ ('posing-analysis-temp','orphan/frame.jpg',now()-interval '3 hours'),
++ ('posing-analysis-temp','recent/frame.jpg',now()-interval '1 minute'),
++ ('posing-analysis-temp','${user}/mobile-request/frames/1.jpg',now()-interval '121 minutes'),
++ ('other-private-bucket','orphan/frame.jpg',now()-interval '3 hours');
++ insert into public.elevare_posing_upload_sessions values
++ ('analyzing',now()-interval '1 minute',now()-interval '1 minute','{"video_path":"web/active/video.mp4","frames":[{"path":"web/active/frame.jpg"}]}'),
++ ('analyzing',now()-interval '3 hours',now()-interval '3 hours','{"video_path":"web/stuck/video.mp4"}'),
++ ('initialized',now()-interval '1 hour',now()-interval '3 hours','{"video_path":"web/abandoned/video.mp4"}'),
++ ('initialized',now()+interval '1 minute',now()-interval '121 minutes','{"video_path":"web/initializing/video.mp4"}'),
++ ('failed',now()-interval '1 hour',now(),' {"video_path":"web/failed/video.mp4"}');
++ insert into public.posing_analyses values('analyzing',now(),'${user}','mobile-request');`);
++ const migration=fs.readFileSync(new URL('../supabase/migrations/202609141300_protect_active_posing_cleanup.sql',import.meta.url),'utf8');
++ sql(migration);sql(migration);
++ const list=()=>sql("select object_name from public.list_stale_posing_analysis_temp_objects(now()-interval '2 hours',1000)").split('\n').sort();
++ assert.deepEqual(list(),['orphan/frame.jpg','web/abandoned/video.mp4','web/failed/video.mp4','web/stuck/video.mp4'].sort());
++ console.log('PASS stale orphan/failed/abandoned/stuck media eligible; near-expiry reservation, frames, mobile job, valid upload and unrelated bucket protected');
++ sql("update public.elevare_posing_upload_sessions set status='complete' where object_paths->>'video_path'='web/active/video.mp4'");
++ assert.ok(list().includes('web/active/video.mp4')); assert.ok(list().includes('web/active/frame.jpg'));
++ console.log('PASS media becomes eligible after terminal completion, including retry after failed removal');
++ // Same conditional predicates used by the Edge Function, including a second
++ // check at mutation time. A completion between lookup and update is retained.
++ sql("create temporary table candidates as select object_paths from public.elevare_posing_upload_sessions where status in ('initialized','analyzing') and expires_at<now() and updated_at<now()-interval '2 hours'; update public.elevare_posing_upload_sessions set status='complete',updated_at=now() where object_paths->>'video_path'='web/stuck/video.mp4'; update public.elevare_posing_upload_sessions s set status='expired' where object_paths in(select object_paths from candidates) and status in ('initialized','analyzing') and expires_at<now() and updated_at<now()-interval '2 hours'");
++ assert.equal(sql("select status from public.elevare_posing_upload_sessions where object_paths->>'video_path'='web/stuck/video.mp4'"),'complete');
++ console.log('PASS completed job is not overwritten by stale lookup; recent reservations do not expire');
++ for(const role of ['anon','authenticated'])assert.equal(sql(`select has_function_privilege('${role}','public.list_stale_posing_analysis_temp_objects(timestamptz,integer)','execute')`),'f');
++ assert.equal(sql("select count(*) from public.list_stale_posing_analysis_temp_objects(now()-interval '2 hours',1)"),'1');
++ console.log('PASS cleanup inventory service-only and bounded');
++} finally {
++ docker(['exec',container,'psql','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1','-c',`drop database ${database}`]);
++}

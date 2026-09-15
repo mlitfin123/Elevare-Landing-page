@@ -1,5 +1,7 @@
 "use client";
 
+import { useMarketplaceAcknowledgement } from "./MarketplaceAcknowledgement";
+
 import { type FormEvent, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
@@ -28,6 +30,7 @@ function isDatabaseUuid(value: string | null | undefined) {
 }
 
 export function InquiryForm({ professional }: InquiryFormProps) {
+  const requireAcknowledgement = useMarketplaceAcknowledgement();
   const pathname = usePathname();
   const router = useRouter();
   const locale = localeFromPathname(pathname);
@@ -160,6 +163,7 @@ export function InquiryForm({ professional }: InquiryFormProps) {
     setFeedback(null);
 
     try {
+      if (!await requireAcknowledgement(supabase, user.id)) return;
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
 
       if (!appUser) {

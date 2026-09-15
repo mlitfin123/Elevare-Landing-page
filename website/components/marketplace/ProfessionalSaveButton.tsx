@@ -1,5 +1,7 @@
 "use client";
 
+import { useMarketplaceAcknowledgement } from "./MarketplaceAcknowledgement";
+
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
@@ -16,6 +18,7 @@ type ProfessionalSaveButtonProps = {
 export function ProfessionalSaveButton({
   professionalId,
 }: ProfessionalSaveButtonProps) {
+  const requireAcknowledgement = useMarketplaceAcknowledgement();
   const pathname = usePathname();
   const router = useRouter();
   const locale = localeFromPathname(pathname);
@@ -125,6 +128,7 @@ export function ProfessionalSaveButton({
         return;
       }
 
+      if (!await requireAcknowledgement(supabase, user.id)) return;
       const { error } = await supabase.from("saved_trainer_profiles").insert({
         client_user_id: resolvedAppUserId,
         trainer_profile_id: professionalId,

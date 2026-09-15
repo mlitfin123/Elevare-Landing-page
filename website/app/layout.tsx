@@ -6,6 +6,7 @@ import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
 import { Header } from "@/components/Header";
+import { MarketplaceAcknowledgement } from "@/components/marketplace/MarketplaceAcknowledgement";
 import { LocaleRuntime } from "@/components/localization/LocaleRuntime";
 import { StructuredData } from "@/components/StructuredData";
 import { buildGoogleAnalyticsBootstrap } from "@/lib/analytics-consent";
@@ -75,7 +76,7 @@ export default function RootLayout({
         ) : null}
         <div className="site-shell">
           <Header />
-          <main className="page-main">{children}</main>
+          <main className="page-main"><MarketplaceAcknowledgement>{children}</MarketplaceAcknowledgement></main>
           <Footer />
         </div>
         <Analytics />

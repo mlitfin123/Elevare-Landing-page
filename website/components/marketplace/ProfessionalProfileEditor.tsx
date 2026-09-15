@@ -1,5 +1,7 @@
 "use client";
 
+import { useMarketplaceAcknowledgement } from "./MarketplaceAcknowledgement";
+
 import Link from "next/link";
 import { saveProfessionalSection } from "@/lib/professional-publication-client";
 import { getProfessionalPublicationMessages } from "@/lib/i18n/professional-publication-messages";
@@ -448,6 +450,7 @@ function ProfessionalSectionHeader({
 
 export function ProfessionalProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
+  const requireAcknowledgement = useMarketplaceAcknowledgement();
   const pathname = usePathname();
   const locale = localeFromPathname(pathname);
   const publicationCopy = getProfessionalPublicationMessages(locale);
@@ -1198,6 +1201,7 @@ export function ProfessionalProfileEditor() {
     let committed = false;
     let mutationMayHaveCommitted = false;
     try {
+      if (nextStatus === "pending_review" && !await requireAcknowledgement(supabase, user.id)) return;
       const appUser = await getMarketplaceAppUserByAuthId(supabase, user.id);
       if (!appUser) throw new Error("We could not find your marketplace account.");
       previousPhotoStoragePath = appUser.profile_photo_storage_path;

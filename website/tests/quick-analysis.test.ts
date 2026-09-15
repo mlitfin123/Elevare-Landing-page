@@ -575,7 +575,7 @@ test("Quick Analysis landing keeps the focused offer, accessible FAQs, and low-f
   assert.match(quickAnalysisEnglish, /QUICK_ANALYSIS_PRICE_DISPLAY/);
   assert.match(quickAnalysisEnglish, /No subscription/);
   assert.match(quickAnalysisEnglish, /No account required/);
-  assert.match(quickAnalysisEnglish, /Photos never stored by ElevareFit/);
+  assert.match(quickAnalysisEnglish, /Photo uploads processed in memory/);
   assert.match(quickAnalysisEnglish, /See How It Works/);
   assert.match(quickAnalysisEnglish, /Watch a quick walkthrough of the StageLab Visual Analysis before getting yours\./);
   assert.match(localizedQuickAnalysisPage, /https:\/\/www\.youtube-nocookie\.com\/embed\/BbAHsUA-yH0/);

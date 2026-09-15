@@ -1,5 +1,7 @@
 "use client";
 
+import { useMarketplaceAcknowledgement } from "./MarketplaceAcknowledgement";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -61,6 +63,7 @@ function blankDraft(category: string, specialty: string, location: string, servi
 }
 
 export function MarketplaceDemandForm({ categories, filters, fixedCategorySlug, sourcePage }: MarketplaceDemandFormProps) {
+  const requireAcknowledgement = useMarketplaceAcknowledgement();
   const pathname = usePathname();
   const locale = localeFromPathname(pathname);
   const t = (value: string) => marketplaceText(locale, value);
@@ -164,44 +167,48 @@ export function MarketplaceDemandForm({ categories, filters, fixedCategorySlug, 
     const { budgetMinCents, budgetMaxCents } = parseBudgetInput(draft.budget);
     setIsSubmitting(true);
     setFeedback(null);
-    const { data, error } = await supabase.rpc("marketplace_submit_concierge_request", {
-      p_request_key: draft.requestKey,
-      p_primary_goal: draft.primaryGoal,
-      p_support_type: draft.supportType,
-      p_category_slug: (fixedCategorySlug ?? draft.category) || null,
-      p_specialty: draft.specialty.trim() || null,
-      p_service_mode: draft.serviceMode || null,
-      p_location_label: draft.locationLabel.trim() || null,
-      p_travel_radius_miles: Number.isFinite(radius) ? radius : null,
-      p_budget_min_cents: budgetMinCents,
-      p_budget_max_cents: budgetMaxCents,
-      p_start_timeframe: draft.startTimeframe || null,
-      p_general_availability: draft.availability.trim() || null,
-      p_experience_level: draft.experience || null,
-      p_preferred_languages: draft.languages,
-      p_language_required: draft.languageRequired,
-      p_service_preferences: draft.preferences,
-      p_note: draft.note.trim() || null,
-      p_share_consent: true,
-      p_locale: locale,
-      p_source_page: sourcePage,
-    });
-    if (error) {
-      setFeedback({ type: "error", message: t("We could not submit your request right now. Please review the form and try again.") });
-    } else {
-      const result = data as { case_code?: string } | null;
-      setCaseCode(result?.case_code ?? null);
-      window.localStorage.removeItem(storageKey);
-      setFeedback({ type: "success", message: t("Your request is in. Elevare will review it and your status will be available in your account.") });
-      trackEvent("concierge_match_request_submitted", {
-        source_page: sourcePage,
-        service_mode: draft.serviceMode || "unspecified",
-        category_selected: Boolean(fixedCategorySlug ?? draft.category),
-        language_required: draft.languageRequired,
+    try {
+      if (!await requireAcknowledgement(supabase, user.id)) return;
+      const { data, error } = await supabase.rpc("marketplace_submit_concierge_request", {
+        p_request_key: draft.requestKey,
+        p_primary_goal: draft.primaryGoal,
+        p_support_type: draft.supportType,
+        p_category_slug: (fixedCategorySlug ?? draft.category) || null,
+        p_specialty: draft.specialty.trim() || null,
+        p_service_mode: draft.serviceMode || null,
+        p_location_label: draft.locationLabel.trim() || null,
+        p_travel_radius_miles: Number.isFinite(radius) ? radius : null,
+        p_budget_min_cents: budgetMinCents,
+        p_budget_max_cents: budgetMaxCents,
+        p_start_timeframe: draft.startTimeframe || null,
+        p_general_availability: draft.availability.trim() || null,
+        p_experience_level: draft.experience || null,
+        p_preferred_languages: draft.languages,
+        p_language_required: draft.languageRequired,
+        p_service_preferences: draft.preferences,
+        p_note: draft.note.trim() || null,
+        p_share_consent: true,
+        p_locale: locale,
+        p_source_page: sourcePage,
       });
-      trackEvent("concierge_match_request_confirmation_viewed", { source_page: sourcePage });
-    }
-    setIsSubmitting(false);
+      if (error) {
+        setFeedback({ type: "error", message: t("We could not submit your request right now. Please review the form and try again.") });
+      } else {
+        const result = data as { case_code?: string } | null;
+        setCaseCode(result?.case_code ?? null);
+        window.localStorage.removeItem(storageKey);
+        setFeedback({ type: "success", message: t("Your request is in. Elevare will review it and your status will be available in your account.") });
+        trackEvent("concierge_match_request_submitted", {
+          source_page: sourcePage,
+          service_mode: draft.serviceMode || "unspecified",
+          category_selected: Boolean(fixedCategorySlug ?? draft.category),
+          language_required: draft.languageRequired,
+        });
+        trackEvent("concierge_match_request_confirmation_viewed", { source_page: sourcePage });
+      }
+    } catch {
+      setFeedback({ type: "error", message: t("We could not submit your request right now. Please review the form and try again.") });
+    } finally { setIsSubmitting(false); }
   }
 
   if (caseCode) return <div id="concierge-request" className="concierge-confirmation panel" role="status" aria-live="polite"><span className="meta-pill">{t("Request received")}</span><h3>{t("We will review your request.")}</h3><p>{t("If suitable professionals are available, we may first confirm their interest and then share a short list with you. This is not a booking and a match is not guaranteed.")}</p><p className="field-help">{t("Reference")}: {caseCode}</p><Link className="button button-primary" href={localizePathname("/account/matches/", locale)}>{t("View my match requests")}</Link></div>;
