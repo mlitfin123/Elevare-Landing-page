@@ -1860,10 +1860,68 @@ function category(label: string, headline: string, description: string, provider
   return { label, headline, description, providerSingular, providerPlural };
 }
 
+const AUTH_COPY: Record<Exclude<Locale, "en">, TranslationDictionary> = {
+  "es-419": {
+    "Elevare account": "Cuenta de Elevare",
+    "Sign in to continue.": "Inicia sesión para continuar.",
+    "Join Elevare Fit": "Únete a Elevare Fit",
+    "Create your professional profile": "Crea tu perfil profesional",
+    "Browsing profiles stays public. Sign in when you want to save profiles, send a consultation request, or build your own listing.": "Puedes explorar perfiles sin iniciar sesión. Inicia sesión para guardar perfiles, solicitar una consulta o crear tu propio anuncio.",
+    "Find a professional or create your own professional listing.": "Encuentra a un profesional o crea tu propio anuncio profesional.",
+    "Start by creating an account. Next, add your services, specialties, and professional details to build your listing.": "Comienza creando una cuenta. Después, agrega tus servicios, especialidades y datos profesionales para crear tu anuncio.",
+    "Authentication mode": "Modo de acceso",
+    "Create account": "Crear cuenta",
+    "Email address": "Correo electrónico",
+    Password: "Contraseña",
+    "Confirm password": "Confirmar contraseña",
+    "I agree to the": "Acepto los",
+    "and acknowledge the": "y reconozco la",
+    "Terms of Service": "Términos de servicio",
+    "Privacy Policy": "Política de privacidad",
+    "I confirm that I am at least 18 years old.": "Confirmo que tengo al menos 18 años.",
+    "After creating your account, you can add your professional details and save your listing as a draft before submitting it for review.": "Después de crear tu cuenta, podrás agregar tus datos profesionales y guardar el anuncio como borrador antes de enviarlo a revisión.",
+    "After creating your account, you can find professionals or start your own professional listing.": "Después de crear tu cuenta, podrás encontrar profesionales o empezar tu propio anuncio profesional.",
+    "After you sign in, you can save profiles, request consultations, manage your private client profile, or build your public profile.": "Después de iniciar sesión, podrás guardar perfiles, solicitar consultas, administrar tu perfil privado de cliente o crear tu perfil público.",
+    "Marketplace authentication is not configured yet.": "El acceso al marketplace aún no está configurado.",
+    "Passwords do not match.": "Las contraseñas no coinciden.",
+    "Please agree to the Terms of Service and Privacy Policy to create an account.": "Acepta los Términos de servicio y la Política de privacidad para crear una cuenta.",
+    "Please confirm that you are at least 18 years old to create an account.": "Confirma que tienes al menos 18 años para crear una cuenta.",
+    "Account created. Check your email if confirmation is enabled, then sign in.": "Cuenta creada. Revisa tu correo si se requiere confirmación y luego inicia sesión.",
+    "We could not complete that request.": "No pudimos completar la solicitud.",
+  },
+  "pt-BR": {
+    "Elevare account": "Conta Elevare",
+    "Sign in to continue.": "Entre para continuar.",
+    "Join Elevare Fit": "Junte-se à Elevare Fit",
+    "Create your professional profile": "Crie seu perfil profissional",
+    "Browsing profiles stays public. Sign in when you want to save profiles, send a consultation request, or build your own listing.": "Você pode explorar perfis sem entrar. Entre para salvar perfis, solicitar uma consulta ou criar seu próprio anúncio.",
+    "Find a professional or create your own professional listing.": "Encontre um profissional ou crie seu próprio anúncio profissional.",
+    "Start by creating an account. Next, add your services, specialties, and professional details to build your listing.": "Comece criando uma conta. Depois, adicione seus serviços, especialidades e dados profissionais para criar seu anúncio.",
+    "Authentication mode": "Modo de acesso",
+    "Create account": "Criar conta",
+    "Email address": "Endereço de e-mail",
+    Password: "Senha",
+    "Confirm password": "Confirme a senha",
+    "I agree to the": "Concordo com os",
+    "and acknowledge the": "e reconheço a",
+    "I confirm that I am at least 18 years old.": "Confirmo que tenho pelo menos 18 anos.",
+    "After creating your account, you can add your professional details and save your listing as a draft before submitting it for review.": "Depois de criar sua conta, você poderá adicionar seus dados profissionais e salvar o anúncio como rascunho antes de enviá-lo para análise.",
+    "After creating your account, you can find professionals or start your own professional listing.": "Depois de criar sua conta, você poderá encontrar profissionais ou começar seu próprio anúncio profissional.",
+    "After you sign in, you can save profiles, request consultations, manage your private client profile, or build your public profile.": "Depois de entrar, você poderá salvar perfis, solicitar consultas, gerenciar seu perfil privado de cliente ou criar seu perfil público.",
+    "Marketplace authentication is not configured yet.": "O acesso ao marketplace ainda não está configurado.",
+    "Passwords do not match.": "As senhas não coincidem.",
+    "Please agree to the Terms of Service and Privacy Policy to create an account.": "Aceite os Termos de Serviço e a Política de Privacidade para criar uma conta.",
+    "Please confirm that you are at least 18 years old to create an account.": "Confirme que você tem pelo menos 18 anos para criar uma conta.",
+    "Account created. Check your email if confirmation is enabled, then sign in.": "Conta criada. Verifique seu e-mail se a confirmação estiver ativada e depois entre.",
+    "We could not complete that request.": "Não foi possível concluir a solicitação.",
+  },
+};
+
 export function marketplaceText(locale: Locale, english: string) {
   return locale === "en"
     ? english
-    : UI_COPY[locale][english]
+    : AUTH_COPY[locale][english]
+      ?? UI_COPY[locale][english]
       ?? ACCOUNT_AND_EDITOR_COPY[locale][english]
       ?? DECISION_READY_COPY[locale][english]
       ?? PROFESSIONAL_RETENTION_COPY[locale][english]

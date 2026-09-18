@@ -35,9 +35,10 @@ export function LocaleRuntime() {
     try { localPreference = window.localStorage.getItem(LOCALE_STORAGE_KEY); } catch { /* Use the URL/cookie when storage is blocked. */ }
     const cookiePreference = readCookiePreference();
     const savedPreference = localPreference ?? cookiePreference;
+    const currentHref = `${pathname}${window.location.search}${window.location.hash}`;
 
     if (savedPreference && isLocale(savedPreference) && savedPreference !== DEFAULT_LOCALE) {
-      router.replace(getLocaleSwitchHref(pathname, savedPreference));
+      router.replace(getLocaleSwitchHref(currentHref, savedPreference));
       return;
     }
 
@@ -52,7 +53,7 @@ export function LocaleRuntime() {
       browserLocales: navigator.languages?.length ? [...navigator.languages] : [navigator.language],
     });
     if (browserLocale !== DEFAULT_LOCALE) {
-      router.replace(getLocaleSwitchHref(pathname, browserLocale));
+      router.replace(getLocaleSwitchHref(currentHref, browserLocale));
     }
   }, [localizedRoutesEnabled, pathname, router]);
 

@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { ACTIVE_LEGAL_ROUTES, renderActiveLegalHtml } from "../lib/legal-routes.ts";
+import { getAuthConfirmationPath } from "../lib/auth-redirect.ts";
 import {
   absoluteUrl,
   buildSiteStructuredData,
@@ -108,7 +109,8 @@ test("new signup confirmations and waitlist CORS are ready for the .com origin",
     "utf8",
   );
 
-  assert.match(authPanel, /emailRedirectTo: absoluteUrl\("\/account\/"\)/);
+  assert.match(authPanel, /emailRedirectTo: absoluteUrl\(getAuthConfirmationPath\(redirect, intent, signupLocale\)\)/);
+  assert.equal(absoluteUrl(getAuthConfirmationPath(null, "professional", "en")), "https://www.elevarefit.com/account/?intent=professional");
   assert.match(waitlistFunction, /"https:\/\/www\.elevarefit\.com"/);
   assert.match(waitlistFunction, /"https:\/\/www\.elevarefit\.org"/);
 });

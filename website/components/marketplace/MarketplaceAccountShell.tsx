@@ -28,6 +28,7 @@ type MarketplaceAccountState = {
   isLoading: boolean;
   hasClientProfile: boolean;
   professionalProfile: ProfessionalAccountState | null;
+  professionalStateLoaded: boolean;
 };
 
 const MarketplaceAccountContext = createContext<MarketplaceAccountState | null>(null);
@@ -74,6 +75,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
   const [appUser, setAppUser] = useState<MarketplaceAppUserRecord | null>(null);
   const [hasClientProfile, setHasClientProfile] = useState(false);
   const [professionalProfile, setProfessionalProfile] = useState<ProfessionalAccountState | null>(null);
+  const [professionalStateLoaded, setProfessionalStateLoaded] = useState(false);
   const [resolvedAuthUserId, setResolvedAuthUserId] = useState<string | null>(null);
   const [isAccountLoading, setIsAccountLoading] = useState(false);
 
@@ -99,6 +101,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
             setAppUser(null);
             setHasClientProfile(false);
             setProfessionalProfile(null);
+            setProfessionalStateLoaded(false);
             setResolvedAuthUserId(currentUser.id);
           }
           return;
@@ -135,11 +138,13 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
               }
             : null,
         );
+        setProfessionalStateLoaded(!professionalProfileResult.error);
       } catch {
         if (isMounted) {
           setAppUser(null);
           setHasClientProfile(false);
           setProfessionalProfile(null);
+          setProfessionalStateLoaded(false);
           setResolvedAuthUserId(currentUser.id);
         }
       } finally {
@@ -160,6 +165,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
   const visibleAppUser = hasResolvedCurrentUser ? appUser : null;
   const visibleClientProfile = hasResolvedCurrentUser && hasClientProfile;
   const visibleProfessionalProfile = hasResolvedCurrentUser ? professionalProfile : null;
+  const visibleProfessionalStateLoaded = hasResolvedCurrentUser && professionalStateLoaded;
 
   const accountState = useMemo<MarketplaceAccountState>(
     () => ({
@@ -169,6 +175,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
       isLoading: isSessionLoading || Boolean(user && (!hasResolvedCurrentUser || isAccountLoading)),
       hasClientProfile: visibleClientProfile,
       professionalProfile: visibleProfessionalProfile,
+      professionalStateLoaded: visibleProfessionalStateLoaded,
     }),
     [
       hasResolvedCurrentUser,
@@ -179,6 +186,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
       visibleAppUser,
       visibleClientProfile,
       visibleProfessionalProfile,
+      visibleProfessionalStateLoaded,
     ],
   );
 

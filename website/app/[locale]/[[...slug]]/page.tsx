@@ -465,7 +465,7 @@ export default async function LocalizedMarketingRoute({ params }: { params: Prom
     return (
       <div className="container">
         <MarketplaceAccountShell>
-          {resolved.page === "account" ? <AccountDashboard /> : null}
+          {resolved.page === "account" ? <Suspense fallback={null}><AccountDashboard /></Suspense> : null}
           {resolved.page === "professional-account" ? <ProfessionalProfileEditor /> : null}
           {resolved.page === "account-inquiries" ? <ProfessionalInquiriesPanel /> : null}
           {resolved.page === "professional-inquiries" ? <ProfessionalInquiriesPanel mode="received" /> : null}

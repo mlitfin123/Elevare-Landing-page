@@ -1,26 +1,37 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
-import { getSafeAuthRedirect } from "@/lib/auth-redirect";
+import { getAuthConfirmationPath, getAuthIntent, getAuthReturnPath, getSafeAuthRedirect, getSignupIntro } from "@/lib/auth-redirect";
 import {
   LOCALE_COOKIE_NAME,
   LOCALE_STORAGE_KEY,
+  areLocalizedRoutesEnabled,
+  isLocale,
   localeFromPathname,
   localizePathname,
   resolvePreferredLocale,
+  type Locale,
 } from "@/lib/i18n/config";
+import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 
 export function AuthPanel() {
-  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = useMemo(() => getSafeAuthRedirect(searchParams.get("redirect")), [searchParams]);
-  const legalLocale = localeFromPathname(redirectPath);
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const redirect = searchParams.get("redirect");
+  const intent = getAuthIntent(searchParams.get("intent"));
+  const signupIntro = getSignupIntro(intent);
+  const redirectPath = useMemo(() => getSafeAuthRedirect(redirect), [redirect]);
+  const requestedLocale = searchParams.get("locale");
+  const redirectLocale = localeFromPathname(redirectPath);
+  const urlLocale = isLocale(requestedLocale) ? requestedLocale : redirectLocale !== "en" ? redirectLocale : null;
+  const locale: Locale = urlLocale ?? "en";
+  const legalLocale = areLocalizedRoutesEnabled() ? locale : "en";
+  const t = (value: string) => marketplaceText(locale, value);
+  const [mode, setMode] = useState<"sign-in" | "sign-up">(intent === "professional" ? "sign-up" : "sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,25 +47,25 @@ export function AuthPanel() {
     event.preventDefault();
 
     if (!isConfigured) {
-      setFeedback("Marketplace authentication is not configured yet.");
+      setFeedback(t("Marketplace authentication is not configured yet."));
       setFeedbackType("error");
       return;
     }
 
     if (mode === "sign-up" && password !== confirmPassword) {
-      setFeedback("Passwords do not match.");
+      setFeedback(t("Passwords do not match."));
       setFeedbackType("error");
       return;
     }
 
     if (mode === "sign-up" && !hasAcceptedLegalTerms) {
-      setFeedback("Please agree to the Terms of Service and Privacy Policy to create an account.");
+      setFeedback(t("Please agree to the Terms of Service and Privacy Policy to create an account."));
       setFeedbackType("error");
       return;
     }
 
     if (mode === "sign-up" && !hasConfirmedAge) {
-      setFeedback("Please confirm that you are at least 18 years old to create an account.");
+      setFeedback(t("Please confirm that you are at least 18 years old to create an account."));
       setFeedbackType("error");
       return;
     }
@@ -62,7 +73,7 @@ export function AuthPanel() {
     const supabase = getSupabaseBrowserClient();
 
     if (!supabase) {
-      setFeedback("Marketplace authentication is not configured yet.");
+      setFeedback(t("Marketplace authentication is not configured yet."));
       setFeedbackType("error");
       return;
     }
@@ -71,6 +82,14 @@ export function AuthPanel() {
     setFeedback(null);
 
     try {
+      const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
+      const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY) ?? readCookie(LOCALE_COOKIE_NAME);
+      const flowLocale = resolvePreferredLocale({
+        explicitLocale: urlLocale,
+        savedLocale,
+        browserLocales,
+      });
+
       if (mode === "sign-in") {
         const { error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -81,31 +100,19 @@ export function AuthPanel() {
           throw error;
         }
 
-        router.push(redirectPath);
+        router.push(getAuthReturnPath(redirect, intent, flowLocale));
         router.refresh();
         return;
       }
 
-      const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
-      const localizedPath = [pathname, redirectPath]
-        .find((candidate) => /^\/(?:es|pt-br)(?:\/|$)/i.test(candidate));
-      const pathnameLocale = localizedPath
-        ? localeFromPathname(localizedPath)
-        : null;
-      const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
-        ?? readCookie(LOCALE_COOKIE_NAME);
-      const signupLocale = resolvePreferredLocale({
-        explicitLocale: pathnameLocale,
-        savedLocale,
-        browserLocales,
-      });
+      const signupLocale = flowLocale;
       const signupBrowserLocale = resolvePreferredLocale({ browserLocales });
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: absoluteUrl("/account/"),
+          emailRedirectTo: absoluteUrl(getAuthConfirmationPath(redirect, intent, signupLocale)),
           data: {
             legal_acceptance: true,
             legal_acceptance_source: "website_signup",
@@ -125,16 +132,16 @@ export function AuthPanel() {
       }
 
       if (data.session) {
-        router.push(redirectPath);
+        router.push(getAuthReturnPath(redirect, intent, signupLocale));
         router.refresh();
         return;
       }
 
-      setFeedback("Account created. Check your email if confirmation is enabled, then sign in.");
+      setFeedback(t("Account created. Check your email if confirmation is enabled, then sign in."));
       setFeedbackType("success");
       setMode("sign-in");
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "We could not complete that request.");
+      setFeedback(error instanceof Error ? error.message : t("We could not complete that request."));
       setFeedbackType("error");
     } finally {
       setIsSubmitting(false);
@@ -143,14 +150,15 @@ export function AuthPanel() {
 
   return (
     <article className="waitlist-card auth-card">
-      <div className="card-kicker">Elevare account</div>
-      <h2>{mode === "sign-in" ? "Sign in to continue." : "Create your marketplace account."}</h2>
+      <div className="card-kicker">{t("Elevare account")}</div>
+      <h2>{t(mode === "sign-in" ? "Sign in to continue." : signupIntro.headline)}</h2>
       <p>
-        Browsing profiles stays public. Sign in when you want to save profiles, send a consultation
-        request, or build your own listing.
+        {t(mode === "sign-in"
+          ? "Browsing profiles stays public. Sign in when you want to save profiles, send a consultation request, or build your own listing."
+          : signupIntro.description)}
       </p>
 
-      <div className="audience-switcher" role="tablist" aria-label="Authentication mode">
+      <div className="audience-switcher" role="tablist" aria-label={t("Authentication mode")}>
         <button
           type="button"
           role="tab"
@@ -158,7 +166,7 @@ export function AuthPanel() {
           aria-selected={mode === "sign-in"}
           onClick={() => setMode("sign-in")}
         >
-          Sign in
+          {t("Sign in")}
         </button>
         <button
           type="button"
@@ -167,14 +175,14 @@ export function AuthPanel() {
           aria-selected={mode === "sign-up"}
           onClick={() => setMode("sign-up")}
         >
-          Create account
+          {t("Create account")}
         </button>
       </div>
 
       <form className="waitlist-form" onSubmit={handleSubmit}>
         <div className="field-grid">
           <label className="field field-full">
-            <span className="field-label">Email address</span>
+            <span className="field-label">{t("Email address")}</span>
             <input
               type="email"
               value={email}
@@ -185,12 +193,12 @@ export function AuthPanel() {
           </label>
 
           <label className="field field-full">
-            <span className="field-label">Password</span>
+            <span className="field-label">{t("Password")}</span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
+              placeholder={t("Password")}
               required
             />
           </label>
@@ -198,12 +206,12 @@ export function AuthPanel() {
           {mode === "sign-up" ? (
             <>
               <label className="field field-full">
-                <span className="field-label">Confirm password</span>
+                <span className="field-label">{t("Confirm password")}</span>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Confirm password"
+                  placeholder={t("Confirm password")}
                   required
                 />
               </label>
@@ -214,8 +222,8 @@ export function AuthPanel() {
                   onChange={(event) => setHasAcceptedLegalTerms(event.target.checked)}
                 />
                 <span>
-                  I agree to the <a href={localizePathname("/terms-of-service/", legalLocale)} hrefLang={legalLocale}>Terms of Service</a> and acknowledge the{" "}
-                  <a href={localizePathname("/privacy-policy/", legalLocale)} hrefLang={legalLocale}>Privacy Policy</a>.
+                  {t("I agree to the")}{" "}<a href={localizePathname("/terms-of-service/", legalLocale)} hrefLang={legalLocale}>{t("Terms of Service")}</a>{" "}{t("and acknowledge the")}{" "}
+                  <a href={localizePathname("/privacy-policy/", legalLocale)} hrefLang={legalLocale}>{t("Privacy Policy")}</a>.
                 </span>
               </label>
               <label className="checkbox-row professional-attestation field-full">
@@ -224,15 +232,18 @@ export function AuthPanel() {
                   checked={hasConfirmedAge}
                   onChange={(event) => setHasConfirmedAge(event.target.checked)}
                 />
-                <span>I confirm that I am at least 18 years old.</span>
+                <span>{t("I confirm that I am at least 18 years old.")}</span>
               </label>
             </>
           ) : null}
         </div>
 
         <div className="form-note">
-          After you sign in, you can save profiles, request consultations, manage your private client
-          profile, or build your public profile.
+          {t(mode === "sign-up" && intent === "professional"
+            ? "After creating your account, you can add your professional details and save your listing as a draft before submitting it for review."
+            : mode === "sign-up"
+              ? "After creating your account, you can find professionals or start your own professional listing."
+              : "After you sign in, you can save profiles, request consultations, manage your private client profile, or build your public profile.")}
         </div>
 
         <div className="form-actions">
@@ -241,9 +252,9 @@ export function AuthPanel() {
             className="button button-primary"
             disabled={isSubmitting || (mode === "sign-up" && (!hasAcceptedLegalTerms || !hasConfirmedAge))}
           >
-            {isSubmitting ? "Submitting..." : mode === "sign-in" ? "Sign in" : "Create account"}
+            {t(isSubmitting ? "Submitting..." : mode === "sign-in" ? "Sign in" : "Create account")}
           </button>
-          {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
+          {feedback ? <div role={feedbackType === "error" ? "alert" : "status"} className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`}>{feedback}</div> : null}
         </div>
       </form>
     </article>

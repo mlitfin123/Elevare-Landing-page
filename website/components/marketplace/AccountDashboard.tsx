@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AccountDeletionRequest } from "@/components/marketplace/AccountDeletionRequest";
 import { ProfessionalRetentionDashboard } from "@/components/marketplace/ProfessionalRetentionDashboard";
 import { useMarketplaceAccountState } from "@/components/marketplace/MarketplaceAccountShell";
@@ -20,6 +20,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { Locale } from "@/lib/i18n/config";
 import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
 import { marketplaceText } from "@/lib/i18n/marketplace-content";
+import { getAuthIntent, getPostAuthDestination, getSafeAuthRedirect } from "@/lib/auth-redirect";
 
 type SavedActivityRecord = {
   id: string;
@@ -96,6 +97,10 @@ function ActivityLoadErrorCard({ label, onRetry, locale }: Readonly<{ label: str
 
 export function AccountDashboard() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const intent = searchParams.get("intent");
   const locale = localeFromPathname(pathname);
   const t = (value: string) => marketplaceText(locale, value);
   const {
@@ -105,6 +110,7 @@ export function AccountDashboard() {
     isConfigured,
     hasClientProfile,
     professionalProfile,
+    professionalStateLoaded,
   } = useMarketplaceAccountState();
   const [snapshot, setSnapshot] = useState<MarketplaceSnapshot | null>(null);
   const [savedRecords, setSavedRecords] = useState<SavedActivityRecord[]>([]);
@@ -114,6 +120,23 @@ export function AccountDashboard() {
   const [isActivityLoading, setIsActivityLoading] = useState(false);
   const [activityErrors, setActivityErrors] = useState<ActivityErrors>(EMPTY_ACTIVITY_ERRORS);
   const [activityLoadAttempt, setActivityLoadAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!user || isLoading) return;
+
+    const explicitRedirect = getSafeAuthRedirect(redirect, "");
+    const professionalIntent = getAuthIntent(intent) === "professional";
+    if (!explicitRedirect && (!professionalIntent || !appUser || !professionalStateLoaded)) return;
+
+    const destination = getPostAuthDestination({
+      redirect,
+      intent,
+      locale,
+      professionalStatus: professionalProfile?.status ?? null,
+      professionalStateLoaded,
+    });
+    if (`${window.location.pathname}${window.location.search}` !== destination) router.replace(destination);
+  }, [appUser, redirect, intent, isLoading, locale, professionalProfile, professionalStateLoaded, router, user]);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -262,7 +285,7 @@ export function AccountDashboard() {
         <h2>{t("Sign in to access your account.")}</h2>
         <p>{t("Use your account to save profiles, send consultation requests, and manage your preferences.")}</p>
         <div className="button-row">
-          <Link className="button button-primary" href="/sign-in/">
+          <Link className="button button-primary" href={getContinuationSignInHref({ redirect, intent }, locale)}>
             {t("Sign in")}
           </Link>
         </div>
@@ -559,4 +582,16 @@ export function AccountDashboard() {
       ))}
     </>
   );
+}
+
+function getContinuationSignInHref(
+  continuation: { redirect: string | null; intent: string | null } | null,
+  locale: Locale,
+) {
+  const params = new URLSearchParams();
+  const redirect = getSafeAuthRedirect(continuation?.redirect, "");
+  if (redirect) params.set("redirect", redirect);
+  if (getAuthIntent(continuation?.intent) === "professional") params.set("intent", "professional");
+  if (locale !== "en") params.set("locale", locale);
+  return params.size ? `/sign-in/?${params}` : "/sign-in/";
 }

@@ -103,6 +103,7 @@ test("localized marketing routes preserve English URLs and equivalent product pa
   assert.equal(localizePathname("/pt-br/stagelab/", "es-419"), "/es/stagelab/");
   assert.equal(getLocaleSwitchHref("/es/logbook/", "pt-BR"), "/pt-br/logbook/");
   assert.equal(getLocaleSwitchHref("/es/stagelab/quick-analysis/", "pt-BR"), "/pt-br/stagelab/quick-analysis/");
+  assert.equal(getLocaleSwitchHref("/account/?intent=professional#access_token=sample", "es-419"), "/es/account/?intent=professional#access_token=sample");
   assert.equal(localizePathname("/account/", "es-419"), "/es/account/");
   assert.equal(localizePathname("/account/professional-profile/", "pt-BR"), "/pt-br/account/professional-profile/");
   assert.equal(localizePathname("/account/inquiries/", "es-419"), "/es/account/inquiries/");
