@@ -185,7 +185,10 @@ export async function generateMetadata({
       description: copy.description,
       pathname: localizePathname(resolved.pathname, resolved.locale),
       locale: resolved.locale,
-      robots: { index: false, follow: true },
+      localizedAlternates: true,
+      robots: indexingEnabled
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
     });
   }
   if (resolved.page === "professionals") {

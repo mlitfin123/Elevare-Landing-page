@@ -9,7 +9,8 @@ export function generateMetadata(): Metadata {
     title: copy.title,
     description: copy.description,
     pathname: "/stagelab/start/",
-    robots: { index: false, follow: true },
+    localizedAlternates: true,
+    robots: { index: true, follow: true },
   });
 }
 

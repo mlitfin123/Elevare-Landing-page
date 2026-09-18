@@ -28,6 +28,22 @@ test("one start page contains both separate offers and ignores legacy offer para
   assert.doesNotMatch(localizedRoute, /parseStageLabStartOffer/);
 });
 
+test("start page is indexable and discoverable in the site sitemap", () => {
+  const englishRoute = read("app", "stagelab", "start", "page.tsx");
+  const localizedRoute = read("app", "[locale]", "[[...slug]]", "page.tsx");
+  const generator = read("scripts", "generate-sitemaps.ts");
+  const sitemap = read("public", "sitemaps", "site.xml");
+
+  assert.match(englishRoute, /localizedAlternates: true,[\s\S]*?robots: \{ index: true, follow: true \}/);
+  assert.match(localizedRoute, /resolved\.page === "stagelab-start"[\s\S]*?robots: indexingEnabled[\s\S]*?\? \{ index: true, follow: true \}/);
+  assert.match(generator, /"\/stagelab\/start"/);
+  assert.match(generator, /"\/stagelab\/start\/"/);
+  for (const prefix of ["", "es/", "pt-br/"]) {
+    const url = `https://www.elevarefit.com/${prefix}stagelab/start/`;
+    assert.equal(sitemap.split(`<loc>${url}</loc>`).length - 1, 1, url);
+  }
+});
+
 test("both stores use the configured StageLab destinations, never website checkout", () => {
   const links = productConfig.StageLab.storeLinks ?? [];
   assert.deepEqual(links.map((link) => link.store), ["ios", "android"]);
