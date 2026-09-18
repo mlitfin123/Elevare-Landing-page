@@ -10,9 +10,11 @@ import {
   LOCALE_STORAGE_KEY,
   localeFromPathname,
   SUPPORTED_LOCALES,
+  stripLocalePrefix,
 } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { stageLabStartSwitchSearch } from "@/lib/stagelab-start";
 
 function saveLocalePreference(locale: Locale) {
   try {
@@ -43,7 +45,10 @@ export function LanguageSelector() {
         }
       });
     }
-    router.push(getLocaleSwitchHref(pathname, locale));
+    const currentPath = stripLocalePrefix(pathname) === "/stagelab/start/"
+      ? `${pathname}${stageLabStartSwitchSearch(window.location.search)}`
+      : pathname;
+    router.push(getLocaleSwitchHref(currentPath, locale));
   }
 
   const labels: Record<Locale, string> = {

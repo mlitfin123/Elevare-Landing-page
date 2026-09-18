@@ -7,6 +7,7 @@ import { LocalizedNutritionPage } from "@/components/localization/LocalizedNutri
 import { LocalizedWorkoutsPage } from "@/components/localization/LocalizedWorkoutsPage";
 import { LocalizedWorkoutGeneratorPage } from "@/components/localization/LocalizedWorkoutGeneratorPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
+import { StageLabStartPage } from "@/components/stagelab/StageLabStartPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
 import { LocalizedStageAnalysisPage } from "@/components/localization/LocalizedStageAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
@@ -53,6 +54,7 @@ import { getMarketplaceCategories, getMarketplaceProfessionals } from "@/lib/mar
 import { findTopCategories, getMarketplaceRotationSeed, toProfessionalDirectoryRecords } from "@/lib/marketplace-helpers";
 import { hasMarketplaceFilterSearchParams } from "@/lib/marketplace-seo";
 import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
+import { stageLabStartMessages } from "@/lib/stagelab-start";
 
 type LocalizedPageParams = {
   locale: string;
@@ -102,6 +104,9 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 0) return { locale, page: "home" as const, pathname: "/" };
   if (slug.length === 1 && slug[0] === "logbook") return { locale, page: "logbook" as const, pathname: "/logbook/" };
   if (slug.length === 1 && slug[0] === "stagelab") return { locale, page: "stagelab" as const, pathname: "/stagelab/" };
+  if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "start") {
+    return { locale, page: "stagelab-start" as const, pathname: "/stagelab/start/" };
+  }
   if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "quick-analysis") {
     return { locale, page: "quick-analysis" as const, pathname: "/stagelab/quick-analysis/" };
   }
@@ -173,6 +178,16 @@ export async function generateMetadata({
   if (!resolved || !areLocalizedRoutesEnabled()) return {};
 
   const indexingEnabled = isLocalizedIndexingEnabled();
+  if (resolved.page === "stagelab-start") {
+    const copy = stageLabStartMessages[resolved.locale];
+    return buildMetadata({
+      title: copy.title,
+      description: copy.description,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      robots: { index: false, follow: true },
+    });
+  }
   if (resolved.page === "professionals") {
     const filteredSearch = hasMarketplaceFilterSearchParams(await searchParams);
     if (resolved.catalogSlug) return buildProfessionalRouteMetadata(resolved.catalogSlug, resolved.locale, filteredSearch);
@@ -390,9 +405,15 @@ export async function generateMetadata({
     : metadata;
 }
 
-export default async function LocalizedMarketingRoute({ params }: { params: Promise<LocalizedPageParams> }) {
+export default async function LocalizedMarketingRoute({ params }: {
+  params: Promise<LocalizedPageParams>;
+}) {
   const resolved = resolvePage(await params);
   if (!resolved || !areLocalizedRoutesEnabled()) notFound();
+
+  if (resolved.page === "stagelab-start") {
+    return <StageLabStartPage locale={resolved.locale} />;
+  }
 
   if (resolved.page === "exercises") {
     return <LocalizedExercisesPage locale={resolved.locale} slug={resolved.catalogSlug} />;

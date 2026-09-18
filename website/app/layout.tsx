@@ -3,10 +3,9 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { DM_Mono, DM_Sans } from "next/font/google";
 import { AnalyticsConsent } from "@/components/AnalyticsConsent";
-import { Footer } from "@/components/Footer";
 import { GoogleAnalyticsPageTracker } from "@/components/GoogleAnalyticsPageTracker";
-import { Header } from "@/components/Header";
 import { LocaleRuntime } from "@/components/localization/LocaleRuntime";
+import { SiteChrome } from "@/components/SiteChrome";
 import { StructuredData } from "@/components/StructuredData";
 import { buildGoogleAnalyticsBootstrap } from "@/lib/analytics-consent";
 import { buildSiteStructuredData, siteConfig } from "@/lib/site";
@@ -73,11 +72,7 @@ export default function RootLayout({
             <GoogleAnalyticsPageTracker measurementId={googleAnalyticsId} />
           </>
         ) : null}
-        <div className="site-shell">
-          <Header />
-          <main className="page-main">{children}</main>
-          <Footer />
-        </div>
+        <SiteChrome>{children}</SiteChrome>
         <Analytics />
       </body>
     </html>
