@@ -18,7 +18,7 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
     assertQuickAnalysisSameOrigin(request);
-    await enforceQuickAnalysisRateLimit(request, "analyze", getQuickAnalysisSupabase());
+    await enforceQuickAnalysisRateLimit(request, "posing_initialize", getQuickAnalysisSupabase());
     const parsed = posingUploadManifestSchema.safeParse(await request.json());
     if (!parsed.success) {
       throw new QuickAnalysisServerError("INVALID_VIDEO", parsed.error.issues[0]?.message ?? "The video is invalid.");

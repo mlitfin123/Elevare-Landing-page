@@ -21,6 +21,22 @@ test("posing route execution limits match documented shared configuration", () =
   }
 });
 
+test("posing upload and processing use separate rate-limit budgets", () => {
+  const initializeRoute = fs.readFileSync(
+    new URL("../app/api/stage-analysis/posing/initialize/route.ts", import.meta.url),
+    "utf8",
+  );
+  const startRoute = fs.readFileSync(
+    new URL("../app/api/stage-analysis/posing/start/route.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(initializeRoute, /enforceQuickAnalysisRateLimit\(request, "posing_initialize"/);
+  assert.match(startRoute, /enforceQuickAnalysisRateLimit\(request, "posing_start"/);
+  assert.doesNotMatch(initializeRoute, /enforceQuickAnalysisRateLimit\(request, "analyze"/);
+  assert.doesNotMatch(startRoute, /enforceQuickAnalysisRateLimit\(request, "analyze"/);
+});
+
 for (const locale of ["en", "es-419", "pt-BR"] as const) test(`client posing request exceptions contain only localized copy in ${locale}`, async () => {
   const { PosingRequestError } = await import("../lib/posing-request-error.ts");
   assert.equal(new PosingRequestError("unexpected_raw_backend_English", locale).message, getPosingMessages(locale).genericError);

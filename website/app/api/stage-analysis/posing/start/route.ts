@@ -16,7 +16,7 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   try {
     assertQuickAnalysisSameOrigin(request);
-    await enforceQuickAnalysisRateLimit(request, "analyze", getQuickAnalysisSupabase());
+    await enforceQuickAnalysisRateLimit(request, "posing_start", getQuickAnalysisSupabase());
     const state = await startPosingAnalysisForToken(getQuickAnalysisAccessToken(request));
     return NextResponse.json({ state }, {
       headers: { "Cache-Control": "no-store", Pragma: "no-cache", "Referrer-Policy": "no-referrer" },

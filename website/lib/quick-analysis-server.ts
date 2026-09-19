@@ -9,6 +9,8 @@ const RATE_LIMIT_WINDOWS = {
   checkout: { limit: 5, seconds: 60 * 60 },
   session: { limit: 20, seconds: 60 * 60 },
   analyze: { limit: 6, seconds: 60 * 60 },
+  posing_initialize: { limit: 6, seconds: 60 * 60 },
+  posing_start: { limit: 12, seconds: 60 * 60 },
   status: { limit: 120, seconds: 60 * 60 },
   translation_feedback: { limit: 5, seconds: 60 * 60 },
 } as const;
