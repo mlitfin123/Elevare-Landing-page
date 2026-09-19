@@ -26,6 +26,7 @@ import { POSING_RUNTIME } from "./posing-runtime.ts";
 import {
   QuickAnalysisServerError,
   deriveQuickAnalysisToken,
+  hashQuickAnalysisRecoveryToken,
   hashQuickAnalysisToken,
 } from "./quick-analysis-server.ts";
 
@@ -219,6 +220,19 @@ export async function getQuickAnalysisByPaymentIntent(
   return (data as QuickAnalysisRow | null) ?? null;
 }
 
+export async function getQuickAnalysisById(
+  supabase: SupabaseClient,
+  analysisId: string,
+) {
+  const { data, error } = await supabase
+    .from("quick_analyses")
+    .select("*")
+    .eq("id", analysisId)
+    .maybeSingle();
+  if (error) throwDatabaseError("We could not retrieve this purchase.", error);
+  return (data as QuickAnalysisRow | null) ?? null;
+}
+
 export async function issueQuickAnalysisAccessToken(
   supabase: SupabaseClient,
   row: QuickAnalysisRow,
@@ -253,6 +267,51 @@ export async function issueQuickAnalysisAccessToken(
     .eq("id", row.id)
     .eq("payment_status", "paid");
   if (error) throwDatabaseError("We could not open your analysis.", error);
+  return token;
+}
+
+/**
+ * Exchanges a high-entropy, short-lived support recovery credential for the
+ * normal browser access cookie. The conditional update consumes the recovery
+ * credential exactly once without changing payment or analysis state.
+ */
+export async function issueQuickAnalysisRecoveryAccessToken(
+  supabase: SupabaseClient,
+  row: QuickAnalysisRow,
+  recoveryToken: string,
+) {
+  if (
+    row.payment_status !== "paid" ||
+    !row.stripe_checkout_session_id ||
+    !row.checkout_nonce_hash ||
+    !row.checkout_nonce_expires_at ||
+    new Date(row.checkout_nonce_expires_at).getTime() <= Date.now() ||
+    hashQuickAnalysisRecoveryToken(recoveryToken) !== row.checkout_nonce_hash
+  ) {
+    throw new QuickAnalysisServerError("INVALID_RECOVERY_LINK", "This recovery link is invalid or expired.", 401);
+  }
+
+  const checkoutSessionId = row.stripe_checkout_session_id;
+  row = await recoverStalePosingUpload(supabase, row);
+  const token = deriveQuickAnalysisToken(checkoutSessionId);
+  const tokenHash = hashQuickAnalysisToken(token);
+  const { data, error } = await supabase
+    .from("quick_analyses")
+    .update({
+      public_token_hash: tokenHash,
+      checkout_nonce_hash: null,
+      checkout_nonce_expires_at: null,
+      last_accessed_at: new Date().toISOString(),
+    })
+    .eq("id", row.id)
+    .eq("payment_status", "paid")
+    .eq("checkout_nonce_hash", row.checkout_nonce_hash)
+    .select("id")
+    .maybeSingle();
+  if (error) throwDatabaseError("We could not recover your analysis.", error);
+  if (!data) {
+    throw new QuickAnalysisServerError("INVALID_RECOVERY_LINK", "This recovery link is invalid or expired.", 401);
+  }
   return token;
 }
 

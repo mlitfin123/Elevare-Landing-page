@@ -30,7 +30,11 @@ import {
   parseQuickAnalysisContext,
   parseQuickAnalysisResult,
 } from "../lib/quick-analysis-schema.ts";
-import { deriveQuickAnalysisToken, hashQuickAnalysisToken } from "../lib/quick-analysis-server.ts";
+import {
+  deriveQuickAnalysisToken,
+  hashQuickAnalysisRecoveryToken,
+  hashQuickAnalysisToken,
+} from "../lib/quick-analysis-server.ts";
 import {
   validatePaidQuickAnalysisSession,
   verifyConfiguredQuickAnalysisPrice,
@@ -77,6 +81,27 @@ const result: QuickAnalysisResult = {
   limitations: ["Lighting and camera angle can affect visible detail."],
   caution_flags: [],
 };
+
+test("support recovery credentials use a distinct deterministic hash", () => {
+  const recoveryToken = "a".repeat(43);
+  const hash = hashQuickAnalysisRecoveryToken(recoveryToken);
+  assert.equal(hash, hashQuickAnalysisRecoveryToken(recoveryToken));
+  assert.match(hash, /^[a-f0-9]{64}$/);
+  assert.notEqual(hash, hashQuickAnalysisRecoveryToken(`${"a".repeat(42)}b`));
+  assert.throws(() => hashQuickAnalysisRecoveryToken("short"), /invalid/i);
+});
+
+test("posing support recovery is one-use and restores only the access cookie", () => {
+  const route = fs.readFileSync(path.join(projectRoot, "app", "stagelab", "posing-analysis", "recover", "route.ts"), "utf8");
+  const repository = fs.readFileSync(path.join(projectRoot, "lib", "quick-analysis-repository.ts"), "utf8");
+  assert.match(route, /analysis_product !== "posing_analysis"/);
+  assert.match(route, /QUICK_ANALYSIS_ACCESS_COOKIE/);
+  assert.match(route, /Referrer-Policy", "no-referrer"/);
+  assert.doesNotMatch(route, /payment_status\s*:/);
+  assert.match(repository, /checkout_nonce_hash: null/);
+  assert.match(repository, /checkout_nonce_expires_at: null/);
+  assert.match(repository, /\.eq\("checkout_nonce_hash", row\.checkout_nonce_hash\)/);
+});
 
 const physiqueContext: QuickAnalysisContext = {
   analysisMode: "physique_check",

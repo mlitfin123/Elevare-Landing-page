@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getSecondarySupabaseServerConfig } from "./supabase-projects.ts";
 import { siteConfig } from "./site.ts";
@@ -79,6 +79,13 @@ export function hashQuickAnalysisToken(token: string) {
     throw new QuickAnalysisServerError("INVALID_TOKEN", "This analysis link is invalid.", 401);
   }
   return createHmac("sha256", getTokenPepper()).update(token).digest("hex");
+}
+
+export function hashQuickAnalysisRecoveryToken(token: string) {
+  if (!/^[A-Za-z0-9_-]{40,80}$/.test(token)) {
+    throw new QuickAnalysisServerError("INVALID_TOKEN", "This recovery link is invalid.", 401);
+  }
+  return createHash("sha256").update(token).digest("hex");
 }
 
 export const QUICK_ANALYSIS_ACCESS_COOKIE = "stagelab_quick_analysis_access";
