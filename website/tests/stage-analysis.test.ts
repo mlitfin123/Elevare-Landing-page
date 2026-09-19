@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
+import { canvasToJpegBlob, createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
 import { posingAnalysisResultSchema, stageAnalysisCheckoutSchema } from "../lib/stage-analysis-schema.ts";
 import {
   POSING_DIVISIONS,
@@ -77,6 +77,55 @@ test("posing frame uploads preserve exact bytes and MIME type without multipart 
   assert.equal(upload.headers.get("cache-control"), "max-age=3600");
   assert.equal(upload.headers.get("x-upsert"), "false");
   assert.deepEqual(new Uint8Array(upload.body), new Uint8Array(await source.arrayBuffer()));
+});
+
+test("posing frame export retries a transient canvas failure", async () => {
+  const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    callback(0);
+    return 1;
+  }) as typeof requestAnimationFrame;
+  let attempts = 0;
+  const canvas = {
+    toBlob(callback: BlobCallback) {
+      attempts += 1;
+      callback(attempts === 1 ? null : new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: "image/jpeg" }));
+    },
+    toDataURL() {
+      throw new Error("fallback should not run");
+    },
+  } as unknown as HTMLCanvasElement;
+  try {
+    const result = await canvasToJpegBlob(canvas);
+    assert.equal(attempts, 2);
+    assert.equal(result.type, "image/jpeg");
+    assert.equal(result.size, 4);
+  } finally {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+  }
+});
+
+test("posing frame export falls back to a JPEG data URL", async () => {
+  const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    callback(0);
+    return 1;
+  }) as typeof requestAnimationFrame;
+  const canvas = {
+    toBlob(callback: BlobCallback) {
+      callback(null);
+    },
+    toDataURL() {
+      return "data:image/jpeg;base64,/9j/2Q==";
+    },
+  } as unknown as HTMLCanvasElement;
+  try {
+    const result = await canvasToJpegBlob(canvas);
+    assert.equal(result.type, "image/jpeg");
+    assert.deepEqual(new Uint8Array(await result.arrayBuffer()), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+  } finally {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+  }
 });
 
 test("PosingAnalysisV1 preserves unavailable scores as null", () => {

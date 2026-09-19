@@ -85,13 +85,41 @@ function waitForVideoEvent(video: HTMLVideoElement, eventName: "loadedmetadata" 
   });
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement) {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new PosingVideoValidationError("frames", "We could not prepare frames from this video."));
-    }, "image/jpeg", FRAME_QUALITY);
+function nextAnimationFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function canvasBlobAttempt(canvas: HTMLCanvasElement) {
+  return new Promise<Blob | null>((resolve) => {
+    try {
+      canvas.toBlob(resolve, "image/jpeg", FRAME_QUALITY);
+    } catch {
+      resolve(null);
+    }
   });
+}
+
+function canvasDataUrlBlob(canvas: HTMLCanvasElement) {
+  try {
+    const dataUrl = canvas.toDataURL("image/jpeg", FRAME_QUALITY);
+    const separator = dataUrl.indexOf(",");
+    if (separator < 0) return null;
+    const bytes = Uint8Array.from(atob(dataUrl.slice(separator + 1)), (character) => character.charCodeAt(0));
+    return bytes.length ? new Blob([bytes], { type: "image/jpeg" }) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function canvasToJpegBlob(canvas: HTMLCanvasElement) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const blob = await canvasBlobAttempt(canvas);
+    if (blob?.size) return blob;
+    await nextAnimationFrame();
+  }
+  const fallback = canvasDataUrlBlob(canvas);
+  if (fallback) return fallback;
+  throw new PosingVideoValidationError("frames", "We could not prepare frames from this video.");
 }
 
 export async function preparePosingVideo(file: File): Promise<PreparedPosingVideo> {
@@ -127,7 +155,7 @@ export async function preparePosingVideo(file: File): Promise<PreparedPosingVide
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const context = canvas.getContext("2d", { alpha: false });
+    const context = canvas.getContext("2d", { alpha: false }) ?? canvas.getContext("2d");
     if (!context) throw new PosingVideoValidationError("frames", "Your browser could not prepare video frames.");
 
     const frames: PreparedPosingFrame[] = [];
@@ -137,7 +165,7 @@ export async function preparePosingVideo(file: File): Promise<PreparedPosingVide
       video.currentTime = Math.min(durationSeconds - 0.001, timestampMs / 1_000);
       await seekPromise;
       context.drawImage(video, 0, 0, width, height);
-      frames.push({ index, timestampMs, width, height, blob: await canvasToBlob(canvas) });
+      frames.push({ index, timestampMs, width, height, blob: await canvasToJpegBlob(canvas) });
     }
 
     return { file, durationSeconds, mimeType, frames };
