@@ -174,11 +174,11 @@ export function PosingAnalysisResultExperience({
       if (!videoUpload) throw new PosingRequestError("upload_incomplete", locale);
       setBusy(messages.uploading);
       await uploadCapability(videoUpload, prepared.file);
-      await Promise.all(prepared.frames.map((frame) => {
+      for (const frame of prepared.frames) {
         const upload = initialized.uploads!.find((item) => item.kind === "frame" && item.frame_index === frame.index);
         if (!upload) throw new PosingRequestError("upload_incomplete", locale);
-        return uploadCapability(upload, frame.blob);
-      }));
+        await uploadCapability(upload, frame.blob);
+      }
       optionalAnalytics("posing_video_upload_completed", { product, source: source.current });
       setBusy(messages.analyzing);
       const startResponse = await fetch("/api/stage-analysis/posing/start/", { method: "POST", headers: { "X-StageLab-Locale": locale }, signal: AbortSignal.timeout(POSING_RUNTIME.gatewayTimeoutMs * 2 + 5_000) });
