@@ -46,6 +46,14 @@ export function createPosingSignedUploadRequest(body: Blob, capabilityHeaders: R
   return { headers, body: form };
 }
 
+/** Safari can serialize canvas Blobs inconsistently in multipart requests. */
+export async function createPosingFrameSignedUploadRequest(body: Blob, capabilityHeaders: Record<string, string>) {
+  const headers = new Headers(capabilityHeaders);
+  headers.set("content-type", body.type || "image/jpeg");
+  headers.set("cache-control", "max-age=3600");
+  return { headers, body: await body.arrayBuffer() };
+}
+
 function getVideoMimeType(file: File): (typeof POSING_VIDEO_MIME_TYPES)[number] | null {
   if (POSING_VIDEO_MIME_TYPES.includes(file.type as (typeof POSING_VIDEO_MIME_TYPES)[number])) {
     return file.type as (typeof POSING_VIDEO_MIME_TYPES)[number];

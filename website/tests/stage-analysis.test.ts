@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
+import { createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
 import { posingAnalysisResultSchema, stageAnalysisCheckoutSchema } from "../lib/stage-analysis-schema.ts";
 import {
   POSING_DIVISIONS,
@@ -64,6 +64,19 @@ test("posing signed uploads use multipart form data with browser-managed content
   assert.ok(uploadedFile instanceof Blob);
   assert.equal(uploadedFile.type, "image/jpeg");
   assert.equal(uploadedFile.size, source.size);
+});
+
+test("posing frame uploads preserve exact bytes and MIME type without multipart serialization", async () => {
+  const source = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: "image/jpeg" });
+  const upload = await createPosingFrameSignedUploadRequest(source, {
+    "content-type": "application/octet-stream",
+    "x-upsert": "false",
+  });
+
+  assert.equal(upload.headers.get("content-type"), "image/jpeg");
+  assert.equal(upload.headers.get("cache-control"), "max-age=3600");
+  assert.equal(upload.headers.get("x-upsert"), "false");
+  assert.deepEqual(new Uint8Array(upload.body), new Uint8Array(await source.arrayBuffer()));
 });
 
 test("PosingAnalysisV1 preserves unavailable scores as null", () => {
