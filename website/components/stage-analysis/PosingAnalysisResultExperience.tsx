@@ -13,7 +13,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { StageAnalysisMessages } from "@/lib/i18n/stage-analysis-messages";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
-import { preparePosingVideo, PosingVideoValidationError } from "@/lib/posing-video-client";
+import { createPosingSignedUploadRequest, preparePosingVideo, PosingVideoValidationError } from "@/lib/posing-video-client";
 import {
   POSING_DIVISION_TO_KEY,
   type PaidStageAnalysisProduct,
@@ -141,7 +141,8 @@ export function PosingAnalysisResultExperience({
 
   async function uploadCapability(capability: UploadCapability, body: Blob) {
     if (body.size > capability.max_bytes) throw new PosingRequestError("upload_incomplete", locale);
-    const response = await fetch(capability.url, { method: capability.method, headers: capability.headers, body, referrerPolicy: "no-referrer", signal: AbortSignal.timeout(POSING_RUNTIME.uploadTimeoutMs) });
+    const upload = createPosingSignedUploadRequest(body, capability.headers);
+    const response = await fetch(capability.url, { method: capability.method, ...upload, referrerPolicy: "no-referrer", signal: AbortSignal.timeout(POSING_RUNTIME.uploadTimeoutMs) });
     if (!response.ok) throw new PosingRequestError("upload_incomplete", locale);
   }
 

@@ -36,6 +36,16 @@ export class PosingVideoValidationError extends Error {
 
 export const getCanonicalPosingFrameTimestamps = getPosingFrameTimestamps;
 
+/** Supabase signed uploads expect Blob bodies as multipart form data. */
+export function createPosingSignedUploadRequest(body: Blob, capabilityHeaders: Record<string, string>) {
+  const headers = new Headers(capabilityHeaders);
+  headers.delete("content-type");
+  const form = new FormData();
+  form.append("cacheControl", "3600");
+  form.append("", body, body instanceof File ? body.name : "frame.jpg");
+  return { headers, body: form };
+}
+
 function getVideoMimeType(file: File): (typeof POSING_VIDEO_MIME_TYPES)[number] | null {
   if (POSING_VIDEO_MIME_TYPES.includes(file.type as (typeof POSING_VIDEO_MIME_TYPES)[number])) {
     return file.type as (typeof POSING_VIDEO_MIME_TYPES)[number];

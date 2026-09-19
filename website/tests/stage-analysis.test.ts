@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
+import { createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
 import { posingAnalysisResultSchema, stageAnalysisCheckoutSchema } from "../lib/stage-analysis-schema.ts";
 import {
   POSING_DIVISIONS,
@@ -48,6 +48,22 @@ test("video rules and canonical frame sampling match the StageLab handoff", () =
   assert.equal(short[0], 480);
   assert.equal(recommended[0], 1_000);
   assert.equal(long.at(-1), 44_000);
+});
+
+test("posing signed uploads use multipart form data with browser-managed content type", () => {
+  const source = new Blob(["frame"], { type: "image/jpeg" });
+  const upload = createPosingSignedUploadRequest(source, {
+    "content-type": "image/jpeg",
+    "x-upsert": "false",
+  });
+
+  assert.equal(upload.headers.has("content-type"), false);
+  assert.equal(upload.headers.get("x-upsert"), "false");
+  assert.equal(upload.body.get("cacheControl"), "3600");
+  const uploadedFile = upload.body.get("");
+  assert.ok(uploadedFile instanceof Blob);
+  assert.equal(uploadedFile.type, "image/jpeg");
+  assert.equal(uploadedFile.size, source.size);
 });
 
 test("PosingAnalysisV1 preserves unavailable scores as null", () => {
