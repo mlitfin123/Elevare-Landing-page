@@ -242,6 +242,7 @@ test("complete stage preserves separate reports and does not create a combined s
   const priorities = read("components", "stage-analysis", "CompleteStagePriorities.tsx");
   assert.match(complete, /QuickAnalysisResultExperience/);
   assert.match(complete, /PosingAnalysisResultExperience/);
+  assert.match(complete, /product="complete_stage_analysis"/);
   assert.match(complete, /showReportCta=\{false\}/);
   assert.match(priorities, /messages\.separateScores/);
   assert.doesNotMatch(`${complete}\n${priorities}`, /combinedScore|combined_score/);
