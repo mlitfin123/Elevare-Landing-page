@@ -237,7 +237,7 @@ export function PosingAnalysisResultExperience({
         <button className="button button-primary" type="submit" disabled={Boolean(busy)}>{busy || (state.posing.status === "failed_retryable" ? messages.retry : messages.analyze)}</button>
         {busy ? <div className="quick-analysis-processing" role="status"><div className="quick-analysis-spinner" aria-hidden="true" /><div><strong>{busy}</strong><span>{messages.keepOpen}</span></div></div> : null}
         {feedback ? <p className="form-feedback is-error" role="alert">{feedback} {state.posing.status === "failed_retryable" ? messages.paymentValid : ""}</p> : null}
-        <p className="fine-print">{messages.attempts}: {state.posing.retryCount} / {state.posing.maxRetries}.</p>
+        <p className="fine-print">{messages.attempts}: {state.posing.retryCount}.</p>
       </form>
     </div>
   );
