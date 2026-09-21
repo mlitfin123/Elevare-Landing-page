@@ -105,7 +105,9 @@ export function createPosingAnalysisService(overrides: Partial<typeof dependenci
     if ((row.posing_retry_count ?? 0) >= 4) throw new QuickAnalysisServerError("RETRY_LIMIT_REACHED", "Contact support for this analysis.", 409);
     if (manifest.division !== POSING_DIVISION_TO_KEY[row.division as keyof typeof POSING_DIVISION_TO_KEY]) throw new QuickAnalysisServerError("DIVISION_MISMATCH", "Division does not match purchase.", 409);
     manifest = { ...manifest, locale: row.posing_generation_locale ?? row.generation_locale ?? "en" };
-    const idempotencyKey = createHash("sha256").update(`${row.id}:${row.posing_retry_count ?? 0}:${JSON.stringify(manifest)}`).digest("hex");
+    const idempotencyKey = createHash("sha256")
+      .update(`${row.id}:${row.posing_retry_count ?? 0}:${row.posing_analysis_id ?? "new"}:${JSON.stringify(manifest)}`)
+      .digest("hex");
     const initialized = await d.initialize({ externalOrderId: row.id, idempotencyKey, manifest, failedAnalysisId: retry ? row.posing_analysis_id ?? undefined : undefined });
     await d.saveUpload(d.db(), row, { uploadSessionId: initialized.uploadSessionId, idempotencyKey, retry });
     return initialized.uploads;

@@ -13,7 +13,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { StageAnalysisMessages } from "@/lib/i18n/stage-analysis-messages";
 import { normalizeQuickAnalysisSource } from "@/lib/quick-analysis-attribution";
-import { createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, preparePosingVideo, PosingVideoValidationError } from "@/lib/posing-video-client";
+import { createPosingFrameSignedUploadRequest, preparePosingVideo, PosingVideoValidationError } from "@/lib/posing-video-client";
 import {
   POSING_DIVISION_TO_KEY,
   type PaidStageAnalysisProduct,
@@ -21,7 +21,7 @@ import {
 } from "@/lib/stage-analysis";
 
 type StatusPayload = { state?: StageAnalysisPublicState; error?: string; code?: string };
-type UploadCapability = { kind: "video" | "frame"; frame_index: number | null; method: "PUT"; url: string; headers: Record<string, string>; max_bytes: number };
+type UploadCapability = { kind: "frame"; frame_index: number; method: "PUT"; url: string; headers: Record<string, string>; max_bytes: number };
 
 async function readPayload(response: Response) {
   return response.json().catch(() => ({})) as Promise<StatusPayload & { uploads?: UploadCapability[] }>;
@@ -141,9 +141,7 @@ export function PosingAnalysisResultExperience({
 
   async function uploadCapability(capability: UploadCapability, body: Blob) {
     if (body.size > capability.max_bytes) throw new PosingRequestError("upload_incomplete", locale);
-    const upload = capability.kind === "frame"
-      ? await createPosingFrameSignedUploadRequest(body, capability.headers)
-      : createPosingSignedUploadRequest(body, capability.headers);
+    const upload = await createPosingFrameSignedUploadRequest(body, capability.headers);
     const response = await fetch(capability.url, { method: capability.method, ...upload, referrerPolicy: "no-referrer", signal: AbortSignal.timeout(POSING_RUNTIME.uploadTimeoutMs) });
     if (!response.ok) throw new PosingRequestError("upload_incomplete", locale);
   }
@@ -170,12 +168,9 @@ export function PosingAnalysisResultExperience({
       const initializeResponse = await fetch("/api/stage-analysis/posing/initialize/", { method: "POST", headers: { "Content-Type": "application/json", "X-StageLab-Locale": locale }, body: JSON.stringify(manifest), signal: AbortSignal.timeout(POSING_RUNTIME.gatewayTimeoutMs + 5_000) });
       const initialized = await readPayload(initializeResponse);
       if (!initializeResponse.ok || !initialized.uploads) throw new PosingRequestError(initialized.code, locale);
-      const videoUpload = initialized.uploads.find((item) => item.kind === "video");
-      if (!videoUpload) throw new PosingRequestError("upload_incomplete", locale);
       setBusy(messages.uploading);
-      await uploadCapability(videoUpload, prepared.file);
       for (const frame of prepared.frames) {
-        const upload = initialized.uploads!.find((item) => item.kind === "frame" && item.frame_index === frame.index);
+        const upload = initialized.uploads!.find((item) => item.frame_index === frame.index);
         if (!upload) throw new PosingRequestError("upload_incomplete", locale);
         await uploadCapability(upload, frame.blob);
       }

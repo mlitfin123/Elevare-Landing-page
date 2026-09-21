@@ -178,8 +178,8 @@ export type PosingUploadManifest = {
 };
 
 export type SafeSignedUpload = {
-  kind: "video" | "frame";
-  frame_index: number | null;
+  kind: "frame";
+  frame_index: number;
   method: "PUT";
   url: string;
   headers: Record<string, string>;

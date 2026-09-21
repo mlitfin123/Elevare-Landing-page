@@ -180,15 +180,23 @@ test("Stripe remains server-authoritative and both new products share the verifi
 
 test("media bypasses ElevareFit persistence and interrupted uploads are recoverable", () => {
   const experience = read("components", "stage-analysis", "PosingAnalysisResultExperience.tsx");
+  const messages = read("lib", "i18n", "stage-analysis-messages.ts");
   const repository = read("lib", "quick-analysis-repository.ts");
   const service = read("lib", "stage-analysis-service.ts");
   const migration = read("..", "supabase", "migrations", "20260907190000_stage_analysis_products.sql");
   assert.match(experience, /fetch\(capability\.url/);
   assert.match(experience, /referrerPolicy: "no-referrer"/);
+  assert.match(experience, /for \(const frame of prepared\.frames\)/);
+  assert.match(experience, /createPosingFrameSignedUploadRequest/);
+  assert.doesNotMatch(experience, /videoUpload|uploadCapability\(videoUpload|prepared\.file/);
   assert.match(experience, /posing_video_upload_completed/);
+  assert.match(messages, /Your original video stays on your device/);
+  assert.match(messages, /Tu video original permanece en tu dispositivo/);
+  assert.match(messages, /Seu vídeo original permanece no dispositivo/);
   assert.match(repository, /recoverStalePosingUpload/);
   assert.match(repository, /canResume:/);
   assert.match(service, /failedAnalysisId: retry \? row\.posing_analysis_id \?\? undefined/);
+  assert.match(service, /row\.posing_analysis_id \?\? "new"/);
   assert.doesNotMatch(migration, /(?:photo|video|frame)_(?:url|path)|storage_bucket/i);
 });
 
