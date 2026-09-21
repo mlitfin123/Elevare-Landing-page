@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { canvasToJpegBlob, createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps } from "../lib/posing-video-client.ts";
+import { canvasToJpegBlob, createPosingFrameSignedUploadRequest, createPosingSignedUploadRequest, getCanonicalPosingFrameTimestamps, waitForPresentedVideoFrame } from "../lib/posing-video-client.ts";
 import { posingAnalysisResultSchema, stageAnalysisCheckoutSchema } from "../lib/stage-analysis-schema.ts";
 import {
   POSING_DIVISIONS,
@@ -126,6 +126,20 @@ test("posing frame export falls back to a JPEG data URL", async () => {
   } finally {
     globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   }
+});
+
+test("posing frame capture waits for the browser to present the decoded video frame", async () => {
+  let callbacks = 0;
+  const video = {
+    requestVideoFrameCallback(callback: VideoFrameRequestCallback) {
+      callbacks += 1;
+      callback(0, {} as VideoFrameCallbackMetadata);
+      return callbacks;
+    },
+  } as unknown as HTMLVideoElement;
+
+  await waitForPresentedVideoFrame(video);
+  assert.equal(callbacks, 1);
 });
 
 test("PosingAnalysisV1 preserves unavailable scores as null", () => {

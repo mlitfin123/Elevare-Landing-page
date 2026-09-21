@@ -89,6 +89,31 @@ function nextAnimationFrame() {
   return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+/**
+ * `seeked` can fire before Chromium has presented the decoded frame for some
+ * QuickTime files. Wait for the compositor frame so canvas does not capture
+ * the previous frame (or an empty first frame).
+ */
+export function waitForPresentedVideoFrame(video: HTMLVideoElement) {
+  if (typeof video.requestVideoFrameCallback !== "function") {
+    return nextAnimationFrame().then(nextAnimationFrame);
+  }
+
+  return new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(fallback);
+      resolve();
+    };
+    const fallback = setTimeout(() => {
+      void nextAnimationFrame().then(nextAnimationFrame).then(finish);
+    }, 1_000);
+    video.requestVideoFrameCallback(finish);
+  });
+}
+
 function canvasBlobAttempt(canvas: HTMLCanvasElement) {
   return new Promise<Blob | null>((resolve) => {
     try {
@@ -162,8 +187,10 @@ export async function preparePosingVideo(file: File): Promise<PreparedPosingVide
     const timestamps = getCanonicalPosingFrameTimestamps(durationSeconds);
     for (const [index, timestampMs] of timestamps.entries()) {
       const seekPromise = waitForVideoEvent(video, "seeked");
+      const presentedFrame = waitForPresentedVideoFrame(video);
       video.currentTime = Math.min(durationSeconds - 0.001, timestampMs / 1_000);
       await seekPromise;
+      await presentedFrame;
       context.drawImage(video, 0, 0, width, height);
       frames.push({ index, timestampMs, width, height, blob: await canvasToJpegBlob(canvas) });
     }
