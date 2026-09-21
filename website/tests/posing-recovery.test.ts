@@ -10,14 +10,14 @@ function harness() {
   let row = { id: "paid-order", analysis_product: "posing_analysis", division: "Men's Physique", generation_locale: "en", posing_generation_locale: "es-419", payment_status: "paid", expires_at: new Date(Date.now() + 86400000).toISOString(), posing_status: "uploading", posing_upload_session_id: "upload-session", posing_idempotency_key: "idempotent-attempt", posing_retry_count: 1, posing_analysis_id: null, posing_result_json: null } as QuickAnalysisRow;
   const events: string[] = []; const counts = { starts: 0, status: 0, ai: 0, initialize: 0 };
   let remote: StageLabPosingStatusResponse = { api_version: "elevare_posing_api_v1", analysis_id: "saved-prompt-0.4", status: "analyzing", result: null, error: null, completed_at: null };
-  let timeout = false, statusFailure = false, parseFailure = false;
+  let timeout = false, rateLimited = false, statusFailure = false, parseFailure = false;
   let capturedLocale: string | undefined;
   const service = createPosingAnalysisService({
     db: (() => ({})) as NonNullable<Parameters<typeof createPosingAnalysisService>[0]>["db"],
     getRow: async () => ({ ...row }),
     requestStart: async () => { events.push("intent"); row = { ...row, posing_status: "processing", posing_processing_started_at: new Date().toISOString() }; return row; },
     associate: async (_db, _row, id) => { events.push("identity"); row = { ...row, posing_status: "processing", posing_analysis_id: id }; return row; },
-    start: async () => { counts.starts++; if (!counts.ai) counts.ai++; if (timeout) throw new StageLabGatewayError("stagelab_timeout", "Gateway timeout", 504, true); return { ...remote }; },
+    start: async () => { counts.starts++; if (rateLimited) throw new StageLabGatewayError("rate_limited", "Too many recent attempts", 429, true); if (!counts.ai) counts.ai++; if (timeout) throw new StageLabGatewayError("stagelab_timeout", "Gateway timeout", 504, true); return { ...remote }; },
     status: async (input) => { counts.status++; assert.equal(input.externalOrderId, row.id); if (!input.analysisId) assert.equal(input.uploadSessionId, row.posing_upload_session_id ?? undefined); if (statusFailure) throw new StageLabGatewayError("gateway_unavailable", "Unavailable", 503, true); return { ...remote }; },
     parse: (value) => { events.push("parse"); if (parseFailure) throw new Error("Simulated incompatible display"); return parsePosingAnalysisResult(value); },
     reportUnavailable: async () => { row = { ...row, posing_error_code: "RESULT_FORMAT_UNAVAILABLE" }; return { ...row, posing_error_code: "RESULT_FORMAT_UNAVAILABLE" }; },
@@ -26,7 +26,7 @@ function harness() {
     initialize: async (input) => { counts.initialize++; capturedLocale = input.manifest.locale; return { uploadSessionId: "retry-session", clientRequestId: "retry-request", expiresAt: new Date(Date.now() + 3600000).toISOString(), reused: false, uploads: [] }; },
     saveUpload: async (_db, _row, input) => { row = { ...row, posing_status: "uploading", posing_upload_session_id: input.uploadSessionId, posing_idempotency_key: input.idempotencyKey, posing_analysis_id: null }; return row; },
   });
-  return { service, events, counts, get row() { return row; }, set row(value) { row = value; }, get remote() { return remote; }, set remote(value) { remote = value; }, set timeout(value: boolean) { timeout = value; }, set statusFailure(value: boolean) { statusFailure = value; }, set parseFailure(value: boolean) { parseFailure = value; }, get locale() { return capturedLocale; } };
+  return { service, events, counts, get row() { return row; }, set row(value) { row = value; }, get remote() { return remote; }, set remote(value) { remote = value; }, set timeout(value: boolean) { timeout = value; }, set rateLimited(value: boolean) { rateLimited = value; }, set statusFailure(value: boolean) { statusFailure = value; }, set parseFailure(value: boolean) { parseFailure = value; }, get locale() { return capturedLocale; } };
 }
 function complete(h: ReturnType<typeof harness>) { h.remote = { ...h.remote, status: "complete", result: result(), completed_at: new Date().toISOString() }; }
 const manifest: PosingUploadManifest = { division: "mens_physique", locale: "en", source_type: "uploaded_video", video: { file_name: "test.mp4", mime_type: "video/mp4", size_bytes: 1000, duration_seconds: 5 }, frames: [400,1800,3200,4600].map((timestamp_ms, index) => ({ index, timestamp_ms, mime_type: "image/jpeg", size_bytes: 100, width: 720, height: 1280 })) } as const;
@@ -48,6 +48,17 @@ test("timeout after reservation recovers identity from the durable upload sessio
   const h = harness(); h.timeout = true; const state = await h.service.start("private-token");
   assert.equal(h.events[0], "intent"); assert.equal(state.posing.status, "processing"); assert.equal(state.posing.analysisId, "saved-prompt-0.4"); assert.equal(h.counts.ai, 1);
   complete(h); const refreshed = await h.service.synchronized("private-token"); assert.equal(refreshed.state.posing.status, "completed"); assert.equal(h.counts.starts, 1);
+});
+test("a gateway rate limit retains the uploaded session without consuming an attempt", async () => {
+  const h = harness();
+  h.rateLimited = true;
+  h.remote = { ...h.remote, analysis_id: null, status: "awaiting_start" };
+  const state = await h.service.start("private-token");
+  assert.equal(h.counts.ai, 0);
+  assert.equal(h.row.posing_retry_count, 1);
+  assert.equal(h.row.posing_analysis_id, null);
+  assert.equal(state.posing.status, "uploading");
+  assert.equal(state.posing.canResume, true);
 });
 test("page refresh during analysis resumes status without starting AI", async () => {
   const h = harness(); h.row = { ...h.row, posing_status: "processing" };

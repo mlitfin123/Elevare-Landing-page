@@ -612,7 +612,6 @@ export async function markPosingUploadInitialized(
   if (!["paid", "failed_retryable"].includes(currentStatus)) {
     throw new QuickAnalysisServerError("POSING_NOT_AVAILABLE", "This posing analysis is not ready for upload.", 409);
   }
-  const nextRetryCount = input.retry ? (row.posing_retry_count ?? 0) + 1 : Math.max(row.posing_retry_count ?? 0, 1);
   const { data, error } = await supabase
     .from("quick_analyses")
     .update({
@@ -620,7 +619,6 @@ export async function markPosingUploadInitialized(
       posing_analysis_id: null,
       posing_upload_session_id: input.uploadSessionId,
       posing_idempotency_key: input.idempotencyKey,
-      posing_retry_count: nextRetryCount,
       posing_error_code: null,
       posing_processing_started_at: null,
       posing_upload_started_at: new Date().toISOString(),
@@ -644,6 +642,10 @@ export async function markPosingAnalysisStarted(
     .update({
       posing_status: row.posing_status === "completed" ? "completed" : "processing",
       posing_analysis_id: analysisId,
+      // An attempt is consumed only once the gateway has durably reserved an
+      // analysis. Uploads, validation failures, and rate-limit responses do
+      // not create an analysis and must leave paid retry capacity intact.
+      posing_retry_count: (row.posing_retry_count ?? 0) + 1,
       posing_processing_started_at: row.posing_processing_started_at ?? new Date().toISOString(),
       posing_error_code: null,
     })
