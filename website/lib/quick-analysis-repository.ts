@@ -30,6 +30,11 @@ import {
   hashQuickAnalysisToken,
 } from "./quick-analysis-server.ts";
 
+// The website schema keeps this legacy counter between 0 and 4. StageLab is
+// authoritative for paid recovery credits, so attaching an analysis that it
+// has already authorized must not push the local telemetry past that range.
+const POSING_RETRY_COUNT_STORAGE_MAX = 4;
+
 export type QuickAnalysisRow = {
   id: string;
   public_token_hash: string | null;
@@ -642,9 +647,9 @@ export async function markPosingAnalysisStarted(
       posing_status: row.posing_status === "completed" ? "completed" : "processing",
       posing_analysis_id: analysisId,
       // An attempt is consumed only once the gateway has durably reserved an
-      // analysis. Uploads, validation failures, and rate-limit responses do
-      // not create an analysis and must leave paid retry capacity intact.
-      posing_retry_count: (row.posing_retry_count ?? 0) + 1,
+      // analysis. StageLab can authorize support recovery beyond the website's
+      // legacy counter range, so keep this local telemetry within its schema.
+      posing_retry_count: Math.min((row.posing_retry_count ?? 0) + 1, POSING_RETRY_COUNT_STORAGE_MAX),
       posing_processing_started_at: row.posing_processing_started_at ?? new Date().toISOString(),
       posing_error_code: null,
     })

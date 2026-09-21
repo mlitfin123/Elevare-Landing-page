@@ -42,6 +42,16 @@ test("only a reserved posing analysis consumes a paid attempt", async () => {
   assert.equal(reserved.posing_analysis_id, "reserved-analysis");
 });
 
+test("a StageLab recovery can attach after the local posing counter reaches its schema limit", async () => {
+  const h = database("processing", "posing_analysis");
+  h.row = { ...h.row, posing_analysis_id: null, posing_retry_count: 4 };
+
+  const recovered = await markPosingAnalysisStarted(h.db, h.row, "recovered-analysis");
+
+  assert.equal(recovered.posing_retry_count, 4);
+  assert.equal(recovered.posing_analysis_id, "recovered-analysis");
+});
+
 test("a stale local posing count never hides a paid retry control", () => {
   const h = database("failed_retryable", "posing_analysis");
   h.row = { ...h.row, posing_retry_count: 4 };
