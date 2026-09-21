@@ -112,17 +112,23 @@ test("real screenshots and the weekly check-in video are used", () => {
   assert.match(video, /videoId = "uSHrNGqia-M"/);
   assert.match(video, /youtube-nocookie\.com\/embed/);
   assert.match(video, /playing \? \(/);
-  assert.doesNotMatch(video, /trackEvent|stagelab_start_video_play_clicked/);
+  assert.match(video, /stagelab_start_video_play_clicked/);
   assert.match(stageLabStartMessages.en.weeklyAlt, /sessions changing from three to four/);
 });
 
-test("start-page measurement uses aggregate Vercel page views without Google Analytics events", () => {
+test("start-page tracks analytics without a consent prompt", () => {
   const actions = read("components", "stagelab", "StageLabStartActions.tsx");
   const layout = read("app", "layout.tsx");
   const consent = read("components", "AnalyticsConsent.tsx");
   const tracker = read("components", "GoogleAnalyticsPageTracker.tsx");
   assert.match(layout, /<Analytics \/>/);
-  assert.doesNotMatch(actions, /trackEvent|stagelab_start_/);
+  assert.match(actions, /stagelab_start_viewed/);
+  assert.match(actions, /stagelab_start_store_clicked/);
+  assert.match(actions, /stagelab_start_image_failed/);
+  assert.match(actions, /placement === "hero"/);
+  assert.match(actions, /placement,/);
+  assert.match(actions, /page_id: "stagelab_start"/);
   assert.match(consent, /stripLocalePrefix\(pathname\) === "\/stagelab\/start\/"/);
-  assert.match(tracker, /if \(isStageLabStart\) return/);
+  assert.doesNotMatch(tracker, /isStageLabStart|stripLocalePrefix/);
+  assert.doesNotMatch(actions, /stagelab_start_offer_shown|install_completed|trial_activated|analysis_completed/);
 });

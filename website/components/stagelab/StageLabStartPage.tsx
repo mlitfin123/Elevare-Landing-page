@@ -17,9 +17,9 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
   const android = productConfig.StageLab.storeLinks?.find((link) => link.store === "android");
   if (!ios || !android) throw new Error("StageLab store destinations are not configured");
 
-  const actions = () => (
+  const actions = (placement: "hero" | "footer") => (
     <StageLabStartActions
-      iosHref={ios.href} androidHref={android.href}
+      placement={placement} locale={locale} iosHref={ios.href} androidHref={android.href}
       download={copy.download} iosLabel={copy.ios} androidLabel={copy.android}
       groupLabel={copy.storeGroup}
     />
@@ -53,7 +53,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
               </div>
             </div>
             <p className="stagelab-start-separate">{copy.separateOffers}</p>
-            {actions()}
+            {actions("hero")}
             <p className="stagelab-start-next">{copy.nextStep}</p>
           </section>
 
@@ -64,7 +64,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
               <p className="stagelab-start-video-note">{copy.videoNote}</p>
               <a href="https://www.youtube.com/shorts/uSHrNGqia-M" target="_blank" rel="noopener noreferrer">{copy.watchOnYouTube}</a>
             </div>
-            <StageLabStartVideo playLabel={copy.playVideo} videoTitle={copy.videoTitle} />
+            <StageLabStartVideo locale={locale} playLabel={copy.playVideo} videoTitle={copy.videoTitle} />
           </section>
 
           <section className="stagelab-start-examples" aria-labelledby="stagelab-start-examples-title">
@@ -74,7 +74,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
                 <h3>{copy.physiqueTitle}</h3>
                 <p>{copy.physiqueCaption}</p>
                 <figure>
-                  <StageLabStartImage imageId="physique-feedback" src={physiqueImage} alt={copy.physiqueAlt} fallback={copy.imageUnavailable} />
+                  <StageLabStartImage imageId="physique-feedback" locale={locale} src={physiqueImage} alt={copy.physiqueAlt} fallback={copy.imageUnavailable} />
                   <figcaption>{copy.physiqueLabel}</figcaption>
                 </figure>
               </article>
@@ -82,7 +82,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
                 <h3>{copy.posingTitle}</h3>
                 <p>{copy.posingCaption}</p>
                 <figure>
-                  <StageLabStartImage imageId="posing-analysis" src={posingImage} alt={copy.posingAlt} fallback={copy.imageUnavailable} />
+                  <StageLabStartImage imageId="posing-analysis" locale={locale} src={posingImage} alt={copy.posingAlt} fallback={copy.imageUnavailable} />
                   <figcaption>{copy.posingLabel}</figcaption>
                 </figure>
                 <p className="stagelab-start-feature-note">{copy.posingAccess}</p>
@@ -91,7 +91,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
                 <h3>{copy.weeklyTitle}</h3>
                 <p>{copy.weeklyCaption}</p>
                 <figure>
-                  <StageLabStartImage imageId="weekly-review" src={weeklyImage} alt={copy.weeklyAlt} fallback={copy.imageUnavailable} />
+                  <StageLabStartImage imageId="weekly-review" locale={locale} src={weeklyImage} alt={copy.weeklyAlt} fallback={copy.imageUnavailable} />
                   <figcaption>{copy.weeklyLabel}</figcaption>
                 </figure>
               </article>
@@ -101,7 +101,7 @@ export function StageLabStartPage({ locale }: { locale: Locale }) {
 
           <section className="stagelab-start-closing" aria-labelledby="stagelab-start-closing-title">
             <h2 id="stagelab-start-closing-title">{copy.closingTitle}</h2>
-            {actions()}
+            {actions("footer")}
             <p className="stagelab-start-disclosure">{copy.closingTerms}</p>
             <p className="stagelab-start-disclosure">{copy.disclaimer}</p>
           </section>
