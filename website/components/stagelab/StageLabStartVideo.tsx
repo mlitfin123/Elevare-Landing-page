@@ -2,25 +2,16 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { trackEvent } from "@/lib/analytics";
-import type { Locale } from "@/lib/i18n/config";
-import { detectStageLabPlatform } from "@/lib/stagelab-start";
-import { eventContext } from "./StageLabStartActions";
 
 const videoId = "uSHrNGqia-M";
 
-export function StageLabStartVideo({ locale, playLabel, videoTitle }: {
-  locale: Locale;
+export function StageLabStartVideo({ playLabel, videoTitle }: {
   playLabel: string;
   videoTitle: string;
 }) {
   const [playing, setPlaying] = useState(false);
 
   function play() {
-    trackEvent("stagelab_start_video_play_clicked", {
-      ...eventContext(detectStageLabPlatform(navigator.userAgent), locale),
-      video_id: videoId,
-    });
     setPlaying(true);
   }
 

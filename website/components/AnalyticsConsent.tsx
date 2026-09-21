@@ -7,7 +7,7 @@ import {
   storeAnalyticsConsentChoice,
   type AnalyticsConsentChoice,
 } from "@/lib/analytics-consent";
-import { localeFromPathname, localizePathname } from "@/lib/i18n/config";
+import { localeFromPathname, localizePathname, stripLocalePrefix } from "@/lib/i18n/config";
 import { getShellMessages } from "@/lib/i18n/shell-messages";
 import { clearLegacyProfileViewStorage, hasBrowserPrivacySignal, readProfileViewChoice, storeProfileViewChoice, type ProfileViewChoice } from "@/lib/profile-view-privacy";
 
@@ -32,6 +32,7 @@ function updateGoogleConsent(choice: AnalyticsConsentChoice) {
 
 export function AnalyticsConsent() {
   const pathname = usePathname();
+  const isStageLabStart = stripLocalePrefix(pathname) === "/stagelab/start/";
   const locale = localeFromPathname(pathname);
   const messages = getShellMessages(locale);
   const consentMessages = messages.analyticsConsent;
@@ -58,6 +59,11 @@ export function AnalyticsConsent() {
 
     if (nextChoice === "declined") clearAnalyticsCookies();
   }
+
+  // This focused acquisition page uses Vercel's aggregate page-view
+  // measurement only, so it does not interrupt the visit with a Google
+  // Analytics choice.
+  if (isStageLabStart) return null;
 
   return (
     <>
