@@ -522,8 +522,7 @@ export function toStageAnalysisPublicState(row: QuickAnalysisRow): StageAnalysis
         includesPosingAnalysis(product) &&
         row.payment_status === "paid" &&
         !expired &&
-        ["paid", "failed_retryable"].includes(posingStatus) &&
-        (row.posing_retry_count ?? 0) < 4,
+        ["paid", "failed_retryable"].includes(posingStatus),
       canResume:
         includesPosingAnalysis(product) &&
         row.payment_status === "paid" &&

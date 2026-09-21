@@ -60,6 +60,13 @@ test("a gateway rate limit retains the uploaded session without consuming an att
   assert.equal(state.posing.status, "uploading");
   assert.equal(state.posing.canResume, true);
 });
+test("a stale website attempt count does not block authoritative retry recovery", async () => {
+  const h = harness();
+  h.row = { ...h.row, posing_status: "failed_retryable", posing_retry_count: 4, posing_analysis_id: null, posing_upload_session_id: null, posing_idempotency_key: null };
+  h.remote = { ...h.remote, analysis_id: null, status: "awaiting_start" };
+  await h.service.initialize("private-token", structuredClone(manifest), true);
+  assert.equal(h.counts.initialize, 1);
+});
 test("page refresh during analysis resumes status without starting AI", async () => {
   const h = harness(); h.row = { ...h.row, posing_status: "processing" };
   await h.service.synchronized("private-token"); assert.equal(h.row.posing_analysis_id, "saved-prompt-0.4"); assert.equal(h.counts.starts, 0); assert.equal(h.counts.ai, 0);

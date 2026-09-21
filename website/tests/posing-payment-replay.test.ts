@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { activatePaidQuickAnalysis, markPosingAnalysisStarted, markPosingUploadInitialized, markStageLabOrderAuthorized, type QuickAnalysisRow } from "../lib/quick-analysis-repository.ts";
+import { activatePaidQuickAnalysis, markPosingAnalysisStarted, markPosingUploadInitialized, markStageLabOrderAuthorized, toStageAnalysisPublicState, type QuickAnalysisRow } from "../lib/quick-analysis-repository.ts";
 function database(status: "paid" | "failed_retryable" | "uploading" | "processing" | "completed", product: "posing_analysis" | "complete_stage_analysis") {
   let row = { id: "purchase", analysis_product: product, payment_status: "paid", stripe_payment_intent_id: "pi_test", stripe_checkout_session_id: "cs_test", posing_status: status, posing_analysis_id: "saved-result", expires_at: "2099-01-01T00:00:00Z", posing_result_json: status === "completed" ? { analysis_id: "saved-result" } : null } as QuickAnalysisRow;
   const updates: object[] = [];
@@ -40,4 +40,10 @@ test("only a reserved posing analysis consumes a paid attempt", async () => {
   const reserved = await markPosingAnalysisStarted(h.db, uploaded, "reserved-analysis");
   assert.equal(reserved.posing_retry_count, 3);
   assert.equal(reserved.posing_analysis_id, "reserved-analysis");
+});
+
+test("a stale local posing count never hides a paid retry control", () => {
+  const h = database("failed_retryable", "posing_analysis");
+  h.row = { ...h.row, posing_retry_count: 4 };
+  assert.equal(toStageAnalysisPublicState(h.row).posing.canUpload, true);
 });

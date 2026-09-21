@@ -102,7 +102,9 @@ export function createPosingAnalysisService(overrides: Partial<typeof dependenci
     if (row.posing_status === "failed_retryable" || row.posing_analysis_id || row.posing_upload_session_id) row = (await synchronized(token)).row;
     if (retry && row.posing_status !== "failed_retryable") throw new QuickAnalysisServerError("RETRY_NOT_ALLOWED", "Retry is unavailable.", 409);
     if (!retry && row.posing_status !== "paid") throw new QuickAnalysisServerError("POSING_NOT_READY", "Upload is not ready.", 409);
-    if ((row.posing_retry_count ?? 0) >= 4) throw new QuickAnalysisServerError("RETRY_LIMIT_REACHED", "Contact support for this analysis.", 409);
+    // StageLab owns the durable per-order limit, including any support-issued
+    // recovery credit. A stale website counter must not lock a paid customer
+    // out before the authoritative reservation can make that decision.
     if (manifest.division !== POSING_DIVISION_TO_KEY[row.division as keyof typeof POSING_DIVISION_TO_KEY]) throw new QuickAnalysisServerError("DIVISION_MISMATCH", "Division does not match purchase.", 409);
     manifest = { ...manifest, locale: row.posing_generation_locale ?? row.generation_locale ?? "en" };
     const idempotencyKey = createHash("sha256")
