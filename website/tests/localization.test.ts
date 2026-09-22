@@ -131,6 +131,17 @@ test("localized route generation obeys the public route flag", () => {
   else process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES = previous;
 });
 
+test("query-dependent professional profile routes render inside Suspense", () => {
+  const routeSource = fs.readFileSync(path.join(projectRoot, "app/[locale]/[[...slug]]/page.tsx"), "utf8");
+  const professionalProfileSource = fs.readFileSync(path.join(projectRoot, "app/account/professional-profile/page.tsx"), "utf8");
+
+  assert.match(
+    routeSource,
+    /resolved\.page === "professional-account" \? \(\s*<Suspense fallback=\{null\}>\s*<ProfessionalProfileEditor \/>\s*<\/Suspense>/,
+  );
+  assert.match(professionalProfileSource, /<Suspense fallback=\{null\}>\s*<ProfessionalProfileEditor \/>\s*<\/Suspense>/);
+});
+
 test("Spanish and Portuguese dictionaries cover every English marketing leaf", () => {
   assert.deepEqual(leafPaths(spanish), leafPaths(english));
   assert.deepEqual(leafPaths(portuguese), leafPaths(english));

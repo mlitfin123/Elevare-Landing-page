@@ -510,7 +510,11 @@ export default async function LocalizedMarketingRoute({ params }: {
       <div className="container">
         <MarketplaceAccountShell>
           {resolved.page === "account" ? <Suspense fallback={null}><AccountDashboard /></Suspense> : null}
-          {resolved.page === "professional-account" ? <ProfessionalProfileEditor /> : null}
+          {resolved.page === "professional-account" ? (
+            <Suspense fallback={null}>
+              <ProfessionalProfileEditor />
+            </Suspense>
+          ) : null}
           {resolved.page === "account-inquiries" ? <ProfessionalInquiriesPanel /> : null}
           {resolved.page === "professional-inquiries" ? <ProfessionalInquiriesPanel mode="received" /> : null}
           {resolved.page === "concierge-matches" ? <ConciergeCasesPanel /> : null}

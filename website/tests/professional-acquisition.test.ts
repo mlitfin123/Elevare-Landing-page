@@ -94,6 +94,9 @@ test("landing CTAs use the shared signup or existing professional workspace and 
   assert.match(actions, /professional_landing_view/);
   assert.match(actions, /professional_landing_cta_click/);
   assert.match(actions, /useRef\(false\)/);
+  assert.match(landing, /<Suspense fallback=\{null\}><ProfessionalRecruitmentTracker \/><\/Suspense>/);
+  assert.match(landing, /function ProfessionalRecruitmentCtaBoundary/);
+  assert.match(landing, /getProfessionalSignupHref\(locale\)/);
   for (const placement of ["hero", "founding_section", "final_cta"]) {
     assert.match(landing, new RegExp(`placement="${placement}"`));
   }

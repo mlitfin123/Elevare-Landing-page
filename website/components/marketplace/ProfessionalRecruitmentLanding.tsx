@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Suspense, type ReactNode } from "react";
 import {
   ProfessionalRecruitmentActionsProvider,
   ProfessionalRecruitmentCta,
@@ -6,7 +8,7 @@ import {
 import { getMarketplaceCategoryCopy } from "@/lib/i18n/marketplace-content";
 import type { Locale } from "@/lib/i18n/config";
 import { MARKETPLACE_TAXONOMY_CATEGORIES } from "@/lib/marketplace-taxonomy";
-import { getProfessionalAcquisitionCopy } from "@/lib/professional-acquisition";
+import { getProfessionalAcquisitionCopy, getProfessionalSignupHref } from "@/lib/professional-acquisition";
 
 export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
   const copy = getProfessionalAcquisitionCopy(locale);
@@ -14,7 +16,7 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
   return (
     <div className="container professional-acquisition-page">
       <ProfessionalRecruitmentActionsProvider>
-        <ProfessionalRecruitmentTracker />
+        <Suspense fallback={null}><ProfessionalRecruitmentTracker /></Suspense>
 
       <section className="hero professional-acquisition-hero" aria-labelledby="professional-acquisition-title">
         <div className="professional-acquisition-hero-copy">
@@ -23,7 +25,7 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
           <p>{copy.hero.body}</p>
           <p className="professional-acquisition-detail">{copy.hero.detail}</p>
           <div className="hero-actions">
-            <ProfessionalRecruitmentCta locale={locale} placement="hero" className="button button-primary">{copy.hero.cta}</ProfessionalRecruitmentCta>
+            <ProfessionalRecruitmentCtaBoundary locale={locale} placement="hero" className="button button-primary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
           </div>
           <p className="professional-acquisition-trust">{copy.hero.trustLine}</p>
         </div>
@@ -59,7 +61,7 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
 
       <section className="section panel professional-acquisition-founding" aria-labelledby="professional-founding-title">
         <div><div className="eyebrow">{copy.founding.eyebrow}</div><h2 id="professional-founding-title">{copy.founding.title}</h2><p>{copy.founding.body}</p><p className="fine-print">{copy.founding.note}</p></div>
-        <ProfessionalRecruitmentCta locale={locale} placement="founding_section" className="button button-secondary">{copy.hero.cta}</ProfessionalRecruitmentCta>
+        <ProfessionalRecruitmentCtaBoundary locale={locale} placement="founding_section" className="button button-secondary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
       </section>
 
       <section className="section professional-acquisition-roadmap" aria-labelledby="professional-roadmap-title">
@@ -102,10 +104,28 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
 
         <section className="section professional-acquisition-closing" aria-labelledby="professional-closing-title">
         <div className="eyebrow">{copy.closing.eyebrow}</div><h2 id="professional-closing-title">{copy.closing.title}</h2><p>{copy.closing.body}</p>
-        <ProfessionalRecruitmentCta locale={locale} placement="final_cta" className="button button-primary">{copy.closing.cta}</ProfessionalRecruitmentCta>
+        <ProfessionalRecruitmentCtaBoundary locale={locale} placement="final_cta" className="button button-primary">{copy.closing.cta}</ProfessionalRecruitmentCtaBoundary>
         <p className="professional-acquisition-trust">{copy.closing.trustLine}</p>
         </section>
       </ProfessionalRecruitmentActionsProvider>
     </div>
+  );
+}
+
+function ProfessionalRecruitmentCtaBoundary({
+  locale,
+  placement,
+  className,
+  children,
+}: {
+  locale: Locale;
+  placement: "hero" | "founding_section" | "final_cta";
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Suspense fallback={<Link className={className} href={getProfessionalSignupHref(locale)}>{children}</Link>}>
+      <ProfessionalRecruitmentCta locale={locale} placement={placement} className={className}>{children}</ProfessionalRecruitmentCta>
+    </Suspense>
   );
 }
