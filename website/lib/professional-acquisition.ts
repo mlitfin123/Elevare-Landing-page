@@ -62,7 +62,7 @@ type VisionCard = { label: string; title: string; body: string };
 export type ProfessionalAcquisitionCopy = {
   seo: { title: string; description: string };
   hero: { eyebrow: string; title: string; body: string; qualification: string; cta: string; trustLine: string };
-  profile: { eyebrow: string; title: string; body: string; photo: string; titleField: string; specialties: string; credentials: string; services: string; pricing: string; location: string; availability: string };
+  profile: { eyebrow: string; title: string; body: string; liveNow: string; liveNowDetail: string; photo: string; titleField: string; specialties: string; credentials: string; services: string; pricing: string; location: string; availability: string };
   vision: { eyebrow: string; title: string; cards: readonly VisionCard[] };
   midCta: { eyebrow: string; title: string; body: string; trustLine: string };
   app: { eyebrow: string; title: string; body: string; points: readonly string[]; status: string };
@@ -81,7 +81,7 @@ export const professionalAcquisitionMessages = {
     hero: {
       eyebrow: "FITNESS & WELLNESS PROFESSIONALS",
       title: "Be one of Elevare's first 100 Founding Professionals",
-      body: "Build your professional presence now and establish your profile as Elevare expands across web and mobile.",
+      body: "Build your professional profile and get discovered by clients on Elevare today — then establish your presence early as Elevare expands to mobile.",
       qualification: "Founding Professional status is available to the first 100 approved professionals.",
       cta: "Become a Founding Professional",
       trustLine: "Free to join • No subscription • Set your own rates",
@@ -90,21 +90,21 @@ export const professionalAcquisitionMessages = {
       eyebrow: "YOUR PROFESSIONAL PRESENCE ON ELEVARE",
       title: "Your professional presence on Elevare.",
       body: "Show clients who you are, what you offer, and what your services cost.",
-      photo: "Your professional photo", titleField: "Your professional title", specialties: "Specialties", credentials: "Credentials", services: "Services", pricing: "Pricing", location: "Location or service area", availability: "Availability",
+      liveNow: "LIVE NOW", liveNowDetail: "Professional profiles & client discovery", photo: "Your professional photo", titleField: "Your professional title", specialties: "Specialties", credentials: "Credentials", services: "Services", pricing: "Pricing", location: "Location or service area", availability: "Availability",
     },
     vision: {
       eyebrow: "MORE THAN A DIRECTORY",
       title: "Built to help the right clients find the right professionals.",
       cards: [
         { label: "AVAILABLE NOW", title: "Decision-ready profiles", body: "Show specialties, credentials, services, pricing, availability, experience, and approach before clients reach out." },
-        { label: "AVAILABLE NOW", title: "Better professional discovery", body: "Clients can browse approved profiles, save favorites, request consultations, and use reviewed concierge requests." },
+        { label: "AVAILABLE NOW", title: "Better professional discovery", body: "Clients can already browse approved professional profiles on Elevare's live web marketplace, save professionals, request consultations, and use available discovery tools." },
         { label: "AVAILABLE NOW", title: "Built around professional fit", body: "Structured client and professional information takes discovery beyond a basic name list." },
         { label: "COMING TO ELEVARE", title: "Smarter automated matching", body: "In development: tools that use goals, preferences, specialties, services, location, and related fit criteria." },
       ],
     },
     midCta: { eyebrow: "FOUNDING PROFESSIONALS", title: "Establish your presence from the beginning.", body: "Create your profile now and be part of the network as Elevare grows.", trustLine: "Free to join • First 100 approved professionals receive Founding Professional status" },
     app: {
-      eyebrow: "BUILD YOUR PRESENCE EARLY", title: "Be ready as Elevare expands to mobile.", body: "Establish your profile now as the Elevare marketplace and professional experience expand.",
+      eyebrow: "BUILD YOUR PRESENCE EARLY", title: "Be ready as Elevare expands to mobile.", body: "Elevare's web marketplace is live today. Establish your profile now as the marketplace and professional experience expand to mobile.",
       points: ["Complete your profile early", "Establish your services and specialties", "Keep your professional information current", "Be part of the network as new tools are introduced"],
       status: "IN DEVELOPMENT — The Elevare marketplace mobile experience is not available yet.",
     },
@@ -136,16 +136,16 @@ export const professionalAcquisitionMessages = {
   },
   "es-419": {
     seo: { title: "Únete a Elevare como profesional de fitness y bienestar", description: "Crea tu perfil profesional de Elevare, muestra tus servicios y especialidades, define tus tarifas y establece tu presencia mientras Elevare crece." },
-    hero: { eyebrow: "PROFESIONALES DE FITNESS Y BIENESTAR", title: "Sé uno de los primeros 100 Profesionales Fundadores de Elevare", body: "Crea tu presencia profesional ahora y establece tu perfil mientras Elevare se expande en web y móvil.", qualification: "El estatus de Profesional Fundador está disponible para los primeros 100 profesionales aprobados.", cta: "Ser profesional fundador", trustLine: "Gratis para unirte • Sin suscripción • Define tus propias tarifas" },
-    profile: { eyebrow: "TU PRESENCIA PROFESIONAL EN ELEVARE", title: "Tu presencia profesional en Elevare.", body: "Muestra a clientes quién eres, qué ofreces y cuánto cuestan tus servicios.", photo: "Tu foto profesional", titleField: "Tu título profesional", specialties: "Especialidades", credentials: "Credenciales", services: "Servicios", pricing: "Precios", location: "Ubicación o zona de servicio", availability: "Disponibilidad" },
+    hero: { eyebrow: "PROFESIONALES DE FITNESS Y BIENESTAR", title: "Sé uno de los primeros 100 Profesionales Fundadores de Elevare", body: "Crea tu perfil profesional y haz que clientes te descubran en Elevare hoy; luego establece tu presencia temprano mientras Elevare se expande a móvil.", qualification: "El estatus de Profesional Fundador está disponible para los primeros 100 profesionales aprobados.", cta: "Ser profesional fundador", trustLine: "Gratis para unirte • Sin suscripción • Define tus propias tarifas" },
+    profile: { eyebrow: "TU PRESENCIA PROFESIONAL EN ELEVARE", title: "Tu presencia profesional en Elevare.", body: "Muestra a clientes quién eres, qué ofreces y cuánto cuestan tus servicios.", liveNow: "DISPONIBLE AHORA", liveNowDetail: "Perfiles profesionales y descubrimiento por clientes", photo: "Tu foto profesional", titleField: "Tu título profesional", specialties: "Especialidades", credentials: "Credenciales", services: "Servicios", pricing: "Precios", location: "Ubicación o zona de servicio", availability: "Disponibilidad" },
     vision: { eyebrow: "MÁS QUE UN DIRECTORIO", title: "Diseñado para ayudar a que los clientes adecuados encuentren a los profesionales adecuados.", cards: [
       { label: "DISPONIBLE AHORA", title: "Perfiles listos para decidir", body: "Muestra especialidades, credenciales, servicios, precios, disponibilidad, experiencia y enfoque antes de que te contacten." },
-      { label: "DISPONIBLE AHORA", title: "Mejor descubrimiento de profesionales", body: "Los clientes pueden explorar perfiles aprobados, guardar favoritos, solicitar consultas y usar solicitudes de concierge revisadas." },
+      { label: "DISPONIBLE AHORA", title: "Mejor descubrimiento de profesionales", body: "Los clientes ya pueden explorar perfiles profesionales aprobados en el marketplace web de Elevare, guardar profesionales, solicitar consultas y usar las herramientas de descubrimiento disponibles." },
       { label: "DISPONIBLE AHORA", title: "Diseñado alrededor de la compatibilidad", body: "La información estructurada de clientes y profesionales lleva el descubrimiento más allá de una lista básica de nombres." },
       { label: "PRÓXIMAMENTE EN ELEVARE", title: "Coincidencias automatizadas más inteligentes", body: "En desarrollo: herramientas que usan objetivos, preferencias, especialidades, servicios, ubicación y criterios de compatibilidad relacionados." },
     ] },
     midCta: { eyebrow: "PROFESIONALES FUNDADORES", title: "Establece tu presencia desde el principio.", body: "Crea tu perfil ahora y sé parte de la red mientras Elevare crece.", trustLine: "Gratis para unirte • Los primeros 100 profesionales aprobados reciben el estatus de Profesional Fundador" },
-    app: { eyebrow: "CREA TU PRESENCIA TEMPRANO", title: "Prepárate mientras Elevare se expande a móvil.", body: "Establece tu perfil ahora mientras se expanden el marketplace y la experiencia profesional de Elevare.", points: ["Completa tu perfil temprano", "Establece tus servicios y especialidades", "Mantén actualizada tu información profesional", "Sé parte de la red a medida que se introducen nuevas herramientas"], status: "EN DESARROLLO — La experiencia móvil del marketplace de Elevare aún no está disponible." },
+    app: { eyebrow: "CREA TU PRESENCIA TEMPRANO", title: "Prepárate mientras Elevare se expande a móvil.", body: "El marketplace web de Elevare ya está disponible. Establece tu perfil ahora mientras el marketplace y la experiencia profesional se expanden a móvil.", points: ["Completa tu perfil temprano", "Establece tus servicios y especialidades", "Mantén actualizada tu información profesional", "Sé parte de la red a medida que se introducen nuevas herramientas"], status: "EN DESARROLLO — La experiencia móvil del marketplace de Elevare aún no está disponible." },
     steps: { eyebrow: "CÓMO FUNCIONA", title: "Cómo funciona Elevare para profesionales", items: [
       { title: "Crea tu cuenta gratis", body: "Comienza con tu correo y contraseña." },
       { title: "Crea tu perfil profesional", body: "Agrega tus servicios, especialidades, credenciales, precios y otros datos profesionales." },
@@ -168,16 +168,16 @@ export const professionalAcquisitionMessages = {
   },
   "pt-BR": {
     seo: { title: "Junte-se à Elevare como profissional de fitness e bem-estar", description: "Crie seu perfil profissional na Elevare, apresente seus serviços e especialidades, defina seus preços e estabeleça sua presença enquanto a Elevare cresce." },
-    hero: { eyebrow: "PROFISSIONAIS DE FITNESS E BEM-ESTAR", title: "Seja um dos primeiros 100 Profissionais Fundadores da Elevare", body: "Crie sua presença profissional agora e estabeleça seu perfil enquanto a Elevare se expande na web e no mobile.", qualification: "O status de Profissional Fundador está disponível para os primeiros 100 profissionais aprovados.", cta: "Tornar-se profissional fundador", trustLine: "Grátis para entrar • Sem assinatura • Defina seus próprios preços" },
-    profile: { eyebrow: "SUA PRESENÇA PROFISSIONAL NA ELEVARE", title: "Sua presença profissional na Elevare.", body: "Mostre aos clientes quem você é, o que oferece e quanto custam seus serviços.", photo: "Sua foto profissional", titleField: "Seu título profissional", specialties: "Especialidades", credentials: "Credenciais", services: "Serviços", pricing: "Preços", location: "Localização ou área de atendimento", availability: "Disponibilidade" },
+    hero: { eyebrow: "PROFISSIONAIS DE FITNESS E BEM-ESTAR", title: "Seja um dos primeiros 100 Profissionais Fundadores da Elevare", body: "Crie seu perfil profissional e seja descoberto por clientes na Elevare hoje — depois, estabeleça sua presença cedo enquanto a Elevare se expande para o mobile.", qualification: "O status de Profissional Fundador está disponível para os primeiros 100 profissionais aprovados.", cta: "Tornar-se profissional fundador", trustLine: "Grátis para entrar • Sem assinatura • Defina seus próprios preços" },
+    profile: { eyebrow: "SUA PRESENÇA PROFISSIONAL NA ELEVARE", title: "Sua presença profissional na Elevare.", body: "Mostre aos clientes quem você é, o que oferece e quanto custam seus serviços.", liveNow: "DISPONÍVEL AGORA", liveNowDetail: "Perfis profissionais e descoberta por clientes", photo: "Sua foto profissional", titleField: "Seu título profissional", specialties: "Especialidades", credentials: "Credenciais", services: "Serviços", pricing: "Preços", location: "Localização ou área de atendimento", availability: "Disponibilidade" },
     vision: { eyebrow: "MAIS QUE UM DIRETÓRIO", title: "Criada para ajudar os clientes certos a encontrar os profissionais certos.", cards: [
       { label: "DISPONÍVEL AGORA", title: "Perfis prontos para a decisão", body: "Mostre especialidades, credenciais, serviços, preços, disponibilidade, experiência e abordagem antes de clientes entrarem em contato." },
-      { label: "DISPONÍVEL AGORA", title: "Melhor descoberta de profissionais", body: "Clientes podem explorar perfis aprovados, salvar favoritos, solicitar consultas e usar pedidos de concierge analisados." },
+      { label: "DISPONÍVEL AGORA", title: "Melhor descoberta de profissionais", body: "Os clientes já podem explorar perfis profissionais aprovados no marketplace web da Elevare, salvar profissionais, solicitar consultas e usar as ferramentas de descoberta disponíveis." },
       { label: "DISPONÍVEL AGORA", title: "Estruturada em torno da compatibilidade", body: "Informações estruturadas de clientes e profissionais levam a descoberta além de uma lista básica de nomes." },
       { label: "EM BREVE NA ELEVARE", title: "Correspondência automatizada mais inteligente", body: "Em desenvolvimento: ferramentas que usam objetivos, preferências, especialidades, serviços, localização e critérios de compatibilidade relacionados." },
     ] },
     midCta: { eyebrow: "PROFISSIONAIS FUNDADORES", title: "Estabeleça sua presença desde o começo.", body: "Crie seu perfil agora e faça parte da rede enquanto a Elevare cresce.", trustLine: "Grátis para entrar • Os primeiros 100 profissionais aprovados recebem o status de Profissional Fundador" },
-    app: { eyebrow: "CRIE SUA PRESENÇA CEDO", title: "Esteja pronto enquanto a Elevare expande para mobile.", body: "Estabeleça seu perfil agora enquanto o marketplace e a experiência profissional da Elevare se expandem.", points: ["Conclua seu perfil cedo", "Estabeleça seus serviços e especialidades", "Mantenha suas informações profissionais atualizadas", "Faça parte da rede conforme novas ferramentas são introduzidas"], status: "EM DESENVOLVIMENTO — A experiência mobile do marketplace da Elevare ainda não está disponível." },
+    app: { eyebrow: "CRIE SUA PRESENÇA CEDO", title: "Esteja pronto enquanto a Elevare expande para mobile.", body: "O marketplace web da Elevare já está ativo. Estabeleça seu perfil agora enquanto o marketplace e a experiência profissional se expandem para o mobile.", points: ["Conclua seu perfil cedo", "Estabeleça seus serviços e especialidades", "Mantenha suas informações profissionais atualizadas", "Faça parte da rede conforme novas ferramentas são introduzidas"], status: "EM DESENVOLVIMENTO — A experiência mobile do marketplace da Elevare ainda não está disponível." },
     steps: { eyebrow: "COMO FUNCIONA", title: "Como a Elevare funciona para profissionais", items: [
       { title: "Crie sua conta grátis", body: "Comece com seu e-mail e senha." },
       { title: "Monte seu perfil profissional", body: "Adicione seus serviços, especialidades, credenciais, preços e outros dados profissionais." },

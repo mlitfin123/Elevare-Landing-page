@@ -50,11 +50,20 @@ test("recruitment copy is complete for every public locale and distinguishes cur
 
   assert.equal(english.hero.eyebrow, "FITNESS & WELLNESS PROFESSIONALS");
   assert.equal(english.hero.title, "Be one of Elevare's first 100 Founding Professionals");
+  assert.equal(english.hero.body, "Build your professional profile and get discovered by clients on Elevare today — then establish your presence early as Elevare expands to mobile.");
+  assert.equal(english.profile.liveNow, "LIVE NOW");
+  assert.equal(english.profile.liveNowDetail, "Professional profiles & client discovery");
+  assert.match(english.vision.cards[1]?.body ?? "", /live web marketplace/);
+  assert.match(english.app.body, /web marketplace is live today/);
   assert.equal(english.transparency.title, "Professional profiles are reviewed before they go live.");
   assert.match(english.transparency.body, /should not be interpreted as universal verification/i);
   assert.equal(english.signup.note, "Creating your account is free. Build your profile at your own pace and submit it for review when you’re ready.");
   assert.notEqual(spanish.hero.title, english.hero.title);
   assert.notEqual(portuguese.hero.title, english.hero.title);
+  assert.match(spanish.profile.liveNow, /DISPONIBLE AHORA/);
+  assert.match(portuguese.profile.liveNow, /DISPONÍVEL AGORA/);
+  assert.match(spanish.app.body, /marketplace web.*disponible/i);
+  assert.match(portuguese.app.body, /marketplace web.*ativo/i);
   for (const copy of [english, spanish, portuguese]) {
     assert.equal(copy.vision.cards.length, 4);
     assert.equal(copy.steps.items.length, 4);
@@ -76,6 +85,8 @@ test("the landing route, localized route, navigation, and sitemap preserve the m
   const header = readProjectFile("components/Header.tsx");
   const sitemap = readProjectFile("scripts/generate-sitemaps.ts");
   const directory = readProjectFile("app/professionals/page.tsx");
+  const directoryClient = readProjectFile("components/marketplace/MarketplaceDirectory.tsx");
+  const marketplaceHelpers = readProjectFile("lib/marketplace-helpers.ts");
 
   assert.match(landingPage, /<ProfessionalRecruitmentLanding locale="en"/);
   assert.match(localizedRoute, /slug\[0\] === "professionals" && slug\[1\] === "join"/);
@@ -84,6 +95,8 @@ test("the landing route, localized route, navigation, and sitemap preserve the m
   assert.match(header, /href\("\/professionals\/join\/"\)/);
   assert.match(sitemap, /"\/professionals\/join\/"/);
   assert.match(directory, /MarketplaceDirectory/);
+  assert.match(directoryClient, /Only marketplace-eligible, active, public profiles appear in marketplace search\./);
+  assert.match(marketplaceHelpers, /Your profile is live on Elevare\./);
 });
 
 test("landing CTAs use the shared signup or existing professional workspace and track safe conversion events", () => {
@@ -106,6 +119,7 @@ test("landing CTAs use the shared signup or existing professional workspace and 
   assert.match(landing, /placement="mid_page" className="button button-primary"/);
   assert.match(actions, /cta_location: placement/);
   assert.match(landing, /copy\.vision\.cards/);
+  assert.match(landing, /professional-acquisition-live-status/);
   assert.match(landing, /professional-acquisition-category-disclosure/);
   assert.match(landing, /FEATURED_CATEGORY_IDS/);
   assert.doesNotMatch(landing, /copy\.roadmap|copy\.founding/);

@@ -46,7 +46,10 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
         <aside className="panel professional-acquisition-profile-preview" aria-labelledby="professional-profile-preview-title">
           <div className="professional-acquisition-preview-head">
             <span className="professional-acquisition-avatar" aria-hidden="true">E</span>
-            <div><span className="stat-label">{copy.profile.photo}</span><h2 id="professional-profile-preview-title">{copy.profile.titleField}</h2></div>
+            <div>
+              <div className="professional-acquisition-live-status"><span className="professional-acquisition-status">{copy.profile.liveNow}</span><span className="professional-acquisition-live-detail">{copy.profile.liveNowDetail}</span></div>
+              <span className="stat-label">{copy.profile.photo}</span><h2 id="professional-profile-preview-title">{copy.profile.titleField}</h2>
+            </div>
           </div>
           <dl>
             <div><dt>{copy.profile.specialties}</dt><dd><span /><span /><span /></dd></div>

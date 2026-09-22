@@ -6141,6 +6141,9 @@ select {
 .professional-acquisition-profile-preview { display: grid; gap: 22px; min-width: 0; padding: clamp(20px, 3vw, 30px); border-color: var(--brand-line); background: rgba(9, 13, 23, .72); }
 .professional-acquisition-preview-head { display: flex; align-items: center; gap: 14px; }
 .professional-acquisition-preview-head h2 { margin-top: 2px; font-size: 1.15rem; letter-spacing: -.02em; }
+.professional-acquisition-live-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 5px; }
+.professional-acquisition-live-status .professional-acquisition-status { margin: 0; padding: 4px 7px; font-size: .61rem; }
+.professional-acquisition-live-detail { color: var(--muted); font-family: var(--font-mono), monospace; font-size: .66rem; font-weight: 700; letter-spacing: .06em; line-height: 1.25; }
 .professional-acquisition-avatar { display: grid; width: 58px; height: 58px; flex: 0 0 58px; place-items: center; border: 1px solid var(--brand-line); border-radius: 50%; background: linear-gradient(135deg, var(--brand), #283c61); color: white; font-weight: 750; font-size: 1.5rem; }
 .professional-acquisition-profile-preview dl { display: grid; gap: 12px; margin: 0; }
 .professional-acquisition-profile-preview dl > div { display: grid; grid-template-columns: minmax(108px, .85fr) minmax(0, 1.15fr); gap: 12px; align-items: center; min-width: 0; }
