@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import { getAuthConfirmationPath, getAuthIntent, getAuthReturnPath, getSafeAuthRedirect, getSignupIntro } from "@/lib/auth-redirect";
@@ -17,18 +17,29 @@ import {
 import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
+import { trackEvent } from "@/lib/analytics";
+import {
+  appendProfessionalAcquisitionParams,
+  getProfessionalAcquisitionCopy,
+  professionalAcquisitionAnalytics,
+  readProfessionalAcquisitionAttribution,
+} from "@/lib/professional-acquisition";
 
 export function AuthPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
   const intent = getAuthIntent(searchParams.get("intent"));
-  const signupIntro = getSignupIntro(intent);
   const redirectPath = useMemo(() => getSafeAuthRedirect(redirect), [redirect]);
   const requestedLocale = searchParams.get("locale");
   const redirectLocale = localeFromPathname(redirectPath);
   const urlLocale = isLocale(requestedLocale) ? requestedLocale : redirectLocale !== "en" ? redirectLocale : null;
   const locale: Locale = urlLocale ?? "en";
+  const professionalCopy = getProfessionalAcquisitionCopy(locale);
+  const signupIntro = intent === "professional" ? professionalCopy.signup : getSignupIntro(intent);
+  const acquisitionAttribution = readProfessionalAcquisitionAttribution(searchParams);
+  const professionalAnalytics = professionalAcquisitionAnalytics(acquisitionAttribution);
+  const isProfessionalSignup = intent === "professional";
   const legalLocale = areLocalizedRoutesEnabled() ? locale : "en";
   const t = (value: string) => marketplaceText(locale, value);
   const [mode, setMode] = useState<"sign-in" | "sign-up">(intent === "professional" ? "sign-up" : "sign-in");
@@ -40,8 +51,18 @@ export function AuthPanel() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const signupViewTracked = useRef(false);
+  const signupStartedTracked = useRef(false);
+  const signupCompletedTracked = useRef(false);
 
   const isConfigured = isMarketplaceAuthConfigured();
+
+  useEffect(() => {
+    if (!isProfessionalSignup || mode !== "sign-up" || signupViewTracked.current) return;
+    signupViewTracked.current = true;
+    trackEvent("professional_signup_view", professionalAnalytics);
+  }, [isProfessionalSignup, mode, professionalAnalytics]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,14 +126,22 @@ export function AuthPanel() {
         return;
       }
 
+      if (isProfessionalSignup && !signupStartedTracked.current) {
+        signupStartedTracked.current = true;
+        trackEvent("professional_signup_started", professionalAnalytics);
+      }
+
       const signupLocale = flowLocale;
       const signupBrowserLocale = resolvePreferredLocale({ browserLocales });
+      const confirmationPath = getAuthConfirmationPath(redirect, intent, signupLocale);
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: absoluteUrl(getAuthConfirmationPath(redirect, intent, signupLocale)),
+          emailRedirectTo: absoluteUrl(isProfessionalSignup
+            ? appendProfessionalAcquisitionParams(confirmationPath, acquisitionAttribution)
+            : confirmationPath),
           data: {
             legal_acceptance: true,
             legal_acceptance_source: "website_signup",
@@ -123,12 +152,20 @@ export function AuthPanel() {
             age_attestation_source: "website_signup",
             signup_locale: signupLocale,
             browser_locale_at_signup: signupBrowserLocale,
+            professional_acquisition: isProfessionalSignup ? acquisitionAttribution : undefined,
           },
         },
       });
 
       if (error) {
         throw error;
+      }
+
+      if (isProfessionalSignup && !signupCompletedTracked.current) {
+        signupCompletedTracked.current = true;
+        const accountCreatedAnalytics = { ...professionalAnalytics, account_type: "new_account" };
+        trackEvent("professional_signup_completed", accountCreatedAnalytics);
+        trackEvent("professional_account_created", accountCreatedAnalytics);
       }
 
       if (data.session) {
@@ -157,6 +194,7 @@ export function AuthPanel() {
           ? "Browsing profiles stays public. Sign in when you want to save profiles, send a consultation request, or build your own listing."
           : signupIntro.description)}
       </p>
+      {mode === "sign-up" && isProfessionalSignup ? <p className="auth-professional-benefit">{professionalCopy.signup.benefit}</p> : null}
 
       <div className="audience-switcher" role="tablist" aria-label={t("Authentication mode")}>
         <button
@@ -194,26 +232,38 @@ export function AuthPanel() {
 
           <label className="field field-full">
             <span className="field-label">{t("Password")}</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder={t("Password")}
-              required
-            />
+            <div className="password-input">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={t("Password")}
+                autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
+                required
+              />
+              <button type="button" className="password-toggle" onClick={() => setShowPassword((value) => !value)} aria-pressed={showPassword}>
+                {showPassword ? professionalCopy.signup.hidePassword : professionalCopy.signup.showPassword}
+              </button>
+            </div>
           </label>
 
           {mode === "sign-up" ? (
             <>
               <label className="field field-full">
                 <span className="field-label">{t("Confirm password")}</span>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder={t("Confirm password")}
-                  required
-                />
+                <div className="password-input">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder={t("Confirm password")}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button type="button" className="password-toggle" onClick={() => setShowPassword((value) => !value)} aria-pressed={showPassword}>
+                    {showPassword ? professionalCopy.signup.hidePassword : professionalCopy.signup.showPassword}
+                  </button>
+                </div>
               </label>
               <label className="checkbox-row professional-attestation field-full">
                 <input
@@ -239,11 +289,11 @@ export function AuthPanel() {
         </div>
 
         <div className="form-note">
-          {t(mode === "sign-up" && intent === "professional"
-            ? "After creating your account, you can add your professional details and save your listing as a draft before submitting it for review."
+          {mode === "sign-up" && isProfessionalSignup
+            ? professionalCopy.signup.note
             : mode === "sign-up"
-              ? "After creating your account, you can find professionals or start your own professional listing."
-              : "After you sign in, you can save profiles, request consultations, manage your private client profile, or build your public profile.")}
+              ? t("After creating your account, you can find professionals or start your own professional listing.")
+              : t("After you sign in, you can save profiles, request consultations, manage your private client profile, or build your public profile.")}
         </div>
 
         <div className="form-actions">

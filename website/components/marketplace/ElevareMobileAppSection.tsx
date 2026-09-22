@@ -56,22 +56,22 @@ export function ElevareMobileAppSection({ sourcePage }: ElevareMobileAppSectionP
         </article>
 
         <article className="panel">
-          <span className="stat-label">For pros</span>
+          <span className="stat-label">For professionals</span>
           <h3>{elevareMobileAppConfig.proTitle}</h3>
           <p>{elevareMobileAppConfig.proDescription}</p>
           <p>{elevareMobileAppConfig.proCarryOverDescription}</p>
           <div className="button-row">
             <TrackedLink
               className="button button-secondary"
-              href="/account/professional-profile/"
+              href="/professionals/join/"
               eventName="cta_click"
               eventParams={{
-                cta_name: "Join as a Pro",
+                cta_name: "Become a Founding Professional",
                 cta_context: `${sourcePage}_mobile_apps`,
                 product: "Elevare",
               }}
             >
-              Join as a Pro
+              Become a Founding Professional
             </TrackedLink>
           </div>
         </article>

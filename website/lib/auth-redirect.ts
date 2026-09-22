@@ -32,28 +32,37 @@ function accountPath(locale: Locale) {
   return areLocalizedRoutesEnabled() ? localizePathname("/account/", locale) : "/account/";
 }
 
+export function getProfessionalProfilePath(locale: Locale) {
+  const path = areLocalizedRoutesEnabled()
+    ? localizePathname("/account/professional-profile/", locale)
+    : "/account/professional-profile/";
+  return `${path}?intent=professional`;
+}
+
 export function getAuthReturnPath(redirect: string | null, intent: string | null, locale: Locale) {
   const explicitRedirect = getSafeAuthRedirect(redirect, "");
   if (explicitRedirect) return explicitRedirect;
 
-  const path = accountPath(locale);
-  return getAuthIntent(intent) === "professional" ? `${path}?intent=professional` : path;
+  return getAuthIntent(intent) === "professional" ? getProfessionalProfilePath(locale) : accountPath(locale);
 }
 
 export function getAuthConfirmationPath(redirect: string | null, intent: string | null, locale: Locale) {
-  const path = accountPath(locale);
-  const params = new URLSearchParams();
   const explicitRedirect = getSafeAuthRedirect(redirect, "");
-  if (explicitRedirect) params.set("redirect", explicitRedirect);
-  if (getAuthIntent(intent) === "professional") params.set("intent", "professional");
-  return params.size ? `${path}?${params}` : path;
+  const professionalIntent = getAuthIntent(intent) === "professional";
+
+  if (!explicitRedirect) {
+    return professionalIntent ? getProfessionalProfilePath(locale) : accountPath(locale);
+  }
+
+  const params = new URLSearchParams({ redirect: explicitRedirect });
+  if (professionalIntent) params.set("intent", "professional");
+  return `${accountPath(locale)}?${params}`;
 }
 
 export function getPostAuthDestination({
   redirect,
   intent,
   locale,
-  professionalStatus,
   professionalStateLoaded,
 }: {
   redirect: string | null;
@@ -65,11 +74,11 @@ export function getPostAuthDestination({
   const explicitRedirect = getSafeAuthRedirect(redirect, "");
   if (explicitRedirect) return explicitRedirect;
 
-  if (getAuthIntent(intent) === "professional" && professionalStateLoaded
-    && (professionalStatus === null || professionalStatus === "draft")) {
-    return areLocalizedRoutesEnabled()
-      ? localizePathname("/account/professional-profile/", locale)
-      : "/account/professional-profile/";
+  if (getAuthIntent(intent) === "professional" && professionalStateLoaded) {
+    // The editor is also the status and management screen for submitted and
+    // approved profiles, so this resumes the existing profile instead of
+    // dropping professional-acquisition traffic into the client dashboard.
+    return getProfessionalProfilePath(locale);
   }
 
   return accountPath(locale);

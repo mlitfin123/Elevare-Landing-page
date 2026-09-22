@@ -68,6 +68,7 @@ const staticSiteRoutes = [
   "/elevare",
   ...LOCALIZED_LEGAL_PATHS,
   "/trust-safety/",
+  "/professionals/join/",
 ] as const;
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
@@ -189,6 +190,7 @@ function buildSiteEntries() {
       "/stagelab/posing-analysis/",
       "/stagelab/complete-stage-analysis/",
       "/trust-safety/",
+      "/professionals/join/",
       ...LOCALIZED_LEGAL_PATHS,
     ].map((route) =>
       toSitemapEntry(localizePathname(route, locale), undefined, "priority_index"),

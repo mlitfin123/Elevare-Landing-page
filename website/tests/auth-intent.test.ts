@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getAuthConfirmationPath,
   getAuthIntent,
+  getProfessionalProfilePath,
   getAuthReturnPath,
   getPostAuthDestination,
   getSignupIntro,
@@ -24,9 +25,10 @@ test("professional intent is exact and unknown values use the general signup cop
   });
 });
 
-test("sign-in and email confirmation carry only safe intent and return destinations", () => {
-  assert.equal(getAuthReturnPath(null, "professional", "en"), "/account/?intent=professional");
-  assert.equal(getAuthConfirmationPath(null, "professional", "en"), "/account/?intent=professional");
+test("sign-in and email confirmation carry only safe intent and continue to the professional workspace", () => {
+  assert.equal(getProfessionalProfilePath("en"), "/account/professional-profile/?intent=professional");
+  assert.equal(getAuthReturnPath(null, "professional", "en"), "/account/professional-profile/?intent=professional");
+  assert.equal(getAuthConfirmationPath(null, "professional", "en"), "/account/professional-profile/?intent=professional");
   assert.equal(getAuthReturnPath(null, "other", "en"), "/account/");
   assert.equal(getAuthConfirmationPath(null, "other", "en"), "/account/");
   assert.equal(getAuthReturnPath("/account/saved/?tab=recent", "professional", "en"), "/account/saved/?tab=recent");
@@ -34,11 +36,11 @@ test("sign-in and email confirmation carry only safe intent and return destinati
     getAuthConfirmationPath("/account/saved/?tab=recent", "professional", "en"),
     "/account/?redirect=%2Faccount%2Fsaved%2F%3Ftab%3Drecent&intent=professional",
   );
-  assert.equal(getAuthReturnPath("//evil.example/path", "professional", "en"), "/account/?intent=professional");
+  assert.equal(getAuthReturnPath("//evil.example/path", "professional", "en"), "/account/professional-profile/?intent=professional");
   assert.equal(getAuthConfirmationPath("https://evil.example/path", null, "en"), "/account/");
 });
 
-test("professional routing resumes new or draft setup without restarting submitted profiles", () => {
+test("professional routing continues each profile state in the existing professional workspace", () => {
   const route = (status: string | null, loaded = true) => getPostAuthDestination({
     redirect: null,
     intent: "professional",
@@ -46,10 +48,8 @@ test("professional routing resumes new or draft setup without restarting submitt
     professionalStatus: status,
     professionalStateLoaded: loaded,
   });
-  assert.equal(route(null), "/account/professional-profile/");
-  assert.equal(route("draft"), "/account/professional-profile/");
-  for (const status of ["pending_review", "approved", "verified", "rejected", "suspended"]) {
-    assert.equal(route(status), "/account/");
+  for (const status of [null, "draft", "pending_review", "approved", "verified", "rejected", "suspended"]) {
+    assert.equal(route(status), "/account/professional-profile/?intent=professional");
   }
   assert.equal(route(null, false), "/account/");
   assert.equal(getPostAuthDestination({ redirect: "/account/matches/", intent: "professional", locale: "en", professionalStatus: null, professionalStateLoaded: true }), "/account/matches/");
@@ -66,9 +66,9 @@ test("supported locale copy and professional destinations stay aligned", () => {
       assert.notEqual(marketplaceText(locale, intro.description), intro.description);
       assert.notEqual(marketplaceText(locale, "Create account"), "Create account");
       assert.notEqual(marketplaceText(locale, getSignupIntro(null).description), getSignupIntro(null).description);
-      assert.equal(getAuthReturnPath(null, "professional", locale), `${prefix}/account/?intent=professional`);
-      assert.equal(getAuthConfirmationPath(null, "professional", locale), `${prefix}/account/?intent=professional`);
-      assert.equal(getPostAuthDestination({ redirect: null, intent: "professional", locale, professionalStatus: null, professionalStateLoaded: true }), `${prefix}/account/professional-profile/`);
+      assert.equal(getAuthReturnPath(null, "professional", locale), `${prefix}/account/professional-profile/?intent=professional`);
+      assert.equal(getAuthConfirmationPath(null, "professional", locale), `${prefix}/account/professional-profile/?intent=professional`);
+      assert.equal(getPostAuthDestination({ redirect: null, intent: "professional", locale, professionalStatus: null, professionalStateLoaded: true }), `${prefix}/account/professional-profile/?intent=professional`);
     }
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES;

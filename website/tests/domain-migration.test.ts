@@ -109,8 +109,9 @@ test("new signup confirmations and waitlist CORS are ready for the .com origin",
     "utf8",
   );
 
-  assert.match(authPanel, /emailRedirectTo: absoluteUrl\(getAuthConfirmationPath\(redirect, intent, signupLocale\)\)/);
-  assert.equal(absoluteUrl(getAuthConfirmationPath(null, "professional", "en")), "https://www.elevarefit.com/account/?intent=professional");
+  assert.match(authPanel, /const confirmationPath = getAuthConfirmationPath\(redirect, intent, signupLocale\)/);
+  assert.match(authPanel, /appendProfessionalAcquisitionParams\(confirmationPath, acquisitionAttribution\)/);
+  assert.equal(absoluteUrl(getAuthConfirmationPath(null, "professional", "en")), "https://www.elevarefit.com/account/professional-profile/?intent=professional");
   assert.match(waitlistFunction, /"https:\/\/www\.elevarefit\.com"/);
   assert.match(waitlistFunction, /"https:\/\/www\.elevarefit\.org"/);
 });

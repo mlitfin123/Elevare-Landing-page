@@ -21,6 +21,7 @@ export const LOCALIZED_MARKETING_PATHS = [
   "/stagelab/complete-stage-analysis/result/",
   "/tools/workout-generator/",
   "/trust-safety/",
+  "/professionals/join/",
   "/account/",
   "/account/professional-profile/",
   "/account/inquiries/",
@@ -73,21 +74,31 @@ function enabled(value: string | undefined) {
   return value?.trim().toLowerCase() === "true";
 }
 
+type LocalizedRoutesEnvironment = { NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES?: string };
+type LocalizedIndexingEnvironment = LocalizedRoutesEnvironment & { ENABLE_LOCALIZED_INDEXING?: string };
+
+// Next exposes public environment variables to browser bundles only when they
+// are read directly. Keep the server path dynamic for scripts and tests while
+// giving client-side auth redirects the same locale feature flag.
+const publicLocalizedRoutesEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES;
+
+function localizedRoutesEnvironment(env?: LocalizedRoutesEnvironment): LocalizedRoutesEnvironment {
+  if (env) return env;
+  if (typeof window === "undefined") return process.env as LocalizedRoutesEnvironment;
+  return { NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES: publicLocalizedRoutesEnabled };
+}
+
 export function areLocalizedRoutesEnabled(
-  env: { NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES?: string } = process.env as {
-    NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES?: string;
-  },
+  env?: LocalizedRoutesEnvironment,
 ) {
-  return enabled(env.NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES);
+  return enabled(localizedRoutesEnvironment(env).NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES);
 }
 
 export function isLocalizedIndexingEnabled(
-  env: { ENABLE_LOCALIZED_INDEXING?: string; NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES?: string } = process.env as {
-    ENABLE_LOCALIZED_INDEXING?: string;
-    NEXT_PUBLIC_ENABLE_LOCALIZED_ROUTES?: string;
-  },
+  env?: LocalizedIndexingEnvironment,
 ) {
-  return areLocalizedRoutesEnabled(env) && enabled(env.ENABLE_LOCALIZED_INDEXING);
+  const runtimeEnv = env ?? (process.env as LocalizedIndexingEnvironment);
+  return areLocalizedRoutesEnabled(runtimeEnv) && enabled(runtimeEnv.ENABLE_LOCALIZED_INDEXING);
 }
 
 export function isLocale(value: unknown): value is Locale {
@@ -214,6 +225,7 @@ export function getLocalizedRouteParams() {
       { locale: localeSegment, slug: ["stagelab", "complete-stage-analysis", "result"] },
       { locale: localeSegment, slug: ["tools", "workout-generator"] },
       { locale: localeSegment, slug: ["trust-safety"] },
+      { locale: localeSegment, slug: ["professionals", "join"] },
       { locale: localeSegment, slug: ["account"] },
       { locale: localeSegment, slug: ["account", "professional-profile"] },
       { locale: localeSegment, slug: ["account", "inquiries"] },

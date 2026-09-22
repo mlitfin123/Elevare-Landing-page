@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { saveProfessionalSection } from "@/lib/professional-publication-client";
 import { getProfessionalPublicationMessages } from "@/lib/i18n/professional-publication-messages";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import { trackEvent } from "@/lib/analytics";
@@ -67,6 +67,11 @@ import {
 } from "@/lib/regulated-professional-titles";
 import { TRUST_EVIDENCE_EXTENSIONS, validateTrustEvidenceFile } from "@/lib/trust-evidence";
 import { ProfessionalTrustStatus } from "@/components/marketplace/ProfessionalTrustStatus";
+import {
+  professionalAcquisitionAnalytics,
+  readProfessionalAcquisitionAttribution,
+  readProfessionalAcquisitionMetadata,
+} from "@/lib/professional-acquisition";
 
 type CredentialDraft = {
   id: string;
@@ -449,6 +454,7 @@ function ProfessionalSectionHeader({
 export function ProfessionalProfileEditor() {
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = localeFromPathname(pathname);
   const publicationCopy = getProfessionalPublicationMessages(locale);
   const t = (value: string) => marketplaceText(locale, value);
@@ -489,6 +495,15 @@ export function ProfessionalProfileEditor() {
   const [credentialUploadFeedback, setCredentialUploadFeedback] = useState<Record<string, CredentialUploadFeedback>>({});
   const savedFormSnapshot = useRef("");
   const resetSavedFormSnapshot = useRef(true);
+  const onboardingTracked = useRef(false);
+  const approvalTracked = useRef(false);
+  const professionalAnalytics = useMemo(() => {
+    const queryAttribution = readProfessionalAcquisitionAttribution(searchParams);
+    const metadataAttribution = readProfessionalAcquisitionMetadata(user?.user_metadata?.professional_acquisition);
+    return professionalAcquisitionAnalytics(
+      Object.keys(queryAttribution).length > 0 ? queryAttribution : metadataAttribution,
+    );
+  }, [searchParams, user?.user_metadata?.professional_acquisition]);
 
   useEffect(() => {
     const snapshot = JSON.stringify({ form, credentials, services, removeCurrentPhoto,
@@ -586,6 +601,13 @@ export function ProfessionalProfileEditor() {
       setIsPubliclyListed(Boolean(statusData?.is_publicly_listed));
 
       if (!profile) {
+        if (!onboardingTracked.current) {
+          onboardingTracked.current = true;
+          trackEvent("professional_onboarding_started", {
+            ...professionalAnalytics,
+            source_page: "professional_profile_editor",
+          });
+        }
         setProfileViewCount(0);
         setForm((current) => ({
           ...current,
@@ -797,7 +819,21 @@ export function ProfessionalProfileEditor() {
       }
     });
     return () => { isMounted = false; };
-  }, [user, reloadVersion]);
+  }, [professionalAnalytics, reloadVersion, user]);
+
+  useEffect(() => {
+    if (!user || approvalStatus !== "approved" || approvalTracked.current) return;
+    const marker = `elevare.professional-profile-approved:${publicProfileId ?? "pending"}`;
+    try {
+      if (window.sessionStorage.getItem(marker)) return;
+      window.sessionStorage.setItem(marker, "1");
+    } catch { /* The approval event remains optional if browser storage is unavailable. */ }
+    approvalTracked.current = true;
+    trackEvent("professional_profile_approved", {
+      ...professionalAnalytics,
+      source_page: "professional_profile_editor",
+    });
+  }, [approvalStatus, professionalAnalytics, publicProfileId, user]);
 
   function toggleArrayField(
     field: "serviceModes" | "availabilityWindows" | "goalTags" | "experienceLevelsServed",
@@ -1450,8 +1486,9 @@ export function ProfessionalProfileEditor() {
       trackEvent(nextStatus === "pending_review" ? "professional_profile_submitted" : "professional_profile_draft_saved", {
         has_services: activeServices.length > 0,
         accepting_status: form.acceptanceStatus,
+        ...professionalAnalytics,
       });
-      if (!publicProfileId) trackEvent("professional_profile_created", { source_page: "professional_profile_editor" });
+      if (!publicProfileId) trackEvent("professional_profile_created", { source_page: "professional_profile_editor", ...professionalAnalytics });
 
       if (
         previousPhotoStoragePath
@@ -1483,7 +1520,7 @@ export function ProfessionalProfileEditor() {
 
   if (!isConfigured) return <article className="callout"><span className="meta-pill">{t("Configuration needed")}</span><h2>{t("Marketplace access is not configured yet.")}</h2><p>{t("Profile access is temporarily unavailable. Please try again later.")}</p></article>;
   if (isLoading) return <article className="callout"><span className="meta-pill">{t("Loading")}</span><h2>{t("Loading your profile.")}</h2><p>{t("One moment while we check your marketplace account.")}</p></article>;
-  if (!user) return <article className="callout"><span className="meta-pill">{t("Pro Profile")}</span><h2>{t("Sign in to create your Pro Profile.")}</h2><div className="button-row"><Link className="button button-primary" href={`/sign-in/?redirect=${encodeURIComponent(localizePathname("/account/professional-profile/", locale))}`}>{t("Sign in")}</Link></div></article>;
+  if (!user) return <article className="callout"><span className="meta-pill">{t("Professional profile")}</span><h2>{t("Sign in to create your professional profile.")}</h2><div className="button-row"><Link className="button button-primary" href={`/sign-in/?intent=professional&redirect=${encodeURIComponent(localizePathname("/account/professional-profile/", locale))}`}>{t("Sign in")}</Link></div></article>;
 
   const approvalLabel = localizeApprovalStatus(approvalStatus, locale);
   const statusMessage = statusMessageOverride ?? getProfessionalStatusMessage(approvalStatus, reviewFeedbackPublic);
@@ -1514,9 +1551,9 @@ export function ProfessionalProfileEditor() {
       <fieldset disabled={isSaving} style={{ display: "contents" }} aria-label={t("Professional profile")}>
       <article className="panel professional-builder-intro">
         <div className="section-head tool-form-head">
-          <div className="eyebrow">{t("Pro Profile")}</div>
-          <h2 className="section-title">{t("Build a profile clients can trust and understand.")}</h2>
-          <p className="section-copy">{t("Show clients what you offer, how you work, and why you're a good fit.")}</p>
+          <div className="eyebrow">{t("Professional profile")}</div>
+          <h2 className="section-title">{t("Let's build your professional profile.")}</h2>
+          <p className="section-copy">{t("Tell potential clients about your services, specialties, experience, and what makes your approach different.")}</p>
         </div>
         <div className="marketplace-status-row">
           <span className="status-chip">{t("Status")}: {approvalLabel}</span>

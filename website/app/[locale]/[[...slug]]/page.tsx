@@ -22,6 +22,7 @@ import { ProfessionalInquiriesPanel } from "@/components/marketplace/Professiona
 import { ConciergeCasesPanel } from "@/components/marketplace/ConciergeCasesPanel";
 import { ProfessionalOpportunitiesPanel } from "@/components/marketplace/ProfessionalOpportunitiesPanel";
 import { TrustSafetyPageContent } from "@/components/marketplace/TrustSafetyPageContent";
+import { ProfessionalRecruitmentLanding } from "@/components/marketplace/ProfessionalRecruitmentLanding";
 import { StructuredData } from "@/components/StructuredData";
 import {
   LocalizedProfessionalRoutePage,
@@ -55,6 +56,7 @@ import { findTopCategories, getMarketplaceRotationSeed, toProfessionalDirectoryR
 import { hasMarketplaceFilterSearchParams } from "@/lib/marketplace-seo";
 import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
 import { stageLabStartMessages } from "@/lib/stagelab-start";
+import { getProfessionalAcquisitionCopy } from "@/lib/professional-acquisition";
 
 type LocalizedPageParams = {
   locale: string;
@@ -140,6 +142,9 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 1 && slug[0] === "trust-safety") {
     return { locale, page: "trust-safety" as const, pathname: "/trust-safety/" };
   }
+  if (slug.length === 2 && slug[0] === "professionals" && slug[1] === "join") {
+    return { locale, page: "professionals-join" as const, pathname: "/professionals/join/" };
+  }
   if (slug[0] === "nutrition" && slug.length <= 3) {
     return { locale, page: "nutrition" as const, pathname: `/${slug.join("/")}/`, catalogSegments: slug.slice(1) };
   }
@@ -189,6 +194,17 @@ export async function generateMetadata({
       robots: indexingEnabled
         ? { index: true, follow: true }
         : { index: false, follow: true },
+    });
+  }
+  if (resolved.page === "professionals-join") {
+    const copy = getProfessionalAcquisitionCopy(resolved.locale);
+    return buildMetadata({
+      title: copy.seo.title,
+      description: copy.seo.description,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: indexingEnabled ? { index: true, follow: true } : { index: false, follow: true },
     });
   }
   if (resolved.page === "professionals") {
@@ -416,6 +432,10 @@ export default async function LocalizedMarketingRoute({ params }: {
 
   if (resolved.page === "stagelab-start") {
     return <StageLabStartPage locale={resolved.locale} />;
+  }
+
+  if (resolved.page === "professionals-join") {
+    return <ProfessionalRecruitmentLanding locale={resolved.locale} />;
   }
 
   if (resolved.page === "exercises") {

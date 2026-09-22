@@ -43,7 +43,7 @@ const clientLinks = [
 ];
 
 const professionalLinks = [
-  { href: "/account/professional-profile/", label: "Pro Profile" },
+  { href: "/account/professional-profile/", label: "Professional Profile" },
   { href: "/account/client-requests/", label: "Client Requests" },
   { href: "/account/opportunities/", label: "Match Opportunities" },
 ];
@@ -200,7 +200,7 @@ export function MarketplaceAccountShell({ children }: Readonly<{ children: React
           <h1 id="account-heading">{t("Your Elevare account")}</h1>
           <p>
             {t(visibleProfessionalProfile
-              ? "Manage your marketplace activity, Pro profile, and client requests."
+              ? "Manage your marketplace activity, professional profile, and client requests."
               : "Manage your preferences, saved profiles, and consultation requests.")}
           </p>
         </div>

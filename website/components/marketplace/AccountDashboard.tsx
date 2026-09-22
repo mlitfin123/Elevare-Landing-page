@@ -520,7 +520,7 @@ export function AccountDashboard() {
             <div className="button-row">
               {professionalProfile.publicSlug ? (
                 <Link className="button button-secondary" href={localizePathname(buildProfessionalPath(professionalProfile.publicSlug), locale)}>
-                  {t("View Pro Profile")}
+                  {t("View Professional Profile")}
                 </Link>
               ) : null}
             </div>
@@ -535,12 +535,12 @@ export function AccountDashboard() {
       <article className="callout account-pro-cta">
         <div>
           <span className="meta-pill">{t("For professionals")}</span>
-          <h2>{t("Offer services on Elevare?")}</h2>
-          <p>{t("Create a public Elevare profile, list your services, and connect with potential clients.")}</p>
+          <h2>{t("Offer your services on Elevare")}</h2>
+          <p>{t("Create your professional profile, showcase your services, and get discovered by potential clients.")}</p>
         </div>
         <div className="button-row">
           <Link className="button button-secondary" href={localizePathname("/account/professional-profile/", locale)}>
-            {t("Join as a Pro")}
+            {t("Become a Founding Professional")}
           </Link>
         </div>
       </article>

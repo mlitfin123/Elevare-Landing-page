@@ -637,14 +637,14 @@ function MarketplaceDirectoryState({
                 <div className="hero-actions marketplace-hero-actions">
                   <TrackedLink
                     className="button button-secondary"
-                    href={localizeProfessionalPath("/account/professional-profile/", locale)}
+                    href={localizePathname("/professionals/join/", locale)}
                     eventName="cta_click"
                     eventParams={{
-                      cta_name: "Join as a Pro",
+                      cta_name: "Become a Founding Professional",
                       cta_context: sourcePage,
                     }}
                   >
-                    {t("Join as a Pro")}
+                    {t("Become a Founding Professional")}
                   </TrackedLink>
                   <TrackedLink
                     className="hero-text-link"
@@ -885,8 +885,8 @@ function MarketplaceDirectoryState({
                   <TrackedLink className="button button-secondary" href={localizePathname("/calculators/", locale)} eventName="cta_click" eventParams={{ cta_name: "Browse calculators", cta_context: `${sourcePage}_empty` }}>
                     {t("Browse free tools")}
                   </TrackedLink>
-                  <TrackedLink className="button button-secondary" href={localizeProfessionalPath("/account/professional-profile/", locale)} eventName="cta_click" eventParams={{ cta_name: "Join as a Pro", cta_context: `${sourcePage}_empty` }}>
-                    {t("Join as a Pro")}
+                  <TrackedLink className="button button-secondary" href={localizePathname("/professionals/join/", locale)} eventName="cta_click" eventParams={{ cta_name: "Become a Founding Professional", cta_context: `${sourcePage}_empty` }}>
+                    {t("Become a Founding Professional")}
                   </TrackedLink>
                 </div>
               ) : null}
@@ -931,7 +931,7 @@ function MarketplaceDirectoryState({
               </div>
             </article>
             <article className="panel">
-              <span className="stat-label">{t("For pros")}</span>
+              <span className="stat-label">{t("For professionals")}</span>
               <h3>{t("Join when you want to be discoverable.")}</h3>
               <p>
                 {t("Build your profile, add public-safe credential details, and submit it for review before it appears in the marketplace.")}
@@ -939,11 +939,11 @@ function MarketplaceDirectoryState({
               <div className="button-row">
                 <TrackedLink
                   className="button button-secondary"
-                  href={localizeProfessionalPath("/account/professional-profile/", locale)}
+                  href={localizePathname("/professionals/join/", locale)}
                   eventName="cta_click"
-                  eventParams={{ cta_name: "Join as a Pro", cta_context: `${sourcePage}_secondary` }}
+                  eventParams={{ cta_name: "Become a Founding Professional", cta_context: `${sourcePage}_secondary` }}
                 >
-                  {t("Join as a Pro")}
+                  {t("Become a Founding Professional")}
                 </TrackedLink>
               </div>
             </article>

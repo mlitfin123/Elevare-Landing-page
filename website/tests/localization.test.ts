@@ -92,6 +92,7 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/stagelab/complete-stage-analysis/result/",
     "/tools/workout-generator/",
     "/trust-safety/",
+    "/professionals/join/",
     "/account/",
     "/account/professional-profile/",
     "/account/inquiries/",
@@ -105,6 +106,8 @@ test("localized marketing routes preserve English URLs and equivalent product pa
   assert.equal(getLocaleSwitchHref("/es/logbook/", "pt-BR"), "/pt-br/logbook/");
   assert.equal(getLocaleSwitchHref("/es/stagelab/quick-analysis/", "pt-BR"), "/pt-br/stagelab/quick-analysis/");
   assert.equal(getLocaleSwitchHref("/es/stagelab/start/?utm_source=instagram", "pt-BR"), "/pt-br/stagelab/start/?utm_source=instagram");
+  assert.equal(getLocaleSwitchHref("/es/professionals/join/?utm_source=instagram", "pt-BR"), "/pt-br/professionals/join/?utm_source=instagram");
+  assert.equal(localizePathname("/professionals/join/", "es-419"), "/es/professionals/join/");
   assert.equal(getLocaleSwitchHref("/account/?intent=professional#access_token=sample", "es-419"), "/es/account/?intent=professional#access_token=sample");
   assert.equal(localizePathname("/account/", "es-419"), "/es/account/");
   assert.equal(localizePathname("/account/professional-profile/", "pt-BR"), "/pt-br/account/professional-profile/");
