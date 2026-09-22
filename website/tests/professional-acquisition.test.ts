@@ -49,7 +49,9 @@ test("recruitment copy is complete for every public locale and distinguishes cur
   const portuguese = getProfessionalAcquisitionCopy("pt-BR");
 
   assert.equal(english.hero.eyebrow, "FITNESS & WELLNESS PROFESSIONALS");
-  assert.equal(english.hero.title, "Be one of the first 100 Elevare Founding Professionals");
+  assert.equal(english.hero.title, "Be one of Elevare's first 100 Founding Professionals");
+  assert.equal(english.transparency.title, "Professional profiles are reviewed before they go live.");
+  assert.match(english.transparency.body, /should not be interpreted as universal verification/i);
   assert.equal(english.signup.note, "Creating your account is free. Build your profile at your own pace and submit it for review when you’re ready.");
   assert.notEqual(spanish.hero.title, english.hero.title);
   assert.notEqual(portuguese.hero.title, english.hero.title);
@@ -101,6 +103,8 @@ test("landing CTAs use the shared signup or existing professional workspace and 
   for (const placement of ["hero", "mid_page", "final_cta"]) {
     assert.match(landing, new RegExp(`placement="${placement}"`));
   }
+  assert.match(landing, /placement="mid_page" className="button button-primary"/);
+  assert.match(actions, /cta_location: placement/);
   assert.match(landing, /copy\.vision\.cards/);
   assert.match(landing, /professional-acquisition-category-disclosure/);
   assert.match(landing, /FEATURED_CATEGORY_IDS/);

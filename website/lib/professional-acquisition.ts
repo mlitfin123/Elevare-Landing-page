@@ -80,7 +80,7 @@ export const professionalAcquisitionMessages = {
     seo: { title: "Join Elevare as a Fitness & Wellness Professional", description: "Create your Elevare professional profile, showcase your services and specialties, set your rates, and establish your presence as Elevare grows." },
     hero: {
       eyebrow: "FITNESS & WELLNESS PROFESSIONALS",
-      title: "Be one of the first 100 Elevare Founding Professionals",
+      title: "Be one of Elevare's first 100 Founding Professionals",
       body: "Build your professional presence now and establish your profile as Elevare expands across web and mobile.",
       qualification: "Founding Professional status is available to the first 100 approved professionals.",
       cta: "Become a Founding Professional",
@@ -118,7 +118,7 @@ export const professionalAcquisitionMessages = {
       ],
     },
     categories: { eyebrow: "WHO CAN JOIN?", title: "Built for fitness and wellness professionals.", body: "Choose the category that accurately describes your work.", allLabel: "View all supported categories" },
-    transparency: { eyebrow: "TRUST STARTS WITH CLEAR SIGNALS", title: "Profile review is live. Every trust signal is specific.", body: "Profiles are reviewed before marketplace publication. Public information, availability, credentials, and trust states are individual signals; they do not mean every professional is verified." },
+    transparency: { eyebrow: "TRUST STARTS WITH CLEAR SIGNALS", title: "Professional profiles are reviewed before they go live.", body: "Profiles are reviewed before marketplace publication. Credentials, availability, and other trust information are displayed as specific signals and should not be interpreted as universal verification." },
     faq: {
       eyebrow: "FAQ", title: "Questions before you join?",
       items: [
@@ -136,7 +136,7 @@ export const professionalAcquisitionMessages = {
   },
   "es-419": {
     seo: { title: "Únete a Elevare como profesional de fitness y bienestar", description: "Crea tu perfil profesional de Elevare, muestra tus servicios y especialidades, define tus tarifas y establece tu presencia mientras Elevare crece." },
-    hero: { eyebrow: "PROFESIONALES DE FITNESS Y BIENESTAR", title: "Sé uno de los primeros 100 profesionales fundadores de Elevare", body: "Crea tu presencia profesional ahora y establece tu perfil mientras Elevare se expande en web y móvil.", qualification: "El estatus de Profesional Fundador está disponible para los primeros 100 profesionales aprobados.", cta: "Ser profesional fundador", trustLine: "Gratis para unirte • Sin suscripción • Define tus propias tarifas" },
+    hero: { eyebrow: "PROFESIONALES DE FITNESS Y BIENESTAR", title: "Sé uno de los primeros 100 Profesionales Fundadores de Elevare", body: "Crea tu presencia profesional ahora y establece tu perfil mientras Elevare se expande en web y móvil.", qualification: "El estatus de Profesional Fundador está disponible para los primeros 100 profesionales aprobados.", cta: "Ser profesional fundador", trustLine: "Gratis para unirte • Sin suscripción • Define tus propias tarifas" },
     profile: { eyebrow: "TU PRESENCIA PROFESIONAL EN ELEVARE", title: "Tu presencia profesional en Elevare.", body: "Muestra a clientes quién eres, qué ofreces y cuánto cuestan tus servicios.", photo: "Tu foto profesional", titleField: "Tu título profesional", specialties: "Especialidades", credentials: "Credenciales", services: "Servicios", pricing: "Precios", location: "Ubicación o zona de servicio", availability: "Disponibilidad" },
     vision: { eyebrow: "MÁS QUE UN DIRECTORIO", title: "Diseñado para ayudar a que los clientes adecuados encuentren a los profesionales adecuados.", cards: [
       { label: "DISPONIBLE AHORA", title: "Perfiles listos para decidir", body: "Muestra especialidades, credenciales, servicios, precios, disponibilidad, experiencia y enfoque antes de que te contacten." },
@@ -153,7 +153,7 @@ export const professionalAcquisitionMessages = {
       { title: "Hazte visible", body: "Los perfiles aprobados pueden aparecer para clientes potenciales que buscan en Elevare." },
     ] },
     categories: { eyebrow: "¿QUIÉN PUEDE UNIRSE?", title: "Creado para profesionales de fitness y bienestar.", body: "Elige la categoría que describe con precisión tu trabajo.", allLabel: "Ver todas las categorías admitidas" },
-    transparency: { eyebrow: "LA CONFIANZA COMIENZA CON SEÑALES CLARAS", title: "La revisión de perfiles está disponible. Cada señal de confianza es específica.", body: "Los perfiles se revisan antes de publicarse. La información, disponibilidad, credenciales y estados de confianza son señales individuales; no significan que todos los profesionales estén verificados." },
+    transparency: { eyebrow: "LA CONFIANZA COMIENZA CON SEÑALES CLARAS", title: "Los perfiles profesionales se revisan antes de publicarse.", body: "Los perfiles se revisan antes de publicarse en el marketplace. Las credenciales, la disponibilidad y otra información de confianza se muestran como señales específicas y no deben interpretarse como verificación universal." },
     faq: { eyebrow: "PREGUNTAS FRECUENTES", title: "¿Preguntas antes de unirte?", items: [
       { question: "¿Es gratis unirse a Elevare?", answer: "Sí. Crear y mantener un perfil profesional es gratis actualmente y no requiere suscripción." },
       { question: "¿Yo defino mis tarifas?", answer: "Sí. Agrega precios a tus servicios y perfil." },
@@ -168,7 +168,7 @@ export const professionalAcquisitionMessages = {
   },
   "pt-BR": {
     seo: { title: "Junte-se à Elevare como profissional de fitness e bem-estar", description: "Crie seu perfil profissional na Elevare, apresente seus serviços e especialidades, defina seus preços e estabeleça sua presença enquanto a Elevare cresce." },
-    hero: { eyebrow: "PROFISSIONAIS DE FITNESS E BEM-ESTAR", title: "Seja um dos primeiros 100 profissionais fundadores da Elevare", body: "Crie sua presença profissional agora e estabeleça seu perfil enquanto a Elevare se expande na web e no mobile.", qualification: "O status de Profissional Fundador está disponível para os primeiros 100 profissionais aprovados.", cta: "Tornar-se profissional fundador", trustLine: "Grátis para entrar • Sem assinatura • Defina seus próprios preços" },
+    hero: { eyebrow: "PROFISSIONAIS DE FITNESS E BEM-ESTAR", title: "Seja um dos primeiros 100 Profissionais Fundadores da Elevare", body: "Crie sua presença profissional agora e estabeleça seu perfil enquanto a Elevare se expande na web e no mobile.", qualification: "O status de Profissional Fundador está disponível para os primeiros 100 profissionais aprovados.", cta: "Tornar-se profissional fundador", trustLine: "Grátis para entrar • Sem assinatura • Defina seus próprios preços" },
     profile: { eyebrow: "SUA PRESENÇA PROFISSIONAL NA ELEVARE", title: "Sua presença profissional na Elevare.", body: "Mostre aos clientes quem você é, o que oferece e quanto custam seus serviços.", photo: "Sua foto profissional", titleField: "Seu título profissional", specialties: "Especialidades", credentials: "Credenciais", services: "Serviços", pricing: "Preços", location: "Localização ou área de atendimento", availability: "Disponibilidade" },
     vision: { eyebrow: "MAIS QUE UM DIRETÓRIO", title: "Criada para ajudar os clientes certos a encontrar os profissionais certos.", cards: [
       { label: "DISPONÍVEL AGORA", title: "Perfis prontos para a decisão", body: "Mostre especialidades, credenciais, serviços, preços, disponibilidade, experiência e abordagem antes de clientes entrarem em contato." },
@@ -185,7 +185,7 @@ export const professionalAcquisitionMessages = {
       { title: "Seja encontrado", body: "Perfis aprovados podem aparecer para possíveis clientes que pesquisam na Elevare." },
     ] },
     categories: { eyebrow: "QUEM PODE ENTRAR?", title: "Feito para profissionais de fitness e bem-estar.", body: "Escolha a categoria que descreve seu trabalho com precisão.", allLabel: "Ver todas as categorias oferecidas" },
-    transparency: { eyebrow: "A CONFIANÇA COMEÇA COM SINAIS CLAROS", title: "A análise de perfis está disponível. Cada sinal de confiança é específico.", body: "Perfis são analisados antes da publicação. Informações, disponibilidade, credenciais e estados de confiança são sinais individuais; eles não significam que todos os profissionais sejam verificados." },
+    transparency: { eyebrow: "A CONFIANÇA COMEÇA COM SINAIS CLAROS", title: "Perfis profissionais são analisados antes de serem publicados.", body: "Os perfis são analisados antes da publicação no marketplace. Credenciais, disponibilidade e outras informações de confiança são exibidas como sinais específicos e não devem ser interpretadas como verificação universal." },
     faq: { eyebrow: "PERGUNTAS FREQUENTES", title: "Perguntas antes de entrar?", items: [
       { question: "É grátis entrar na Elevare?", answer: "Sim. Criar e manter um perfil profissional é grátis hoje e não exige assinatura." },
       { question: "Eu defino meus próprios preços?", answer: "Sim. Adicione preços aos seus serviços e perfil." },

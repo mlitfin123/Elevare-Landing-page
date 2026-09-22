@@ -78,7 +78,7 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
           <p>{copy.midCta.body}</p>
         </div>
         <div className="professional-acquisition-mid-cta-action">
-          <ProfessionalRecruitmentCtaBoundary locale={locale} placement="mid_page" className="button button-secondary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
+          <ProfessionalRecruitmentCtaBoundary locale={locale} placement="mid_page" className="button button-primary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
           <p className="professional-acquisition-trust">{copy.midCta.trustLine}</p>
         </div>
       </section>
