@@ -6129,15 +6129,15 @@ select {
 
 /* Professional recruitment keeps the marketplace directory and profile editor intact. */
 .professional-acquisition-page { padding: clamp(28px, 5vw, 72px) 0 clamp(54px, 8vw, 104px); }
-.professional-acquisition-page .section { margin-top: clamp(48px, 8vw, 96px); }
+.professional-acquisition-page .section { margin-top: clamp(40px, 6vw, 72px); }
 .professional-acquisition-page h2 { margin: 0; font-size: clamp(1.75rem, 4vw, 2.7rem); line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
 .professional-acquisition-page h3 { margin: 0 0 8px; font-size: 1.08rem; line-height: 1.3; }
 .professional-acquisition-page p { max-width: 70ch; color: var(--muted); }
-.professional-acquisition-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr); align-items: center; gap: clamp(28px, 6vw, 76px); min-height: 520px; padding: clamp(28px, 5vw, 68px); border: 1px solid var(--brand-line); border-radius: var(--radius-lg); background: radial-gradient(circle at 88% 12%, rgba(116, 200, 214, .18), transparent 33%), linear-gradient(140deg, rgba(79, 153, 168, .14), transparent 53%), var(--surface); box-shadow: var(--shadow); }
-.professional-acquisition-hero h1 { max-width: 12ch; margin: 12px 0 18px; font-size: clamp(2.35rem, 6vw, 4.6rem); line-height: 1; letter-spacing: -.058em; text-wrap: balance; }
+.professional-acquisition-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr); align-items: center; gap: clamp(28px, 6vw, 76px); padding: clamp(28px, 5vw, 56px); border: 1px solid var(--brand-line); border-radius: var(--radius-lg); background: radial-gradient(circle at 88% 12%, rgba(116, 200, 214, .18), transparent 33%), linear-gradient(140deg, rgba(79, 153, 168, .14), transparent 53%), var(--surface); box-shadow: var(--shadow); }
+.professional-acquisition-hero h1 { max-width: 15ch; margin: 12px 0 16px; font-size: clamp(2.35rem, 6vw, 4.35rem); line-height: 1; letter-spacing: -.058em; text-wrap: balance; }
 .professional-acquisition-hero-copy > p { margin: 0; font-size: clamp(1rem, 1.8vw, 1.15rem); }
-.professional-acquisition-detail { margin-top: 12px !important; }
 .professional-acquisition-trust { margin: 13px 0 0 !important; color: var(--brand-bright) !important; font-size: .86rem !important; font-weight: 650; }
+.professional-acquisition-qualification { margin-top: 8px !important; color: var(--muted-strong) !important; font-size: .82rem !important; line-height: 1.45; }
 .professional-acquisition-profile-preview { display: grid; gap: 22px; min-width: 0; padding: clamp(20px, 3vw, 30px); border-color: var(--brand-line); background: rgba(9, 13, 23, .72); }
 .professional-acquisition-preview-head { display: flex; align-items: center; gap: 14px; }
 .professional-acquisition-preview-head h2 { margin-top: 2px; font-size: 1.15rem; letter-spacing: -.02em; }
@@ -6151,30 +6151,31 @@ select {
 .professional-acquisition-profile-preview .button { width: 100%; }
 .professional-acquisition-proof { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 40px; align-items: end; padding: 0 clamp(4px, 3vw, 46px); }
 .professional-acquisition-proof p { margin: 0; font-size: clamp(1.08rem, 2.4vw, 1.35rem); line-height: 1.5; }
-.professional-acquisition-vision-intro { margin: 18px 0 0; font-size: clamp(1.02rem, 2vw, 1.18rem); line-height: 1.55; }
 .professional-acquisition-vision-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
-.professional-acquisition-vision-grid .panel, .professional-acquisition-roadmap-grid .panel { display: grid; align-content: start; min-width: 0; padding: 22px; }
-.professional-acquisition-vision-grid p, .professional-acquisition-roadmap-grid p { margin: 0; font-size: .94rem; line-height: 1.55; }
+.professional-acquisition-vision-grid .panel { display: grid; align-content: start; min-width: 0; padding: 22px; }
+.professional-acquisition-vision-grid p { margin: 0; font-size: .94rem; line-height: 1.55; }
 .professional-acquisition-status { display: inline-flex; width: fit-content; margin: 0 0 14px; padding: 5px 8px; border: 1px solid var(--brand-line); border-radius: 999px; color: var(--brand-bright); font-family: var(--font-mono), monospace; font-size: .68rem; font-weight: 700; letter-spacing: .08em; line-height: 1.2; }
-.professional-acquisition-founding { display: flex; align-items: end; justify-content: space-between; gap: 26px; padding: clamp(24px, 4vw, 42px); border-color: var(--brand-line); background: linear-gradient(120deg, var(--brand-wash), transparent 70%), var(--surface); }
-.professional-acquisition-founding .button { flex: 0 0 auto; }
-.professional-acquisition-founding p { margin: 14px 0 0; }
+.professional-acquisition-mid-cta { display: flex; align-items: end; justify-content: space-between; gap: 26px; padding: clamp(24px, 4vw, 38px); border-color: var(--brand-line); background: linear-gradient(120deg, var(--brand-wash), transparent 70%), var(--surface); }
+.professional-acquisition-mid-cta p { margin: 14px 0 0; }
+.professional-acquisition-mid-cta-action { display: grid; justify-items: start; flex: 0 0 min(100%, 360px); }
+.professional-acquisition-mid-cta-action .professional-acquisition-trust { line-height: 1.4; }
 .professional-acquisition-page .fine-print { max-width: 76ch; color: var(--muted-strong); font-size: .88rem; line-height: 1.55; }
-.professional-acquisition-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); gap: clamp(22px, 5vw, 62px); align-items: center; padding: clamp(28px, 5vw, 64px); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: radial-gradient(circle at 9% 12%, rgba(116, 200, 214, .12), transparent 33%), var(--surface); }
+.professional-acquisition-app { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr); gap: clamp(22px, 5vw, 52px); align-items: center; padding: clamp(24px, 4vw, 46px); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: radial-gradient(circle at 9% 12%, rgba(116, 200, 214, .12), transparent 33%), var(--surface); }
 .professional-acquisition-app-copy p { margin: 14px 0 0; }
 .professional-acquisition-app .panel { padding: 24px; }
-.professional-acquisition-app ul { display: grid; gap: 13px; padding: 0; margin: 0 0 22px; list-style: none; }
+.professional-acquisition-app ul { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
 .professional-acquisition-app li { position: relative; padding-left: 22px; color: var(--text); font-size: .94rem; }
 .professional-acquisition-app li::before { position: absolute; left: 0; color: var(--brand-bright); content: "•"; }
 .professional-acquisition-app .button { width: 100%; }
-.professional-acquisition-roadmap-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
-.professional-acquisition-roadmap-grid .panel:nth-child(2) { border-color: var(--brand-line); background: linear-gradient(145deg, var(--brand-wash), transparent 72%), var(--surface); }
 .professional-acquisition-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; padding: 0; margin: 24px 0 0; list-style: none; counter-reset: steps; }
 .professional-acquisition-steps li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; min-width: 0; }
 .professional-acquisition-steps li > span { color: var(--brand-bright); font-family: var(--font-mono), monospace; font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
 .professional-acquisition-steps p { margin: 0; font-size: .9rem; }
 .professional-acquisition-category-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0; margin: 22px 0 0; list-style: none; }
 .professional-acquisition-category-list li { min-width: 0; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 10px; background: rgba(22, 22, 36, .62); color: var(--text); font-size: .92rem; overflow-wrap: anywhere; }
+.professional-acquisition-category-disclosure { margin-top: 14px; }
+.professional-acquisition-category-disclosure summary { width: fit-content; cursor: pointer; color: var(--brand-bright); font-weight: 650; }
+.professional-acquisition-category-disclosure summary:focus-visible { outline: 2px solid var(--brand-bright); outline-offset: 4px; }
 .professional-acquisition-transparency { padding: clamp(24px, 4vw, 42px); }
 .professional-acquisition-transparency p { margin: 14px 0 0; font-size: 1.03rem; }
 .professional-acquisition-faqs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
@@ -6202,20 +6203,21 @@ select {
   .professional-acquisition-hero h1 { max-width: 14ch; }
   .professional-acquisition-profile-preview { padding: 20px; }
   .professional-acquisition-proof { gap: 16px; padding: 0 4px; }
-  .professional-acquisition-founding { align-items: stretch; flex-direction: column; padding: 24px 20px; }
-  .professional-acquisition-founding .button { width: 100%; }
+  .professional-acquisition-mid-cta { align-items: stretch; flex-direction: column; padding: 24px 20px; }
+  .professional-acquisition-mid-cta-action { width: 100%; }
+  .professional-acquisition-mid-cta .button { width: 100%; }
   .professional-acquisition-app { padding: 25px 20px; }
-  .professional-acquisition-vision-grid, .professional-acquisition-roadmap-grid { grid-template-columns: 1fr; }
+  .professional-acquisition-vision-grid { grid-template-columns: 1fr; }
   .professional-acquisition-category-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .professional-acquisition-faqs { grid-template-columns: 1fr; }
   .professional-acquisition-closing { padding: 30px 20px; }
 }
 @media (max-width: 420px) {
   .professional-acquisition-page { width: min(var(--max-width), calc(100vw - 24px)); }
-  .professional-acquisition-page .section { margin-top: 44px; }
+  .professional-acquisition-page .section { margin-top: 36px; }
   .professional-acquisition-hero { padding: 22px 16px; }
-  .professional-acquisition-hero h1 { font-size: clamp(2.05rem, 12vw, 2.65rem); }
-  .professional-acquisition-vision-grid, .professional-acquisition-steps, .professional-acquisition-category-list { grid-template-columns: 1fr; }
+  .professional-acquisition-hero h1 { font-size: clamp(1.95rem, 9.5vw, 2.4rem); }
+  .professional-acquisition-vision-grid, .professional-acquisition-steps { grid-template-columns: 1fr; }
   .professional-acquisition-profile-preview dl > div { grid-template-columns: 1fr; gap: 5px; }
   .professional-acquisition-profile-preview dd { justify-content: flex-start; }
   .professional-acquisition-profile-preview dd span { width: 74px; }

@@ -43,27 +43,28 @@ test("professional recruitment attribution is allowlisted, bounded, and safe to 
   });
 });
 
-test("recruitment copy is complete for every public locale and distinguishes current features from the roadmap", () => {
+test("recruitment copy is complete for every public locale and distinguishes current features from future matching", () => {
   const english = getProfessionalAcquisitionCopy("en");
   const spanish = getProfessionalAcquisitionCopy("es-419");
   const portuguese = getProfessionalAcquisitionCopy("pt-BR");
 
-  assert.equal(english.hero.title, "Join Elevare as a Founding Professional");
+  assert.equal(english.hero.eyebrow, "FITNESS & WELLNESS PROFESSIONALS");
+  assert.equal(english.hero.title, "Be one of the first 100 Elevare Founding Professionals");
   assert.equal(english.signup.note, "Creating your account is free. Build your profile at your own pace and submit it for review when you’re ready.");
   assert.notEqual(spanish.hero.title, english.hero.title);
   assert.notEqual(portuguese.hero.title, english.hero.title);
   for (const copy of [english, spanish, portuguese]) {
     assert.equal(copy.vision.cards.length, 4);
-    assert.equal(copy.roadmap.stages.length, 3);
     assert.equal(copy.steps.items.length, 4);
+    assert.equal(copy.faq.items.length, 6);
     assert.match(copy.app.status, /not available|aún no está disponible|ainda não está disponível/i);
-    assert.match(copy.founding.note, /does not|No cambia|não altera/i);
+    assert.match(copy.hero.qualification, /approved|aprobados|aprovados/i);
     assert.match(copy.faq.items.at(-1)?.answer ?? "", /cannot guarantee|no puede garantizar|não pode garantir/i);
     assert.match(copy.vision.cards.map((card) => card.label).join(" "), /AVAILABLE NOW|DISPONIBLE AHORA|DISPONÍVEL AGORA/i);
-    assert.match(copy.roadmap.stages.map((stage) => stage.label).join(" "), /IN DEVELOPMENT|EN DESARROLLO|EM DESENVOLVIMENTO/i);
-    assert.match(copy.roadmap.stages.at(-1)?.title ?? "", /automated|automatizadas|automatizada/i);
+    assert.match(copy.vision.cards.at(-1)?.label ?? "", /COMING TO ELEVARE|PRÓXIMAMENTE EN ELEVARE|EM BREVE NA ELEVARE/i);
+    assert.match(copy.vision.cards.at(-1)?.title ?? "", /automated|automatizadas|automatizada/i);
   }
-  assert.match(english.roadmap.stages.at(-1)?.body ?? "", /being developed/i);
+  assert.match(english.vision.cards.at(-1)?.body ?? "", /in development/i);
   assert.doesNotMatch(english.vision.cards.map((card) => card.body).join(" "), /guaranteed|AI-powered/i);
 });
 
@@ -97,11 +98,13 @@ test("landing CTAs use the shared signup or existing professional workspace and 
   assert.match(landing, /<Suspense fallback=\{null\}><ProfessionalRecruitmentTracker \/><\/Suspense>/);
   assert.match(landing, /function ProfessionalRecruitmentCtaBoundary/);
   assert.match(landing, /getProfessionalSignupHref\(locale\)/);
-  for (const placement of ["hero", "founding_section", "final_cta"]) {
+  for (const placement of ["hero", "mid_page", "final_cta"]) {
     assert.match(landing, new RegExp(`placement="${placement}"`));
   }
   assert.match(landing, /copy\.vision\.cards/);
-  assert.match(landing, /copy\.roadmap\.stages/);
+  assert.match(landing, /professional-acquisition-category-disclosure/);
+  assert.match(landing, /FEATURED_CATEGORY_IDS/);
+  assert.doesNotMatch(landing, /copy\.roadmap|copy\.founding/);
 });
 
 test("shared signup and professional onboarding retain consent, validation, acquisition context, and analytics", () => {
@@ -127,9 +130,9 @@ test("mobile recruitment layout uses single-column fallbacks and maintains touch
 
   assert.match(styles, /@media \(max-width: 700px\)/);
   assert.match(styles, /@media \(max-width: 420px\)/);
-  assert.match(styles, /\.professional-acquisition-vision-grid, \.professional-acquisition-roadmap-grid \{ grid-template-columns: 1fr;/);
-  assert.match(styles, /\.professional-acquisition-vision-grid, \.professional-acquisition-steps, \.professional-acquisition-category-list \{ grid-template-columns: 1fr;/);
-  assert.match(styles, /\.professional-acquisition-roadmap-grid \{ grid-template-columns: 1fr;/);
+  assert.match(styles, /\.professional-acquisition-vision-grid \{ grid-template-columns: 1fr;/);
+  assert.match(styles, /\.professional-acquisition-vision-grid, \.professional-acquisition-steps \{ grid-template-columns: 1fr;/);
+  assert.match(styles, /\.professional-acquisition-category-disclosure summary:focus-visible/);
   assert.match(styles, /\.professional-acquisition-closing \.button, \.professional-acquisition-hero \.button \{ width: 100%;/);
   assert.match(styles, /\.password-toggle \{ position: absolute;/);
 });

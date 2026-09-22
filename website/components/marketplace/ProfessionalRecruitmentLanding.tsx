@@ -10,8 +10,21 @@ import type { Locale } from "@/lib/i18n/config";
 import { MARKETPLACE_TAXONOMY_CATEGORIES } from "@/lib/marketplace-taxonomy";
 import { getProfessionalAcquisitionCopy, getProfessionalSignupHref } from "@/lib/professional-acquisition";
 
+const FEATURED_CATEGORY_IDS = new Set([
+  "personal_training",
+  "strength_conditioning",
+  "bodybuilding_physique",
+  "nutrition",
+  "dietetics",
+  "health_wellness_coaching",
+  "yoga",
+  "pilates",
+]);
+
 export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
   const copy = getProfessionalAcquisitionCopy(locale);
+  const featuredCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) => FEATURED_CATEGORY_IDS.has(category.stableId));
+  const additionalCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) => !FEATURED_CATEGORY_IDS.has(category.stableId));
 
   return (
     <div className="container professional-acquisition-page">
@@ -23,11 +36,11 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
           <div className="eyebrow">{copy.hero.eyebrow}</div>
           <h1 id="professional-acquisition-title">{copy.hero.title}</h1>
           <p>{copy.hero.body}</p>
-          <p className="professional-acquisition-detail">{copy.hero.detail}</p>
           <div className="hero-actions">
             <ProfessionalRecruitmentCtaBoundary locale={locale} placement="hero" className="button button-primary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
           </div>
           <p className="professional-acquisition-trust">{copy.hero.trustLine}</p>
+          <p className="professional-acquisition-qualification">{copy.hero.qualification}</p>
         </div>
 
         <aside className="panel professional-acquisition-profile-preview" aria-labelledby="professional-profile-preview-title">
@@ -53,27 +66,21 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
 
       <section className="section professional-acquisition-vision" aria-labelledby="professional-vision-title">
         <div className="section-heading"><div><div className="eyebrow">{copy.vision.eyebrow}</div><h2 id="professional-vision-title">{copy.vision.title}</h2></div></div>
-        <p className="professional-acquisition-vision-intro">{copy.vision.body}</p>
         <div className="professional-acquisition-vision-grid">
           {copy.vision.cards.map((card) => <article className="panel" key={card.title}><span className="professional-acquisition-status">{card.label}</span><h3>{card.title}</h3><p>{card.body}</p></article>)}
         </div>
       </section>
 
-      <section className="section panel professional-acquisition-founding" aria-labelledby="professional-founding-title">
-        <div><div className="eyebrow">{copy.founding.eyebrow}</div><h2 id="professional-founding-title">{copy.founding.title}</h2><p>{copy.founding.body}</p><p className="fine-print">{copy.founding.note}</p></div>
-        <ProfessionalRecruitmentCtaBoundary locale={locale} placement="founding_section" className="button button-secondary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
-      </section>
-
-      <section className="section professional-acquisition-roadmap" aria-labelledby="professional-roadmap-title">
-        <div className="section-heading"><div><div className="eyebrow">{copy.roadmap.eyebrow}</div><h2 id="professional-roadmap-title">{copy.roadmap.title}</h2></div></div>
-        <div className="professional-acquisition-roadmap-grid">
-          {copy.roadmap.stages.map((stage) => <article className="panel" key={stage.label}><span className="professional-acquisition-status">{stage.label}</span><h3>{stage.title}</h3><p>{stage.body}</p></article>)}
+      <section className="section panel professional-acquisition-mid-cta" aria-labelledby="professional-mid-cta-title">
+        <div>
+          <div className="eyebrow">{copy.midCta.eyebrow}</div>
+          <h2 id="professional-mid-cta-title">{copy.midCta.title}</h2>
+          <p>{copy.midCta.body}</p>
         </div>
-      </section>
-
-      <section className="section professional-acquisition-app" aria-labelledby="professional-app-title">
-        <div className="professional-acquisition-app-copy"><div className="eyebrow">{copy.app.eyebrow}</div><h2 id="professional-app-title">{copy.app.title}</h2><p>{copy.app.body}</p><p className="fine-print">{copy.app.status}</p></div>
-        <div className="panel"><ul>{copy.app.points.map((point) => <li key={point}>{point}</li>)}</ul></div>
+        <div className="professional-acquisition-mid-cta-action">
+          <ProfessionalRecruitmentCtaBoundary locale={locale} placement="mid_page" className="button button-secondary">{copy.hero.cta}</ProfessionalRecruitmentCtaBoundary>
+          <p className="professional-acquisition-trust">{copy.midCta.trustLine}</p>
+        </div>
       </section>
 
       <section className="section" aria-labelledby="professional-steps-title">
@@ -83,12 +90,23 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
         </ol>
       </section>
 
+      <section className="section professional-acquisition-app" aria-labelledby="professional-app-title">
+        <div className="professional-acquisition-app-copy"><div className="eyebrow">{copy.app.eyebrow}</div><h2 id="professional-app-title">{copy.app.title}</h2><p>{copy.app.body}</p><p className="fine-print">{copy.app.status}</p></div>
+        <div className="panel"><ul>{copy.app.points.map((point) => <li key={point}>{point}</li>)}</ul></div>
+      </section>
+
       <section className="section" aria-labelledby="professional-categories-title">
         <div className="section-heading"><div><div className="eyebrow">{copy.categories.eyebrow}</div><h2 id="professional-categories-title">{copy.categories.title}</h2></div></div>
         <p>{copy.categories.body}</p>
         <ul className="professional-acquisition-category-list">
-          {MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => <li key={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</li>)}
+          {featuredCategories.map((category) => <li key={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</li>)}
         </ul>
+        <details className="professional-acquisition-category-disclosure">
+          <summary>{copy.categories.allLabel}</summary>
+          <ul className="professional-acquisition-category-list">
+            {additionalCategories.map((category) => <li key={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</li>)}
+          </ul>
+        </details>
       </section>
 
       <section className="section panel professional-acquisition-transparency" aria-labelledby="professional-transparency-title">
@@ -102,11 +120,11 @@ export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-        <section className="section professional-acquisition-closing" aria-labelledby="professional-closing-title">
+      <section className="section professional-acquisition-closing" aria-labelledby="professional-closing-title">
         <div className="eyebrow">{copy.closing.eyebrow}</div><h2 id="professional-closing-title">{copy.closing.title}</h2><p>{copy.closing.body}</p>
         <ProfessionalRecruitmentCtaBoundary locale={locale} placement="final_cta" className="button button-primary">{copy.closing.cta}</ProfessionalRecruitmentCtaBoundary>
         <p className="professional-acquisition-trust">{copy.closing.trustLine}</p>
-        </section>
+      </section>
       </ProfessionalRecruitmentActionsProvider>
     </div>
   );
@@ -119,7 +137,7 @@ function ProfessionalRecruitmentCtaBoundary({
   children,
 }: {
   locale: Locale;
-  placement: "hero" | "founding_section" | "final_cta";
+  placement: "hero" | "mid_page" | "final_cta";
   className?: string;
   children: ReactNode;
 }) {

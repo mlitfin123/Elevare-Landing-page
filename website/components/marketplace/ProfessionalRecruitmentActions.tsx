@@ -106,7 +106,7 @@ export function ProfessionalRecruitmentCta({
   children,
 }: {
   locale: Locale;
-  placement: "hero" | "founding_section" | "final_cta";
+  placement: "hero" | "mid_page" | "final_cta";
   className?: string;
   children: ReactNode;
 }) {
