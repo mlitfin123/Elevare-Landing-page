@@ -3,7 +3,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AGE_ATTESTATION_VERSION, PRIVACY_VERSION, TERMS_VERSION } from "@/lib/legal";
-import { getAuthConfirmationPath, getAuthIntent, getAuthReturnPath, getSafeAuthRedirect, getSignupIntro } from "@/lib/auth-redirect";
+import { getAuthConfirmationPath, getAuthIntent, getAuthReturnPath, getOAuthCallbackPath, getSafeAuthRedirect, getSignupIntro } from "@/lib/auth-redirect";
 import {
   LOCALE_COOKIE_NAME,
   LOCALE_STORAGE_KEY,
@@ -18,6 +18,7 @@ import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 import { trackEvent } from "@/lib/analytics";
+import { clearPendingOAuthSignup, savePendingOAuthSignup } from "@/lib/oauth-signup";
 import {
   appendProfessionalAcquisitionParams,
   getProfessionalAcquisitionCopy,
@@ -64,6 +65,86 @@ export function AuthPanel() {
     trackEvent("professional_signup_view", professionalAnalytics);
   }, [isProfessionalSignup, mode, professionalAnalytics]);
 
+  function getFlowLocale() {
+    const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
+    const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY) ?? readCookie(LOCALE_COOKIE_NAME);
+    const flowLocale = resolvePreferredLocale({
+      explicitLocale: urlLocale,
+      savedLocale,
+      browserLocales,
+    });
+    const signupBrowserLocale = resolvePreferredLocale({ browserLocales });
+
+    return { flowLocale, signupBrowserLocale };
+  }
+
+  async function handleOAuth(provider: "google" | "apple") {
+    if (!isConfigured) {
+      setFeedback(t("Marketplace authentication is not configured yet."));
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasAcceptedLegalTerms) {
+      setFeedback(t("Please agree to the Terms of Service and Privacy Policy to create an account."));
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasConfirmedAge) {
+      setFeedback(t("Please confirm that you are at least 18 years old to create an account."));
+      setFeedbackType("error");
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setFeedback(t("Marketplace authentication is not configured yet."));
+      setFeedbackType("error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    try {
+      const { flowLocale, signupBrowserLocale } = getFlowLocale();
+      const isSignup = mode === "sign-up";
+      if (isSignup) {
+        savePendingOAuthSignup({
+          signupLocale: flowLocale,
+          browserLocale: signupBrowserLocale,
+        });
+
+        if (isProfessionalSignup && !signupStartedTracked.current) {
+          signupStartedTracked.current = true;
+          trackEvent("professional_signup_started", { ...professionalAnalytics, auth_method: provider });
+        }
+      }
+
+      const callbackPath = getOAuthCallbackPath({
+        redirect,
+        intent,
+        locale: flowLocale,
+        isSignup,
+      });
+      const redirectTo = absoluteUrl(isProfessionalSignup
+        ? appendProfessionalAcquisitionParams(callbackPath, acquisitionAttribution)
+        : callbackPath);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo },
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      if (mode === "sign-up") clearPendingOAuthSignup();
+      setFeedback(error instanceof Error ? error.message : t("We could not complete that request."));
+      setFeedbackType("error");
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -103,13 +184,7 @@ export function AuthPanel() {
     setFeedback(null);
 
     try {
-      const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
-      const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY) ?? readCookie(LOCALE_COOKIE_NAME);
-      const flowLocale = resolvePreferredLocale({
-        explicitLocale: urlLocale,
-        savedLocale,
-        browserLocales,
-      });
+      const { flowLocale, signupBrowserLocale } = getFlowLocale();
 
       if (mode === "sign-in") {
         const { error } = await supabase.auth.signInWithPassword({
@@ -132,7 +207,6 @@ export function AuthPanel() {
       }
 
       const signupLocale = flowLocale;
-      const signupBrowserLocale = resolvePreferredLocale({ browserLocales });
       const confirmationPath = getAuthConfirmationPath(redirect, intent, signupLocale);
 
       const { data, error } = await supabase.auth.signUp({
@@ -288,6 +362,20 @@ export function AuthPanel() {
           ) : null}
         </div>
 
+        <div className="auth-oauth" aria-label={t("Social sign-in options")}>
+          <div className="auth-oauth-divider"><span>{t("Or continue with")}</span></div>
+          <div className="auth-oauth-actions">
+            <button type="button" className="auth-oauth-button" disabled={isSubmitting} onClick={() => void handleOAuth("google")}>
+              <GoogleIcon />
+              {t(mode === "sign-up" ? "Create account with Google" : "Sign in with Google")}
+            </button>
+            <button type="button" className="auth-oauth-button" disabled={isSubmitting} onClick={() => void handleOAuth("apple")}>
+              <AppleIcon />
+              {t(mode === "sign-up" ? "Create account with Apple" : "Sign in with Apple")}
+            </button>
+          </div>
+        </div>
+
         <div className="form-note">
           {mode === "sign-up" && isProfessionalSignup
             ? professionalCopy.signup.note
@@ -308,6 +396,25 @@ export function AuthPanel() {
         </div>
       </form>
     </article>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="auth-oauth-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M21.35 12.23c0-.73-.06-1.2-.2-1.69H12v3.58h5.37c-.11.89-.7 2.23-2.02 3.13l-.02.12 2.94 2.28.2.02c1.85-1.71 2.88-4.22 2.88-7.44Z" />
+      <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.37l-3.07-2.38c-.82.57-1.92.97-3.38.97-2.58 0-4.77-1.7-5.55-4.06l-.11.01-3.06 2.37-.04.11A9.75 9.75 0 0 0 12 21.75Z" />
+      <path fill="#FBBC05" d="M6.45 13.91A5.9 5.9 0 0 1 6.14 12c0-.66.12-1.3.3-1.91v-.13L3.35 7.55l-.1.05A9.75 9.75 0 0 0 2.25 12c0 1.58.38 3.08 1 4.4l3.2-2.49Z" />
+      <path fill="#EA4335" d="M12 6.03c1.85 0 3.1.8 3.81 1.47l2.78-2.7C16.83 3.18 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.75 5.4l3.2 2.49C7.23 7.75 9.42 6.03 12 6.03Z" />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg className="auth-oauth-icon auth-oauth-icon-apple" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M16.69 12.8c-.03-2.65 2.17-3.94 2.27-4a4.88 4.88 0 0 0-3.84-2.08c-1.61-.17-3.17.96-3.99.96-.84 0-2.1-.94-3.46-.91A5.1 5.1 0 0 0 3.38 9.4c-1.85 3.2-.47 7.9 1.3 10.49.89 1.27 1.92 2.69 3.27 2.64 1.32-.06 1.81-.84 3.4-.84 1.58 0 2.03.84 3.4.81 1.42-.02 2.31-1.27 3.17-2.55a10.45 10.45 0 0 0 1.45-2.95 4.56 4.56 0 0 1-2.68-4.2ZM14.07 5.02A4.74 4.74 0 0 0 15.16 1.6a4.82 4.82 0 0 0-3.12 1.62 4.5 4.5 0 0 0-1.12 3.3 3.98 3.98 0 0 0 3.15-1.5Z" />
+    </svg>
   );
 }
 

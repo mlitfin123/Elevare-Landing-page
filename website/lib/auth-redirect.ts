@@ -59,6 +59,27 @@ export function getAuthConfirmationPath(redirect: string | null, intent: string 
   return `${accountPath(locale)}?${params}`;
 }
 
+export function getOAuthCallbackPath({
+  redirect,
+  intent,
+  locale,
+  isSignup,
+}: {
+  redirect: string | null;
+  intent: string | null;
+  locale: Locale;
+  isSignup: boolean;
+}) {
+  const params = new URLSearchParams({ locale });
+  const safeRedirect = getSafeAuthRedirect(redirect, "");
+
+  if (safeRedirect) params.set("redirect", safeRedirect);
+  if (getAuthIntent(intent)) params.set("intent", "professional");
+  if (isSignup) params.set("mode", "sign-up");
+
+  return `/auth/callback/?${params}`;
+}
+
 export function getPostAuthDestination({
   redirect,
   intent,

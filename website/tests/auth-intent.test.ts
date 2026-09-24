@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getAuthConfirmationPath,
   getAuthIntent,
+  getOAuthCallbackPath,
   getProfessionalProfilePath,
   getAuthReturnPath,
   getPostAuthDestination,
@@ -38,6 +39,27 @@ test("sign-in and email confirmation carry only safe intent and continue to the 
   );
   assert.equal(getAuthReturnPath("//evil.example/path", "professional", "en"), "/account/professional-profile/?intent=professional");
   assert.equal(getAuthConfirmationPath("https://evil.example/path", null, "en"), "/account/");
+});
+
+test("OAuth callbacks preserve only safe continuation state", () => {
+  assert.equal(
+    getOAuthCallbackPath({
+      redirect: "/account/saved/?tab=recent",
+      intent: "professional",
+      locale: "es-419",
+      isSignup: true,
+    }),
+    "/auth/callback/?locale=es-419&redirect=%2Faccount%2Fsaved%2F%3Ftab%3Drecent&intent=professional&mode=sign-up",
+  );
+  assert.equal(
+    getOAuthCallbackPath({
+      redirect: "https://evil.example/path",
+      intent: "anything-else",
+      locale: "en",
+      isSignup: false,
+    }),
+    "/auth/callback/?locale=en",
+  );
 });
 
 test("professional routing continues each profile state in the existing professional workspace", () => {
