@@ -409,6 +409,12 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
         </article>
       </section>
 
+      <TrainingLogbookCta
+        title="Track this workout for free in Logbook."
+        description="Once you start running the template, use Logbook to save the sets, reps, and exercise history that tell you whether the plan is really working."
+        ctaContext={`workout_detail_${workoutTemplate.slug}`}
+      />
+
       {joinedExercises.length > 0 ? (
         <section className="section">
           <div className="section-head">
@@ -523,11 +529,6 @@ async function WorkoutDetailPage({ slug }: { slug: string }) {
         <TrainingDisclaimer />
       </section>
 
-      <TrainingLogbookCta
-        title="Track this workout for free in Logbook."
-        description="Once you start running the template, use Logbook to save the sets, reps, and exercise history that tell you whether the plan is really working."
-        ctaContext={`workout_detail_${workoutTemplate.slug}`}
-      />
       <MarketplaceSupportCta
         href="/professionals/strength-conditioning/"
         label="Find a strength and conditioning coach"

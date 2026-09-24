@@ -3846,6 +3846,161 @@ select {
   margin-bottom: 24px;
 }
 
+.logbook-contextual-cta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: center;
+  margin: 24px 0;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(116, 200, 214, 0.3);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at 92% 14%, rgba(35, 205, 194, 0.11), transparent 34%),
+    linear-gradient(180deg, rgba(15, 15, 26, 0.9), rgba(10, 10, 18, 0.92));
+  box-shadow: var(--shadow);
+}
+
+.logbook-contextual-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(145deg, rgba(79, 153, 168, 0.08), transparent 36%);
+}
+
+.logbook-contextual-cta-copy,
+.logbook-contextual-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.logbook-contextual-cta-copy {
+  min-width: 0;
+}
+
+.logbook-contextual-cta h2 {
+  margin: 8px 0;
+  font-size: clamp(20px, 2.2vw, 27px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.logbook-contextual-cta p {
+  max-width: 700px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.58;
+}
+
+.logbook-contextual-supporting {
+  margin-top: 9px !important;
+  font-size: 13px;
+}
+
+.logbook-contextual-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.logbook-contextual-actions .button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.logbook-contextual-cta--compact {
+  padding: 18px 20px;
+  gap: 18px;
+}
+
+.logbook-contextual-cta--compact h2 {
+  font-size: clamp(18px, 2vw, 23px);
+}
+
+.logbook-contextual-cta--compact .logbook-contextual-supporting {
+  display: none;
+}
+
+.logbook-contextual-sticky-wrap {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .logbook-contextual-cta {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .logbook-contextual-cta--compact {
+    padding: 18px;
+  }
+
+  .logbook-contextual-actions {
+    justify-content: flex-start;
+  }
+
+  .logbook-contextual-actions .button {
+    flex: 1 1 220px;
+    text-align: center;
+  }
+
+  .logbook-contextual-sticky-wrap {
+    display: block;
+  }
+
+  .logbook-contextual-sticky-spacer {
+    height: calc(68px + env(safe-area-inset-bottom));
+  }
+
+  .logbook-contextual-sticky {
+    position: fixed;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 12px;
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid rgba(116, 200, 214, 0.36);
+    border-radius: 14px;
+    background: rgba(10, 15, 25, 0.96);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  }
+
+  .logbook-contextual-sticky .button {
+    flex: 1;
+    min-height: 46px;
+    text-align: center;
+  }
+
+  .logbook-contextual-dismiss {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .logbook-contextual-dismiss:focus-visible,
+  .logbook-contextual-sticky .button:focus-visible,
+  .logbook-contextual-actions .button:focus-visible {
+    outline: 2px solid var(--brand-bright);
+    outline-offset: 3px;
+  }
+}
+
 .quick-analysis-entry-cta {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

@@ -1,4 +1,4 @@
-import { ProductCtaButtons } from "@/components/ProductCtaButtons";
+import { ContextualLogbookCta } from "@/components/logbook/ContextualLogbookCta";
 import type { Locale } from "@/lib/i18n/config";
 
 type TrainingLogbookCtaProps = {
@@ -9,24 +9,14 @@ type TrainingLogbookCtaProps = {
 };
 
 export function TrainingLogbookCta({ title, description, ctaContext, locale = "en" }: TrainingLogbookCtaProps) {
-  return (
-    <section className="section">
-      <article className="product-cta">
-        <span className="meta-pill">Logbook</span>
-        <h2>{title}</h2>
-        <p>{description}</p>
-        <div className="button-row">
-          <ProductCtaButtons
-            product="Logbook"
-            context={ctaContext}
-            displayLabels={locale === "es-419"
-              ? { ios: "Descargar en App Store", android: "Disponible en Google Play" }
-              : locale === "pt-BR"
-                ? { ios: "Baixar na App Store", android: "Disponivel no Google Play" }
-                : undefined}
-          />
-        </div>
-      </article>
-    </section>
-  );
+  // Existing callers retain their page-specific copy props while the CTA itself
+  // is centralized by the content type. This lets copy variants change without
+  // changing the training templates.
+  void title;
+  void description;
+
+  const sourceType = ctaContext.includes("exercise") ? "exercise" : "workout";
+  const ctaPosition = sourceType === "exercise" ? "post_exercise_content" : "post_workout_prescription";
+
+  return <ContextualLogbookCta sourceType={sourceType} ctaPosition={ctaPosition} locale={locale} />;
 }

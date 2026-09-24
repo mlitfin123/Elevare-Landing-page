@@ -8,6 +8,7 @@ import {
   useCalculatorTranslation,
 } from "@/components/tools/CalculatorLocalization";
 import { getLocalizedTool } from "@/lib/i18n/calculator-content";
+import { CalculatorLogbookCta } from "@/components/logbook/CalculatorLogbookCta";
 
 export function formatDateInputValue(date: Date) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
@@ -112,6 +113,7 @@ export function ResultCard({
       <span className="meta-pill">{translate("Result")}</span>
       <h3>{translate(title)}</h3>
       {children}
+      <CalculatorLogbookCta />
     </article>
   );
 }

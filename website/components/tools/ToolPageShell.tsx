@@ -1,6 +1,5 @@
 import { RelatedTools } from "@/components/tools/RelatedTools";
 import { StructuredData } from "@/components/StructuredData";
-import { ToolLogbookCta } from "@/components/tools/ToolLogbookCta";
 import { EstimateDisclaimer } from "@/components/ContentDisclaimer";
 import { absoluteUrl } from "@/lib/site";
 import { getCalculatorPath, TOOL_GROUPS, type ToolSlug } from "@/lib/tools";
@@ -116,7 +115,6 @@ export function ToolPageShell({ toolSlug, children, locale = "en" }: ToolPageShe
       </section>
 
       <RelatedTools currentTool={toolSlug} locale={locale} />
-      <ToolLogbookCta toolSlug={toolSlug} locale={locale} />
     </div>
   );
 }

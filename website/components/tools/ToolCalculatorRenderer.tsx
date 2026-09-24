@@ -1,6 +1,7 @@
 "use client";
 
 import { ContextualAnalysisCTA } from "@/components/stage-analysis/ContextualAnalysisCTA";
+import { CalculatorLogbookCta } from "@/components/logbook/CalculatorLogbookCta";
 
 import { useState } from "react";
 import {
@@ -214,6 +215,7 @@ function ResultCard({
       <span className="meta-pill">{translate("Result")}</span>
       <h3>{translate(title)}</h3>
       {children}
+      <CalculatorLogbookCta />
     </article>
   );
 }
