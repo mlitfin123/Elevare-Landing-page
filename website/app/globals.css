@@ -3875,6 +3875,22 @@ select {
   gap: 10px;
 }
 
+.auth-google-button-wrap,
+.auth-google-button {
+  min-width: 0;
+  min-height: 48px;
+}
+
+.auth-google-button {
+  display: grid;
+  place-items: center;
+}
+
+.auth-google-button > div,
+.auth-google-button iframe {
+  max-width: 100% !important;
+}
+
 .auth-oauth-button {
   display: inline-flex;
   min-width: 0;

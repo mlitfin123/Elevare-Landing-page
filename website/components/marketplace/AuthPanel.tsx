@@ -18,7 +18,8 @@ import { marketplaceText } from "@/lib/i18n/marketplace-content";
 import { absoluteUrl } from "@/lib/site";
 import { getSupabaseBrowserClient, isMarketplaceAuthConfigured } from "@/lib/supabase-browser";
 import { trackEvent } from "@/lib/analytics";
-import { clearPendingOAuthSignup, savePendingOAuthSignup } from "@/lib/oauth-signup";
+import { clearPendingOAuthSignup, readPendingOAuthSignup, savePendingOAuthSignup } from "@/lib/oauth-signup";
+import { GoogleIdentityButton } from "@/components/marketplace/GoogleIdentityButton";
 import {
   appendProfessionalAcquisitionParams,
   getProfessionalAcquisitionCopy,
@@ -58,6 +59,7 @@ export function AuthPanel() {
   const signupCompletedTracked = useRef(false);
 
   const isConfigured = isMarketplaceAuthConfigured();
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (!isProfessionalSignup || mode !== "sign-up" || signupViewTracked.current) return;
@@ -141,6 +143,82 @@ export function AuthPanel() {
       if (mode === "sign-up") clearPendingOAuthSignup();
       setFeedback(error instanceof Error ? error.message : t("We could not complete that request."));
       setFeedbackType("error");
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogleCredential(credential: string, nonce: string) {
+    if (!isConfigured) {
+      setFeedback(t("Marketplace authentication is not configured yet."));
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasAcceptedLegalTerms) {
+      setFeedback(t("Please agree to the Terms of Service and Privacy Policy to create an account."));
+      setFeedbackType("error");
+      return;
+    }
+
+    if (mode === "sign-up" && !hasConfirmedAge) {
+      setFeedback(t("Please confirm that you are at least 18 years old to create an account."));
+      setFeedbackType("error");
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      setFeedback(t("Marketplace authentication is not configured yet."));
+      setFeedbackType("error");
+      return;
+    }
+
+    const isSignup = mode === "sign-up";
+    let sessionEstablished = false;
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    try {
+      const { flowLocale, signupBrowserLocale } = getFlowLocale();
+      if (isSignup) {
+        savePendingOAuthSignup({ signupLocale: flowLocale, browserLocale: signupBrowserLocale });
+        if (isProfessionalSignup && !signupStartedTracked.current) {
+          signupStartedTracked.current = true;
+          trackEvent("professional_signup_started", { ...professionalAnalytics, auth_method: "google" });
+        }
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: credential,
+        nonce,
+      });
+      if (error) throw error;
+      sessionEstablished = true;
+
+      if (isSignup) {
+        const pendingSignup = readPendingOAuthSignup();
+        if (!pendingSignup) throw new Error(t("We could not confirm your signup consent. Please start again."));
+        const { error: updateError } = await supabase.auth.updateUser({ data: pendingSignup });
+        if (updateError) throw updateError;
+        clearPendingOAuthSignup();
+
+        if (isProfessionalSignup && !signupCompletedTracked.current) {
+          signupCompletedTracked.current = true;
+          const accountCreatedAnalytics = { ...professionalAnalytics, account_type: "google_account" };
+          trackEvent("professional_signup_completed", accountCreatedAnalytics);
+          trackEvent("professional_account_created", accountCreatedAnalytics);
+        }
+      }
+
+      router.push(getAuthReturnPath(redirect, intent, flowLocale));
+      router.refresh();
+    } catch (error) {
+      if (isSignup) clearPendingOAuthSignup();
+      if (sessionEstablished) await supabase.auth.signOut();
+      setFeedback(error instanceof Error ? error.message : t("We could not complete that request."));
+      setFeedbackType("error");
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -365,10 +443,15 @@ export function AuthPanel() {
         <div className="auth-oauth" aria-label={t("Social sign-in options")}>
           <div className="auth-oauth-divider"><span>{t("Or continue with")}</span></div>
           <div className="auth-oauth-actions">
-            <button type="button" className="auth-oauth-button" disabled={isSubmitting} onClick={() => void handleOAuth("google")}>
-              <GoogleIcon />
-              {t(mode === "sign-up" ? "Create account with Google" : "Sign in with Google")}
-            </button>
+            <GoogleIdentityButton
+              clientId={googleClientId}
+              disabled={isSubmitting || (mode === "sign-up" && (!hasAcceptedLegalTerms || !hasConfirmedAge))}
+              isSignup={mode === "sign-up"}
+              label={t(mode === "sign-up" ? "Create account with Google" : "Sign in with Google")}
+              unavailableLabel={t(mode === "sign-up" ? "Create account with Google" : "Sign in with Google")}
+              onCredential={handleGoogleCredential}
+              onFallback={() => void handleOAuth("google")}
+            />
             <button type="button" className="auth-oauth-button" disabled={isSubmitting} onClick={() => void handleOAuth("apple")}>
               <AppleIcon />
               {t(mode === "sign-up" ? "Create account with Apple" : "Sign in with Apple")}
@@ -396,17 +479,6 @@ export function AuthPanel() {
         </div>
       </form>
     </article>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="auth-oauth-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="#4285F4" d="M21.35 12.23c0-.73-.06-1.2-.2-1.69H12v3.58h5.37c-.11.89-.7 2.23-2.02 3.13l-.02.12 2.94 2.28.2.02c1.85-1.71 2.88-4.22 2.88-7.44Z" />
-      <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.37l-3.07-2.38c-.82.57-1.92.97-3.38.97-2.58 0-4.77-1.7-5.55-4.06l-.11.01-3.06 2.37-.04.11A9.75 9.75 0 0 0 12 21.75Z" />
-      <path fill="#FBBC05" d="M6.45 13.91A5.9 5.9 0 0 1 6.14 12c0-.66.12-1.3.3-1.91v-.13L3.35 7.55l-.1.05A9.75 9.75 0 0 0 2.25 12c0 1.58.38 3.08 1 4.4l3.2-2.49Z" />
-      <path fill="#EA4335" d="M12 6.03c1.85 0 3.1.8 3.81 1.47l2.78-2.7C16.83 3.18 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.75 5.4l3.2 2.49C7.23 7.75 9.42 6.03 12 6.03Z" />
-    </svg>
   );
 }
 
