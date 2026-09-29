@@ -6,9 +6,9 @@ import { trackEvent } from "@/lib/analytics";
 import type { Locale } from "@/lib/i18n/config";
 import { detectStageLabPlatform, safeStageLabCampaignFields, type StageLabVisitorPlatform } from "@/lib/stagelab-start";
 
-export function eventContext(platform: StageLabVisitorPlatform, locale: Locale) {
+export function eventContext(platform: StageLabVisitorPlatform, locale: Locale, pageId = "stagelab_start") {
   return {
-    page_id: "stagelab_start",
+    page_id: pageId,
     platform,
     locale,
     ...safeStageLabCampaignFields(new URLSearchParams(window.location.search)),
@@ -16,9 +16,10 @@ export function eventContext(platform: StageLabVisitorPlatform, locale: Locale) 
 }
 
 export function StageLabStartActions({
-  placement, locale, iosHref, androidHref, download, iosLabel, androidLabel, groupLabel,
+  placement, pageId = "stagelab_start", locale, iosHref, androidHref, download, iosLabel, androidLabel, groupLabel,
 }: {
   placement: "hero" | "footer";
+  pageId?: "stagelab_start" | "stagelab_coach_start";
   locale: Locale;
   iosHref: string;
   androidHref: string;
@@ -37,13 +38,13 @@ export function StageLabStartActions({
       const key = `${locale}:${window.location.pathname}`;
       if (tracked.current === key) return;
       tracked.current = key;
-      trackEvent("stagelab_start_viewed", eventContext(detected, locale));
+      trackEvent(pageId === "stagelab_coach_start" ? "stagelab_coach_start_viewed" : "stagelab_start_viewed", eventContext(detected, locale, pageId));
     }
-  }, [locale, placement]);
+  }, [locale, pageId, placement]);
 
   function trackStoreClick(store: "ios" | "android") {
-    trackEvent("stagelab_start_store_clicked", {
-      ...eventContext(detectStageLabPlatform(navigator.userAgent), locale),
+    trackEvent(pageId === "stagelab_coach_start" ? "stagelab_coach_start_store_clicked" : "stagelab_start_store_clicked", {
+      ...eventContext(detectStageLabPlatform(navigator.userAgent), locale, pageId),
       store,
       placement,
       destination_url: store === "ios" ? iosHref : androidHref,

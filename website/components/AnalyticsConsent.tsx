@@ -32,7 +32,8 @@ function updateGoogleConsent(choice: AnalyticsConsentChoice) {
 
 export function AnalyticsConsent() {
   const pathname = usePathname();
-  const isStageLabStart = stripLocalePrefix(pathname) === "/stagelab/start/";
+  const strippedPath = stripLocalePrefix(pathname);
+  const isStageLabStart = strippedPath === "/stagelab/start/" || strippedPath === "/stagelab/coaches/start/";
   const locale = localeFromPathname(pathname);
   const messages = getShellMessages(locale);
   const consentMessages = messages.analyticsConsent;

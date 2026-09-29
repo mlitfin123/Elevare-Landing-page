@@ -84,6 +84,7 @@ test("localized marketing routes preserve English URLs and equivalent product pa
     "/logbook/",
     "/stagelab/",
     "/stagelab/start/",
+    "/stagelab/coaches/start/",
     "/stagelab/quick-analysis/",
     "/stagelab/quick-analysis/result/",
     "/stagelab/posing-analysis/",

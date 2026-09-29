@@ -45,7 +45,8 @@ export function LanguageSelector() {
         }
       });
     }
-    const currentPath = stripLocalePrefix(pathname) === "/stagelab/start/"
+    const currentPathname = stripLocalePrefix(pathname);
+    const currentPath = (currentPathname === "/stagelab/start/" || currentPathname === "/stagelab/coaches/start/")
       ? `${pathname}${stageLabStartSwitchSearch(window.location.search)}`
       : pathname;
     router.push(getLocaleSwitchHref(currentPath, locale));

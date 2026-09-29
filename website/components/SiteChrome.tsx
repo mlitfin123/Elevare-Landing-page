@@ -6,7 +6,8 @@ import { Header } from "@/components/Header";
 import { stripLocalePrefix } from "@/lib/i18n/config";
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
-  const focusedStart = stripLocalePrefix(usePathname()) === "/stagelab/start/";
+  const focusedPath = stripLocalePrefix(usePathname());
+  const focusedStart = focusedPath === "/stagelab/start/" || focusedPath === "/stagelab/coaches/start/";
 
   return (
     <div className="site-shell">

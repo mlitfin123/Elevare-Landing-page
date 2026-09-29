@@ -8,6 +8,7 @@ import { LocalizedWorkoutsPage } from "@/components/localization/LocalizedWorkou
 import { LocalizedWorkoutGeneratorPage } from "@/components/localization/LocalizedWorkoutGeneratorPage";
 import { LocalizedProductPage } from "@/components/localization/LocalizedProductPage";
 import { StageLabStartPage } from "@/components/stagelab/StageLabStartPage";
+import { StageLabCoachStartPage } from "@/components/stagelab/StageLabCoachStartPage";
 import { LocalizedQuickAnalysisPage } from "@/components/localization/LocalizedQuickAnalysisPage";
 import { LocalizedStageAnalysisPage } from "@/components/localization/LocalizedStageAnalysisPage";
 import { QuickAnalysisResultExperience } from "@/components/quick-analysis/QuickAnalysisResultExperience";
@@ -56,6 +57,7 @@ import { findTopCategories, getMarketplaceRotationSeed, toProfessionalDirectoryR
 import { hasMarketplaceFilterSearchParams } from "@/lib/marketplace-seo";
 import { localizeMarketplaceCategory, marketplaceText } from "@/lib/i18n/marketplace-content";
 import { stageLabStartMessages } from "@/lib/stagelab-start";
+import { stageLabCoachStartMessages } from "@/lib/stagelab-coach-start";
 import { getProfessionalAcquisitionCopy } from "@/lib/professional-acquisition";
 
 type LocalizedPageParams = {
@@ -108,6 +110,9 @@ function resolvePage(params: LocalizedPageParams) {
   if (slug.length === 1 && slug[0] === "stagelab") return { locale, page: "stagelab" as const, pathname: "/stagelab/" };
   if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "start") {
     return { locale, page: "stagelab-start" as const, pathname: "/stagelab/start/" };
+  }
+  if (slug.length === 3 && slug[0] === "stagelab" && slug[1] === "coaches" && slug[2] === "start") {
+    return { locale, page: "stagelab-coaches-start" as const, pathname: "/stagelab/coaches/start/" };
   }
   if (slug.length === 2 && slug[0] === "stagelab" && slug[1] === "quick-analysis") {
     return { locale, page: "quick-analysis" as const, pathname: "/stagelab/quick-analysis/" };
@@ -194,6 +199,17 @@ export async function generateMetadata({
       robots: indexingEnabled
         ? { index: true, follow: true }
         : { index: false, follow: true },
+    });
+  }
+  if (resolved.page === "stagelab-coaches-start") {
+    const copy = stageLabCoachStartMessages[resolved.locale];
+    return buildMetadata({
+      title: copy.seoTitle,
+      description: copy.seoDescription,
+      pathname: localizePathname(resolved.pathname, resolved.locale),
+      locale: resolved.locale,
+      localizedAlternates: true,
+      robots: { index: true, follow: true },
     });
   }
   if (resolved.page === "professionals-join") {
@@ -432,6 +448,10 @@ export default async function LocalizedMarketingRoute({ params }: {
 
   if (resolved.page === "stagelab-start") {
     return <StageLabStartPage locale={resolved.locale} />;
+  }
+
+  if (resolved.page === "stagelab-coaches-start") {
+    return <StageLabCoachStartPage locale={resolved.locale} />;
   }
 
   if (resolved.page === "professionals-join") {

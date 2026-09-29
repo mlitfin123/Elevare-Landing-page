@@ -10,6 +10,7 @@ import {
   stageLabStartMessages,
   stageLabStartSwitchSearch,
 } from "../lib/stagelab-start.ts";
+import { stageLabCoachStartMessages } from "../lib/stagelab-coach-start.ts";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
 const read = (...segments: string[]) => fs.readFileSync(path.join(projectRoot, ...segments), "utf8");
@@ -41,6 +42,44 @@ test("start page is indexable and discoverable in the site sitemap", () => {
   for (const prefix of ["", "es/", "pt-br/"]) {
     const url = `https://www.elevarefit.com/${prefix}stagelab/start/`;
     assert.equal(sitemap.split(`<loc>${url}</loc>`).length - 1, 1, url);
+  }
+});
+
+test("coach ad page is indexable, localized, and discoverable in the site sitemap", () => {
+  const englishRoute = read("app", "stagelab", "coaches", "start", "page.tsx");
+  const localizedRoute = read("app", "[locale]", "[[...slug]]", "page.tsx");
+  const generator = read("scripts", "generate-sitemaps.ts");
+  const sitemap = read("public", "sitemaps", "site.xml");
+  const coachMessages = read("lib", "stagelab-coach-start.ts");
+
+  assert.match(englishRoute, /localizedAlternates: true,[\s\S]*?robots: \{ index: true, follow: true \}/);
+  assert.match(localizedRoute, /resolved\.page === "stagelab-coaches-start"[\s\S]*?robots: \{ index: true, follow: true \}/);
+  assert.match(localizedRoute, /StageLabCoachStartPage locale=\{resolved\.locale\}/);
+  assert.match(generator, /"\/stagelab\/coaches\/start"/);
+  assert.match(generator, /"\/stagelab\/coaches\/start\/"/);
+  for (const prefix of ["", "es/", "pt-br/"]) {
+    const url = `https://www.elevarefit.com/${prefix}stagelab/coaches/start/`;
+    assert.equal(sitemap.split(`<loc>${url}</loc>`).length - 1, 1, url);
+  }
+
+  for (const locale of ["en", "es-419", "pt-BR"] as const) {
+    const copy = stageLabCoachStartMessages[locale];
+    assert.ok(copy.title && copy.description && copy.trialTitle && copy.athletesTitle && copy.athleteProTitle);
+    assert.equal(copy.screenshots.length, 9);
+  }
+  for (const filename of [
+    "coach-dashboard-review-queue.jpg",
+    "coach-analytics-portfolio.jpg",
+    "coach-activity-review-feed.jpg",
+    "coach-client-training-review.jpg",
+    "coach-client-decision-review.jpg",
+    "coach-client-risk-queue.jpg",
+    "coach-client-summary-review.jpg",
+    "coach-client-visual-checkins.jpg",
+    "coach-client-adherence-review.jpg",
+  ]) {
+    assert.match(coachMessages, new RegExp(filename));
+    assert.ok(fs.existsSync(path.join(projectRoot, "public", "stagelab", "coach", filename)));
   }
 });
 
@@ -127,8 +166,9 @@ test("start-page tracks analytics without a consent prompt", () => {
   assert.match(actions, /stagelab_start_image_failed/);
   assert.match(actions, /placement === "hero"/);
   assert.match(actions, /placement,/);
-  assert.match(actions, /page_id: "stagelab_start"/);
-  assert.match(consent, /stripLocalePrefix\(pathname\) === "\/stagelab\/start\/"/);
+  assert.match(actions, /page_id: pageId/);
+  assert.match(consent, /strippedPath === "\/stagelab\/start\/"/);
+  assert.match(consent, /strippedPath === "\/stagelab\/coaches\/start\/"/);
   assert.doesNotMatch(tracker, /isStageLabStart|stripLocalePrefix/);
   assert.doesNotMatch(actions, /stagelab_start_offer_shown|install_completed|trial_activated|analysis_completed/);
 });
