@@ -277,6 +277,19 @@ test("StageLab legal documents consistently name Elevare Fit LLC as operator", (
   assert.doesNotMatch(documents, /&copy;[^\n]*StageLab/);
 });
 
+test("StageLab coach agreement defines the platform relationship and coach responsibilities", () => {
+  const agreement = readFileSync(`${projectRoot}public/stagelab-coach-agreement.html`, "utf8");
+
+  assert.match(agreement, /StageLab Is a Software Platform/);
+  assert.match(agreement, /does not hire you to provide coaching services/i);
+  assert.match(agreement, /not an employee, worker, agent, partner, joint venturer/i);
+  assert.match(agreement, /not a party to your relationship, agreement, or transactions with any client/i);
+  assert.match(agreement, /clients who have authorized the relationship/i);
+  assert.match(agreement, /independently review each output/i);
+  assert.match(agreement, /StageLab is not an emergency service/i);
+  assert.match(agreement, /business associate agreement.*separately agreed to it in writing/i);
+});
+
 test("legal history is append-only to marketplace users and public credentials exclude review links", () => {
   const migration = readFileSync(
     `${repositoryRoot}supabase/migrations/20260818210000_marketplace_legal_privacy_readiness.sql`,
