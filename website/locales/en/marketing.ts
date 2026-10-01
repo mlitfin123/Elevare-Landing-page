@@ -159,8 +159,8 @@ const messages = {
     },
     stagelab: {
       seo: {
-        title: "StageLab: Bodybuilding & Physique Prep App",
-        description: "Explore AI-assisted bodybuilding competition prep, physique readiness, posing analysis, and the methodology behind StageLab's check-ins and plan decisions.",
+        title: "StageLab: Competition Prep, Physique Progress & Posing",
+        description: "Track competition prep, compare physique progress, review posing feedback, and keep nutrition, cardio, recovery, and check-ins together in StageLab.",
       },
       structuredDescription: "Bodybuilding contest prep tracking with AI-assisted physique assessment, separate posing analysis, and explained plan decisions for athletes and coaches.",
       hero: {

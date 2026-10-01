@@ -2,10 +2,11 @@ import type { StageLabMethodologyMessages } from "../../lib/i18n/stagelab-method
 
 const messages: StageLabMethodologyMessages = {
   eyebrow: "Nuestra metodología",
-  title: "Cómo toma decisiones StageLab",
+  title: "Cómo funcionan las recomendaciones de StageLab",
   lead: "La IA también debe poder explicarse.",
-  body: "StageLab combina evaluaciones asistidas por modelos con reglas de preparación consistentes, evolución en el tiempo, contexto de la categoría y comprobaciones de seguridad. La IA contribuye a la evaluación; no controla tu plan de preparación por su cuenta.",
+  body: "StageLab combina el progreso registrado, la adherencia, la recuperación, el contexto de la categoría y observaciones asistidas por IA para producir recomendaciones que puedes revisar. La IA apoya la evaluación; no controla tu plan por su cuenta, y tú revisas las razones antes de aplicar un cambio compatible.",
   scope: "Esta metodología describe la preparación continua para competir dentro de la app StageLab. Los análisis individuales del sitio web evalúan un momento concreto: no gestionan un plan de preparación ni establecen un historial de progreso.",
+  expandLabel: "Revisar cómo funcionan las recomendaciones de StageLab",
   cards: {
     readiness: {
       title: "Preparación física visual",

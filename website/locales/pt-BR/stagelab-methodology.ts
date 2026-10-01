@@ -2,10 +2,11 @@ import type { StageLabMethodologyMessages } from "../../lib/i18n/stagelab-method
 
 const messages: StageLabMethodologyMessages = {
   eyebrow: "Por dentro do método",
-  title: "Como a StageLab toma decisões",
+  title: "Como funcionam as recomendações do StageLab",
   lead: "A IA também precisa ser compreensível.",
-  body: "A StageLab combina avaliações assistidas por modelos com regras consistentes de preparação, evolução ao longo do tempo, contexto da categoria e verificações de segurança. A IA contribui para a avaliação; ela não controla seu plano de preparação por conta própria.",
+  body: "O StageLab combina a evolução registrada, a adesão, a recuperação, o contexto da categoria e observações com auxílio de IA para produzir recomendações que você pode revisar. A IA apoia a avaliação; ela não controla seu plano por conta própria, e você revisa os motivos antes de aplicar uma mudança compatível.",
   scope: "Esta metodologia descreve a preparação contínua para competir no app StageLab. As análises avulsas do site avaliam um momento específico: elas não gerenciam um plano de preparação nem estabelecem um histórico de evolução.",
+  expandLabel: "Ver como funcionam as recomendações do StageLab",
   cards: {
     readiness: {
       title: "Prontidão visual para o palco",

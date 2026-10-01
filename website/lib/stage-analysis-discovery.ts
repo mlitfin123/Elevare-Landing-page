@@ -18,6 +18,7 @@ export function getCompleteStageSavingsCents() {
 }
 type DiscoveryCopy = {
   audience: string; title: string; body: string; terms: string; action: string;
+  reportAudience: string; reportTitle: string; reportBody: string; reportTerms: string;
   oneTime: string; bundle: string; savings: string; languageFallback: string;
   products: Record<StageAnalysisProduct, { title: string; description: string; input: string }>;
 };
@@ -26,6 +27,9 @@ export const analysisDiscoveryCopy: Record<Locale, DiscoveryCopy> = {
     audience: "For bodybuilding and physique athletes", title: "StageLab AI Analyses",
     body: "Get AI-assisted feedback on your physique, posing, or both.",
     terms: "One-time website reports. No account or subscription required. App access and ongoing coaching are separate.",
+    reportAudience: "Standalone website reports", reportTitle: "Want a one-time physique or posing review?",
+    reportBody: "Purchase an AI-assisted physique, posing, or combined report directly on the website without downloading the app.",
+    reportTerms: "No account or subscription required. These one-time purchases do not include ongoing app coaching, a StageLab Pro subscription, or future app analyses.",
     action: "View analysis", oneTime: "one time", bundle: "Physique + posing",
     savings: "Save {price} compared with buying both separately.",
     languageFallback: "Your report will be generated in English. The website and checkout remain in your selected language.",
@@ -39,6 +43,9 @@ export const analysisDiscoveryCopy: Record<Locale, DiscoveryCopy> = {
     audience: "Para atletas de fisicoculturismo y físico", title: "Análisis con IA de StageLab",
     body: "Recibe comentarios asistidos por IA sobre tu físico, tus poses o ambos.",
     terms: "Informes únicos en el sitio web. No necesitas cuenta ni suscripción. El acceso a la app y el coaching continuo son servicios aparte.",
+    reportAudience: "Informes independientes en el sitio", reportTitle: "¿Quieres una revisión única de tu físico o tus poses?",
+    reportBody: "Compra directamente en el sitio un informe de físico, poses o análisis combinado asistido por IA, sin descargar la app.",
+    reportTerms: "No necesitas cuenta ni suscripción. Estas compras de pago único no incluyen coaching continuo en la app, una suscripción StageLab Pro ni futuros análisis dentro de la app.",
     action: "Ver análisis", oneTime: "pago único", bundle: "Físico + poses",
     savings: "Ahorra {price} frente a comprar ambos por separado.",
     languageFallback: "Tu informe se generará en inglés. El sitio y el pago permanecen en el idioma seleccionado.",
@@ -52,6 +59,9 @@ export const analysisDiscoveryCopy: Record<Locale, DiscoveryCopy> = {
     audience: "Para atletas de fisiculturismo e físico", title: "Análises com IA da StageLab",
     body: "Receba feedback com auxílio de IA sobre seu físico, suas poses ou ambos.",
     terms: "Relatórios avulsos no site. Não é necessário conta nem assinatura. O acesso ao app e o acompanhamento contínuo são serviços separados.",
+    reportAudience: "Relatórios independentes no site", reportTitle: "Quer uma avaliação avulsa do físico ou das poses?",
+    reportBody: "Compre diretamente no site um relatório de físico, poses ou análise combinada com auxílio de IA, sem baixar o app.",
+    reportTerms: "Não é necessário conta nem assinatura. Essas compras avulsas não incluem acompanhamento contínuo no app, uma assinatura StageLab Pro nem futuras análises dentro do app.",
     action: "Ver análise", oneTime: "pagamento único", bundle: "Físico + poses",
     savings: "Economize {price} em relação à compra dos dois separadamente.",
     languageFallback: "Seu relatório será gerado em inglês. O site e o pagamento permanecem no idioma selecionado.",

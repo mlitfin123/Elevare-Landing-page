@@ -6,7 +6,7 @@ import {
 } from "@/lib/i18n/stagelab-methodology-messages";
 
 // Public product explanation only. No analysis configuration or app logic is imported.
-export function StageLabMethodology({ locale = "en" }: { locale?: Locale }) {
+export function StageLabMethodology({ locale = "en", collapsed = false }: { locale?: Locale; collapsed?: boolean }) {
   const copy = getStageLabMethodologyMessages(locale);
 
   return (
@@ -20,6 +20,10 @@ export function StageLabMethodology({ locale = "en" }: { locale?: Locale }) {
           <p className="stagelab-methodology-scope">{copy.scope}</p>
         </div>
       </div>
+
+      <details className="panel stagelab-methodology-disclosure" open={!collapsed}>
+        <summary>{copy.expandLabel}</summary>
+        <div className="stagelab-methodology-disclosure-content">
 
       <div className="stagelab-methodology-grid">
         {METHODOLOGY_CONCEPTS.map((key, index) => (
@@ -79,6 +83,8 @@ export function StageLabMethodology({ locale = "en" }: { locale?: Locale }) {
         <p><strong>{copy.limits.posing}</strong></p>
         <p className="stagelab-methodology-note">{copy.limits.guidance}</p>
       </aside>
+        </div>
+      </details>
     </section>
   );
 }

@@ -99,14 +99,14 @@ test("the calculator hub and relevant prep articles receive one focused entry po
   assert.match(seoAudit, /href\.split\(\/\[\?#\]\//);
 });
 
-test("existing Homepage and StageLab placements remain direct, priced, and attributed", () => {
+test("existing Homepage and StageLab report placements remain direct, priced, and attributed", () => {
   const homepage = read("components", "localization", "LocalizedHomePage.tsx");
-  const stageLab = read("app", "stagelab", "page.tsx");
+  const stageLab = read("components", "stagelab", "StageLabLandingPage.tsx");
 
   assert.match(homepage, /StageAnalysisProducts locale=\{locale\} source="home-analyses"/);
-  assert.match(stageLab, /getQuickAnalysisEntryHref\("stagelab"\)/);
+  assert.match(stageLab, /StageAnalysisProducts locale=\{locale\} source="stagelab" presentation="standalone-reports"/);
   assert.match(read("components", "stage-analysis", "StageAnalysisCard.tsx"), /formatStageAnalysisPrice\(product\)/);
-  assert.match(stageLab, /QUICK_ANALYSIS_PRICE_DISPLAY/);
+  assert.match(stageLab, /cta_context: "stagelab_hero_reports"/);
   assert.doesNotMatch(`${homepage}\n${stageLab}`, /elevarefit\.org\/stagelab\/quick-analysis/i);
 });
 

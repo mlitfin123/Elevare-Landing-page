@@ -159,8 +159,8 @@ const messages = {
     },
     stagelab: {
       seo: {
-        title: "StageLab: app para preparación de fisicoculturismo y físico",
-        description: "Conoce la preparación de fisicoculturismo con IA, el análisis de físico y poses, y la metodología detrás de los check-ins y las decisiones de StageLab.",
+        title: "StageLab: preparación, progreso físico y poses",
+        description: "Sigue tu preparación para competir, compara tu progreso físico, revisa comentarios sobre tus poses y mantén juntos nutrición, cardio, recuperación y check-ins en StageLab.",
       },
       structuredDescription: "Seguimiento de preparación de fisicoculturismo con evaluación del físico asistida por IA, análisis separado de poses y decisiones explicadas para atletas y coaches.",
       hero: {

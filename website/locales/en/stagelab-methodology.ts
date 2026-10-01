@@ -2,10 +2,11 @@ import type { StageLabMethodologyMessages } from "../../lib/i18n/stagelab-method
 
 const messages: StageLabMethodologyMessages = {
   eyebrow: "Inside the method",
-  title: "How StageLab Makes Decisions",
+  title: "How StageLab’s recommendations work",
   lead: "AI shouldn't have to be a black box.",
-  body: "StageLab pairs model-assisted assessment with consistent prep rules, progress over time, division context, and safety checks. AI contributes to the assessment; it doesn't independently control your prep plan.",
+  body: "StageLab combines logged progress, adherence, recovery, division context, and AI-assisted observations to produce reviewable recommendations. AI supports the assessment; it does not independently control your prep plan, and you review the reasons before applying a supported change.",
   scope: "This describes ongoing competition prep in the StageLab app. One-time website analyses are standalone snapshots: they do not manage a prep plan or establish a progress history.",
+  expandLabel: "Review how StageLab’s recommendations work",
   cards: {
     readiness: {
       title: "Visual readiness",

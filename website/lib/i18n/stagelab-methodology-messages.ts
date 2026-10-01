@@ -12,6 +12,7 @@ export type StageLabMethodologyMessages = {
   lead: string;
   body: string;
   scope: string;
+  expandLabel: string;
   cards: Record<(typeof METHODOLOGY_CONCEPTS)[number], { title: string; body: string; note: string }>;
   posing: { eyebrow: string; title: string; body: string; separation: string; unaffected: string[]; note: string };
   flow: { title: string; inputsLabel: string; inputs: string[]; steps: string[]; caption: string };

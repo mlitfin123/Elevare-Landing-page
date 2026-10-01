@@ -6508,3 +6508,92 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .professional-acquisition-page *, .password-toggle { transition: none; }
 }
+
+/* StageLab product page: real product media stays secondary to concise product positioning. */
+.stagelab-product-page { padding-bottom: clamp(56px, 8vw, 96px); }
+.stagelab-product-page .section { margin-top: clamp(54px, 7vw, 88px); }
+.stagelab-product-hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr); align-items: center; gap: clamp(34px, 7vw, 90px); padding-block: clamp(44px, 5vw, 64px); }
+.stagelab-product-hero-copy { min-width: 0; }
+.stagelab-product-lockup { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 24px; font-size: 1.15rem; font-weight: 750; letter-spacing: -.02em; }
+.stagelab-product-lockup img { width: 42px; height: 42px; border-radius: 11px; }
+.stagelab-product-hero h1 { max-width: 20ch; margin: 12px 0 20px; font-size: clamp(2.55rem, 5vw, 4.45rem); line-height: .98; letter-spacing: -.058em; text-wrap: balance; }
+.stagelab-product-hero-copy > p { max-width: 64ch; color: var(--muted); font-size: clamp(1rem, 1.6vw, 1.17rem); line-height: 1.68; }
+.stagelab-product-hero-copy .stagelab-product-support { margin: 16px 0 0; color: var(--text); font-size: .95rem; font-weight: 650; }
+.stagelab-product-hero .button-row { margin-top: 24px; }
+.stagelab-product-hero-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; }
+.stagelab-product-hero-links a { color: var(--brand-bright); font-size: .9rem; font-weight: 650; text-decoration: underline; text-decoration-color: rgba(116, 200, 214, .45); text-underline-offset: 4px; }
+.stagelab-product-page a:focus-visible, .stagelab-product-page button:focus-visible, .stagelab-product-page summary:focus-visible { outline: 3px solid var(--brand-bright); outline-offset: 4px; }
+.stagelab-screenshot { min-width: 0; margin: 0; }
+.stagelab-screenshot-link { display: block; width: fit-content; max-width: 100%; margin-inline: auto; border: 1px solid var(--border-strong); border-radius: 20px; background: #090d16; box-shadow: var(--shadow); overflow: hidden; }
+.stagelab-screenshot img { display: block; width: auto; max-width: 100%; height: auto; max-height: 620px; object-fit: contain; }
+.stagelab-screenshot figcaption { display: grid; gap: 5px; max-width: 38ch; margin: 13px auto 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+.stagelab-screenshot figcaption strong { color: var(--text); font-size: .95rem; }
+.stagelab-screenshot figcaption small { color: var(--muted-strong); font-family: var(--font-mono), monospace; font-size: .69rem; letter-spacing: .05em; text-transform: uppercase; }
+.stagelab-hero-screenshot { justify-self: center; width: min(100%, 310px); }
+.stagelab-hero-screenshot img { max-height: 640px; }
+.stagelab-product-demo, .stage-analysis-products { scroll-margin-top: 112px; }
+.stagelab-product-demo .section-heading { max-width: 780px; }
+.stagelab-product-demo .section-heading p, .stagelab-benefits .section-heading p { color: var(--muted); line-height: 1.65; }
+.stagelab-demo-layout { display: grid; grid-template-columns: minmax(280px, .7fr) minmax(0, 1.3fr); gap: clamp(22px, 4vw, 48px); align-items: start; margin-top: 28px; }
+.stagelab-demo-video-card { display: grid; gap: 22px; padding: 22px; }
+.stagelab-demo-video-card h3 { margin: 7px 0 9px; font-size: 1.28rem; }
+.stagelab-demo-video-card p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+.stagelab-landing-video-frame { position: relative; width: min(100%, 360px); aspect-ratio: 9 / 16; margin-inline: auto; border: 1px solid var(--border-strong); border-radius: 16px; background: #070b12; overflow: hidden; }
+.stagelab-landing-video-frame iframe, .stagelab-landing-video-play { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.stagelab-landing-video-play { padding: 0; cursor: pointer; background: #070b12; color: white; }
+.stagelab-landing-video-play img { object-fit: cover; }
+.stagelab-landing-video-play::after { position: absolute; inset: 0; background: linear-gradient(transparent 56%, rgba(0, 0, 0, .8)); content: ""; }
+.stagelab-landing-video-icon { position: absolute; z-index: 1; top: 50%; left: 50%; display: grid; width: 62px; height: 62px; place-items: center; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,.5); border-radius: 50%; background: rgba(5, 10, 18, .82); color: var(--brand-bright); font-size: 1.35rem; }
+.stagelab-landing-video-label { position: absolute; z-index: 1; right: 18px; bottom: 18px; left: 18px; font-size: .83rem; font-weight: 700; line-height: 1.4; text-align: center; }
+.stagelab-demo-screens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.stagelab-demo-screens .stagelab-screenshot-link { border-radius: 14px; }
+.stagelab-demo-screens .stagelab-screenshot img { width: 100%; max-height: 510px; }
+.stagelab-benefit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 28px; }
+.stagelab-benefit-card { display: grid; align-content: start; gap: 12px; min-width: 0; padding: clamp(22px, 3vw, 30px); }
+.stagelab-benefit-card h3, .stagelab-coach-benefit h3 { margin: 0; font-size: clamp(1.35rem, 2.3vw, 1.8rem); line-height: 1.2; }
+.stagelab-benefit-card p, .stagelab-coach-benefit p { margin: 0; color: var(--muted); line-height: 1.65; }
+.stagelab-coach-benefit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 320px); gap: clamp(28px, 5vw, 60px); align-items: center; margin-top: 18px; padding: clamp(24px, 4vw, 38px); border-color: var(--brand-line); background: linear-gradient(135deg, var(--brand-wash), transparent 70%), var(--surface); }
+.stagelab-coach-benefit > div { display: grid; justify-items: start; gap: 14px; }
+.stagelab-coach-benefit .button { margin-top: 6px; }
+.stagelab-coach-benefit .stagelab-screenshot img { max-height: 490px; }
+.stagelab-access-note { max-width: 92ch; margin: 18px 0 0; line-height: 1.6; }
+.stagelab-methodology-disclosure { margin-top: 24px; padding: 0; overflow: clip; }
+.stagelab-methodology-disclosure > summary { position: relative; padding: 20px 56px 20px 22px; cursor: pointer; color: var(--text); font-weight: 700; list-style: none; }
+.stagelab-methodology-disclosure > summary::-webkit-details-marker { display: none; }
+.stagelab-methodology-disclosure > summary::after { position: absolute; top: 50%; right: 22px; transform: translateY(-50%); color: var(--brand-bright); content: "+"; font-size: 1.45rem; }
+.stagelab-methodology-disclosure[open] > summary { border-bottom: 1px solid var(--border-strong); }
+.stagelab-methodology-disclosure[open] > summary::after { content: "−"; }
+.stagelab-methodology-disclosure-content { padding: clamp(20px, 3vw, 30px); }
+.stagelab-product-final { align-items: center; gap: 30px; }
+.stagelab-product-final p { max-width: 62ch; color: var(--muted); }
+.stagelab-product-final .fine-print { margin-bottom: 0; font-size: .84rem; }
+@media (max-width: 960px) {
+  .stagelab-product-hero { grid-template-columns: minmax(0, 1fr) minmax(230px, .55fr); min-height: 0; }
+  .stagelab-demo-layout { grid-template-columns: minmax(250px, .65fr) minmax(0, 1.35fr); }
+  .stagelab-demo-screens { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .stagelab-product-page { width: min(var(--max-width), calc(100vw - 32px)); }
+  .stagelab-product-page .section { margin-top: 48px; }
+  .stagelab-product-hero { grid-template-columns: 1fr; gap: 34px; padding-block: 30px 12px; }
+  .stagelab-product-lockup { margin-bottom: 18px; }
+  .stagelab-product-hero h1 { max-width: 15ch; font-size: clamp(2.4rem, 11.5vw, 3.6rem); }
+  .stagelab-hero-screenshot { width: min(82vw, 285px); }
+  .stagelab-demo-layout, .stagelab-coach-benefit { grid-template-columns: 1fr; }
+  .stagelab-demo-screens { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 10px; }
+  .stagelab-benefit-grid { grid-template-columns: 1fr; }
+  .stagelab-product-final { align-items: stretch; }
+  .stagelab-product-final .product-store-buttons { width: 100%; }
+}
+@media (max-width: 430px) {
+  .stagelab-product-page { width: min(var(--max-width), calc(100vw - 24px)); }
+  .stagelab-product-hero h1 { font-size: clamp(2.2rem, 11vw, 2.85rem); }
+  .stagelab-product-hero .product-store-buttons, .stagelab-product-hero .button-store, .stagelab-product-final .button-store { width: 100%; }
+  .stagelab-demo-screens { grid-template-columns: 1fr; }
+  .stagelab-demo-screens .stagelab-screenshot { width: min(100%, 300px); margin-inline: auto; }
+  .stagelab-coach-benefit { padding: 22px 18px; }
+  .stagelab-methodology-disclosure-content { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stagelab-product-page * { scroll-behavior: auto; transition: none; }
+}

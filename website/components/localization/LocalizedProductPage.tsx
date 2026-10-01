@@ -5,6 +5,7 @@ import { StructuredData } from "@/components/StructuredData";
 import { TrackedLink } from "@/components/TrackedLink";
 import { StageAnalysisProducts } from "@/components/stage-analysis/StageAnalysisProducts";
 import { StageLabMethodology, StageLabMethodologyTransition } from "@/components/stage-analysis/StageLabMethodology";
+import { StageLabLandingPage } from "@/components/stagelab/StageLabLandingPage";
 import type { Locale } from "@/lib/i18n/config";
 import { localizePathname } from "@/lib/i18n/config";
 import type { ProductPageMessages } from "@/lib/i18n/marketing-types";
@@ -69,6 +70,8 @@ function buildLocalizedProductStructuredData(locale: Locale, product: LocalizedP
 }
 
 export function LocalizedProductPage({ locale, product, messages }: { locale: Locale; product: LocalizedProduct; messages: ProductPageMessages }) {
+  if (product === "stagelab") return <StageLabLandingPage locale={locale} />;
+
   const details = productDetails[product];
   const isLogbook = product === "logbook";
 
