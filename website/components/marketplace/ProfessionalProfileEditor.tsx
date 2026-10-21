@@ -6,6 +6,7 @@ import { CategoryCatalog, CategoryMembership, categoryCopy, categorySelectionVal
 import { categoryAvailable, scopeCopy } from '@/lib/launch-scope';
 import { saveProfessionalSection } from "@/lib/professional-publication-client";
 import { getProfessionalPublicationMessages } from "@/lib/i18n/professional-publication-messages";
+import { focusProfileField, profileFieldTarget } from "@/lib/profile-field-navigation";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
@@ -182,6 +183,7 @@ type TrainerProfileRow = {
   public_headline: string | null;
   best_fit_summary: string | null;
   coaching_style: string | null;
+  coaching_approach: string | null;
   service_boundaries: string | null;
   consultation_expectations: string | null;
   modality: string | null;
@@ -481,6 +483,8 @@ export function ProfessionalProfileEditor() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [focusTarget, setFocusTarget] = useState<{ id: string } | null>(null);
+  const validationTargets = useRef<Record<string, { id: string; serviceId?: string; credentialId?: string }>>({});
   const [approvalStatus, setApprovalStatus] = useState("draft");
   const [reviewFeedbackPublic, setReviewFeedbackPublic] = useState<string | null>(null);
   const [publicProfileId, setPublicProfileId] = useState<string | null>(null);
@@ -499,6 +503,11 @@ export function ProfessionalProfileEditor() {
   const resetSavedFormSnapshot = useRef(true);
   const onboardingTracked = useRef(false);
   const approvalTracked = useRef(false);
+  useEffect(() => {
+    if (!focusTarget) return;
+    focusProfileField(focusTarget.id, document, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    setFocusTarget(null);
+  }, [focusTarget]);
   const professionalAnalytics = useMemo(() => {
     const queryAttribution = readProfessionalAcquisitionAttribution(searchParams);
     const metadataAttribution = readProfessionalAcquisitionMetadata(user?.user_metadata?.professional_acquisition);
@@ -578,7 +587,7 @@ export function ProfessionalProfileEditor() {
           .select("marketplace_status,status_message,is_publicly_listed,review_feedback_public,public_slug")
           .eq("user_id", appUser.id).maybeSingle(),
         marketplaceClient.from("trainer_profiles")
-          .select("id,updated_at,bio,years_experience,location_city,location_state,country_code,postal_code,primary_specialty,secondary_specialties,marketplace_specialties,marketplace_goal_tags,experience_levels_served,public_headline,best_fit_summary,coaching_style,service_boundaries,consultation_expectations,modality,verification_status,profile_live,accepting_clients,client_acceptance_status,typical_availability,availability_details,marketplace_price_min_cents,marketplace_price_max_cents,marketplace_pricing_basis,marketplace_currency_code,contact_for_pricing,website_url,social_links,public_slug,public_display_name,professional_title,review_feedback_public,languages")
+          .select("id,updated_at,bio,years_experience,location_city,location_state,country_code,postal_code,primary_specialty,secondary_specialties,marketplace_specialties,marketplace_goal_tags,experience_levels_served,public_headline,best_fit_summary,coaching_style,coaching_approach,service_boundaries,consultation_expectations,modality,verification_status,profile_live,accepting_clients,client_acceptance_status,typical_availability,availability_details,marketplace_price_min_cents,marketplace_price_max_cents,marketplace_pricing_basis,marketplace_currency_code,contact_for_pricing,website_url,social_links,public_slug,public_display_name,professional_title,review_feedback_public,languages")
           .eq("user_id", appUser.id).maybeSingle(),
       ]);
       if (statusResult.error) throw statusResult.error;
@@ -690,7 +699,7 @@ export function ProfessionalProfileEditor() {
         selectedSpecialties: loadedSpecialties,
         goalTags: loadedGoals,
         experienceLevelsServed: loadedExperienceLevels,
-        coachingStyle: profile.coaching_style ?? "",
+        coachingStyle: profile.coaching_approach ?? profile.coaching_style ?? "",
         serviceBoundaries: profile.service_boundaries ?? "",
         consultationExpectations: profile.consultation_expectations ?? "",
         countryCode,
@@ -902,10 +911,19 @@ export function ProfessionalProfileEditor() {
   }
 
   function focusCompletenessItem(section: ProfessionalSectionId, fieldId: string) {
-    setExpandedSections((current) => ({ ...current, [section]: true }));
-    window.setTimeout(() => {
-      document.getElementById(`profile-field-${fieldId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 0);
+    const target = profileFieldTarget(fieldId);
+    setExpandedSections((current) => ({ ...current, [target?.section ?? section]: true }));
+    if (target) setFocusTarget({ id: target.id });
+  }
+
+  function goToField(field: string) {
+    const target = profileFieldTarget(field);
+    if (!target) return;
+    if (target.section) setExpandedSections(current => ({ ...current, [target.section]: true }));
+    const detail = validationTargets.current[field];
+    if (detail?.serviceId) setEditingServiceId(detail.serviceId);
+    if (detail?.credentialId) setEditingCredentialId(detail.credentialId);
+    setFocusTarget({ id: detail?.id ?? target.id });
   }
 
   function choosePhoto(file: File | null) {
@@ -995,6 +1013,7 @@ export function ProfessionalProfileEditor() {
 
   function validateForm(isSubmission: boolean) {
     const errors: FieldErrors = {};
+    validationTargets.current = {};
     if (!publicProfileId && !categorySelectionValid(categoryMemberships)) errors.specialties = categoryCopy[locale].review;
     const activeServices = services.filter((service) => service.isActive && service.name.trim());
     const urlFields = [
@@ -1023,8 +1042,10 @@ export function ProfessionalProfileEditor() {
       const contentError = validatePublicProfessionalContent(value);
       if (contentError && !errors[field]) errors[field] = contentError;
     }
-    if (credentials.some((credential) => !isValidOptionalUrl(credential.supportingReferenceUrl))) {
+    const invalidCredential = credentials.find(credential => !isValidOptionalUrl(credential.supportingReferenceUrl));
+    if (invalidCredential) {
       errors.credentials = "Enter a complete http:// or https:// credential reference URL.";
+      validationTargets.current.credentials = { id: `profile-reference-${invalidCredential.id}`, credentialId: invalidCredential.id };
     }
 
     if (form.yearsExperience && (!Number.isFinite(Number(form.yearsExperience)) || Number(form.yearsExperience) < 0)) {
@@ -1038,21 +1059,19 @@ export function ProfessionalProfileEditor() {
     if (form.priceFrom && form.priceTo && Number(form.priceTo) < Number(form.priceFrom)) errors.pricing = "Maximum price must be at least the starting price.";
     if (!/^[A-Z]{3}$/.test(form.currencyCode.trim().toUpperCase())) errors.pricing = "Enter a three-letter currency code such as USD or CAD.";
     for (const service of activeServices) {
-      if (service.priceFrom && dollarsToCents(service.priceFrom) == null) errors.services = "Enter valid service pricing.";
-      if (service.priceTo && service.priceFrom && Number(service.priceTo) < Number(service.priceFrom)) errors.services = "A service maximum price cannot be lower than its starting price.";
-      if (service.durationMinutes && (!Number.isFinite(Number(service.durationMinutes)) || Number(service.durationMinutes) < 5)) errors.services = "Service duration must be at least 5 minutes.";
-      if (service.intendedFor.trim().length > 500) errors.services = "Keep each intended-client description to 500 characters or fewer.";
-      if (service.deliveryCadence.trim().length > 240 || service.minimumCommitment.trim().length > 240) errors.services = "Keep service cadence and commitment details to 240 characters or fewer.";
-      if (service.additionalCostsNote.trim().length > 400) errors.services = "Keep additional cost notes to 400 characters or fewer.";
-      const serviceTextError = [
-        service.name,
-        service.description,
-        service.intendedFor,
-        service.deliveryCadence,
-        service.minimumCommitment,
-        service.additionalCostsNote,
-      ].map(validatePublicProfessionalContent).find(Boolean);
-      if (serviceTextError) errors.services = serviceTextError;
+      const reject = (field: keyof ServiceDraft, message: string) => {
+        errors.services = message;
+        validationTargets.current.services = { id: `profile-service-${service.id}-${field}`, serviceId: service.id };
+      };
+      if (service.priceFrom && dollarsToCents(service.priceFrom) == null) reject("priceFrom", "Enter valid service pricing.");
+      if (service.priceTo && service.priceFrom && Number(service.priceTo) < Number(service.priceFrom)) reject("priceTo", "A service maximum price cannot be lower than its starting price.");
+      if (service.durationMinutes && (!Number.isFinite(Number(service.durationMinutes)) || Number(service.durationMinutes) < 5)) reject("durationMinutes", "Service duration must be at least 5 minutes.");
+      if (service.intendedFor.trim().length > 500) reject("intendedFor", "Keep each intended-client description to 500 characters or fewer.");
+      if (service.deliveryCadence.trim().length > 240 || service.minimumCommitment.trim().length > 240) reject(service.deliveryCadence.trim().length > 240 ? "deliveryCadence" : "minimumCommitment", "Keep service cadence and commitment details to 240 characters or fewer.");
+      if (service.additionalCostsNote.trim().length > 400) reject("additionalCostsNote", "Keep additional cost notes to 400 characters or fewer.");
+      const textFields = ["name", "description", "intendedFor", "deliveryCadence", "minimumCommitment", "additionalCostsNote"] as const;
+      const textError = textFields.map(field => ({ field, message: validatePublicProfessionalContent(service[field]) })).find(error => error.message);
+      if (textError?.message) reject(textError.field, textError.message);
     }
 
     if (isSubmission) {
@@ -1069,14 +1088,25 @@ export function ProfessionalProfileEditor() {
       if (!categorySelectionValid(categoryMemberships)) errors.specialties = categoryCopy[locale].review;
       if (form.serviceModes.length === 0) errors.serviceModes = "Choose at least one service mode.";
       const needsLocation = form.serviceModes.includes("in_person") || form.serviceModes.includes("hybrid");
-      if (needsLocation && !form.city.trim()) errors.location = "Add a city for in-person services.";
+      if (needsLocation && !form.city.trim()) {
+        errors.location = "Add a city for in-person services.";
+        validationTargets.current.location = { id: "profile-city" };
+      }
       if (needsLocation && isRegionRequired(form.countryCode) && !form.state.trim()) {
         errors.location = `Add a ${regionLabel.toLowerCase()} for in-person services.`;
+        validationTargets.current.location = { id: "profile-region" };
       }
-      if (activeServices.length === 0) errors.services = "Add at least one service.";
+      if (activeServices.length === 0) {
+        errors.services = "Add at least one service.";
+        const service = services.find(service => service.isActive) ?? services[0];
+        if (service) validationTargets.current.services = { id: `profile-service-${service.id}-name`, serviceId: service.id };
+      }
       const hasPricingContext = Boolean(form.contactForPricing || form.priceFrom.trim())
         || activeServices.some((service) => Boolean(service.contactForPricing || service.priceFrom.trim()));
-      if (!hasPricingContext) errors.services = "Add a starting price or choose Contact for pricing.";
+      if (!hasPricingContext) {
+        errors.services = "Add a starting price or choose Contact for pricing.";
+        if (activeServices[0]) validationTargets.current.services = { id: `profile-service-${activeServices[0].id}-priceFrom`, serviceId: activeServices[0].id };
+      }
       if (form.availabilityWindows.length === 0) errors.availability = "Choose at least one typical availability window.";
       if (!form.acceptanceStatus) errors.acceptance = "Choose your new-client status.";
       if (!form.consultationExpectations.trim()) errors.consultationExpectations = "Explain what a client can expect after requesting a consultation.";
@@ -1087,44 +1117,7 @@ export function ProfessionalProfileEditor() {
 
   function showValidationErrors(errors: FieldErrors) {
     setFieldErrors(errors);
-    const firstKey = Object.keys(errors)[0];
-    if (!firstKey) return;
-
-    const sectionByField: Partial<Record<string, ProfessionalSectionId>> = {
-      name: "about",
-      professionalTitle: "about",
-      photo: "about",
-      bio: "about",
-      yearsExperience: "about",
-      publicHeadline: "fit",
-      bestFitSummary: "fit",
-      goals: "fit",
-      experienceLevels: "fit",
-      coachingStyle: "fit",
-      serviceBoundaries: "fit",
-      primaryCategory: "offer",
-      specialties: "offer",
-      services: "offer",
-      serviceModes: "work",
-      location: "work",
-      acceptance: "work",
-      availability: "work",
-      consultationExpectations: "work",
-      pricing: "pricing",
-      website: "links",
-      websiteLinkText: "links",
-      instagram: "links",
-      facebook: "links",
-      tiktok: "links",
-      youtube: "links",
-      linkedin: "links",
-      credentials: "credentials",
-    };
-    const targetSection = sectionByField[firstKey];
-    if (targetSection) setExpandedSections((current) => ({ ...current, [targetSection]: true }));
-    window.setTimeout(() => {
-      document.getElementById(`profile-field-${firstKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 0);
+    setFocusTarget({ id: "profile-validation" });
   }
 
   async function uploadProfilePhoto(): Promise<UploadedProfilePhoto | null> {
@@ -1169,7 +1162,7 @@ export function ProfessionalProfileEditor() {
       nextStatus === "pending_review"
       && !hasCompatibleVerifiedCredential(form.professionalTitle, credentials)
     ) {
-      setFieldErrors({ professionalTitle: REGULATED_TITLE_REVIEW_MESSAGE });
+      showValidationErrors({ professionalTitle: REGULATED_TITLE_REVIEW_MESSAGE });
       setExpandedSections((current) => ({ ...current, about: true, credentials: true }));
       setFeedback(REGULATED_TITLE_REVIEW_MESSAGE);
       setFeedbackType("error");
@@ -1233,7 +1226,7 @@ export function ProfessionalProfileEditor() {
         years_experience: form.yearsExperience ? Number(form.yearsExperience) : null,
         marketplace_goal_tags: form.goalTags,
         experience_levels_served: form.experienceLevelsServed,
-        coaching_style: form.coachingStyle.trim() || null,
+        coaching_approach: form.coachingStyle.trim() || null,
         service_boundaries: form.serviceBoundaries.trim() || null,
         consultation_expectations: form.consultationExpectations.trim() || null,
         location_city: form.city.trim() || null,
@@ -1393,7 +1386,7 @@ export function ProfessionalProfileEditor() {
         selectedSpecialties: form.selectedSpecialties,
         goalTags: parseStringArray(saved.profile.marketplace_goal_tags),
         experienceLevelsServed: parseStringArray(saved.profile.experience_levels_served),
-        coachingStyle: saved.profile.coaching_style ?? "",
+        coachingStyle: saved.profile.coaching_approach ?? saved.profile.coaching_style ?? "",
         serviceBoundaries: saved.profile.service_boundaries ?? "",
         consultationExpectations: saved.profile.consultation_expectations ?? "",
         countryCode: saved.profile.country_code ?? countryCode,
@@ -1600,14 +1593,15 @@ export function ProfessionalProfileEditor() {
           translate={t}
         />
         {expandedSections.offer ? <div className="professional-section-body">
-          <CategorySpecialties profileId={publicProfileId || null} locale={locale} initialServices={categoryMemberships} onCatalog={setCategoryCatalog} onChange={memberships => {
+          <div id="profile-field-specialties"><CategorySpecialties profileId={publicProfileId || null} locale={locale} initialServices={categoryMemberships} onCatalog={setCategoryCatalog} onChange={memberships => {
             setCategoryMemberships(memberships);
             const featured = memberships.find(row => row.is_primary);
             setForm(current => ({ ...current, primaryCategoryStableId: featured?.category_slug ?? '',
               additionalCategoryStableIds: memberships.filter(row => !row.is_primary).map(row => row.category_slug),
               selectedSpecialties: memberships.flatMap(row => [row.primary_specialty, ...row.secondary_specialties].filter((value): value is string => !!value)),
             }));
-          }} />
+          }} /></div>
+          <FieldError name="primaryCategory" errors={fieldErrors} translate={t} />
           <FieldError name="specialties" errors={fieldErrors} translate={t} />
           {selectedCategoryNotes.map((note) => <div key={note} className="form-note">{t(note)}</div>)}
           <div id="profile-field-services" className="profile-subsection">
@@ -1619,19 +1613,19 @@ export function ProfessionalProfileEditor() {
               return isEditing ? <div key={service.id} className="nested-editor-card">
                 <div className="nested-editor-head"><strong>{service.name.trim() || `${t("Service")} ${index + 1}`}</strong><button type="button" className="hero-text-link" onClick={() => { setServices((current) => current.filter((entry) => entry.id !== service.id)); setEditingServiceId(null); }}>{t("Remove")}</button></div>
                 <div className="tool-form-grid marketplace-editor-grid">
-                  <label className="field"><span className="field-label">{t("Service name")}</span><input value={service.name} onChange={(event) => updateService(service.id, { name: event.target.value })} placeholder={t("60-Minute Personal Training")} /></label>
+                  <label id={`profile-service-${service.id}-name`} className="field"><span className="field-label">{t("Service name")}</span><input value={service.name} onChange={(event) => updateService(service.id, { name: event.target.value })} placeholder={t("60-Minute Personal Training")} /></label>
                   <label className="field"><span className="field-label">{t("Service mode")}</span><select value={service.serviceMode} onChange={(event) => updateService(service.id, { serviceMode: event.target.value })}><option value="">{t("Flexible")}</option>{SERVICE_MODE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{localizeServiceMode(option.value, locale)}</option>)}</select></label>
-                  <label className="field field-full"><span className="field-label">{t("Description")}</span><textarea rows={3} value={service.description} onChange={(event) => updateService(service.id, { description: event.target.value })} placeholder={t("What is included and who is this service best for?")} /></label>
-                  <label className="field field-full"><span className="field-label">{t("Intended for")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={500} rows={3} value={service.intendedFor} onChange={(event) => updateService(service.id, { intendedFor: event.target.value })} placeholder={t("Who is most likely to benefit from this specific service?")} /></label>
+                  <label id={`profile-service-${service.id}-description`} className="field field-full"><span className="field-label">{t("Description")}</span><textarea rows={3} value={service.description} onChange={(event) => updateService(service.id, { description: event.target.value })} placeholder={t("What is included and who is this service best for?")} /></label>
+                  <label id={`profile-service-${service.id}-intendedFor`} className="field field-full"><span className="field-label">{t("Intended for")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={500} rows={3} value={service.intendedFor} onChange={(event) => updateService(service.id, { intendedFor: event.target.value })} placeholder={t("Who is most likely to benefit from this specific service?")} /></label>
                   <label className="field field-full"><span className="field-label">{t("What is included")} <span className="field-optional">{t("Optional")}</span></span><span className="field-help">{t("Add one item per line, up to 12 items.")}</span><textarea rows={4} value={service.includedItems} onChange={(event) => updateService(service.id, { includedItems: event.target.value })} placeholder={t("Initial assessment\nPersonalized plan\nWeekly check-in")} /></label>
-                  <label className="field"><span className="field-label">{t("Duration in minutes")} <span className="field-optional">{t("Optional")}</span></span><input type="number" min="5" value={service.durationMinutes} onChange={(event) => updateService(service.id, { durationMinutes: event.target.value })} placeholder="60" /></label>
-                  <label className="field"><span className="field-label">{t("Delivery cadence")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.deliveryCadence} onChange={(event) => updateService(service.id, { deliveryCadence: event.target.value })} placeholder={t("Weekly check-in with messaging support")} /></label>
-                  <label className="field"><span className="field-label">{t("Minimum commitment")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.minimumCommitment} onChange={(event) => updateService(service.id, { minimumCommitment: event.target.value })} placeholder={t("Month to month or 12-week minimum")} /></label>
+                  <label id={`profile-service-${service.id}-durationMinutes`} className="field"><span className="field-label">{t("Duration in minutes")} <span className="field-optional">{t("Optional")}</span></span><input type="number" min="5" value={service.durationMinutes} onChange={(event) => updateService(service.id, { durationMinutes: event.target.value })} placeholder="60" /></label>
+                  <label id={`profile-service-${service.id}-deliveryCadence`} className="field"><span className="field-label">{t("Delivery cadence")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.deliveryCadence} onChange={(event) => updateService(service.id, { deliveryCadence: event.target.value })} placeholder={t("Weekly check-in with messaging support")} /></label>
+                  <label id={`profile-service-${service.id}-minimumCommitment`} className="field"><span className="field-label">{t("Minimum commitment")} <span className="field-optional">{t("Optional")}</span></span><input maxLength={240} value={service.minimumCommitment} onChange={(event) => updateService(service.id, { minimumCommitment: event.target.value })} placeholder={t("Month to month or 12-week minimum")} /></label>
                   <label className="field"><span className="field-label">{t("Consultation")}</span><select value={service.consultationType} onChange={(event) => updateService(service.id, { consultationType: event.target.value })}>{CONSULTATION_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
                   <label className="field"><span className="field-label">{t("Pricing basis")}</span><select value={service.pricingBasis} disabled={service.contactForPricing} onChange={(event) => updateService(service.id, { pricingBasis: event.target.value })}>{PRICING_BASIS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}</select></label>
-                  <label className="field"><span className="field-label">{t("Starting price")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceFrom} onChange={(event) => updateService(service.id, { priceFrom: event.target.value })} placeholder="75" /></label>
-                  <label className="field"><span className="field-label">{t("Optional maximum")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceTo} onChange={(event) => updateService(service.id, { priceTo: event.target.value })} placeholder="120" /></label>
-                  <label className="field field-full"><span className="field-label">{t("Additional costs or requirements")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={400} rows={2} value={service.additionalCostsNote} onChange={(event) => updateService(service.id, { additionalCostsNote: event.target.value })} placeholder={t("Note any separate facility fees, equipment needs, or other requirements.")} /></label>
+                  <label id={`profile-service-${service.id}-priceFrom`} className="field"><span className="field-label">{t("Starting price")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceFrom} onChange={(event) => updateService(service.id, { priceFrom: event.target.value })} placeholder="75" /></label>
+                  <label id={`profile-service-${service.id}-priceTo`} className="field"><span className="field-label">{t("Optional maximum")}</span><input type="number" min="0" step="1" disabled={service.contactForPricing} value={service.priceTo} onChange={(event) => updateService(service.id, { priceTo: event.target.value })} placeholder="120" /></label>
+                  <label id={`profile-service-${service.id}-additionalCostsNote`} className="field field-full"><span className="field-label">{t("Additional costs or requirements")} <span className="field-optional">{t("Optional")}</span></span><textarea maxLength={400} rows={2} value={service.additionalCostsNote} onChange={(event) => updateService(service.id, { additionalCostsNote: event.target.value })} placeholder={t("Note any separate facility fees, equipment needs, or other requirements.")} /></label>
                 </div>
                 <label className="checkbox-row"><input type="checkbox" checked={service.contactForPricing} onChange={(event) => updateService(service.id, { contactForPricing: event.target.checked })} /><span>{t("Contact for pricing")}</span></label>
                 <label className="checkbox-row"><input type="checkbox" checked={service.isActive} onChange={(event) => updateService(service.id, { isActive: event.target.checked })} /><span>{t("Show this service on my profile")}</span></label>
@@ -1658,8 +1652,8 @@ export function ProfessionalProfileEditor() {
           <div id="profile-field-serviceModes" className="profile-subsection"><span className="field-label">{t("Service mode")} <span aria-hidden="true">*</span></span><div className="toggle-row">{SERVICE_MODE_OPTIONS.map((option) => <button key={option.value} type="button" aria-pressed={form.serviceModes.includes(option.value)} className={`toggle-chip${form.serviceModes.includes(option.value) ? " is-active" : ""}`} onClick={() => toggleArrayField("serviceModes", option.value)}>{localizeServiceMode(option.value, locale)}</button>)}</div><FieldError name="serviceModes" errors={fieldErrors} translate={t} /></div>
           <div id="profile-field-location" className="tool-form-grid marketplace-editor-grid">
             <label className="field"><span className="field-label">{t("Country")}</span><select autoComplete="country" value={form.countryCode} onChange={(event) => updateCountry(event.target.value)}>{marketplaceCountryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}</select></label>
-            <label className="field"><span className="field-label">{t("City")}</span><input autoComplete="address-level2" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} placeholder={form.countryCode === "US" ? "Miami" : t("City")} /></label>
-            <label className="field"><span className="field-label">{t(regionLabel)}{!isRegionRequired(form.countryCode) ? <span className="field-optional"> {t("Optional")}</span> : null}</span>{regionOptions.length > 0 ? <select autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}><option value="">{t("Select")} {t(regionLabel).toLocaleLowerCase(locale)}</option>{form.state && !regionOptions.some(([code]) => code === form.state) ? <option value={form.state}>{form.state}</option> : null}{regionOptions.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select> : <input autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} placeholder={form.countryCode === "GB" ? "Greater London" : t(regionLabel)} />}</label>
+            <label id="profile-city" className="field"><span className="field-label">{t("City")}</span><input autoComplete="address-level2" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} placeholder={form.countryCode === "US" ? "Miami" : t("City")} /></label>
+            <label id="profile-region" className="field"><span className="field-label">{t(regionLabel)}{!isRegionRequired(form.countryCode) ? <span className="field-optional"> {t("Optional")}</span> : null}</span>{regionOptions.length > 0 ? <select autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))}><option value="">{t("Select")} {t(regionLabel).toLocaleLowerCase(locale)}</option>{form.state && !regionOptions.some(([code]) => code === form.state) ? <option value={form.state}>{form.state}</option> : null}{regionOptions.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select> : <input autoComplete="address-level1" value={form.state} onChange={(event) => setForm((current) => ({ ...current, state: event.target.value }))} placeholder={form.countryCode === "GB" ? "Greater London" : t(regionLabel)} />}</label>
             {offersInPerson ? <label className="field"><span className="field-label">{t("Service radius")}</span><span className="field-help">{t("Enter the distance you normally travel in")} {distanceLabel}.</span><input type="number" min="1" max="500" list="service-radius-options" value={form.serviceRadius} onChange={(event) => setForm((current) => ({ ...current, serviceRadius: event.target.value }))} /><datalist id="service-radius-options">{[5, 10, 25, 50].map((distance) => <option key={distance} value={distance} />)}</datalist></label> : null}
             {offersInPerson ? <label className="field field-full"><span className="field-label">{t("Service area description")} <span className="field-optional">{t("Optional")}</span></span><input value={form.serviceArea} onChange={(event) => setForm((current) => ({ ...current, serviceArea: event.target.value }))} placeholder={form.countryCode === "GB" ? "Central London" : "Brickell, Downtown Miami, and Edgewater"} /></label> : null}
             <FieldError name="location" errors={fieldErrors} translate={t} />
@@ -1756,7 +1750,7 @@ export function ProfessionalProfileEditor() {
                   {!hasPrivateDocument && !hasLegacyDocument ? <span className="field-help">{t("PDF, JPG, PNG, or WebP up to 8 MB. The file is private and is uploaded when you save your profile.")}</span> : null}
                   {uploadFeedback ? <span className={uploadFeedback.kind === "error" ? "field-error" : "field-help"} role={uploadFeedback.kind === "error" ? "alert" : "status"}>{t(uploadFeedback.message)}</span> : null}
                 </div>
-                <label className="field field-full"><span className="field-label">{t("Supporting reference URL")}</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder={t("Optional public verification link")} /><span className="field-help">{t("This may help reviewers confirm the credential, but it does not make the credential verified.")}</span><FieldError name="credentials" errors={fieldErrors} translate={t} /></label>
+                <label id={`profile-reference-${credential.id}`} className="field field-full"><span className="field-label">{t("Supporting reference URL")}</span><input type="url" value={credential.supportingReferenceUrl} onChange={(event) => updateCredential(credential.id, { supportingReferenceUrl: event.target.value })} placeholder={t("Optional public verification link")} /><span className="field-help">{t("This may help reviewers confirm the credential, but it does not make the credential verified.")}</span><FieldError name="credentials" errors={fieldErrors} translate={t} /></label>
                 <label className="check-row field-full">
                   <input type="checkbox" checked={credential.publicDisplay} onChange={(event) => updateCredential(credential.id, { publicDisplay: event.target.checked })} />
                   <span>{t("Show this credential on my public profile")}</span>
@@ -1845,7 +1839,17 @@ export function ProfessionalProfileEditor() {
         <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>      <p role="status" aria-live="polite">{isSaving ? publicationCopy.saving : null}</p>
       {propagationDelayed ? <button type="button" className="button button-secondary" onClick={() => void retryPropagation()}>{publicationCopy.retry}</button> : null}
       {saveConflict ? <button type="button" className="button button-secondary" onClick={() => { setSaveConflict(false); setReloadVersion((value) => value + 1); }}>{publicationCopy.reload}</button> : null}
-{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}</div>
+{feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}
+        {Object.values(fieldErrors).some(Boolean) ? <div id="profile-validation" tabIndex={-1} className="profile-completeness" aria-labelledby="profile-validation-heading">
+          <strong id="profile-validation-heading">{publicationCopy.reviewFields}</strong>
+          <ul className="profile-completeness-actions">
+            {Object.entries(fieldErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}>
+              {profileFieldTarget(field) ? <button type="button" className="profile-completeness-item" onClick={() => goToField(field)}>
+                {t(message)}<span>{publicationCopy.goToField}</span>
+              </button> : t(message)}
+            </li>)}
+          </ul>
+        </div> : null}</div>
       </article>
       </fieldset>
     </section>

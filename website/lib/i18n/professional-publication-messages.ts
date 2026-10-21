@@ -1,6 +1,8 @@
 import type { Locale } from "./config.ts";
 const en = {
   saving: "Saving your changes…",
+  reviewFields: "Review these fields",
+  goToField: "Go to field",
   delayed: "Saved. Public updates may be delayed. You can retry the public update without saving again.",
   retry: "Retry public update",
   propagated: "Public information is up to date.",
@@ -13,6 +15,8 @@ const en = {
 type Messages = Record<keyof typeof en, string>;
 const es: Messages = {
   saving: "Guardando tus cambios…",
+  reviewFields: "Revisa estos campos",
+  goToField: "Ir al campo",
   delayed: "Guardado. Las actualizaciones públicas pueden tardar. Puedes reintentar la actualización pública sin volver a guardar.",
   retry: "Reintentar actualización pública",
   propagated: "La información pública está actualizada.",
@@ -24,6 +28,8 @@ const es: Messages = {
 };
 const pt: Messages = {
   saving: "Salvando suas alterações…",
+  reviewFields: "Revise estes campos",
+  goToField: "Ir para o campo",
   delayed: "Salvo. As atualizações públicas podem demorar. Você pode tentar a atualização pública novamente sem salvar outra vez.",
   retry: "Tentar atualização pública novamente",
   propagated: "As informações públicas estão atualizadas.",

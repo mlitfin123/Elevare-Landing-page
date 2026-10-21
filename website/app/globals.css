@@ -2970,6 +2970,19 @@ select {
   font-size: 18px;
 }
 
+#profile-validation .profile-completeness-actions {
+  list-style: none;
+  padding-left: 0;
+}
+
+#profile-validation .profile-completeness-item {
+  flex-wrap: wrap;
+}
+
+#profile-validation .profile-completeness-item span {
+  font-size: 13px;
+}
+
 .professional-profile-builder .selection-tag:focus-visible,
 .professional-profile-builder .professional-section-toggle:focus-visible,
 .professional-profile-builder .profile-completeness-item:focus-visible,
