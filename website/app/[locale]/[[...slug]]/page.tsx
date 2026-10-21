@@ -71,7 +71,7 @@ export async function generateStaticParams() {
   const baseParams = getLocalizedRouteParams();
   if (!baseParams.length) return [];
 
-  const [exercises, workoutTemplates, restaurants, marketplaceCategories] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants(), getMarketplaceCategories()]);
+  const [exercises, workoutTemplates, restaurants] = await Promise.all([getAllExercises(), getAllWorkoutTemplates(), getNutritionRestaurants()]);
   const categorySlugs = [...EXERCISE_MUSCLE_CATEGORIES, ...EXERCISE_EQUIPMENT_CATEGORIES].map((category) => category.slug);
   const locales = ["es-419", "pt-BR"] as const;
   const catalogParams = locales.flatMap((locale) => {
@@ -93,7 +93,6 @@ export async function generateStaticParams() {
         ...restaurantNutritionViews.map((view) => ({ locale: localeSegment, slug: ["nutrition", restaurant.slug, view] })),
       ]),
       { locale: localeSegment, slug: ["professionals"] },
-      ...marketplaceCategories.map((category) => ({ locale: localeSegment, slug: ["professionals", category.slug] })),
     ];
   });
 

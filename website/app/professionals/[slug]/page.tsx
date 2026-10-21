@@ -77,10 +77,6 @@ type ProfessionalRoutePageProps = {
 
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  return (await getMarketplaceCategories()).map((category) => ({ slug: category.slug }));
-}
-
 export async function buildProfessionalRouteMetadata(
   slug: string,
   locale: Locale = "en",
