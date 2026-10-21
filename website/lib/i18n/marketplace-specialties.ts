@@ -4,6 +4,8 @@ type SpecialtyDictionary = Record<string, string>;
 
 const SPECIALTY_TRANSLATIONS: Record<Exclude<Locale, "en">, SpecialtyDictionary> = {
   "es-419": {
+    'Goals & Accountability': 'Objetivos y seguimiento',
+    'Guided Stretching': 'Estiramientos guiados',
     "General Fitness": "Fitness general",
     "Beginner Fitness": "Fitness para principiantes",
     "Strength Training": "Entrenamiento de fuerza",
@@ -224,6 +226,8 @@ const SPECIALTY_TRANSLATIONS: Record<Exclude<Locale, "en">, SpecialtyDictionary>
     "Functional Independence": "Independencia funcional",
   },
   "pt-BR": {
+    'Goals & Accountability': 'Objetivos e acompanhamento',
+    'Guided Stretching': 'Alongamento guiado',
     "General Fitness": "Condicionamento geral",
     "Beginner Fitness": "Fitness para iniciantes",
     "Strength Training": "Treinamento de força",

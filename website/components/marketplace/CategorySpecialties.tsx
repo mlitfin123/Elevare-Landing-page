@@ -125,4 +125,3 @@ export default function CategorySpecialties({ profileId, locale, initialServices
     </fieldset> : null}
   </section>;
 }
-
