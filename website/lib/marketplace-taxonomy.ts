@@ -1,3 +1,5 @@
+import { categoryAvailable } from './launch-scope.ts';
+
 export type MarketplaceTaxonomyCategory = {
   stableId: string;
   publicSlug: string;
@@ -17,7 +19,7 @@ export type MarketplaceLegacyCategoryMapping = {
   impliedServiceModes?: string[];
 };
 
-export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCategory[] = [
+export const ARCHIVED_TAXONOMY: readonly MarketplaceTaxonomyCategory[] = [
   {
     stableId: "personal_training",
     publicSlug: "personal-training",
@@ -75,13 +77,11 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
       "Agility",
       "Conditioning",
       "Work Capacity",
-      "Injury-Resilient Training",
-      "Return-to-Performance Training",
       "Periodization",
       "Sports Conditioning",
       "Youth Athletic Development",
     ],
-    editorNote: "Return-to-performance should not be represented as physical therapy or medical rehabilitation.",
+    editorNote: "Exercise instruction only; no injury evaluation or rehabilitation services.",
   },
   {
     stableId: "bodybuilding_physique",
@@ -276,7 +276,6 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
       "Sustainable Lifestyle Change",
       "General Wellbeing",
       "Fitness Accountability",
-      "Nutrition Accountability",
     ],
   },
   {
@@ -298,7 +297,7 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
       "Motivation",
       "Habit Development",
       "Performance Mindset",
-      "Mental Performance",
+      "Goals & Accountability",
       "Productivity Coaching",
       "Career-Life Balance",
       "Lifestyle Change",
@@ -365,16 +364,15 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
     providerSingular: "Mobility and Movement Coach",
     providerPlural: "Mobility and Movement Coaches",
     headline: "Mobility, flexibility, and movement coaching",
-    shortDescription: "Support for mobility, flexibility, movement quality, and non-medical corrective exercise.",
+    shortDescription: "Client-performed mobility, flexibility, and guided stretching instruction. No hands-on treatment or injury rehabilitation.",
     sortOrder: 130,
     specialties: [
       "Mobility Training",
       "Flexibility Training",
-      "Assisted Stretching",
+      "Guided Stretching",
       "Stretching",
       "Movement Coaching",
       "Movement Quality",
-      "Corrective Exercise",
       "Posture & Movement",
       "Joint Mobility",
       "Athletic Mobility",
@@ -463,6 +461,8 @@ export const MARKETPLACE_TAXONOMY_CATEGORIES: readonly MarketplaceTaxonomyCatego
   },
 ] as const;
 
+export const MARKETPLACE_TAXONOMY_CATEGORIES = ARCHIVED_TAXONOMY.filter((category) => categoryAvailable(category.stableId));
+
 export const MARKETPLACE_CLIENT_GOAL_TAGS = [
   "Build Muscle",
   "Weight Loss / Fat Loss",
@@ -475,7 +475,6 @@ export const MARKETPLACE_CLIENT_GOAL_TAGS = [
   "Prepare for a Competition",
   "Improve Athletic Performance",
   "Mobility & Flexibility",
-  "Improve Nutrition",
   "Healthy Habits & Lifestyle",
   "Accountability",
   "Improve Confidence",
@@ -548,13 +547,15 @@ export const MARKETPLACE_CATEGORY_RELATED_PUBLIC_SLUGS: Record<string, string[]>
 };
 
 const taxonomyByStableId = new Map(
-  MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => [category.stableId, category]),
+  ARCHIVED_TAXONOMY.map((category) => [category.stableId, category]),
 );
 const taxonomyByPublicSlug = new Map(
-  MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => [category.publicSlug, category]),
+  ARCHIVED_TAXONOMY.map((category) => [category.publicSlug, category]),
 );
 
 export function getMarketplaceTaxonomyCategoryByStableId(stableId: string | null | undefined) {
+  if (stableId === 'mobility_flexibility_movement') stableId = 'mobility_movement';
+  if (stableId === 'meditation_mindfulness_breathwork') stableId = 'mindfulness_breathwork';
   return stableId ? taxonomyByStableId.get(stableId) ?? null : null;
 }
 
@@ -607,6 +608,7 @@ export function resolveMarketplaceCategoryTaxonomy(
 
 export function getMarketplaceTaxonomySelections(categoryStableIds: string[]) {
   return categoryStableIds
+    .filter(categoryAvailable)
     .map((stableId) => getMarketplaceTaxonomyCategoryByStableId(stableId))
     .filter((category): category is MarketplaceTaxonomyCategory => Boolean(category));
 }

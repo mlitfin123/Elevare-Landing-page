@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { connection } from "next/server";
-import { MARKETPLACE_CATEGORY_SEEDS } from "./marketplace-categories.ts";
+import { mapCategoryCatalog } from "./marketplace-categories.ts";
 import { getMarketplaceServerClient } from "./marketplace-server.ts";
 import { professionalCache, professionalIdPattern, publicSlugPattern } from "./professional-cache.ts";
 import { mapPublicMarketplaceRows, type MarketplacePublicTrainerRow, type MarketplaceInternationalTrainerRow, type MarketplacePublicTrustRow } from "./marketplace-public-mapper.ts";
@@ -10,9 +10,12 @@ import type { ProfessionalCategoryRecord, ProfessionalProfileRecord } from "./ma
 
 type PublicRow = { professional_id: string; slug: string; profile: MarketplacePublicTrainerRow; international: MarketplaceInternationalTrainerRow; trust: MarketplacePublicTrustRow };
 
-export const getMarketplaceCategories = cache(async (): Promise<ProfessionalCategoryRecord[]> =>
-  MARKETPLACE_CATEGORY_SEEDS.map((category) => ({ ...category, id: category.stableId, isActive: true })),
-);
+export const getMarketplaceCategories = cache(async (): Promise<ProfessionalCategoryRecord[]> => {
+  await connection();
+  const { data, error } = await getMarketplaceServerClient().rpc('marketplace_category_catalog');
+  if (error || !Array.isArray(data)) throw new Error('MARKETPLACE_CATEGORY_READ_FAILED');
+  return mapCategoryCatalog(data);
+});
 
 async function readProfessionals(slug?: string): Promise<ProfessionalProfileRecord[]> {
   const client = getMarketplaceServerClient();

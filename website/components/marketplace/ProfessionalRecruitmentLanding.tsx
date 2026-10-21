@@ -7,7 +7,7 @@ import {
 } from "@/components/marketplace/ProfessionalRecruitmentActions";
 import { getMarketplaceCategoryCopy } from "@/lib/i18n/marketplace-content";
 import type { Locale } from "@/lib/i18n/config";
-import { MARKETPLACE_TAXONOMY_CATEGORIES } from "@/lib/marketplace-taxonomy";
+import { getMarketplaceCategories } from "@/lib/marketplace";
 import { getProfessionalAcquisitionCopy, getProfessionalSignupHref } from "@/lib/professional-acquisition";
 
 const FEATURED_CATEGORY_IDS = new Set([
@@ -21,10 +21,11 @@ const FEATURED_CATEGORY_IDS = new Set([
   "pilates",
 ]);
 
-export function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
+export async function ProfessionalRecruitmentLanding({ locale }: { locale: Locale }) {
   const copy = getProfessionalAcquisitionCopy(locale);
-  const featuredCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) => FEATURED_CATEGORY_IDS.has(category.stableId));
-  const additionalCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) => !FEATURED_CATEGORY_IDS.has(category.stableId));
+  const categories = await getMarketplaceCategories();
+  const featuredCategories = categories.filter((category) => FEATURED_CATEGORY_IDS.has(category.stableId));
+  const additionalCategories = categories.filter((category) => !FEATURED_CATEGORY_IDS.has(category.stableId));
 
   return (
     <div className="container professional-acquisition-page">

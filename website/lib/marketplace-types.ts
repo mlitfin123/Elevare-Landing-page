@@ -9,6 +9,11 @@ export type ProfessionalCategoryRecord = {
   sortOrder: number;
   isActive: boolean;
   isPrimary?: boolean;
+  primarySpecialty?: string | null;
+  secondarySpecialties?: string[];
+  specialtyLabels?: Record<string, Record<string, string>>;
+  offerings?: { id: string; name: string; description: string | null; price_cents: number; currency: string;
+    pricing_basis: string; billing_period: string | null; duration_minutes: number | null; delivery_mode: string }[];
 };
 
 export type ProfessionalCredentialRecord = {
@@ -20,6 +25,7 @@ export type ProfessionalCredentialRecord = {
   issueDate: string | null;
   expirationDate: string | null;
   verificationStatus: string;
+  verifiedAt?: string | null;
   countryCode: string | null;
   jurisdiction: string | null;
 };
@@ -31,6 +37,7 @@ export type ProfessionalTrustSummary = {
   phoneVerified: boolean;
   identityVerified: boolean;
   identityVerifiedAt: string | null;
+  identityReviewedAt?: string | null;
   backgroundCheckCompleted: boolean;
   backgroundCheckCompletedAt: string | null;
   backgroundCheckProduct: string | null;

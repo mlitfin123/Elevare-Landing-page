@@ -14,7 +14,7 @@ export function Footer() {
   const pathname = usePathname();
   const locale = localeFromPathname(pathname);
   const messages = getShellMessages(locale);
-  const signInHref = `/sign-in/?redirect=${encodeURIComponent(localizePathname("/", locale))}`;
+  const signInHref = `/sign-in/?redirect=${encodeURIComponent(localizePathname("/account/", locale))}`;
   const englishOnlyHrefLang = locale === "en" ? undefined : "en";
 
   return (

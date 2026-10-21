@@ -10,7 +10,6 @@ export const CLIENT_GOAL_OPTIONS = [
   "Prepare for a Competition",
   "Improve Athletic Performance",
   "Mobility & Flexibility",
-  "Improve Nutrition",
   "Healthy Habits & Lifestyle",
   "Accountability",
   "Improve Confidence",
@@ -136,7 +135,7 @@ const LEGACY_GOAL_LABELS: Record<string, string> = {
   mobility_flexibility: "Mobility & Flexibility",
   athletic_performance: "Improve Athletic Performance",
   senior_fitness: "Healthy Aging",
-  injury_aware_training: "Learn / Return to Exercise",
+  injury_aware_training: "injury_aware_training",
   competition_prep: "Prepare for a Competition",
   online_coaching: "Accountability",
 };

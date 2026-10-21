@@ -26,6 +26,8 @@ test("modern marketplace categories preserve a valid legacy specialty", () => {
     { primary: "competition_prep", secondary: [] },
   );
   assert.equal(deriveLegacySpecialties("strength_sports", ["Powerlifting"]).primary, "strength_training");
+  assert.deepEqual(deriveLegacySpecialties("mobility_movement", ["Guided Stretching", "Injury Aware Training"]),
+    { primary: "mobility_flexibility", secondary: [] });
 });
 
 test("profile completeness requires meaningful public profile inputs", () => {
@@ -175,7 +177,7 @@ test("specialty options only come from selected marketplace categories", () => {
   const available = collectCategorySpecialties(categories);
 
   assert.ok(available.includes("Competition Prep"));
-  assert.ok(available.includes("Sports Nutrition"));
+  assert.equal(available.includes("Sports Nutrition"),false);
   assert.equal(available.includes("Powerlifting"), false);
   assert.deepEqual(
     retainAvailableSpecialties(["Competition Prep", "Powerlifting"], categories),

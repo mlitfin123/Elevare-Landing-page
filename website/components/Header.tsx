@@ -83,7 +83,7 @@ export function Header() {
             </div>
           </details>
           <Link className="nav-link" href={href("/professionals/join/")} aria-current={isActive("/professionals/join/") ? "page" : undefined}>{m.pro}</Link>
-          <AuthNavigationLink className="button-link" signedInLabel={messages.authentication.signedIn} signInLabel={messages.authentication.signIn} signInHref={`/sign-in/?redirect=${encodeURIComponent(localizedHome)}`} signedInHref={href("/account/")} />
+          <AuthNavigationLink className="button-link" signedInLabel={messages.authentication.signedIn} signInLabel={messages.authentication.signIn} signInHref={`/sign-in/?redirect=${encodeURIComponent(href("/account/"))}`} signedInHref={href("/account/")} />
           <LanguageSelector />
         </nav>
       </div>

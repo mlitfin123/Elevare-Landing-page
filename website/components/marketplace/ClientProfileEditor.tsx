@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from 'next/navigation';
+import { localeFromPathname } from '@/lib/i18n/config';
+import { categoryAvailable, savedScopeCopy, scopeCopy } from '@/lib/launch-scope';
+import { getMarketplaceCategoryCopy, marketplaceText } from '@/lib/i18n/marketplace-content';
 import Link from "next/link";
 import { useSupabaseSession } from "@/hooks/useSupabaseSession";
 import {
@@ -39,7 +43,8 @@ import {
   normalizeCurrencyCode,
   normalizeRegionValue,
 } from "@/lib/marketplace-location";
-import { MARKETPLACE_TAXONOMY_CATEGORIES } from "@/lib/marketplace-taxonomy";
+import { ARCHIVED_TAXONOMY } from "@/lib/marketplace-taxonomy";
+import type { ProfessionalCategoryRecord } from "@/lib/marketplace-types";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ClientProfileFormState = {
@@ -132,7 +137,10 @@ function getBudgetOptionLabel(
   return buildSavedBudgetLabel(option.value, option.minCents, option.maxCents, currencyCode);
 }
 
-export function ClientProfileEditor() {
+export function ClientProfileEditor({ categories }: { categories: ProfessionalCategoryRecord[] }) {
+  const locale = localeFromPathname(usePathname());
+  const scope = scopeCopy[locale];
+  const savedScope = savedScopeCopy[locale];
   const { user, isLoading, isConfigured } = useSupabaseSession();
   const [form, setForm] = useState<ClientProfileFormState>(initialFormState);
   const [isSaving, setIsSaving] = useState(false);
@@ -351,9 +359,17 @@ export function ClientProfileEditor() {
   const hasLegacyRadius = Boolean(form.preferredRadius && !distanceOptions.some((option) => option.value === form.preferredRadius));
   const regionOptions = getRegionOptions(form.countryCode);
   const regionLabel = getRegionLabel(form.countryCode);
-  const selectedCategories = MARKETPLACE_TAXONOMY_CATEGORIES.filter((category) =>
+  const selectedCategories = categories.filter((category) =>
     form.interestedCategories.includes(category.stableId),
   );
+  const unavailable = [
+    ...form.interestedCategories.filter((id) => !categories.some(category => category.stableId === id)).map((id) => {
+      const category = ARCHIVED_TAXONOMY.find((item) => item.stableId === id || item.publicSlug === id);
+      return { field: 'interestedCategories' as const, id, label: getMarketplaceCategoryCopy(category?.publicSlug ?? id, locale)?.label ?? category?.label ?? id };
+    }),
+    ...form.goals.filter((id) => !(CLIENT_GOAL_OPTIONS as readonly string[]).includes(id))
+      .map((id) => ({ field: 'goals' as const, id, label: id === 'injury_aware_training' ? savedScope.injury : marketplaceText(locale, id) })),
+  ];
 
   function addPreferredLanguage() {
     const nextLanguages = normalizeClientLanguages([...form.preferredLanguages, languageDraft]);
@@ -378,12 +394,21 @@ export function ClientProfileEditor() {
       <div className="professional-profile-builder client-preference-builder">
         <article className="panel professional-builder-intro">
           <div className="eyebrow">Private marketplace preferences</div>
+          <p className="section-copy">{scope.notice}</p>
           <h2 className="section-title">Your marketplace preferences</h2>
           <p className="section-copy">
             These preferences help Elevare surface better-fit profiles and give providers more context when you reach out.
           </p>
           <p className="client-privacy-note"><strong>Your preferences are not shown on your public marketplace profile.</strong></p>
         </article>
+        {unavailable.length > 0 ? <article className="panel profile-form-section">
+          <h3>{savedScope.title}</h3>
+          <p>{savedScope.body}</p>
+          <div className="toggle-row">{unavailable.map((item) => <button key={`${item.field}:${item.id}`} type="button" className="toggle-chip"
+            onClick={() => setForm((current) => ({ ...current, [item.field]: current[item.field].filter((id) => id !== item.id) }))}>
+            {item.label}: {savedScope.remove}
+          </button>)}</div>
+        </article> : null}
 
         <article className="panel profile-form-section">
           <div className="section-head section-head-compact">
@@ -512,7 +537,7 @@ export function ClientProfileEditor() {
           ) : (
             <>
               <div className="selectable-grid client-category-grid">
-                {MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => {
+                {categories.map((category) => {
                   const isActive = form.interestedCategories.includes(category.stableId);
                   return (
                     <button
@@ -526,7 +551,7 @@ export function ClientProfileEditor() {
                       }))}
                     >
                       <span className="client-category-card-head">
-                        <strong>{category.label}</strong>
+                        <strong>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</strong>
                         {isActive ? <span className="client-card-state" aria-hidden="true">Selected</span> : null}
                       </span>
                       <span>{CLIENT_CATEGORY_DESCRIPTIONS[category.stableId] ?? category.shortDescription}</span>

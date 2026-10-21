@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import CategorySpecialties from "./CategorySpecialties";
+import { CategoryCatalog, CategoryMembership, categoryCopy, categorySelectionValid } from "@/lib/category-specialties";
+import { categoryAvailable, scopeCopy } from '@/lib/launch-scope';
 import { saveProfessionalSection } from "@/lib/professional-publication-client";
 import { getProfessionalPublicationMessages } from "@/lib/i18n/professional-publication-messages";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -44,9 +47,7 @@ import {
   ACCEPTANCE_OPTIONS,
   AVAILABILITY_OPTIONS,
   calculateProfileCompleteness,
-  collectCategorySpecialties,
   countWords,
-  deriveLegacySpecialties,
   formatCredentialVerificationStatus,
   formatServicePricingSummary,
   isValidOptionalUrl,
@@ -462,6 +463,8 @@ export function ProfessionalProfileEditor() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const credentialInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [profileVersion, setProfileVersion] = useState<string | null>(null);
+  const [categoryMemberships, setCategoryMemberships] = useState<CategoryMembership[]>([]);
+  const [categoryCatalog, setCategoryCatalog] = useState<CategoryCatalog>([]);
   const [propagationDelayed, setPropagationDelayed] = useState(false);
   const [saveConflict, setSaveConflict] = useState(false);
   const [reloadVersion, setReloadVersion] = useState(0);
@@ -489,7 +492,6 @@ export function ProfessionalProfileEditor() {
   const [expandedSections, setExpandedSections] = useState(defaultExpandedSections);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingCredentialId, setEditingCredentialId] = useState<string | null>(null);
-  const [additionalCategoryDraft, setAdditionalCategoryDraft] = useState("");
   const [languageDraft, setLanguageDraft] = useState("");
   const [selectedCredentialFiles, setSelectedCredentialFiles] = useState<Record<string, File>>({});
   const [credentialUploadFeedback, setCredentialUploadFeedback] = useState<Record<string, CredentialUploadFeedback>>({});
@@ -528,17 +530,6 @@ export function ProfessionalProfileEditor() {
   const selectedCategoryNotes = useMemo(
     () => buildDistinctValues(selectedTaxonomyCategories.map((category) => category.editorNote ?? null)),
     [selectedTaxonomyCategories],
-  );
-  const availableSpecialties = useMemo(
-    () => collectCategorySpecialties(selectedTaxonomyCategories),
-    [selectedTaxonomyCategories],
-  );
-  const availableAdditionalCategories = useMemo(
-    () => MARKETPLACE_TAXONOMY_CATEGORIES.filter(
-      (category) => category.stableId !== form.primaryCategoryStableId
-        && !form.additionalCategoryStableIds.includes(category.stableId),
-    ),
-    [form.additionalCategoryStableIds, form.primaryCategoryStableId],
   );
   const regionOptions = getRegionOptions(form.countryCode);
   const regionLabel = getRegionLabel(form.countryCode);
@@ -847,39 +838,6 @@ export function ProfessionalProfileEditor() {
     }));
   }
 
-  function toggleSpecialty(specialty: string) {
-    setForm((current) => ({
-      ...current,
-      selectedSpecialties: current.selectedSpecialties.includes(specialty)
-        ? current.selectedSpecialties.filter((entry) => entry !== specialty)
-        : [...current.selectedSpecialties, specialty],
-    }));
-  }
-
-  function updateCategories(primaryCategoryStableId: string, additionalCategoryStableIds: string[]) {
-    const selectedCategories = getMarketplaceTaxonomySelections(
-      buildDistinctValues([primaryCategoryStableId, ...additionalCategoryStableIds]),
-    );
-    setForm((current) => ({
-      ...current,
-      primaryCategoryStableId,
-      additionalCategoryStableIds,
-      selectedSpecialties: retainAvailableSpecialties(current.selectedSpecialties, selectedCategories),
-    }));
-  }
-
-  function addAdditionalCategory() {
-    if (!additionalCategoryDraft || form.additionalCategoryStableIds.length >= 3) return;
-    updateCategories(form.primaryCategoryStableId, [...form.additionalCategoryStableIds, additionalCategoryDraft]);
-    setAdditionalCategoryDraft("");
-  }
-
-  function removeAdditionalCategory(stableId: string) {
-    updateCategories(
-      form.primaryCategoryStableId,
-      form.additionalCategoryStableIds.filter((entry) => entry !== stableId),
-    );
-  }
 
   function updateService(id: string, updates: Partial<ServiceDraft>) {
     setServices((current) => current.map((service) => service.id === id ? { ...service, ...updates } : service));
@@ -1037,6 +995,7 @@ export function ProfessionalProfileEditor() {
 
   function validateForm(isSubmission: boolean) {
     const errors: FieldErrors = {};
+    if (!publicProfileId && !categorySelectionValid(categoryMemberships)) errors.specialties = categoryCopy[locale].review;
     const activeServices = services.filter((service) => service.isActive && service.name.trim());
     const urlFields = [
       ["website", form.websiteUrl], ["instagram", form.instagramUrl], ["facebook", form.facebookUrl], ["tiktok", form.tiktokUrl],
@@ -1106,7 +1065,8 @@ export function ProfessionalProfileEditor() {
       if (form.goalTags.length === 0) errors.goals = "Choose at least one client goal.";
       if (form.experienceLevelsServed.length === 0) errors.experienceLevels = "Choose at least one experience level you serve.";
       if (!form.primaryCategoryStableId) errors.primaryCategory = "Choose a primary category.";
-      if (form.selectedSpecialties.length === 0) errors.specialties = "Choose at least one specialty.";
+      else if (!categoryAvailable(form.primaryCategoryStableId)) errors.primaryCategory = scopeCopy[locale].notice;
+      if (!categorySelectionValid(categoryMemberships)) errors.specialties = categoryCopy[locale].review;
       if (form.serviceModes.length === 0) errors.serviceModes = "Choose at least one service mode.";
       const needsLocation = form.serviceModes.includes("in_person") || form.serviceModes.includes("hybrid");
       if (needsLocation && !form.city.trim()) errors.location = "Add a city for in-person services.";
@@ -1261,7 +1221,7 @@ export function ProfessionalProfileEditor() {
         if (selectedCategories.length !== orderedCategoryStableIds.length) throw new Error("One or more selected categories are not available. Refresh and try again.");
       }
 
-      const legacySpecialties = deriveLegacySpecialties(form.primaryCategoryStableId, form.selectedSpecialties);
+
       const countryCode = normalizeCountryCode(form.countryCode);
       const currencyCode = normalizeCurrencyCode(form.currencyCode, getDefaultCurrencyCode(countryCode));
       const profilePayload = {
@@ -1280,9 +1240,7 @@ export function ProfessionalProfileEditor() {
         location_state: form.state || null,
         country_code: countryCode,
         postal_code: form.postalCode.trim() || null,
-        primary_specialty: legacySpecialties.primary,
-        secondary_specialties: legacySpecialties.secondary,
-        marketplace_specialties: form.selectedSpecialties,
+
         modality: deriveTrainerModality(form.serviceModes, form.serviceModes.includes("online") || form.serviceModes.includes("hybrid")),
         accepting_clients: form.acceptanceStatus !== "not_accepting",
         client_acceptance_status: form.acceptanceStatus,
@@ -1304,7 +1262,12 @@ export function ProfessionalProfileEditor() {
         },
         languages: form.languages,
       };
-      const categoryPayload = selectedCategories.map((category, index) => ({ service_category_id: category.id, is_primary: index === 0 }));
+      const categoryPayload = selectedCategories.map((category, index) => {
+        const membership = categoryMemberships.find(row => row.service_category_id === category.id);
+        return { service_category_id: category.id, is_primary: index === 0,
+          ...(!publicProfileId ? { primary_specialty: membership?.primary_specialty,
+            secondary_specialties: membership?.secondary_specialties ?? [] } : {}) };
+      });
       let locationPayload: Record<string, unknown> | null = null;
       const hasLocation = offersInPerson || Boolean(form.city.trim() || form.state || form.serviceArea.trim() || form.postalCode.trim());
       if (hasLocation) {
@@ -1427,7 +1390,7 @@ export function ProfessionalProfileEditor() {
         acceptanceStatus: saved.profile.client_acceptance_status ?? "accepting",
         displayName: saved.profile.public_display_name ?? "", professionalTitle: saved.profile.professional_title ?? "",
         yearsExperience: saved.profile.years_experience == null ? "" : String(saved.profile.years_experience),
-        selectedSpecialties: parseStringArray(saved.profile.marketplace_specialties),
+        selectedSpecialties: form.selectedSpecialties,
         goalTags: parseStringArray(saved.profile.marketplace_goal_tags),
         experienceLevelsServed: parseStringArray(saved.profile.experience_levels_served),
         coachingStyle: saved.profile.coaching_style ?? "",
@@ -1526,10 +1489,14 @@ export function ProfessionalProfileEditor() {
   const statusMessage = statusMessageOverride ?? getProfessionalStatusMessage(approvalStatus, reviewFeedbackPublic);
   const previewPhoto = removeCurrentPhoto ? "" : photoPreviewUrl || form.profilePhotoUrl;
   const activePreviewServices = services.filter((service) => service.isActive && service.name.trim());
-  const selectedPrimaryCategoryRecord = selectedTaxonomyCategories[0];
-  const selectedPrimaryCategory = selectedPrimaryCategoryRecord
-    ? getMarketplaceCategoryCopy(selectedPrimaryCategoryRecord.publicSlug, locale)?.label ?? selectedPrimaryCategoryRecord.label
-    : t("No primary category selected");
+  const selectedPrimaryCategoryRecord = selectedTaxonomyCategories.find(category => category.stableId === form.primaryCategoryStableId);
+  const selectedCategory = categoryCatalog.find(category => category.slug === form.primaryCategoryStableId);
+  const selectedPrimaryCategory = (selectedPrimaryCategoryRecord && getMarketplaceCategoryCopy(selectedPrimaryCategoryRecord.publicSlug, locale)?.label)
+    ?? selectedCategory?.name ?? selectedPrimaryCategoryRecord?.label ?? t("No primary category selected");
+  const specialtyLabel = (id: string) => {
+    const labels = categoryCatalog.flatMap(category => category.options).find(option => option.id === id)?.labels;
+    return labels?.[locale.split('-')[0]] ?? labels?.en ?? localizeMarketplaceSpecialty(id, locale);
+  };
   const selectedModeLabels = SERVICE_MODE_OPTIONS
     .filter((option) => form.serviceModes.includes(option.value))
     .map((option) => localizeServiceMode(option.value, locale));
@@ -1553,7 +1520,8 @@ export function ProfessionalProfileEditor() {
         <div className="section-head tool-form-head">
           <div className="eyebrow">{t("Professional profile")}</div>
           <h2 className="section-title">{t("Let's build your professional profile.")}</h2>
-          <p className="section-copy">{t("Tell potential clients about your services, specialties, experience, and what makes your approach different.")}</p>
+          <p className="section-copy">{scopeCopy[locale].notice}</p>
+          <p className="section-copy">{scopeCopy[locale].boundaries}</p>
         </div>
         <div className="marketplace-status-row">
           <span className="status-chip">{t("Status")}: {approvalLabel}</span>
@@ -1632,9 +1600,15 @@ export function ProfessionalProfileEditor() {
           translate={t}
         />
         {expandedSections.offer ? <div className="professional-section-body">
-          <label id="profile-field-primaryCategory" className="field field-full"><span className="field-label">{t("Primary category")} <span aria-hidden="true">*</span></span><select value={form.primaryCategoryStableId} onChange={(event) => updateCategories(event.target.value, form.additionalCategoryStableIds.filter((entry) => entry !== event.target.value))}><option value="">{t("Select a primary category")}</option>{MARKETPLACE_TAXONOMY_CATEGORIES.map((category) => <option key={category.stableId} value={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</option>)}</select><FieldError name="primaryCategory" errors={fieldErrors} translate={t} /></label>
-          <div className="profile-subsection"><span className="field-label">{t("Additional categories")}</span><span className="field-help">{t("Optional. Add up to three categories that genuinely describe your services.")}</span>{form.additionalCategoryStableIds.length > 0 ? <div className="professional-selection-tags">{form.additionalCategoryStableIds.map((stableId) => { const category = MARKETPLACE_TAXONOMY_CATEGORIES.find((entry) => entry.stableId === stableId); const categoryLabel = category ? getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label : stableId; return <button key={stableId} type="button" className="selection-tag" onClick={() => removeAdditionalCategory(stableId)} aria-label={`${t("Remove")} ${categoryLabel}`}>{categoryLabel}<span aria-hidden="true">×</span></button>; })}</div> : null}<div className="professional-inline-add"><select aria-label={t("Additional category")} value={additionalCategoryDraft} disabled={!form.primaryCategoryStableId || form.additionalCategoryStableIds.length >= 3} onChange={(event) => setAdditionalCategoryDraft(event.target.value)}><option value="">{t("Choose a category")}</option>{availableAdditionalCategories.map((category) => <option key={category.stableId} value={category.stableId}>{getMarketplaceCategoryCopy(category.publicSlug, locale)?.label ?? category.label}</option>)}</select><button type="button" className="button button-secondary" disabled={!additionalCategoryDraft || form.additionalCategoryStableIds.length >= 3} onClick={addAdditionalCategory}>{t("+ Add category")}</button></div></div>
-          <div id="profile-field-specialties" className="profile-subsection"><span className="field-label">{t("Specialties")} <span aria-hidden="true">*</span></span><span className="field-help">{t("Choose specialties from your selected categories. These do not imply a verified credential.")}</span>{form.selectedSpecialties.length > 0 ? <div className="professional-selection-tags">{form.selectedSpecialties.map((specialty) => <button key={specialty} type="button" className="selection-tag" onClick={() => toggleSpecialty(specialty)} aria-label={`${t("Remove")} ${localizeMarketplaceSpecialty(specialty, locale)}`}>{localizeMarketplaceSpecialty(specialty, locale)}<span aria-hidden="true">×</span></button>)}</div> : null}{selectedTaxonomyCategories.length > 0 ? <details className="professional-compact-selector" open={form.selectedSpecialties.length === 0}><summary>{t("Choose specialties")}</summary><div className="toggle-row">{availableSpecialties.map((specialty) => <button key={specialty} type="button" aria-pressed={form.selectedSpecialties.includes(specialty)} className={`toggle-chip${form.selectedSpecialties.includes(specialty) ? " is-active" : ""}`} onClick={() => toggleSpecialty(specialty)}>{localizeMarketplaceSpecialty(specialty, locale)}</button>)}</div></details> : <div className="form-note">{t("Choose a category to see its specialties.")}</div>}<FieldError name="specialties" errors={fieldErrors} translate={t} /></div>
+          <CategorySpecialties profileId={publicProfileId || null} locale={locale} initialServices={categoryMemberships} onCatalog={setCategoryCatalog} onChange={memberships => {
+            setCategoryMemberships(memberships);
+            const featured = memberships.find(row => row.is_primary);
+            setForm(current => ({ ...current, primaryCategoryStableId: featured?.category_slug ?? '',
+              additionalCategoryStableIds: memberships.filter(row => !row.is_primary).map(row => row.category_slug),
+              selectedSpecialties: memberships.flatMap(row => [row.primary_specialty, ...row.secondary_specialties].filter((value): value is string => !!value)),
+            }));
+          }} />
+          <FieldError name="specialties" errors={fieldErrors} translate={t} />
           {selectedCategoryNotes.map((note) => <div key={note} className="form-note">{t(note)}</div>)}
           <div id="profile-field-services" className="profile-subsection">
             <span className="field-label">{t("Services")} <span aria-hidden="true">*</span></span>
@@ -1866,7 +1840,7 @@ export function ProfessionalProfileEditor() {
         <div className="section-head section-head-compact"><div className="eyebrow">{t("Preview and submit")}</div><h3 id="submit-heading" className="section-title section-title-compact">{t("Review your profile before it goes to Elevare.")}</h3></div>
         <div className="profile-completeness"><div className="profile-completeness-head"><strong>{t("Profile")} {completeness.percent}% {t("complete")}</strong><span>{completeness.missing.length === 0 ? t("Ready to submit") : `${completeness.missing.length} ${t(completeness.missing.length === 1 ? "item left" : "items left")}`}</span></div><div className="profile-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completeness.percent}><span style={{ width: `${completeness.percent}%` }} /></div>{completeness.missing.length > 0 ? <div className="profile-completeness-actions"><span className="field-help">{t("Complete these profile basics:")}</span>{completeness.items.filter((item) => !item.complete).map((item) => <button key={item.id} type="button" className="profile-completeness-item" onClick={() => focusCompletenessItem(item.section, item.id)}>{t(item.label)}<span aria-hidden="true">→</span></button>)}</div> : <p className="field-help">{t("Your profile has the information needed for review. Optional sections can still help clients understand your work.")}</p>}</div>
         <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{t(isPreviewing ? "Hide profile preview" : "Preview public profile")}</button>
-        {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">{t("Private preview")}</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt={t("Private profile preview")} /> : <div className="profile-photo-placeholder">{t("Photo preview")}</div>}<div><h3>{form.displayName || t("Your name")}</h3><p className="professional-title-copy">{form.professionalTitle || t("Your professional title")}</p><p>{form.bio || t("Your bio will appear here.")}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{localizeMarketplaceSpecialty(specialty, locale)}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || t("Service details")}</p></div>)}</div> : null}</div> : null}
+        {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">{t("Private preview")}</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt={t("Private profile preview")} /> : <div className="profile-photo-placeholder">{t("Photo preview")}</div>}<div><h3>{form.displayName || t("Your name")}</h3><p className="professional-title-copy">{form.professionalTitle || t("Your professional title")}</p><p>{form.bio || t("Your bio will appear here.")}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{specialtyLabel(specialty)}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || t("Service details")}</p></div>)}</div> : null}</div> : null}
         <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{t(PROFESSIONAL_ATTESTATION_TEXT)} {t("I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the")} <a href={localizePathname("/terms-of-service/", locale)}>{t("Terms of Service")}</a> {t("and acknowledge the")} <a href={localizePathname("/privacy-policy/", locale)}>{t("Privacy Policy")}</a>.</span></label><FieldError name="terms" errors={fieldErrors} translate={t} />
         <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>      <p role="status" aria-live="polite">{isSaving ? publicationCopy.saving : null}</p>
       {propagationDelayed ? <button type="button" className="button button-secondary" onClick={() => void retryPropagation()}>{publicationCopy.retry}</button> : null}

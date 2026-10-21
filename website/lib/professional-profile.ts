@@ -58,7 +58,6 @@ export const PROFESSIONAL_GOAL_OPTIONS = [
   { value: "endurance", label: "Endurance" },
   { value: "mobility", label: "Mobility" },
   { value: "healthy_habits", label: "Healthy habits" },
-  { value: "recovery_support", label: "Recovery support" },
 ] as const;
 
 export const PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS = [
@@ -219,17 +218,13 @@ export function deriveLegacySpecialties(primaryCategory: string, specialties: st
       : "muscle_gain_body_recomposition";
   } else if (primaryCategory === "running_endurance" || primaryCategory === "sports_performance") {
     primary = "athletic_performance";
-  } else if (primaryCategory === "yoga_pilates_mobility" || primaryCategory === "recovery_bodywork") {
+  } else if (["yoga_pilates_mobility", "yoga", "pilates", "mobility_movement", "mobility_flexibility_movement"].includes(primaryCategory)) {
     primary = "mobility_flexibility";
-  } else if (primaryCategory === "special_populations") {
-    primary = normalizedSpecialties.some((entry) => entry.includes("senior") || entry.includes("aging"))
-      ? "senior_fitness"
-      : "injury_aware_training";
   }
 
   const recognized = [
     "general_fitness", "strength_training", "competition_prep", "muscle_gain_body_recomposition",
-    "athletic_performance", "mobility_flexibility", "senior_fitness", "injury_aware_training",
+    "athletic_performance", "mobility_flexibility", "senior_fitness",
     "beginner_coaching", "fat_loss", "womens_fitness", "online_coaching",
   ];
   const secondary = normalizedSpecialties

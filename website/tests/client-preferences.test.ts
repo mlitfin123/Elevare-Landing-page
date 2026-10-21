@@ -39,8 +39,10 @@ test("structured goals preserve new values and safely map legacy fitness goals",
     ),
     ["Weight Loss / Fat Loss", "Improve Fitness & Conditioning"],
   );
-  assert.equal(CLIENT_GOAL_OPTIONS.length, 20);
+  assert.equal(CLIENT_GOAL_OPTIONS.length, 19);
+  assert.equal((CLIENT_GOAL_OPTIONS as readonly string[]).includes('Improve Nutrition'),false);
   assert.ok(CLIENT_GOAL_OPTIONS.includes("Other"));
+  assert.deepEqual(normalizeClientGoalTags([], ["injury_aware_training"]), ["injury_aware_training"]);
 });
 
 test("every retired goal label maps to a visible consolidated option", () => {
