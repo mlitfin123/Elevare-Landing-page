@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { distinctProfileCopy, distinctProfileLabels, profileListItemText } from "@/lib/professional-presentation";
 import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { InquiryForm } from "@/components/marketplace/InquiryForm";
@@ -195,9 +196,12 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
       .map((entry) => locale === "en" ? formatServiceModeLabel(entry) : localizeServiceMode(entry, locale))
       .join(", ")
     : t("Flexible");
-  const goalLabels = professional.goalTags.map((goal) => (
+  const profileTitle = professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile");
+  const headline = distinctProfileCopy(professional.publicHeadline, [profileTitle, professional.bio, professional.bestFitSummary]);
+  const showServiceModes = Boolean(distinctProfileCopy(serviceModeSummary, [profileLocation]));
+  const goalLabels = distinctProfileLabels(professional.goalTags.map((goal) => t(
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
-  ));
+  )));
   const experienceLevelLabels = professional.experienceLevelsServed.map((level) => (
     PROFESSIONAL_EXPERIENCE_LEVEL_OPTIONS.find((option) => option.value === level)?.label ?? level.replaceAll("_", " ")
   ));
@@ -294,13 +298,13 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
           <div className="eyebrow">{localizedPrimaryCategory?.label ?? t("Profile")}</div>
           <h1>{professional.displayName}</h1>
           <p className="professional-title-copy professional-title-copy-large">
-            {professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile")}
+            {profileTitle}
           </p>
-          <p>{professional.publicHeadline || professional.bestFitSummary || professional.bio}</p>
+          {headline ? <p>{headline}</p> : null}
 
           <div className="professional-stat-list">
             <span>{profileLocation}</span>
-            <span>{serviceModeSummary}</span>
+            {showServiceModes ? <span>{serviceModeSummary}</span> : null}
             <span>{clientStatusLabel}</span>
           </div>
 
@@ -318,7 +322,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
               <div className="proof-value">{serviceModeSummary}</div>
             </article>
             <article className="proof-card">
-              <span className="proof-label">{t("Pricing from")}</span>
+              <span className="proof-label">{t("Pricing")}</span>
               <div className="proof-value">{priceSummary ?? t("Contact for pricing")}</div>
             </article>
           </div>
@@ -373,14 +377,14 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                     <li><strong>{t("Minimum commitment")}:</strong> {service.minimumCommitment}</li>
                   ) : null}
                   <li>
-                    <strong>{t("Consultation")}:</strong>{" "}
+                    <strong>{t("Introductory consultation")}:</strong>{" "}
                     {t(CONSULTATION_TYPE_OPTIONS.find((option) => option.value === service.consultationType)?.label ?? "Ask for details")}
                   </li>
                 </ul>
                 {service.includedItems.length > 0 ? (
                   <>
                     <span className="stat-label">{t("What is included")}</span>
-                    <ul>{service.includedItems.map((item) => <li key={item}>{item}</li>)}</ul>
+                    <ul>{service.includedItems.map((item) => <li key={item}>{profileListItemText(item)}</li>)}</ul>
                   </>
                 ) : null}
                 {service.additionalCostsNote ? (

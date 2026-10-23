@@ -22,6 +22,7 @@ import {
   localizeServiceMode,
   marketplaceText,
 } from "@/lib/i18n/marketplace-content";
+import { distinctProfileCopy, distinctProfileLabels } from "@/lib/professional-presentation";
 import { PROFESSIONAL_GOAL_OPTIONS } from "@/lib/professional-profile";
 
 type ProfessionalCardProps = {
@@ -60,9 +61,13 @@ export function ProfessionalCard({
     : professional.clientAcceptanceStatus === "not_accepting"
       ? "Not accepting new clients"
       : "Accepting new clients");
-  const goalLabels = professional.goalTags.map((goal) => (
+  const title = professional.professionalTitle || localizedCategories[0]?.label || marketplaceText(locale, "Profile");
+  const headline = distinctProfileCopy(professional.publicHeadline, [title, professional.bio]);
+  const summary = distinctProfileCopy(professional.bestFitSummary, [title, headline]);
+  const showServiceModes = Boolean(distinctProfileCopy(serviceModes, [location]));
+  const goalLabels = distinctProfileLabels(professional.goalTags.map((goal) => marketplaceText(locale,
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
-  ));
+  )));
 
   return (
     <article className="panel professional-card">
@@ -111,13 +116,13 @@ export function ProfessionalCard({
 
           <h3>{professional.displayName}</h3>
           <p className="professional-title-copy">
-            {professional.professionalTitle || localizedCategories[0]?.label || marketplaceText(locale, "Profile")}
+            {title}
           </p>
-          {professional.publicHeadline ? <p className="professional-card-headline">{professional.publicHeadline}</p> : null}
+          {headline ? <p className="professional-card-headline">{headline}</p> : null}
 
           <div className="professional-stat-list">
             <span>{location}</span>
-            {serviceModes ? <span>{serviceModes}</span> : null}
+            {showServiceModes ? <span>{serviceModes}</span> : null}
             {yearsExperience ? <span>{yearsExperience}</span> : null}
             {priceSummary ? <span>{priceSummary}</span> : null}
             <span>{acceptanceLabel}</span>
@@ -139,9 +144,7 @@ export function ProfessionalCard({
             </div>
           ) : null}
 
-          <p className="professional-bio-snippet">
-            {professional.bestFitSummary || professional.publicHeadline || marketplaceText(locale, "View this profile to review specialties, services, pricing, and consultation details.")}
-          </p>
+          {summary ? <p className="professional-bio-snippet">{summary}</p> : null}
 
           <span className="proof-action">{marketplaceText(locale, actionLabel)}</span>
         </div>
