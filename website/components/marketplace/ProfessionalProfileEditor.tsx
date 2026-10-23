@@ -507,7 +507,6 @@ export function ProfessionalProfileEditor() {
   useEffect(() => {
     if (!focusTarget) return;
     focusProfileField(focusTarget.id, document, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    setFocusTarget(null);
   }, [focusTarget]);
   const professionalAnalytics = useMemo(() => {
     const queryAttribution = readProfessionalAcquisitionAttribution(searchParams);

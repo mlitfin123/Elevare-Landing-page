@@ -20,27 +20,33 @@ export default function CategorySpecialties({ profileId, locale, initialServices
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
   const pending = useRef(false);
-  const changed = useRef(onChange); changed.current = onChange;
-  const initial = useRef(initialServices); initial.current = initialServices;
-  const loaded = useRef(onCatalog); loaded.current = onCatalog;
+  const changed = useRef(onChange);
+  const initial = useRef(initialServices);
+  const loaded = useRef(onCatalog);
   const generation = useRef(0);
   useEffect(() => {
+    changed.current = onChange;
+    initial.current = initialServices;
+    loaded.current = onCatalog;
+  }, [onChange, initialServices, onCatalog]);
+  useEffect(() => {
     const request = ++generation.current;
-    setSnapshot(undefined); setMessage('');
-    const client = getSupabaseBrowserClient();
-    if (!client) { setMessage(copy.failed); return; }
-    void Promise.all([
-      profileId ? client.rpc('professional_category_snapshot', { p_trainer_profile_id: profileId })
-        : Promise.resolve({ data: { revision: '', services: initial.current }, error: null }),
-      client.rpc('marketplace_category_catalog'),
-    ])
-      .then(([saved, options]) => {
+    void Promise.resolve().then(async () => {
+        if (request !== generation.current) return;
+        setSnapshot(undefined); setMessage('');
+        const client = getSupabaseBrowserClient();
+        if (!client) { setMessage(copy.failed); return; }
+        const [saved, options] = await Promise.all([
+          profileId ? client.rpc('professional_category_snapshot', { p_trainer_profile_id: profileId })
+            : Promise.resolve({ data: { revision: '', services: initial.current }, error: null }),
+          client.rpc('marketplace_category_catalog'),
+        ]);
         if (request !== generation.current) return;
         if (saved.error || options.error || !saved.data || !Array.isArray(options.data)) { setMessage(copy.failed); return; }
         const catalog = availableCategories(options.data);
         setSnapshot(saved.data); setDrafts(saved.data.services); setCatalog(catalog); loaded.current?.(catalog); changed.current(saved.data.services);
       }).catch(() => { if (request === generation.current) setMessage(copy.failed); });
-    return () => { generation.current++; };
+    return () => { generation.current = request + 1; };
   }, [profileId, reload, copy.failed]);
   async function run(action: () => PromiseLike<{ data: CategorySnapshot | null; error: unknown }>, savedCategory?: string) {
     if (pending.current || !snapshot) return;
