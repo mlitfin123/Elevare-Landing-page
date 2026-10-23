@@ -15,6 +15,7 @@ import {
   professionalApprovalEventKey,
   resolveProfessionalApprovalEmailLocale,
   safeDeliveryError,
+  safeApprovalDeliveryError,
 } from "../../supabase/functions/professional-approval-email/email.ts";
 
 const migration = readFileSync(
@@ -268,4 +269,15 @@ test("existing visibility behavior remains verified plus profile_live", () => {
   assert.match(migration, /verification_status = 'verified'::public\.verification_status/i);
   assert.match(migration, /profile_live = true/i);
   assert.doesNotMatch(migration, /update public\.trainer_profiles[\s\S]*where[\s\S]*verification_status.*verified[\s\S]*insert into public\.professional_email_outbox/i);
+});
+
+test("approval delivery diagnostics identify the failing stage without private details", () => {
+  assert.equal(safeApprovalDeliveryError("configuration").code, "resend_key_missing");
+  assert.equal(safeApprovalDeliveryError("recipient_lookup").code, "approval_recipient_lookup_failed");
+  assert.equal(safeApprovalDeliveryError("recipient_validation").code, "approval_recipient_email_invalid");
+  assert.equal(safeApprovalDeliveryError("provider_request").code, "resend_connection_failed");
+  assert.equal(safeApprovalDeliveryError("provider_request", 422).code, "resend_http_422");
+  assert.equal(safeApprovalDeliveryError("provider_response", 200).code, "resend_response_invalid");
+  assert.equal(safeApprovalDeliveryError("record_result").code, "approval_email_recording_failed");
+  assert.doesNotMatch(JSON.stringify(safeApprovalDeliveryError("recipient_lookup")), /@|Bearer|https?:/);
 });

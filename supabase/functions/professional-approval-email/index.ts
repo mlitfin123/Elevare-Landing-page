@@ -8,7 +8,8 @@ import {
   isServiceRoleRequest,
   professionalApprovalEventKey,
   resolveProfessionalApprovalEmailLocale,
-  safeDeliveryError,
+  safeApprovalDeliveryError,
+  type ApprovalDeliveryStage,
 } from "./email.ts";
 
 const RESEND_API_BASE = "https://api.resend.com";
@@ -162,10 +163,12 @@ async function deliverApprovalEmail({
 
   const eventId = claim.event_id ?? "";
   const lockToken = claim.lock_token ?? "";
+  let deliveryStage: ApprovalDeliveryStage = "configuration";
 
   try {
     if (!RESEND_API_KEY) throw new DeliveryError();
 
+    deliveryStage = "profile_lookup";
     const { data: profile, error: profileError } = await supabase
       .from("trainer_profiles")
       .select("id, user_id, public_display_name, verification_status, profile_live")
@@ -181,15 +184,19 @@ async function deliverApprovalEmail({
       throw new DeliveryError();
     }
 
+    deliveryStage = "recipient_lookup";
     const { data: user, error: userError } = await supabase
       .from("users")
       .select("email, first_name, preferred_locale, auth_id")
       .eq("id", profile.user_id)
       .single();
 
-    const recipientEmail = user?.email?.trim().toLowerCase() ?? "";
-    if (userError || !isValidEmail(recipientEmail)) throw new DeliveryError();
+    if (userError || !user) throw new DeliveryError();
+    deliveryStage = "recipient_validation";
+    const recipientEmail = user.email?.trim().toLowerCase() ?? "";
+    if (!isValidEmail(recipientEmail)) throw new DeliveryError();
 
+    deliveryStage = "locale_lookup";
     let authMetadata: Record<string, unknown> = {};
     if (typeof user?.auth_id === "string" && isUuid(user.auth_id)) {
       const { data: authData, error: authError } = await supabase.auth.admin.getUserById(user.auth_id);
@@ -205,12 +212,14 @@ async function deliverApprovalEmail({
       browserLocaleAtSignup: metadataString(authMetadata, "browser_locale_at_signup"),
     });
 
+    deliveryStage = "message_preparation";
     const email = buildProfessionalApprovalEmail({
       firstName: user?.first_name,
       locale,
       supportEmail: RESEND_TRANSACTIONAL_REPLY_TO,
     });
 
+    deliveryStage = "provider_request";
     const response = await fetch(`${RESEND_API_BASE}/emails`, {
       method: "POST",
       headers: {
@@ -235,10 +244,12 @@ async function deliverApprovalEmail({
 
     if (!response.ok) throw new DeliveryError(response.status);
 
+    deliveryStage = "provider_response";
     const responseData = await response.json() as { id?: unknown };
     const providerMessageId = typeof responseData.id === "string" ? responseData.id.trim() : "";
     if (!providerMessageId) throw new DeliveryError(response.status);
 
+    deliveryStage = "record_result";
     const { data: completed, error: completionError } = await supabase.rpc(
       "marketplace_complete_professional_approval_email",
       {
@@ -267,7 +278,7 @@ async function deliverApprovalEmail({
       retry_available: false,
     };
   } catch (error) {
-    const safeError = safeDeliveryError(error instanceof DeliveryError ? error.status : undefined);
+    const safeError = safeApprovalDeliveryError(deliveryStage, error instanceof DeliveryError ? error.status : undefined);
     const { data: failureData } = await supabase.rpc(
       "marketplace_fail_professional_approval_email",
       {
@@ -283,6 +294,8 @@ async function deliverApprovalEmail({
       professionalId,
       eventType: "professional_approved",
       status: "failed",
+      deliveryStage,
+      errorCode: safeError.code,
       attemptCount: claim.attempt_count,
       retryAvailable: failure?.retry_available === true,
       timestamp: new Date().toISOString(),
@@ -290,6 +303,8 @@ async function deliverApprovalEmail({
 
     return {
       email_status: "failed",
+      error_code: safeError.code,
+      error_message: safeError.message,
       retry_available: failure?.retry_available === true,
     };
   }

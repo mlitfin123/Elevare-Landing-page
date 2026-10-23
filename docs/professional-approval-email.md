@@ -27,3 +27,9 @@ Use the Elevare-Prod Supabase project (`cnfqpfynjpwlzdtblzps`). Do not add these
 The published approval templates are selected by normalized locale. Their IDs are defined in `supabase/functions/professional-approval-email/email.ts`, and unsupported or missing locales use the English template. The templates contain no runtime variables; each template must retain the correct locale-aware professional profile link.
 
 The endpoint accepts only a Supabase-verified `service_role` JWT. It does not accept a recipient email, recipient name, sent status, or approval timestamp from the browser.
+
+## Delivery diagnostics
+
+The sender now records the failing stage in its outbox error code and protected function logs. No recipient addresses, tokens, provider response bodies, or raw exception messages are logged. If Resend accepted the request but recording completion failed, the error explicitly requires checking provider logs before another attempt. Existing retry limits and idempotency remain unchanged.
+
+This update must be deployed to the Supabase `professional-approval-email` Edge Function; deploying the website or admin does not deploy it. From this repository root, use the established authenticated Supabase deployment workflow with `supabase functions deploy professional-approval-email --project-ref cnfqpfynjpwlzdtblzps`. Do not disable JWT verification. Existing failed rows retain their old generic code until a new authorized attempt runs the updated function.

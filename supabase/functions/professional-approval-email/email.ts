@@ -273,6 +273,24 @@ export function safeDeliveryError(status?: number) {
   };
 }
 
+export type ApprovalDeliveryStage = "configuration" | "profile_lookup" | "recipient_lookup" | "recipient_validation" | "locale_lookup" | "message_preparation" | "provider_request" | "provider_response" | "record_result";
+
+export function safeApprovalDeliveryError(stage: ApprovalDeliveryStage, status?: number) {
+  if (status != null && Number.isInteger(status) && status >= 400 && status <= 599) return safeDeliveryError(status);
+  const errors: Record<ApprovalDeliveryStage, { code: string; message: string }> = {
+    configuration: { code: "resend_key_missing", message: "The email function cannot read RESEND_API_KEY." },
+    profile_lookup: { code: "approval_profile_lookup_failed", message: "The professional profile could not be loaded or is not currently approved and live." },
+    recipient_lookup: { code: "approval_recipient_lookup_failed", message: "The recipient account could not be loaded. Check database fields and function access." },
+    recipient_validation: { code: "approval_recipient_email_invalid", message: "The account email is missing or has an invalid format." },
+    locale_lookup: { code: "approval_locale_lookup_failed", message: "The recipient locale metadata could not be loaded." },
+    message_preparation: { code: "approval_message_preparation_failed", message: "The approval message could not be prepared." },
+    provider_request: { code: "resend_connection_failed", message: "The email function could not complete its connection to Resend." },
+    provider_response: { code: "resend_response_invalid", message: "Resend did not return a readable message identifier. Check provider logs before retrying." },
+    record_result: { code: "approval_email_recording_failed", message: "Resend accepted the message, but saving its send status failed. Check provider logs before retrying." },
+  };
+  return errors[stage];
+}
+
 function normalizeFirstName(value: string | null | undefined) {
   const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
   return normalized ? normalized.slice(0, 80) : null;
