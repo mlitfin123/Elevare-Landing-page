@@ -22,7 +22,7 @@ import {
   localizeServiceMode,
   marketplaceText,
 } from "@/lib/i18n/marketplace-content";
-import { distinctProfileCopy, distinctProfileLabels } from "@/lib/professional-presentation";
+import { distinctProfileCopy, distinctProfileLabels, expandProfileGoal } from "@/lib/professional-presentation";
 import { PROFESSIONAL_GOAL_OPTIONS } from "@/lib/professional-profile";
 
 type ProfessionalCardProps = {
@@ -65,7 +65,7 @@ export function ProfessionalCard({
   const headline = distinctProfileCopy(professional.publicHeadline, [title, professional.bio]);
   const summary = distinctProfileCopy(professional.bestFitSummary, [title, headline]);
   const showServiceModes = Boolean(distinctProfileCopy(serviceModes, [location]));
-  const goalLabels = distinctProfileLabels(professional.goalTags.map((goal) => marketplaceText(locale,
+  const goalLabels = distinctProfileLabels(professional.goalTags.flatMap(expandProfileGoal).map((goal) => marketplaceText(locale,
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
   )));
 

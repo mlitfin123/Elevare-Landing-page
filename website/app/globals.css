@@ -1891,9 +1891,28 @@ select {
   word-break: break-word;
 }
 
-.professional-summary-grid {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.hero-proof.professional-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: none;
+  align-items: start;
+}
+
+.professional-summary-grid .professional-category-summary,
+.professional-summary-grid .professional-price-summary {
+  grid-column: 1 / -1;
+}
+
+.professional-summary-grid .proof-value {
+  font-size: 20px;
+  line-height: 1.4;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+@media (max-width: 560px) {
+  .hero-proof.professional-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .marketplace-detail-grid {

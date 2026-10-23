@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { distinctProfileCopy, distinctProfileLabels, profileListItemText } from "@/lib/professional-presentation";
+import { distinctProfileCopy, distinctProfileLabels, expandProfileGoal, profileListItemText } from "@/lib/professional-presentation";
 import { Suspense } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { InquiryForm } from "@/components/marketplace/InquiryForm";
@@ -199,7 +199,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   const profileTitle = professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile");
   const headline = distinctProfileCopy(professional.publicHeadline, [profileTitle, professional.bio, professional.bestFitSummary]);
   const showServiceModes = Boolean(distinctProfileCopy(serviceModeSummary, [profileLocation]));
-  const goalLabels = distinctProfileLabels(professional.goalTags.map((goal) => t(
+  const goalLabels = distinctProfileLabels(professional.goalTags.flatMap(expandProfileGoal).map((goal) => t(
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
   )));
   const experienceLevelLabels = professional.experienceLevelsServed.map((level) => (
@@ -309,7 +309,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
           </div>
 
           <div className="hero-proof professional-summary-grid">
-            <article className="proof-card">
+            <article className="proof-card professional-category-summary">
               <span className="proof-label">{t("Category")}</span>
               <div className="proof-value">{formatCategoryList(localizedCategories) || t("Profile")}</div>
             </article>
@@ -321,7 +321,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
               <span className="proof-label">{t("Services")}</span>
               <div className="proof-value">{serviceModeSummary}</div>
             </article>
-            <article className="proof-card">
+            <article className="proof-card professional-price-summary">
               <span className="proof-label">{t("Pricing")}</span>
               <div className="proof-value">{priceSummary ?? t("Contact for pricing")}</div>
             </article>
@@ -478,6 +478,8 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                   key={entry.type}
                   className={`button button-secondary${icon ? " professional-social-icon-link" : " professional-website-link"}`}
                   href={entry.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   eventName="professional_external_link_click"
                   eventParams={{ source_page: "professional_profile", link_type: entry.type }}
                   title={icon ? entry.label : undefined}
@@ -494,6 +496,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
                       <span className="sr-only">{entry.label}</span>
                     </>
                   ) : entry.label}
+                  <span className="sr-only"> {t("(opens in a new tab)")}</span>
                 </TrackedLink>
               );
             })}

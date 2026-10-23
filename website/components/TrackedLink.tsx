@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { MouseEventHandler, ReactNode } from "react";
+import type { HTMLAttributeAnchorTarget, MouseEventHandler, ReactNode } from "react";
 import { trackEvent, type AnalyticsEventParams } from "@/lib/analytics";
 import { normalizeSitePath } from "@/lib/site";
 
@@ -15,6 +15,8 @@ type TrackedLinkProps = {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
   hrefLang?: string;
   title?: string;
+  target?: HTMLAttributeAnchorTarget;
+  rel?: string;
 };
 
 export function TrackedLink({
@@ -27,6 +29,8 @@ export function TrackedLink({
   onClick,
   hrefLang,
   title,
+  target,
+  rel,
 }: TrackedLinkProps) {
   const normalizedHref = href.startsWith("/") ? normalizeSitePath(href) : href;
 
@@ -44,7 +48,7 @@ export function TrackedLink({
   };
 
   return (
-    <Link href={normalizedHref} className={className} prefetch={prefetch} onClick={handleClick} hrefLang={hrefLang} title={title}>
+    <Link href={normalizedHref} className={className} prefetch={prefetch} onClick={handleClick} hrefLang={hrefLang} title={title} target={target} rel={rel}>
       {children}
     </Link>
   );
