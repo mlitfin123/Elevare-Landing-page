@@ -1,4 +1,20 @@
-export const pausedCategories = new Set(['nutrition','dietetics','recovery_bodywork','special_population_fitness','group_fitness_instruction']);
+// Release configuration, not legal authorization. Keep both gates off until
+// jurisdiction, review operations and database publication rules are approved.
+export const nutritionLaunchPolicy = Object.freeze({
+  coachingCategoryId: 'nutrition',
+  coachingEnabled: false,
+  regulatedCategoryId: 'dietetics',
+  regulatedEnabled: false,
+  coachingScope: 'nonclinical',
+  reviewRequired: ['protected_titles', 'disease_treatment', 'medical_nutrition_therapy', 'credential_name_mismatch'],
+  requiredApprovals: ['jurisdiction_scope', 'review_operations', 'database_publication_rules'],
+} as const);
+
+export const pausedCategories = new Set([
+  ...(!nutritionLaunchPolicy.coachingEnabled ? [nutritionLaunchPolicy.coachingCategoryId] : []),
+  ...(!nutritionLaunchPolicy.regulatedEnabled ? [nutritionLaunchPolicy.regulatedCategoryId] : []),
+  'recovery_bodywork','special_population_fitness','group_fitness_instruction',
+]);
 export const categoryAvailable = (id: string) => !pausedCategories.has(id.replaceAll('-', '_'));
 export const savedScopeCopy = {
   en: { title: 'Saved selections unavailable at launch', body: 'These selections are kept until you remove them. Choose an available option below; no replacement is automatic.', remove: 'Remove', injury: 'Injury-aware training (saved)' },
