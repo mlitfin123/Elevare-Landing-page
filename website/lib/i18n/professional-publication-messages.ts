@@ -11,6 +11,7 @@ const en = {
   pending: "Draft saved. Your changes require review before they appear publicly.",
   failed: "We could not save your changes. Your unsaved changes are still here.",
   uncertain: "We could not confirm the save. Reload and review the current profile before saving again.",
+  sessionExpired: "Your session expired. Sign in again before saving. Your unsaved changes are still here.",
 };
 type Messages = Record<keyof typeof en, string>;
 const es: Messages = {
@@ -25,6 +26,7 @@ const es: Messages = {
   pending: "Borrador guardado. Tus cambios requieren revisión antes de aparecer públicamente.",
   failed: "No pudimos guardar tus cambios. Tus cambios sin guardar siguen aquí.",
   uncertain: "No pudimos confirmar que se guardó. Vuelve a cargar y revisa el perfil actual antes de guardar otra vez.",
+  sessionExpired: "Tu sesión venció. Inicia sesión de nuevo antes de guardar. Tus cambios sin guardar siguen aquí.",
 };
 const pt: Messages = {
   saving: "Salvando suas alterações…",
@@ -38,6 +40,7 @@ const pt: Messages = {
   pending: "Rascunho salvo. Suas alterações precisam de revisão antes de aparecerem publicamente.",
   failed: "Não foi possível salvar suas alterações. Suas alterações não salvas continuam aqui.",
   uncertain: "Não foi possível confirmar que foi salvo. Recarregue e revise o perfil atual antes de salvar novamente.",
+  sessionExpired: "Sua sessão expirou. Entre novamente antes de salvar. Suas alterações não salvas continuam aqui.",
 };
 export const professionalPublicationMessages = { en, "es-419": es, "pt-BR": pt };
 export function getProfessionalPublicationMessages(locale: Locale): Messages {

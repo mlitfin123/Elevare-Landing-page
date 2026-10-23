@@ -479,6 +479,7 @@ export function ProfessionalProfileEditor() {
   const [removeCurrentPhoto, setRemoveCurrentPhoto] = useState(false);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const saveInFlight = useRef(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">("success");
@@ -1145,7 +1146,7 @@ export function ProfessionalProfileEditor() {
   }
 
   async function handleSave(nextStatus: "draft" | "pending_review") {
-    if (!user) return;
+    if (!user || saveInFlight.current || saveConflict) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setFeedback("Marketplace auth is not configured yet.");
@@ -1177,6 +1178,7 @@ export function ProfessionalProfileEditor() {
       return;
     }
 
+    saveInFlight.current = true;
     setIsSaving(true);
     setFeedback(null);
     setFieldErrors({});
@@ -1466,10 +1468,11 @@ export function ProfessionalProfileEditor() {
         if (cleanupResult.error) console.warn("An incomplete credential upload could not be cleaned up.");
       }
       console.warn("Professional profile save failed.", { category: "save_or_conflict" });
-      setFeedback(committed ? publicationCopy.delayed : error instanceof Error && error.message === "conflict" ? publicationCopy.conflict
+      setFeedback(committed ? publicationCopy.delayed : error instanceof Error && error.message === "unauthorized" ? publicationCopy.sessionExpired : error instanceof Error && error.message === "conflict" ? publicationCopy.conflict
         : error instanceof Error && error.message === "network" ? publicationCopy.uncertain : publicationCopy.failed);
       setFeedbackType("error");
     } finally {
+      saveInFlight.current = false;
       setIsSaving(false);
     }
   }
@@ -1836,7 +1839,7 @@ export function ProfessionalProfileEditor() {
         <button type="button" className="button button-secondary" onClick={() => setIsPreviewing((current) => !current)}>{t(isPreviewing ? "Hide profile preview" : "Preview public profile")}</button>
         {isPreviewing ? <div className="professional-private-preview"><span className="meta-pill">{t("Private preview")}</span><div className="professional-preview-grid">{previewPhoto ? <img src={previewPhoto} alt={t("Private profile preview")} /> : <div className="profile-photo-placeholder">{t("Photo preview")}</div>}<div><h3>{form.displayName || t("Your name")}</h3><p className="professional-title-copy">{form.professionalTitle || t("Your professional title")}</p><p>{form.bio || t("Your bio will appear here.")}</p><div className="tag-row">{form.selectedSpecialties.slice(0, 6).map((specialty) => <span key={specialty} className="tag-chip">{specialtyLabel(specialty)}</span>)}</div></div></div>{activePreviewServices.length > 0 ? <div className="grid-3">{activePreviewServices.map((service) => <div key={service.id} className="nested-editor-card"><strong>{service.name}</strong><p>{service.description || t("Service details")}</p></div>)}</div> : null}</div> : null}
         <label id="profile-field-terms" className="checkbox-row professional-attestation"><input type="checkbox" checked={hasAcceptedProfessionalTerms} onChange={(event) => setHasAcceptedProfessionalTerms(event.target.checked)} /><span>{t(PROFESSIONAL_ATTESTATION_TEXT)} {t("I understand that marketplace approval does not establish legal authorization in every jurisdiction. I agree to the")} <a href={localizePathname("/terms-of-service/", locale)}>{t("Terms of Service")}</a> {t("and acknowledge the")} <a href={localizePathname("/privacy-policy/", locale)}>{t("Privacy Policy")}</a>.</span></label><FieldError name="terms" errors={fieldErrors} translate={t} />
-        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>      <p role="status" aria-live="polite">{isSaving ? publicationCopy.saving : null}</p>
+        <div className="form-actions"><div className="button-row">{approvalStatus !== "approved" ? <button type="button" className="button button-secondary" onClick={() => handleSave("draft")} disabled={isSaving || saveConflict}>{t(isSaving ? "Saving..." : "Save draft")}</button> : null}<button type="button" className="button button-primary" onClick={() => handleSave("pending_review")} disabled={isSaving || saveConflict}>{t(isSaving ? "Submitting..." : approvalStatus === "approved" ? "Submit updates for review" : "Submit for review")}</button></div>      <p role="status" aria-live="polite">{isSaving ? publicationCopy.saving : null}</p>
       {propagationDelayed ? <button type="button" className="button button-secondary" onClick={() => void retryPropagation()}>{publicationCopy.retry}</button> : null}
       {saveConflict ? <button type="button" className="button button-secondary" onClick={() => { setSaveConflict(false); setReloadVersion((value) => value + 1); }}>{publicationCopy.reload}</button> : null}
 {feedback ? <div className={`form-feedback ${feedbackType === "error" ? "is-error" : "is-success"}`} role="status">{t(feedback)}</div> : null}
