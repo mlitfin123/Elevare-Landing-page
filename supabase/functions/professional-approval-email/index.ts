@@ -149,6 +149,7 @@ async function deliverApprovalEmail({
       professionalId,
       eventType: "professional_approved",
       status: "claim_failed",
+      databaseErrorCode: claimError.code,
       timestamp: new Date().toISOString(),
     });
     return { email_status: "pending", retry_available: true };
