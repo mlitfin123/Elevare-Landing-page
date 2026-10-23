@@ -8,8 +8,8 @@ export function distinctProfileCopy(value: string | null, alreadyShown: (string 
   return alreadyShown.some((entry) => entry && displayKey(entry) === displayKey(value)) ? null : value;
 }
 
-export function distinctProfileLabels(values: string[]) {
-  const seen = new Set<string>();
+export function distinctProfileLabels(values: string[], alreadyShown: string[] = []) {
+  const seen = new Set(alreadyShown.map(displayKey));
   return values.filter((value) => {
     const key = displayKey(value);
     if (!key || seen.has(key)) return false;

@@ -14,3 +14,12 @@ test("goal display preserves arbitrary phrases and distinct goals", () => {
   assert.deepEqual(expandProfileGoal("Strength, confidence & consistency"), ["Strength, confidence & consistency"]);
   assert.deepEqual(distinctProfileLabels(["Muscle Gain", "muscle_gain", "Strength", "Strength training"]), ["Muscle Gain", "Strength", "Strength training"]);
 });
+
+test("goals omit labels already displayed as specialties without changing selections", () => {
+  const goals = ["General fitness", "Fat loss", "Healthy habits", "FAT LOSS"];
+  const specialties = ["General Fitness", "Fat Loss", "Strength Training"];
+  assert.deepEqual(distinctProfileLabels(goals, specialties), ["Healthy habits"]);
+  assert.deepEqual(goals, ["General fitness", "Fat loss", "Healthy habits", "FAT LOSS"]);
+  assert.deepEqual(specialties, ["General Fitness", "Fat Loss", "Strength Training"]);
+  assert.deepEqual(distinctProfileLabels(["Pérdida de grasa", "Hábitos saludables"], ["Pérdida de grasa"]), ["Hábitos saludables"]);
+});

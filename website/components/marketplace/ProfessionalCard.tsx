@@ -65,9 +65,10 @@ export function ProfessionalCard({
   const headline = distinctProfileCopy(professional.publicHeadline, [title, professional.bio]);
   const summary = distinctProfileCopy(professional.bestFitSummary, [title, headline]);
   const showServiceModes = Boolean(distinctProfileCopy(serviceModes, [location]));
+  const specialtyLabels = distinctProfileLabels(specialtyLabels.map((specialty) => localizeMarketplaceSpecialty(specialty, locale)));
   const goalLabels = distinctProfileLabels(professional.goalTags.flatMap(expandProfileGoal).map((goal) => marketplaceText(locale,
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
-  )));
+  )), specialtyLabels);
 
   return (
     <article className="panel professional-card">
@@ -130,9 +131,9 @@ export function ProfessionalCard({
 
           {professional.specialties.length > 0 ? (
             <div className="tag-row">
-              {professional.specialties.slice(0, 4).map((specialty) => (
+              {specialtyLabels.map((specialty) => (
                 <span key={specialty} className="tag-chip">
-                  {localizeMarketplaceSpecialty(specialty, locale)}
+                  {specialty}
                 </span>
               ))}
             </div>
