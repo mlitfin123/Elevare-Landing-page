@@ -264,6 +264,10 @@ function normalizeSupportedApprovalEmailLocale(value: string | null | undefined)
   return null;
 }
 
+export function isValidApprovalRecipientEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 export function safeDeliveryError(status?: number) {
   return {
     code: status ? `resend_http_${status}` : "resend_unavailable",

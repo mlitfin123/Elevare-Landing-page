@@ -6,6 +6,7 @@ import {
   formatProfessionalApprovalSender,
   getProfessionalApprovalTemplateId,
   isServiceRoleRequest,
+  isValidApprovalRecipientEmail,
   professionalApprovalEventKey,
   resolveProfessionalApprovalEmailLocale,
   safeApprovalDeliveryError,
@@ -194,7 +195,7 @@ async function deliverApprovalEmail({
     if (userError || !user) throw new DeliveryError();
     deliveryStage = "recipient_validation";
     const recipientEmail = user.email?.trim().toLowerCase() ?? "";
-    if (!isValidEmail(recipientEmail)) throw new DeliveryError();
+    if (!isValidApprovalRecipientEmail(recipientEmail)) throw new DeliveryError();
 
     deliveryStage = "locale_lookup";
     let authMetadata: Record<string, unknown> = {};
