@@ -199,7 +199,7 @@ async function ProfessionalProfilePage({ slug, locale = "en" }: { slug: string; 
   const profileTitle = professional.professionalTitle || formatCategoryList(localizedCategories) || t("Profile");
   const headline = distinctProfileCopy(professional.publicHeadline, [profileTitle, professional.bio, professional.bestFitSummary]);
   const showServiceModes = Boolean(distinctProfileCopy(serviceModeSummary, [profileLocation]));
-  const specialtyLabels = distinctProfileLabels(specialtyLabels.map((specialty) => localizeMarketplaceSpecialty(specialty, locale)));
+  const specialtyLabels = distinctProfileLabels(professional.specialties.map((specialty) => localizeMarketplaceSpecialty(specialty, locale)));
   const goalLabels = distinctProfileLabels(professional.goalTags.flatMap(expandProfileGoal).map((goal) => t(
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
   )), specialtyLabels);

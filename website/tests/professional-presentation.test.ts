@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { distinctProfileLabels, expandProfileGoal } from "../lib/professional-presentation.ts";
 
 test("legacy combined goals display once alongside current goal selections", () => {
@@ -22,4 +23,18 @@ test("goals omit labels already displayed as specialties without changing select
   assert.deepEqual(goals, ["General fitness", "Fat loss", "Healthy habits", "FAT LOSS"]);
   assert.deepEqual(specialties, ["General Fitness", "Fat Loss", "Strength Training"]);
   assert.deepEqual(distinctProfileLabels(["Pérdida de grasa", "Hábitos saludables"], ["Pérdida de grasa"]), ["Hábitos saludables"]);
+});
+
+test("profile and card specialty initializers evaluate from saved selections", () => {
+  const professional = { specialties: ["Fat Loss", "fat_loss", "General Fitness", "Strength Training", "Mobility"] };
+  for (const [file, expected] of [
+    ["../app/professionals/[slug]/page.tsx", ["Fat Loss", "General Fitness", "Strength Training", "Mobility"]],
+    ["../components/marketplace/ProfessionalCard.tsx", ["Fat Loss", "General Fitness", "Strength Training"]],
+  ] as const) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    const initializer = source.match(/const specialtyLabels = ([^;\n]+);/);
+    assert.ok(initializer, file);
+    const evaluate = new Function("professional", "locale", "localizeMarketplaceSpecialty", "distinctProfileLabels", `return ${initializer[1]};`);
+    assert.deepEqual(evaluate(professional, "en", (label: string) => label, distinctProfileLabels), [...expected]);
+  }
 });

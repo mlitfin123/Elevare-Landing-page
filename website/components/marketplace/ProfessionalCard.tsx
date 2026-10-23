@@ -65,7 +65,7 @@ export function ProfessionalCard({
   const headline = distinctProfileCopy(professional.publicHeadline, [title, professional.bio]);
   const summary = distinctProfileCopy(professional.bestFitSummary, [title, headline]);
   const showServiceModes = Boolean(distinctProfileCopy(serviceModes, [location]));
-  const specialtyLabels = distinctProfileLabels(specialtyLabels.map((specialty) => localizeMarketplaceSpecialty(specialty, locale)));
+  const specialtyLabels = distinctProfileLabels(professional.specialties.slice(0, 4).map((specialty) => localizeMarketplaceSpecialty(specialty, locale)));
   const goalLabels = distinctProfileLabels(professional.goalTags.flatMap(expandProfileGoal).map((goal) => marketplaceText(locale,
     PROFESSIONAL_GOAL_OPTIONS.find((option) => option.value === goal)?.label ?? goal.replaceAll("_", " ")
   )), specialtyLabels);
