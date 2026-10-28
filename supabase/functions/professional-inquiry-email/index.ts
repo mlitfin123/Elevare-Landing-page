@@ -1,5 +1,4 @@
 import {bridgeEnvironment,handoffWebsiteOutbox} from '../_shared/communicationBridge.ts';
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   DEFAULT_SUPPORT_EMAIL,

@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { DEFAULT_SUPPORT_EMAIL } from "../professional-approval-email/email.ts";
 import { deliverMarketplaceNotifications, handleMarketplaceNotificationRequest } from "../_shared/marketplace-notification-delivery.ts";
