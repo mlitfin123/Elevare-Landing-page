@@ -1,3 +1,4 @@
+import {bridgeEnvironment,handoffWebsiteCommunications,handoffWebsiteOutbox} from './communicationBridge.ts';
 import { buildConciergeNotification, type ConciergeNotificationEvent } from "./concierge-notification-templates.ts";
 import { formatProfessionalApprovalSender } from "../professional-approval-email/email.ts";
 
@@ -75,6 +76,8 @@ export async function deliverMarketplaceNotifications(
   const deadline = now() + 25_000;
   const prepared = await client.rpc("marketplace_prepare_notification_reminders");
   if (prepared.error) throw new Error("notification_preparation_failed");
+  const bridge=bridgeEnvironment(k=>(globalThis as any).Deno?.env.get(k));
+  await handoffWebsiteCommunications(client,bridge,request);
   const result = { sent: 0, failed: 0, cancelled: 0 };
   for (let index = 0; index < Math.min(10, options.maxJobs ?? 10) && now() < deadline; index++) {
     const claimed = await client.rpc("marketplace_claim_notification");
@@ -89,6 +92,8 @@ export async function deliverMarketplaceNotifications(
       if (completed.error || completed.data !== true) throw new Error("notification_ack_failed");
       result[state]++;
     };
+    const coordinated=await handoffWebsiteOutbox(client,'marketplace_concierge_notification_outbox',claim.id,bridge,request);
+    if(coordinated){if(coordinated.state!=='provider_accepted')result.failed++;continue;}
     const resolved = await client.rpc("marketplace_notification_delivery_context", { p_id: claim.id, p_lock_token: claim.lock_token });
     if (resolved.error) throw new Error("notification_recipient_check_failed");
     if (!resolved.data) {
@@ -99,6 +104,9 @@ export async function deliverMarketplaceNotifications(
     try { message = buildMarketplaceNotification(resolved.data as Context, config); }
     catch { await finish("cancelled", { p_error_code: "invalid_context" }); continue; }
 
+    const start=await client.rpc('marketplace_email_start',{p_table:'marketplace_concierge_notification_outbox',p_id:claim.id,p_lock:claim.lock_token,p_email:message.to[0]});
+    if(start.error||start.data!==true){await client.rpc('marketplace_email_hold',{p_table:'marketplace_concierge_notification_outbox',p_id:claim.id,p_lock:claim.lock_token});result.failed++;continue;}
+    const outcome=async(value:string)=>{const r=await client.rpc('marketplace_email_outcome',{p_table:'marketplace_concierge_notification_outbox',p_id:claim.id,p_lock:claim.lock_token,p_outcome:value});if(r.error||r.data!==true)throw new Error('notification_outcome_ack_failed');};
     let response: Response;
     let providerId: unknown;
     try {
@@ -110,10 +118,12 @@ export async function deliverMarketplaceNotifications(
       // Provider error bodies can contain private data. Never persist or log them.
       if (response.ok) providerId = (await response.json() as { id?: unknown }).id;
     } catch {
-      await finish("failed", { p_error_code: "network" });
+      await outcome("ambiguous"); result.failed++;
       continue;
     }
+    if(response.status>=500||response.status===408||response.ok&&(typeof providerId!=='string'||!providerId.trim())){await outcome('ambiguous');result.failed++;continue;}
     if (!response.ok || typeof providerId !== "string" || !providerId.trim()) {
+      await outcome("rejected");
       const code = response.status === 429 ? "rate_limited" : response.status === 409 ? "idempotency_conflict" : "provider_rejected";
       await finish("failed", { p_error_code: code, p_retryable: response.status === 429 || response.status >= 500 || response.ok });
       continue;

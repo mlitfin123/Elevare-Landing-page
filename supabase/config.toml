@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.marketplace-notification-delivery]
 verify_jwt = true
+
+[functions.website-communication-email-events]
+verify_jwt = false
+
+[functions.website-communication-source]
+verify_jwt = false

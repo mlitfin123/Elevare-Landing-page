@@ -1,3 +1,4 @@
+import {bridgeEnvironment,handoffWebsiteOutbox} from '../_shared/communicationBridge.ts';
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -158,6 +159,7 @@ async function deliverApprovalEmail({
   }
 
   const claim = (claimData ?? {}) as ClaimResult;
+  if(!claim.claimed&&claim.reason==='coordinated'){const handed=await handoffWebsiteOutbox(supabase,'professional_email_outbox',claim.event_id??'',bridgeEnvironment(k=>Deno.env.get(k)));return {email_status:handed?.state??'pending',retry_available:false};}
   if (!claim.claimed) {
     return mapUnclaimedResult(claim);
   }
@@ -166,6 +168,8 @@ async function deliverApprovalEmail({
   const lockToken = claim.lock_token ?? "";
   let deliveryStage: ApprovalDeliveryStage = "configuration";
 
+  const coordinated=await handoffWebsiteOutbox(supabase,'professional_email_outbox',String((claimData as any)?.event_id??''),bridgeEnvironment(k=>Deno.env.get(k)));
+  if(coordinated)return {email_sent:false,email_status:coordinated.state,message:'Approval is saved. Coordinated email remains tracked.'};
   try {
     if (!RESEND_API_KEY) throw new DeliveryError();
 
@@ -221,6 +225,8 @@ async function deliverApprovalEmail({
     });
 
     deliveryStage = "provider_request";
+    const started=await supabase.rpc('marketplace_email_start',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_email:recipientEmail});
+    if(started.error||started.data!==true){await supabase.rpc('marketplace_email_hold',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken});return {email_status:'pending',retry_available:false,error_code:'notification_readiness_hold'};}
     const response = await fetch(`${RESEND_API_BASE}/emails`, {
       method: "POST",
       headers: {
@@ -243,6 +249,7 @@ async function deliverApprovalEmail({
       }),
     });
 
+    if(!response.ok&&response.status>=400&&response.status<500&&response.status!==408)await supabase.rpc('marketplace_email_outcome',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_outcome:'rejected'});
     if (!response.ok) throw new DeliveryError(response.status);
 
     deliveryStage = "provider_response";
@@ -279,6 +286,8 @@ async function deliverApprovalEmail({
       retry_available: false,
     };
   } catch (error) {
+    const unknown=await supabase.rpc('marketplace_email_outcome',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_outcome:'ambiguous'});
+    if(!unknown.error&&unknown.data===true)return {email_status:'pending',retry_available:false,error_code:'notification_outcome_unknown'};
     const safeError = safeApprovalDeliveryError(deliveryStage, error instanceof DeliveryError ? error.status : undefined);
     const { data: failureData } = await supabase.rpc(
       "marketplace_fail_professional_approval_email",

@@ -1,3 +1,4 @@
+import {bridgeEnvironment,handoffWebsiteOutbox} from '../_shared/communicationBridge.ts';
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -69,6 +70,7 @@ Deno.serve(async (request) => {
   });
   const claim = (claimData ?? {}) as ClaimResult;
   if (claimError) return json({ ok: false, message: "Notification delivery is pending." }, 503, cors);
+  if(!claim.claimed&&claim.reason==='coordinated'){const handed=await handoffWebsiteOutbox(supabase,'professional_email_outbox',claim.event_id??'',bridgeEnvironment(k=>Deno.env.get(k)));return json({ok:true,notification_status:handed?.state??'pending'},202,cors);}
   if (!claim.claimed) return json({ ok: true, notification_status: "already_processed" }, 200, cors);
   if (!isUuid(claim.event_id ?? "") || !isUuid(claim.lock_token ?? "")) {
     return json({ ok: false, message: "Notification delivery is pending." }, 503, cors);
@@ -76,6 +78,8 @@ Deno.serve(async (request) => {
   const eventId = claim.event_id!;
   const lockToken = claim.lock_token!;
 
+  const coordinated=await handoffWebsiteOutbox(supabase,'professional_email_outbox',eventId,bridgeEnvironment(k=>Deno.env.get(k)));
+  if(coordinated)return json({ok:true,notification_status:coordinated.state},202,cors);
   try {
     const { data: profile, error: profileError } = await supabase
       .from("trainer_profiles")
@@ -109,6 +113,8 @@ Deno.serve(async (request) => {
       supportEmail: RESEND_TRANSACTIONAL_REPLY_TO,
     });
 
+    const started=await supabase.rpc('marketplace_email_start',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_email:recipientEmail});
+    if(started.error||started.data!==true){await supabase.rpc('marketplace_email_hold',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken});return json({ok:true,notification_status:'pending',message:'The request is saved. Email delivery is awaiting review.'},202,cors);}
     const response = await fetch(`${RESEND_API_BASE}/emails`, {
       method: "POST",
       headers: {
@@ -129,6 +135,7 @@ Deno.serve(async (request) => {
         ],
       }),
     });
+    if(!response.ok&&response.status>=400&&response.status<500&&response.status!==408)await supabase.rpc('marketplace_email_outcome',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_outcome:'rejected'});
     if (!response.ok) throw new Error(`resend_${response.status}`);
     const responseData = await response.json() as { id?: unknown };
     const providerMessageId = typeof responseData.id === "string" ? responseData.id.trim() : "";
@@ -142,6 +149,8 @@ Deno.serve(async (request) => {
     if (completionError || completed !== true) throw new Error("outbox_completion_failed");
     return json({ ok: true, notification_status: "sent" }, 200, cors);
   } catch (error) {
+    const unknown=await supabase.rpc('marketplace_email_outcome',{p_table:'professional_email_outbox',p_id:eventId,p_lock:lockToken,p_outcome:'ambiguous'});
+    if(!unknown.error&&unknown.data===true)return json({ok:false,notification_status:'ambiguous',message:'The request is saved. Notification delivery needs review; do not resend.'},503,cors);
     const status = error instanceof Error ? Number(error.message.replace("resend_", "")) || undefined : undefined;
     const safeError = safeDeliveryError(status);
     await supabase.rpc("marketplace_fail_professional_inquiry_email", {
