@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import * as bridge from "../../supabase/functions/_shared/communicationBridge.ts";
 import * as email from "../../supabase/functions/professional-approval-email/email.ts";
 
 async function runSender(recipientEmail: string) {
@@ -24,6 +25,8 @@ async function runSender(recipientEmail: string) {
     },
     async rpc(name: string) {
       calls.push(name);
+      if(name==='marketplace_email_start')return {data:true,error:null};
+      if(name==='marketplace_email_outcome')return {data:false,error:null};
       if (name === "marketplace_claim_professional_approval_email") return {data: {claimed: true, event_id: id, lock_token: id, attempt_count: 1}, error: null};
       if (name === "marketplace_complete_professional_approval_email") return {data: {completed: true}, error: null};
       if (name === "marketplace_fail_professional_approval_email") return {data: {retry_available: true}, error: null};
@@ -40,6 +43,7 @@ async function runSender(recipientEmail: string) {
     require: (name: string) => {
       if (name.startsWith("jsr:")) return {};
       if (name.startsWith("npm:@supabase/")) return {createClient: () => client};
+      if (name.endsWith("/communicationBridge.ts")) return bridge;
       if (name === "./email.ts") return email;
       throw new Error("Unexpected import");
     },

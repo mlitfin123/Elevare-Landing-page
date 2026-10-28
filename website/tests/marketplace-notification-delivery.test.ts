@@ -50,7 +50,7 @@ test("delivery rechecks ownership, uses a stable provider key, and acknowledges 
     assert.equal(url, "https://api.resend.com/emails");
     assert.equal(new Headers(init?.headers).get("idempotency-key"), `marketplace-email:${id}`);
     assert.equal(init?.redirect, "error");
-    assert.equal(calls.at(-1)?.name, "marketplace_notification_delivery_context");
+    assert.equal(calls.at(-1)?.name, "marketplace_email_start");
     return Response.json({ id: "provider-123" });
   };
   assert.deepEqual(await deliverMarketplaceNotifications(client, config, request), { sent: 1, failed: 0, cancelled: 0 });
@@ -66,22 +66,22 @@ test("opt-out, stale ownership and obsolete events cancel without sending", asyn
   assert.equal(sent, false); assert.equal(result.cancelled, 1);
 });
 
-test("transient failures retry; permanent provider rejection never logs private error bodies", async () => {
+test("known transient rejection retries; uncertain failures hold; private provider bodies stay out of logs", async () => {
   for (const [status, retryable] of [[429, true], [503, true], [422, false], [409, false]] as const) {
     const { client, calls } = fakeClient();
     const result = await deliverMarketplaceNotifications(client, config, async () => new Response("PRIVATE_PROVIDER_BODY", { status }));
     assert.equal(result.failed, 1);
-    const finish = calls.find((call) => call.name === "marketplace_finish_notification")!;
-    assert.equal(finish.args?.p_retryable, retryable);
+    const finish = calls.find((call) => call.name === 'marketplace_finish_notification');
+    if(status===503){assert.equal(finish,undefined);assert.equal(calls.find(c=>c.name==='marketplace_email_outcome')?.args?.p_outcome,'ambiguous');}else assert.equal(finish?.args?.p_retryable,retryable);
     assert.ok(!JSON.stringify(calls).includes("PRIVATE_PROVIDER_BODY"));
   }
 });
 
-test("uncertain network results remain retryable with the same event identity", async () => {
+test("uncertain network results remain held under the same event identity", async () => {
   const { client, calls } = fakeClient();
   assert.equal((await deliverMarketplaceNotifications(client, config, async () => { throw Error("private network detail"); })).failed, 1);
-  const finish = calls.find((call) => call.name === "marketplace_finish_notification")!;
-  assert.equal(finish.args?.p_error_code, "network");
+  assert.equal(calls.find(c=>c.name==='marketplace_email_outcome')?.args?.p_outcome,'ambiguous');
+  assert.equal(calls.some(c=>c.name==='marketplace_finish_notification'),false);
   assert.ok(!JSON.stringify(calls).includes("private network detail"));
 });
 
