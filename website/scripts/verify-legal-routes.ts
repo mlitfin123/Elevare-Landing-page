@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   ACTIVE_LEGAL_ROUTES,
+  STAGELAB_LEGAL_ROUTES,
   archiveFileToProductionRoute,
   publicHtmlFileToProductionRoute,
 } from "../lib/legal-routes.ts";
@@ -63,6 +64,12 @@ async function productionRouteExists(route: string) {
     const routeKey = `${route.replace(/\/+$/, "")}/page`;
     const serverEntry = appPaths[routeKey] ?? appPaths[routeKey.replace(/\/page$/, "/route")];
     if (serverEntry && await pathExists(path.join(projectRoot, ".next", "server", serverEntry))) return true;
+  }
+  // A flat public HTML asset does not implement its extensionless URL in Next.
+  // Require the Coach Agreement's explicit route, leaving other legal routing
+  // outside the scope of this targeted repair.
+  if (route === STAGELAB_LEGAL_ROUTES.coach.route) {
+    return !verifyOutput && pathExists(path.join(projectRoot, "app", "stagelab-coach-agreement", "route.ts"));
   }
   if (route === "/") {
     return verifyOutput
