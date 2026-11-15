@@ -220,7 +220,7 @@ function MarketplaceDirectoryState({
   heroEyebrow = "Elevare marketplace",
   heroTitle = "Find the right support for your goals.",
   heroDescription =
-    "Discover trainers, coaches, nutrition professionals, and wellness specialists based on your goals, location, and preferences.",
+    "Discover independent fitness and wellness professionals based on your goals, location, and preferences.",
   showCategoryCards = true,
   showHeroActions = true,
   showSecondaryExplanation = true,

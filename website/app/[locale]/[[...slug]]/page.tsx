@@ -228,7 +228,7 @@ export async function generateMetadata({
     const t = (value: string) => marketplaceText(resolved.locale, value);
     return buildMetadata({
       title: t("Find Trainers, Coaches & Wellness Experts | Elevare"),
-      description: t("Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare."),
+      description: t("Discover independent fitness and wellness professionals based on your goals, location, and preferences."),
       pathname: localizePathname("/professionals/", resolved.locale),
       locale: resolved.locale,
       localizedAlternates: true,

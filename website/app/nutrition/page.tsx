@@ -161,10 +161,9 @@ export default async function NutritionIndexPage() {
 
       <LogbookCTA context="nutrition_index" />
       <MarketplaceSupportCta
-        href="/professionals/nutrition/"
-        label="Find nutrition support"
+        href="/professionals/"
+        label="Browse fitness & wellness professionals"
         context="nutrition_index"
-        title="Want help applying nutrition information to your goals?"
       />
       <NutritionDisclaimer />
     </div>

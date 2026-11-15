@@ -371,7 +371,7 @@ export function AccountDashboard() {
           <article className="panel account-action-card">
             <span className="stat-label">{t("Find support")}</span>
             <h3>{t("Explore Elevare")}</h3>
-            <p>{t("Browse trainers, coaches, nutrition, wellness, and other services on Elevare.")}</p>
+            <p>{t("Browse fitness and wellness professionals on Elevare.")}</p>
             <div className="button-row">
               <Link className="button button-primary" href={localizePathname("/professionals/", locale)}>
                 {t("Explore Elevare")}

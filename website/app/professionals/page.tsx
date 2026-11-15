@@ -24,7 +24,7 @@ export async function generateMetadata({ searchParams }: ProfessionalsDirectoryP
   return buildMetadata({
     title: "Find Trainers, Coaches & Wellness Experts | Elevare",
     description:
-      "Explore personal trainers, nutrition coaches, bodybuilding coaches, wellness specialists, and other fitness and health-focused services on Elevare.",
+      "Discover independent fitness and wellness professionals based on your goals, location, and preferences.",
     pathname: "/professionals",
     robots: filtered ? { index: false, follow: true } : undefined,
   });

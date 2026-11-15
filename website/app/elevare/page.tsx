@@ -93,7 +93,7 @@ export default async function ElevarePage() {
           <div className="eyebrow">Categories</div>
           <h2 className="section-title">Browse the marketplace by type of support.</h2>
           <p className="section-copy">
-            The category system is built to support personal training, coaching, nutrition, wellness, mobility,
+            The category system is built to support personal training, coaching, wellness, mobility,
             performance, and other related services without boxing everything into one narrow label.
           </p>
         </div>
