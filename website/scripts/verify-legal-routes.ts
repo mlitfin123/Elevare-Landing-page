@@ -66,10 +66,10 @@ async function productionRouteExists(route: string) {
     if (serverEntry && await pathExists(path.join(projectRoot, ".next", "server", serverEntry))) return true;
   }
   // A flat public HTML asset does not implement its extensionless URL in Next.
-  // Require the Coach Agreement's explicit route, leaving other legal routing
+  // Require these explicit routes, leaving other legal routing
   // outside the scope of this targeted repair.
-  if (route === STAGELAB_LEGAL_ROUTES.coach.route) {
-    return !verifyOutput && pathExists(path.join(projectRoot, "app", "stagelab-coach-agreement", "route.ts"));
+  if ([STAGELAB_LEGAL_ROUTES.coach, STAGELAB_LEGAL_ROUTES.terms].some(document => document.route === route)) {
+    return !verifyOutput && pathExists(path.join(projectRoot, "app", route.replace(/^\/+|\/+$/g, ""), "route.ts"));
   }
   if (route === "/") {
     return verifyOutput
